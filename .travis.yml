@@ -23,7 +23,7 @@ install:
  
 # Run test
 script:
-  - "nosetests --with-cov --cover-package=Kona --cov-config .coveragerc --logging-level=INFO"
+  - "nosetests --with-coverage --cover-package=Kona --logging-level=INFO"
  
 # Calculate coverage
 after_success:
