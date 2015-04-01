@@ -4,10 +4,7 @@ import unittest
 class placeholder(unittest.TestCase):
 
     def autoPass(self):
-        self.failUnless(True)
-
-def main():
-    unittest.main()
+        self.assertTrue(True)
 
 if __name__ == '__main__':
-    main()
+    unittest.main()
