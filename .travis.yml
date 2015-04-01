@@ -24,9 +24,7 @@ install:
  
 # Run test
 script:
-  - "coverage run --source=kona setup.py test"
-  - "coverage report -m"
-#  - "nosetests --with-coverage --cover-package=Kona --logging-level=INFO"
+  - "nosetests --with-coverage --cover-package=Kona --logging-level=INFO"
  
 # Calculate coverage
 after_success:
