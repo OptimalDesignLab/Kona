@@ -1,4 +1,38 @@
-from distutils.core import setup
+from distutils.core import setup, Command
+
+def discover_and_run_tests():
+    import os
+    import sys
+    import unittest
+
+    # get setup.py directory
+    setup_file = sys.modules['__main__'].__file__
+    setup_dir = os.path.abspath(os.path.dirname(setup_file))
+
+    # use the default shared TestLoader instance
+    test_loader = unittest.defaultTestLoader
+
+    # use the basic test runner that outputs to sys.stderr
+    test_runner = unittest.TextTestRunner()
+
+    # automatically discover all tests
+    # NOTE: only works for python 2.7 and later
+    test_suite = test_loader.discover(setup_dir)
+
+    # run the test suite
+    test_runner.run(test_suite)
+    
+class DiscoverTest(Command):
+    user_options = []
+    
+    def initialize_options(self):
+        pass
+        
+    def finalize_options(self):
+        pass
+        
+    def run(self):
+        discover_and_run_tests()
 
 setup(name = 'Kona',
       version = '1.0',
@@ -6,5 +40,6 @@ setup(name = 'Kona',
       author_email = 'hickej2@rpi.edu',
       url = 'https://github.com/OptimalDesignLab/Kona',
       package_dir = {'kona':''},
-      packages = ['kona', 'kona.examples']
+      packages = ['kona', 'kona.examples'],
+      cmdclass = {'test': DiscoverTest},
       )
