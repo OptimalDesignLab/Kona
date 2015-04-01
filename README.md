@@ -22,4 +22,4 @@ guarantees that any solver that has already been integrated with Kona will
 work correctly underneath any new algorithm that may be added in the future.
 
 An older version of Kona written in C++ can be found 
-[here](https://bitbucket.org/odl/kona)
+[here](https://bitbucket.org/odl/kona).
