@@ -4,7 +4,7 @@ import unittest
 class placeholder(unittest.TestCase):
 
     def autoPass(self):
-        self.assertTrue(True)
+        self.assertTrue(True) # pragma: no cover
 
 if __name__ == '__main__':
     unittest.main()
