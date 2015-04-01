@@ -10,11 +10,11 @@
     </a>
     <a href='https://coveralls.io/r/OptimalDesignLab/Kona?branch=master'>
         <img id=graph alt="Coverage Status" 
-          src="https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg" 
+          src="https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master" 
           />
         <script language="javascript" type="text/javascript">
             var d = new Date(); 
-            document.getElementById("graph").src = "https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg&ver=" + d.getTime();
+            document.getElementById("graph").src = "https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master&ver=" + d.getTime();
         </script>
     </a>
 </p>
