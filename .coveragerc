@@ -1,4 +1,5 @@
 [run]
+branch = True
 source = Kona
 omit =
     */python?.?/*
@@ -7,11 +8,17 @@ omit =
     */site-packages/ordereddict.py
     */site-packages/nose/*
     */unittest2/*
+    */tests
     */setup.py
+
+[report]
 exclude_lines =
     pragma: no cover
     def __repr__
     raise AssertionError
     raise NotImplementedError
+    if __name__ == .__main__.:
+    if __name__==.__main__.:
     if __name__ == '__main__':
+    if __name__=='__main__':
     unittest.main()
