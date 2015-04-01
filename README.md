@@ -1,9 +1,21 @@
 <p>
     <a href='https://travis-ci.org/OptimalDesignLab/Kona?branch=master'>
-        <img src='https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master&<? echo time();?>' alt='Build Status' />
+        <img id=graph alt="Build Status" 
+          src="https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master" 
+          />
+        <script language="javascript" type="text/javascript">
+            var d = new Date(); 
+            document.getElementById("graph").src = "https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master&ver=" + d.getTime();
+        </script>
     </a>
     <a href='https://coveralls.io/r/OptimalDesignLab/Kona?branch=master'>
-        <img src='https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master&<? echo time();?>' alt='Coverage Status' />
+        <img id=graph alt="Coverage Status" 
+          src="https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg" 
+          />
+        <script language="javascript" type="text/javascript">
+            var d = new Date(); 
+            document.getElementById("graph").src = "https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg&ver=" + d.getTime();
+        </script>
     </a>
 </p>
 
