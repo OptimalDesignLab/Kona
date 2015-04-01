@@ -1,9 +1,9 @@
 <p>
     <a href='https://travis-ci.org/OptimalDesignLab/Kona?branch=master'>
-        <img src='https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master' alt='Build Status' />
+        <img src='https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master&<? echo time();?>' alt='Build Status' />
     </a>
     <a href='https://coveralls.io/r/OptimalDesignLab/Kona?branch=master'>
-        <img src='https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master' alt='Coverage Status' />
+        <img src='https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master&<? echo time();?>' alt='Coverage Status' />
     </a>
 </p>
 
