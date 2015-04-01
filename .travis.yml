@@ -14,6 +14,7 @@ before_install:
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
   - "sudo rm -rf /dev/shm"
   - "sudo ln -s /run/shm /dev/shm"
+  
 # Install packages
 install:
   - "conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy nose"
@@ -23,7 +24,8 @@ install:
  
 # Run test
 script:
-  - "coverage run setup.py test"
+  - "coverage run --source=Kona setup.py test"
+  - "coverage report -m"
 #  - "nosetests --with-coverage --cover-package=Kona --logging-level=INFO"
  
 # Calculate coverage
