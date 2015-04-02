@@ -26,7 +26,7 @@ PDE-constrained optimization.
 
 An important aspect of its implementation is that it makes no assumptions 
 regarding the dimension, type or parallelization of the control, state or 
-constraint vectors. The user must implement these vectors and, throuh reverse 
+constraint vectors. The user must implement these vectors and, through reverse 
 communication, Kona asks the user to perform various operations on these 
 vectors. This model allows Kona to be used in a variety of parallel 
 environments, because it remains agnostic to how the user defines and stores 
