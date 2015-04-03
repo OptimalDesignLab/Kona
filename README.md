@@ -1,23 +1,5 @@
-<p>
-    <a href='https://travis-ci.org/OptimalDesignLab/Kona?branch=master'>
-        <img id="travis" alt="Build Status" 
-          src="https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master" 
-          />
-        <script language="javascript" type="text/javascript">
-            var d = new Date(); 
-            document.getElementById("travis").src = "https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master&ver="+d.getTime();
-        </script>
-    </a>
-    <a href='https://coveralls.io/r/OptimalDesignLab/Kona?branch=master'>
-        <img alt="Coverage Status" id="coveralls" 
-        src='https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master' 
-        />
-        <script language="javascript" type="text/javascript">
-            var d = new Date(); 
-            document.getElementById("coveralls").src = "https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master&ver="+d.getTime();
-        </script>
-    </a>
-</p>
+[![Build Status](https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master)](https://travis-ci.org/OptimalDesignLab/Kona)
+[![Coverage Status](https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master)](https://coveralls.io/r/OptimalDesignLab/Kona?branch=master)
 
 # Kona
 
