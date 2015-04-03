@@ -1,10 +1,5 @@
 """singleton.py: Contains the Singleton class definition."""
 
-__author__      = "Alp Dener"
-__email__       = "denera@rpi.edu"
-__license__     = "LGPL"
-__date__        = "April 2, 2015"
-
 class Singleton(object):
     """
     This is a non-thread-safe singleton implementation in Python that allows 
@@ -23,3 +18,7 @@ class Singleton(object):
         # otherwise, raise error because we already have an instance created
         else:
             raise RuntimeError('Attempting to reallocate a Singleton!')
+            
+    def __del__(cls):
+        cls.__instance = None
+        

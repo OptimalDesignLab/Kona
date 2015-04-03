@@ -24,31 +24,34 @@ class BaseVector(object):
         
     def __del__(self):
         self._memory.UnassignVector(self)
-        
-    def __eq__(self, rhs): # this is the = operator
-        if isinstance(rhs, float):
-            self._memory.AXPlusBY(rhs, -1, 0.0, -1, self)
-        else:
-            self._memory.CheckType(rhs, type(self))
-            self._memory.AXPlusBY(0.0, -1, 1.0, vec.GetIndex(), self)
             
     def __iadd__(self, vec): # this is the += operator
-        self._memory.CheckType(rhs, type(self))
+        self._memory.CheckType(vec, type(self))
         self._memory.AXPlusBY(1.0, vec.GetIndex(), 1.0, self._index, self)
+        return self
         
     def __isub__(self, vec): # this is the -= operator
-        self._memory.CheckType(rhs, type(self))
+        self._memory.CheckType(vec, type(self))
         self._memory.AXPlusBY(-1.0, vec.GetIndex(), 1.0, self._index, self)
+        return self
         
     def __imul__(self, val): # this is the *= operator
         if isinstance(val, float):
             self._memory.AXPlusBY(val, self._index, 0.0, -1, self)
+            return self
         else:
             raise TypeError('_BaseVector.__imul__() >> ' + \
                             'RHS must be a scalar value.')
                             
     def __idiv__(self, val): # this is the /= operator
-        self.__imul__(val)
+        return self.__imul__(1./val)
+        
+    def Equals(self, rhs): # the = operator cannot be overloaded
+        if isinstance(rhs, float):
+            self._memory.AXPlusBY(rhs, -1, 0.0, -1, self)
+        else:
+            self._memory.CheckType(rhs, type(self))
+            self._memory.AXPlusBY(0.0, -1, 1.0, rhs.GetIndex(), self)
         
     def EqualsAXPlusBY(self, a, x, b, y): # this performs self = a*x + b*y
         self._memory.CheckType(x, type(self))
@@ -62,7 +65,7 @@ class BaseVector(object):
                              'Inner product is negative!')
         else:
             return sqrt(val)
-    
+            
     def GetIndex(self): # return the storage index for the vector
         return self._index
     
@@ -71,6 +74,10 @@ class DesignVector(BaseVector):
     Derived from the base abstracted vector. Contains member functions specific 
     to design vectors.
     """
+    flag = 0
+    
+    def GetIndex(self): # return the storage index for the vector
+        return self._index
         
     def EqualsBasisVector(self, basis):
         pass
@@ -102,11 +109,11 @@ class StateVector(BaseVector):
     Derived from the base abstracted vector. Contains member functions specific 
     to state vectors.
     """
-    pass
+    flag = 1
     
 class DualVector(BaseVector):
     """
     Derived from the base abstracted vector. Contains member functions specific 
     to state vectors.
     """
-    pass
+    flag = 2

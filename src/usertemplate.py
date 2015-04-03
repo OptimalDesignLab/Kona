@@ -91,12 +91,14 @@ class UserTemplate(object):
         -------
         int : Error code for the operation. 0 (zero) means no error.
         """
-        self.kona_design = np.zeros((num_design_vec, self.num_design))
-        self.kona_state = np.zeros((num_state_vec, self.num_state))
-        self.kona_dual = np.zeros((num_dual_vec, self.num_ceq))
+        self.kona_storage = {
+            0 : np.zeros((num_design_vec, self.num_design)),
+            1 : np.zeros((num_state_vec, self.num_state)),
+            2 : np.zeros((num_dual_vec, self.num_ceq)),
+        }
         return 0
 
-    def axpby_d(self, a, vec1, b, vec2, result):
+    def ax_p_by(self, vecType, a, vec1, b, vec2, result):
         """
         User-defined linear algebra method for scalar multiplication and
         vector addition.
@@ -105,6 +107,8 @@ class UserTemplate(object):
 
         Parameters
         ----------
+        vecType : int
+            Integer flag for vector basis. 0 is design, 1 is state, 2 is dual.
         a, b : double
             Multiplication coefficients.
         vec1, vec2 : int
@@ -122,19 +126,19 @@ class UserTemplate(object):
                 if b == 0.:
                     out = np.zeros(self.num_design)
                 else:
-                    y = self.kona_design[vec2]
+                    y = self.kona_storage[vecType][vec2]
                     out = b*y
         elif vec2 == -1: # if only the index for vec2 is -1
             # answer is vec1 scaled by a
             if a == 0.:
                 out = np.zeros(self.num_design)
             else:
-                x = self.kona_design[vec1]
+                x = self.kona_storage[vecType][vec1]
                 out = a*x
         else:
             # otherwise perform the full a*vec1 + b*vec2 operation
-            x = self.kona_design[vec1]
-            y = self.kona_design[vec2]
+            x = self.kona_storage[vecType][vec1]
+            y = self.kona_storage[vecType][vec2]
             if a == 0.:
                 if b == 0.:
                     out = self.zeros(self.num_design)
@@ -146,23 +150,9 @@ class UserTemplate(object):
                 else:
                     out = a*x + b*y
         # write the result into the designated location
-        self.kona_design[result] = out
-
-    def axpby_s(self, a, vec1, b, vec2, result):
-        """
-        See ``axpby_d``. Perform the same tasks for vectors of size
-        ``self.num_state``.
-        """
-        pass
-
-    def axpby_ceq(self, a, vec1, b, vec2, result):
-        """
-        See ``axpby_d``. Perform the same tasks for vectors of size
-        ``self.num_ceq``.
-        """
-        pass
-
-    def inner_prod_d(self, vec1, vec2):
+        self.kona_storage[vecType][result] = out
+        
+    def inner_prod(self, vecType, vec1, vec2):
         """
         User-defined linear algebra method for a vector inner product.
 
@@ -175,19 +165,8 @@ class UserTemplate(object):
         -------
         float : Result of the operation.
         """
-        return np.inner(self.kona_design[vec1], self.kona_design[vec2])
-
-    def inner_prod_s(self, vec1, vec2):
-        """
-        See ``inner_prod_d``. Must return ``0.0`` when not implemented.
-        """
-        return 0.0
-
-    def inner_prod_ceq(self, vec1, vec2):
-        """
-        See ``inner_prod_d``. Must return ``0.0`` when not implemented.
-        """
-        return 0.0
+        return np.inner(self.kona_storage[vecType][vec1], 
+                        self.kona_storage[vecType][vec2])
 
     def eval_obj(self, at_design, at_state):
         """

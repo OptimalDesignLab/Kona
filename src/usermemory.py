@@ -24,7 +24,7 @@ class UserMemory(Singleton):
         self.vecAssigned = {
             DesignVector : [False] * self.numDesignVec,
             StateVector : [False] * self.numStateVec,
-            DualVector : [False] * self.numDualVec
+            DualVector : [False] * self.numDualVec,
         }
         
         # send request to user to allocate storage for vectors
@@ -34,8 +34,16 @@ class UserMemory(Singleton):
         if ierr != 0:
             raise RuntimeError('userObj.alloc_memory() >> ' + \
                                'Error Code: ' % ierr)
+    def _resetAssignments(self):
+        # THIS IS ONLY USED BY UNIT TESTS
+        self.vecAssigned = {
+            DesignVector : [False] * self.numDesignVec,
+            StateVector : [False] * self.numStateVec,
+            DualVector : [False] * self.numDualVec,
+        }
+        # THIS IS ONLY USED BY UNIT TESTS
         
-    def CheckType(vec, vecType):
+    def CheckType(self, vec, vecType):
         # make sure we're comparing to a valid vector type
         if vecType not in self.vecAssigned.keys():
             raise TypeError('UserMemory.CheckType() >> Unknown type provided.')
@@ -67,32 +75,23 @@ class UserMemory(Singleton):
         
     def UnassignVector(self, vec):
         # change the assignment flag for the given vector type and index
-        self.vecAssigned[vec.GetType()][vec.GetIndex()] = False
+        self.vecAssigned[type(vec)][vec.GetIndex()] = False
         
-    def AXPlusBY(self, a, x_index, b, y_index, result):
+    def AXPlusBY(self, a, xIndex, b, yIndex, result):
         # request the user function that matches vector type
-        if isinstance(result, DesignVector):
-            self.userObj.axpby_d(a, x_index, b, y_index, result.GetIndex())
-        elif isinstance(result, StateVector):
-            self.userObj.axpby_s(a, x_index, b, y_index, result.GetIndex())
-        elif isinstance(result, DualVector):
-            self.userObj.axpby_ceq(a, x_index, b, y_index, result.GetIndex())
-        else:
-            raise TypeError('UserMemory.AXPlusBY() >> Unknown vector type.')
+        vecType = result.flag
+        resultIndex = result.GetIndex()
+        self.userObj.ax_p_by(vecType, a, xIndex, b, yIndex, resultIndex)
         
     def InnerProd(self, x, y):
         # make sure the two vectors have the same type
         self.CheckType(y, type(x))
         
         # request the user function that matches vector type
-        if isinstance(x, DesignVector):
-            return self.userObj.inner_prod_d(x.GetIndex(), y.GetIndex())
-        elif isinstance(x, StateVector):
-            return self.userObj.inner_prod_s(x.GetIndex(), y.GetIndex())
-        elif isinstance(x, DualVector):
-            return self.userObj.inner_prod_ceq(x.GetIndex(), y.GetIndex())
-        else:
-            raise TypeError('UserMemory.InnerProd() >> Unknown vector type.')
+        vecType = x.flag
+        xIndex = x.GetIndex()
+        yIndex = y.GetIndex()
+        return self.userObj.inner_prod(vecType, xIndex, yIndex)
         
     def Restrict(self, opType, vec):
         # check vector types
