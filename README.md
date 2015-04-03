@@ -9,9 +9,9 @@
         </script>
     </a>
     <a href='https://coveralls.io/r/OptimalDesignLab/Kona?branch=master'>
-        <img id=coveralls alt="Coverage Status" 
-          src="https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master" 
-          />
+        <img alt='Coverage Status' id=coveralls 
+        src='https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master' 
+        />
         <script language="javascript" type="text/javascript">
             var d = new Date(); 
             document.getElementById("coveralls").src = "https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master&ver=" + d.getTime();
