@@ -2,8 +2,8 @@ from numpy import sqrt
 
 class BaseVector(object):
     """
-    An abstracted vector class connected to the Kona user memory, containing 
-    a common set of algebraic member functions.
+    An abstract vector class connected to the Kona user memory, containing a
+    common set of algebraic member functions.
     
     Attributes
     ----------

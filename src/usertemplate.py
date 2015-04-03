@@ -1,6 +1,6 @@
 """This module contains the core template class from which Kona users can
 derive their own problem definitions. Instructions on which base class to
-derive from are provide in the class docstrings below.
+derive from are provided in the class docstrings below.
 
 When deriving user-defined problem objects, the default method names and
 arguments defined below should be preserved exactly as shown. The user should
