@@ -40,6 +40,6 @@ setup(name = 'Kona',
       author_email = 'hickej2@rpi.edu',
       url = 'https://github.com/OptimalDesignLab/Kona',
       package_dir = {'kona':''},
-      packages = ['kona', 'kona.examples'],
+      packages = ['kona', 'kona.examples', 'kona.src', 'kona.src.common'],
       cmdclass = {'test': DiscoverTest},
       )
