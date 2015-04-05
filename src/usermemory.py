@@ -79,7 +79,7 @@ class UserMemory(Singleton):
         
     def AXPlusBY(self, a, xIndex, b, yIndex, result):
         # request the user function that matches vector type
-        vecType = result.flag
+        vecType = result.GetFlag()
         resultIndex = result.GetIndex()
         self.userObj.ax_p_by(vecType, a, xIndex, b, yIndex, resultIndex)
         
@@ -88,7 +88,7 @@ class UserMemory(Singleton):
         self.CheckType(y, type(x))
         
         # request the user function that matches vector type
-        vecType = x.flag
+        vecType = x.GetFlag()
         xIndex = x.GetIndex()
         yIndex = y.GetIndex()
         return self.userObj.inner_prod(vecType, xIndex, yIndex)

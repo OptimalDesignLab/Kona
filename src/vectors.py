@@ -17,6 +17,7 @@ class BaseVector(object):
     memory : UserMemory (singleton)
         Pointer to the Kona user memory.
     """
+    _flag = None # vector basis flag -- 0 is design, 1 is state, 2 is dual
     
     def __init__(self, memory):
         self._memory = memory
@@ -68,16 +69,16 @@ class BaseVector(object):
             
     def GetIndex(self): # return the storage index for the vector
         return self._index
+        
+    def GetFlag(self):
+        return self._flag
     
 class DesignVector(BaseVector):
     """
     Derived from the base abstracted vector. Contains member functions specific 
     to design vectors.
     """
-    flag = 0
-    
-    def GetIndex(self): # return the storage index for the vector
-        return self._index
+    _flag = 0
         
     def EqualsBasisVector(self, basis):
         pass
@@ -88,8 +89,8 @@ class DesignVector(BaseVector):
     def RestrictToTarget(self):
         self._memory.Restrict(1, self)
         
-    def Convert(self, vec):
-        self._memory.ConvertVec(vec, self)
+    def Convert(self, dualVec):
+        self._memory.ConvertVec(dualVec, self)
         
     def EqualsInitialDesign(self):
         self._memory.SetInitialDesign(self)
@@ -109,11 +110,26 @@ class StateVector(BaseVector):
     Derived from the base abstracted vector. Contains member functions specific 
     to state vectors.
     """
-    flag = 1
+    _flag = 1
     
+    def EqualsObjectiveGradient(self, atDesign, atState):
+        self._memory.ObjectiveGradient(atDesign, atState, self)
+    
+    def EqualsPDEResidual(self, atDesign, atState):
+        self._memory.EvaluatePDEResidual(atDesign, atState, self)
+        
+    def EqualsPrimalSolution(self, atDesign):
+        self._memory.SolvePDE(atDesign, self)
+        
 class DualVector(BaseVector):
     """
     Derived from the base abstracted vector. Contains member functions specific 
     to state vectors.
     """
-    flag = 2
+    _flag = 2
+    
+    def Convert(self, designVec):
+        self._memory.ConvertVec(self, designVec)
+        
+    def EqualsConstraints(self, atDesign, atState):
+        self._memory.EvaluateConstraints(atDesign, atState, self)
