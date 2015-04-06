@@ -3,16 +3,33 @@
 
 # Kona
 
-Kona is an optimization library that implements a set of algorithms for 
-PDE-constrained optimization.
+## What is it?
 
-An important aspect of its implementation is that it makes no assumptions 
-regarding the dimension, type or parallelization of the control, state or 
-constraint vectors. The user must implement these vectors and, through reverse 
-communication, Kona asks the user to perform various operations on these 
-vectors. This model allows Kona to be used in a variety of parallel 
-environments, because it remains agnostic to how the user defines and stores 
-these vectors.
+Kona is a library for nonlinear constrained optimization.
+
+## Who is it for?
+
+Kona was designed primarily for large-scale partial-differential-equation (PDE)
+constrained optimization problems; however, it is suitable for any (sufficiently
+smooth) problem where the objective function and/or constraints require the
+solution of a computationally expensive state equation.  Kona is also useful for
+developing new optimization algorithms for PDE-constrained optimization, for the
+reasons described below.
+
+## How is it implemented?
+
+An important aspect of Kona's implementation is that it makes no assumptions
+regarding the dimension, type, or parallelization of the primal variables, state
+variables, or constraints.  In other words, these objects are assumed to exist in
+an abstract vector space.
+
+For ease of use, Kona provides a default
+[NumPy](http://dx.doi.org/10.1109/MCSE.2011.37) implementation for these vector
+spaces.  For high-performance applications, where variables are typically
+distributed across multiple processes, the user must implement the storage and
+linear algebra operations for the vector spaces.  This model allows Kona to be
+used in a variety of parallel environments, because it remains agnostic to how
+the user defines, stores, and manipulates the vectors.
 
 Additionally, Kona separates optimization algorithms from the underlying PDE 
 solver such that any new optimization algorithm can be implemented in Kona 
@@ -21,5 +38,9 @@ and testing of new algorithms independently from the PDE solver, and
 guarantees that any solver that has already been integrated with Kona will 
 work correctly underneath any new algorithm that may be added in the future.
 
+## History and References
+
 An older version of Kona written in C++ can be found 
 [here](https://bitbucket.org/odl/kona).
+
+Insert AIAA paper references here.
