@@ -1,7 +1,6 @@
-from common import Singleton
-from usermemory import UserMemory
+from kona.linalg import KonaMemory
 
-class Optimizer(Singleton):
+class Optimizer(object):
     """
     This is a top-level wrapper for all optimization algorithms contained in 
     the Kona library, and also the only class exposed to the outside user.
@@ -20,7 +19,7 @@ class Optimizer(Singleton):
         numDesignVec, numStateVec, numDualVec = self_memoryRequirements(self)
         
         # initialize optimization memory
-        self.memory = UserMemory(userObj, numDesignVec, numStateVec, numDualVec)
+        self.memory = KonaMemory(userObj, numDesignVec, numStateVec, numDualVec)
         
     def _readOptions(self, optns):
         pass

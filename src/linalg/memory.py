@@ -1,16 +1,13 @@
 import numpy
-from common import Singleton
-from usertemplate import UserTemplate
-from vectors import *
+from kona.common import Singleton
+from vectors.common import *
+from vectors.composite import *
 
-class UserMemory(Singleton):
+class KonaMemory(Singleton):
     
     def __init__(self, userObj, numDesignVec, numStateVec, numDualVec):
         # assign user object
-        if not isinstance(userObj, UserTemplate):
-            raise TypeError('UserMemory() >> Unknown user object.')
-        else:
-            self.userObj = userObj
+        self.userObj = userObj
         
         # cost tracking
         self.precondCount = 0

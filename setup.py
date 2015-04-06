@@ -1,4 +1,5 @@
-from distutils.core import setup, Command
+from distutils.core import Command
+from setuptools import setup, find_packages
 
 def discover_and_run_tests():
     import os
@@ -39,7 +40,14 @@ setup(name = 'Kona',
       author = 'Jason E. Hicken',
       author_email = 'hickej2@rpi.edu',
       url = 'https://github.com/OptimalDesignLab/Kona',
-      package_dir = {'kona':''},
-      packages = ['kona', 'kona.examples', 'kona.src', 'kona.src.common'],
+      package_dir = {'kona':'src'},
+      # packages = [
+ #        'examples',
+ #        'src',
+ #        'src.common',
+ #        'src.linalg', 'src.linalg.vectors',
+ #        'src.algorithms',
+ #        'src.user'],
+      packages = find_packages(), 
       cmdclass = {'test': DiscoverTest},
       )

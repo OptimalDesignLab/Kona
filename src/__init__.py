@@ -1,4 +1,5 @@
 from optimizer import *
-from usermemory import *
-import vectors
 import common
+import linalg
+import algorithms
+import user

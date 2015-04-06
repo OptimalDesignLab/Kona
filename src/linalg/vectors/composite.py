@@ -1,5 +1,5 @@
 from numpy import sqrt
-from vectors import DesignVector, DualVector
+from kona.linalg.vectors.common import DesignVector, DualVector
 
 class ReducedKKTVector(object):
     

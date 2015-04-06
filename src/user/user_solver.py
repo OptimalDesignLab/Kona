@@ -1,24 +1,6 @@
-"""This module contains the core template class from which Kona users can
-derive their own problem definitions. Instructions on which base class to
-derive from are provided in the class docstrings below.
+from base_vectors import BaseAllocator
 
-When deriving user-defined problem objects, the default method names and
-arguments defined below should be preserved exactly as shown. The user should
-only change the contents of these methods to perform the corresponding tasks
-required by Kona for the optimization. To that end, the user is free to add new
-intermediate methods. Kona will only utilize methods that are part of this base
-class.
-
-.. note::
-
-   All of the matrix-vector multiplication methods can be implemented
-   matrix-free. The choice is left up to the user.
-
-"""
-
-import numpy as np
-
-class UserTemplate(object):
+class UserSolver(object):
     """Base class for Kona objective functions, designed to be a template for
     any objective functions intended to be used for ``kona.Optimize()``.
 
@@ -35,138 +17,16 @@ class UserTemplate(object):
         Number of state variables
     num_ceq : int (optional)
         Size of the equality constraint residual
-    kona_design : numpy.array
-        Kona storage array for vectors of size ``self.num_design``
-    kona_state : numpy.array
-        Kona storage array for vectors of size ``self.num_state``
-    kona_dual : numpy.array
-        Kona storage array for vectors of size ``self.num_ceq``
-        
-    Parameters
-    ----------
-    num_design : int (optional)
-        Number of design variables.
-    num_state : int (optional)
-        Number of state variables.
-    num_ceq : int (optional)
-        Number of equality constraints.
     """
-
-    def __init__(self, num_design=0, num_state=0, num_ceq=0):
-        self.num_design = num_design
-        self.num_state = num_state
-        self.num_ceq = num_ceq
-        
-    def get_rank(self):
-        """
-        Return the processor rank.
-        
-        For serial codes, this should always return 0 (zero). This rank is used 
-        to ensure that print statements originate only from the root (0 rank) 
-        processor.
-        
-        Returns
-        -------
-        int : Processor rank.
-        """
-        return 0
-
-    def alloc_memory(self, num_design_vec, num_state_vec, num_dual_vec):
-        """
-        Create the storage arrays required by Kona.
-
-        Parameters
-        ----------
-        num_design_vec : int
-            Number of storage vectors for design variables, each with a length
-            of ``self.num_design``.
-        num_state_vec : int
-            Number of storage vectors for state variables, each with a length
-            of ``self.num_state``.
-        num_dual_vec : int
-            Number of storage vectors for ceq (constraint) variables, each
-            with a length of ``self.num_state``.
-            
-        Returns
-        -------
-        int : Error code for the operation. 0 (zero) means no error.
-        """
-        self.kona_storage = {
-            0 : np.zeros((num_design_vec, self.num_design)),
-            1 : np.zeros((num_state_vec, self.num_state)),
-            2 : np.zeros((num_dual_vec, self.num_ceq)),
-        }
-        return 0
-
-    def ax_p_by(self, vecType, a, vec1, b, vec2, result):
-        """
-        User-defined linear algebra method for scalar multiplication and
-        vector addition.
-
-        .. math:: a\mathbf{x} + b\mathbf{y}
-
-        Parameters
-        ----------
-        vecType : int
-            Integer flag for vector basis. 0 is design, 1 is state, 2 is dual.
-        a, b : double
-            Multiplication coefficients.
-        vec1, vec2 : int
-            Storage indexes for the vectors to be operated on.
-        result : int
-            Storage index for the result of the operation.
-        """
-        #print "axpby_d : %.3f * vec %i + %.2f * vec %i" % (a, vec1, b, vec2)
-        if vec1 == -1:
-            if vec2 == -1: # if indexes for both vectors are -1
-                # answer is a vector of ones scaled by a
-                out = a*np.ones(self.num_design)
-            else: # if only the index for vec1 is -1
-                # answer is vec2 scaled by b
-                if b == 0.:
-                    out = np.zeros(self.num_design)
-                else:
-                    y = self.kona_storage[vecType][vec2]
-                    out = b*y
-        elif vec2 == -1: # if only the index for vec2 is -1
-            # answer is vec1 scaled by a
-            if a == 0.:
-                out = np.zeros(self.num_design)
-            else:
-                x = self.kona_storage[vecType][vec1]
-                out = a*x
+    
+    def __init__(self, num_design=0, num_state=0, num_ceq=0, allocator=None):
+        if allocator is None:
+            self.allocator = BaseAllocator(num_design, num_state, num_ceq)
         else:
-            # otherwise perform the full a*vec1 + b*vec2 operation
-            x = self.kona_storage[vecType][vec1]
-            y = self.kona_storage[vecType][vec2]
-            if a == 0.:
-                if b == 0.:
-                    out = self.zeros(self.num_design)
-                else:
-                    out = b*y
-            else:
-                if b == 0.:
-                    out = a*x
-                else:
-                    out = a*x + b*y
-        # write the result into the designated location
-        self.kona_storage[vecType][result] = out
-        
-    def inner_prod(self, vecType, vec1, vec2):
-        """
-        User-defined linear algebra method for a vector inner product.
-
-        Parameters
-        ----------
-        vec1, vec2 : int
-            Storage indexes for the vectors to be operated on.
-
-        Returns
-        -------
-        float : Result of the operation.
-        """
-        return np.inner(self.kona_storage[vecType][vec1], 
-                        self.kona_storage[vecType][vec2])
+            self.allocator = allocator
+        self.num_design = self.allocator.num_design
+        self.num_state = self.allocator.num_state
+        self.num_dual = self.allocator.num_dual
 
     def eval_obj(self, at_design, at_state):
         """
@@ -204,8 +64,8 @@ class UserTemplate(object):
     def eval_residual(self, at_design, at_state, result):
         """
         Evaluate the linearized system (PDE) using the design point stored in
-        ``self.kona_design[vec1]`` and the state variables stored in
-        ``self.kona_state[vec2]``. Put the residual vector in
+        ``self.kona_design[x]`` and the state variables stored in
+        ``self.kona_state[y]``. Put the residual vector in
         ``self.kona_state[result]``.
 
         Parameters
@@ -222,8 +82,8 @@ class UserTemplate(object):
     def eval_ceq(self, at_design, at_state, result):
         """
         Evaluate the vector of equality constraints using the design
-        variables stored at `self.kona_design[vec1]`` and the state
-        variables stored at ``self.kona_state[vec2]``. Store the constraint
+        variables stored at `self.kona_design[x]`` and the state
+        variables stored at ``self.kona_state[y]``. Store the constraint
         residual at ``self.kona_dual[result].
 
         Parameters
@@ -678,7 +538,7 @@ class UserTemplate(object):
         """
         pass
 
-class UserTemplateIDF(UserTemplate):
+class UserSolverIDF(UserSolver):
     """
     A modified base class for multidisciplinary problems that adopt the 
     IDF (individual discipline feasible) formulation for disciplinary 
@@ -713,70 +573,9 @@ class UserTemplateIDF(UserTemplate):
         Number of equality constraints, NOT including IDF constraints
     """
 
-    def __init__(self, num_real_design, num_state, num_real_ceq=0):
-        # variables with the _real_ designation do not include information
-        # about the IDF target state variables
-        self.num_real_design = num_real_design
-        self.num_real_ceq = num_real_ceq
-        num_design = num_real_design + num_state
-        num_ceq = num_real_ceq + num_state
-        UserTemplate.__init__(self, num_design, num_state, num_ceq)
-
-    def restrict_design(self, type, target):
-        """
-        If operation type is 0 (``type == 0``), set the target state variables 
-        to zero.
-        
-        If operation type is 1 (``type == 1``), set the real design variables 
-        to zero.
-        
-        This operation should be performed on the design vector stored at 
-        ``self.kona_design[target]``.
-        
-        Parameters
-        ----------
-        type : int
-            Operation type flag.
-        target : int
-            Index of the design vector to be operated on.
-        """
-        if type == 0:
-            self.kona_design[target, self.num_real_design:] = 0.
-        elif type == 1:
-            self.kona_design[target, :self.num_real_design] = 0.
-        else:
-            raise ValueError('Unexpected type in restrict_design()!')
-
-    def copy_dual_to_targstate(self, take_from, copy_to):
-        """
-        Take the target state variables from dual storage, 
-        ``self.kona_dual[take_from]``, and put them into design storage, 
-        ``self.kona_design[copy_to]``. Also set the real design variables to 
-        zero.
-        
-        Parameters
-        ----------
-        take_from : int
-            Dual index from where target state variables should be taken.
-        copy_to : int
-            Design index to which target state variables should be copied.
-        """
-        self.kona_design[copy_to, :self.num_real_design] = 0.
-        self.kona_design[copy_to, self.num_real_design:] = \
-            self.kona_dual[take_from, self.num_real_ceq:]
-
-    def copy_targstate_to_dual(self, take_from, copy_to):
-        """
-        Take the target state variables from design storage, 
-        ``self.kona_design[take_from]``, and put them into dual storage, 
-        ``self.kona_dual[copy_to]``.
-        
-        Parameters
-        ----------
-        take_from : int
-            Design index from where target state variables should be taken.
-        copy_to : int
-            Dual index to which target state variables should be copied.
-        """
-        self.kona_dual[copy_to, self.num_real_ceq:] = \
-            self.kona_design[take_from, self.num_real_design:]
+    def __init__(self, num_design, num_state, num_ceq, allocator=None):
+        if allocator is None:
+            allocator = BaseAllocatorIDF(num_design, num_state, num_ceq)
+        UserSolver.__init__(num_design, num_state, num_ceq, allocator)
+        self.num_real_design = num_design
+        self.num_real_ceq = num_ceq
