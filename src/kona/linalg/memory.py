@@ -2,7 +2,7 @@ import numpy
 from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import PDEJacobian, ConstraintJacobian
-from kona.linalg.matrices.composite import Hessian, ReducedKKT
+from kona.linalg.matrices.composite import Hessian, ReducedKKTMatrix
 
 class VectorFactory(object):
     """

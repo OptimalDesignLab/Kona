@@ -41,13 +41,6 @@ setup(name = 'Kona',
       author_email = 'hickej2@rpi.edu',
       url = 'https://github.com/OptimalDesignLab/Kona',
       package_dir = {'':'src'},
-      # packages = [
- #        'examples',
- #        'src',
- #        'src.common',
- #        'src.linalg', 'src.linalg.vectors',
- #        'src.algorithms',
- #        'src.user'],
       packages = find_packages(),
       cmdclass = {'test': DiscoverTest},
       )
