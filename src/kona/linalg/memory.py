@@ -1,5 +1,5 @@
 import numpy
-from kona.vectors.common import DesignVector, StateVector, DualVector
+from kona.vectors.common import DesignVector, StateVector, DualVector, IDFVector
 from kona.vectors.composite import *
 
 class VectorFactory(object):
@@ -23,13 +23,10 @@ class VectorFactory(object):
     memory : KonaMemory
     vec_type : DesignVector, StateVector, DualVector
     """
-    def __init__(self, memory, vec_type=None):
+    def __init__(self, memory, vec_type):
         self._num_vecs = 0
         self._memory = memory
-        if vec_type not in self._memory.vector_stack.keys():
-            raise TypeError('VectorFactory() >> Unknown vector type!')
-        else:
-            self._vec_type = vec_type
+        self._vec_type = vec_type
         
     def request_num_vectors(self, count):
         self._num_vecs += count

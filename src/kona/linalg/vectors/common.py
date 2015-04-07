@@ -161,13 +161,13 @@ class DesignVector(KonaVector):
     to design vectors.
     """    
     def restrict_target_state(self):
-        self._memory.allocator.restrict_design(0, self._data)
+        self._memory.solver.allocator.restrict_design(0, self._data)
         
     def restrict_real_design(self):
         self._memory.solver.allocator.restrict_design(1, self._data)
         
     def convert(self, dual_vector):
-        self._memory.allocator.copy_dual_to_targstate(dual_vector._data, 
+        self._memory.solver.allocator.copy_dual_to_targstate(dual_vector._data, 
                                                      self._data)
         
     def equals_init_design(self):
