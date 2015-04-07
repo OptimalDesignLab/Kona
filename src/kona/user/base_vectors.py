@@ -57,14 +57,23 @@ class BaseAllocator(object):
         self.num_state = num_state
         self.num_dual = num_ceq
 
-    def alloc_design(self):
-        return NumpyVector(self.num_design)
+    def design(self, count):
+        out = []
+        for i in range(count):
+            out.append(BaseVector(self.num_design))
+        return out
 
-    def alloc_state(self):
-        return NumpyVector(self.num_state)
+    def state(self, count):
+        out = []
+        for i in range(count):
+            out.append(BaseVector(self.num_state))
+        return out
 
-    def alloc_dual(self):
-        return NumpyVector(self.num_dual)
+    def dual(self, count):
+        out = []
+        for i in range(count):
+            out.append(BaseVector(self.num_dual))
+        return out
 
 class BaseAllocatorIDF(BaseAllocator):
 
