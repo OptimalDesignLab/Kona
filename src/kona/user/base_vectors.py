@@ -20,9 +20,9 @@ class BaseVector(object):
         self.data += vector.data
 
     def times(self, value):
-        self.data *= value.data
+        self.data *= value
 
-    def equals_value(self, val):
+    def equals_value(self, value):
         self.data[:] = value
 
     def equals_vector(self, vector):
@@ -44,7 +44,7 @@ class BaseVector(object):
         out : numpy.ndarray
             Result of the operation.
         """
-        self.data = a*x + b*y
+        self.data = a*x.data + b*y.data
 
     def inner(self, vector):
         """

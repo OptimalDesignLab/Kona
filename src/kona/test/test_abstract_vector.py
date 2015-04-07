@@ -28,22 +28,22 @@ class AbsVectorTestCase(unittest.TestCase):
     def test_times_equals(self):
         self.x_vec.times(3)
         norm = self.x_vec.inner(self.x_vec)
-        self.assertEquals(self.x_vec.norm2, 3*10**.5)
+        self.assertEquals(self.x_vec.inner(self.x_vec), 90)
 
     def test_plus_equals(self):
         self.x_vec.plus(self.y_vec)
-        self.assertEquals(self.x_vec.norm2, 3*10**.5)
+        self.assertEquals(self.x_vec.inner(self.x_vec), 90)
 
     def test_assignment(self):
 
         x_vec = self.x_vec
 
-        self.z_vec.set_to_scalar(15)
-        self.assertEquals(self.z_vec.norm2, 15*10**.5)
+        self.z_vec.equals_value(15)
+        self.assertEquals(self.z_vec.inner(self.z_vec), 2250)
 
-        self.z_vec.set_to_vector(self.x_vec)
+        self.z_vec.equals_vector(self.x_vec)
         self.z_vec.times(2)
-        self.assertEquals(self.z_vec.norm2, 2*10**.5)
+        self.assertEquals(self.z_vec.inner(self.z_vec), 40)
 
         self.z_vec.equals_ax_p_by(2, self.x_vec, 3, self.y_vec)
 
