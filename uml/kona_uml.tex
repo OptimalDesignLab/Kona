@@ -16,12 +16,12 @@
         \operation{equals\_ax\_p\_by(a, AbstractVector, b, AbstractVector)}
     \end{interface}
 
-    \begin{class}{BaseVector}{17,5}
+    \begin{class}{BaseVector}{17,4}
         \implement{AbstractVector}
         \attribute{NumPy ndarray$\colon$ data}
     \end{class}
 
-    \begin{class}{BaseAllocator}{17,10}
+    \begin{class}{BaseAllocator}{17,7}
         \operation{BaseVector $\colon$ alloc\_design()}
         \operation{BaseVector $\colon$ alloc\_state()}
         \operation{BaseVector $\colon$ alloc\_dual()}
@@ -35,9 +35,12 @@
         \operation{FullKKT_vec_factory()}
     \end{class}
 
-    \begin{class}{VectorFactor}{0,0}
-
+    \begin{class}{VectorFactor}{0,5}
+        \operation{tally(num_vectors)}
+        \operation{generate()}
     \end{class}
+
+    \unidirectionalAssociation{KonaMemory}{}{5}{ VectorFactor }
 
 \end{tikzpicture}
 

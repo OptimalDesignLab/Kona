@@ -71,19 +71,19 @@ class BaseAllocator(object):
 
     def alloc_design(self, count):
         out = []
-        for i in range(count):
+        for i in xrange(count):
             out.append(BaseVector(self.num_design))
         return out
 
     def alloc_state(self, count):
         out = []
-        for i in range(count):
+        for i in xrange(count):
             out.append(BaseVector(self.num_state))
         return out
 
     def alloc_dual(self, count):
         out = []
-        for i in range(count):
+        for i in xrange(count):
             out.append(BaseVector(self.num_dual))
         return out
 
