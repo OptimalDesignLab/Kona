@@ -46,11 +46,11 @@ class KonaMemory(Singleton):
         
     def allocate_memory(self):
         self.vector_stack[DesignVector] = \
-            self.user_obj.allocator.design(self.design_factory._count)
+            self.user_obj.allocator.alloc_design(self.design_factory._count)
         self.vector_stack[StateVector] = \
-            self.user_obj.allocator.state(self.state_factory._count)
+            self.user_obj.allocator.alloc_state(self.state_factory._count)
         self.vector_stack[DualVector] = \
-            self.user_obj.allocator.dual(self.dual_factory._count)
+            self.user_obj.allocator.alloc_dual(self.dual_factory._count)
     
     def get_rank():
         return self.user_obj.get_rank()
