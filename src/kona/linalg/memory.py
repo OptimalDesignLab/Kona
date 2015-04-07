@@ -24,7 +24,7 @@ class VectorFactory(object):
     vec_type : DesignVector, StateVector, DualVector
     """
     def __init__(self, memory, vec_type=None):
-        self._num_vecs = 0
+        self.num_vecs = 0
         self._memory = memory
         if vec_type not in self._memory.vector_stack.keys():
             raise TypeError('VectorFactory() >> Unknown vector type!')
@@ -32,7 +32,9 @@ class VectorFactory(object):
             self._vec_type = vec_type
 
     def request_num_vectors(self, count):
-        self._num_vecs += count
+        if count < 1:
+            raise ValueError('number of vectors requested can not be less than 1')
+        self.num_vecs += count
 
     def generate(self):
         data = self._memory.pop_vector(self._vec_type)
@@ -66,6 +68,13 @@ class KonaMemory(object):
         self.user_obj = user_obj
         self.rank = self.user_obj.get_rank()
 
+        # allocate vec assignments
+        self.vector_stack = {
+            DesignVector : [],
+            StateVector : [],
+            DualVector : [],
+        }
+
         # prepare vector factories
         self.design_factory = VectorFactory(self, DesignVector)
         self.state_factory = VectorFactory(self, StateVector)
@@ -74,12 +83,6 @@ class KonaMemory(object):
         # cost tracking
         self.precond_count = 0
 
-        # allocate vec assignments
-        self.vector_stack = {
-            DesignVector : [],
-            StateVector : [],
-            DualVector : [],
-        }
 
     def push_vector(self, vec_type, user_data):
         """
@@ -124,9 +127,8 @@ class KonaMemory(object):
         factories, this function will manipulate the user-defined solver object
         to allocate all actual, real memory required for the optimization.
         """
-        self.vector_stack[DesignVector] = \
-            self.user_obj.allocator.alloc_design(self.design_factory._num_vecs)
-        self.vector_stack[StateVector] = \
-            self.user_obj.allocator.alloc_state(self.state_factory._num_vecs)
-        self.vector_stack[DualVector] = \
-            self.user_obj.allocator.alloc_dual(self.dual_factory._num_vecs)
+        allocator = self.user_obj.allocator
+
+        self.vector_stack[DesignVector] = allocator.alloc_design(self.design_factory.num_vecs)
+        self.vector_stack[StateVector] = allocator.alloc_state(self.state_factory.num_vecs)
+        self.vector_stack[DualVector] = allocator.alloc_dual(self.dual_factory.num_vecs)

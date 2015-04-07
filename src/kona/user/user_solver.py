@@ -18,7 +18,7 @@ class UserSolver(object):
     num_ceq : int (optional)
         Size of the equality constraint residual
     """
-    
+
     def __init__(self, num_design=0, num_state=0, num_ceq=0, allocator=None):
         if allocator is None:
             self.allocator = BaseAllocator(num_design, num_state, num_ceq)
@@ -27,6 +27,13 @@ class UserSolver(object):
         self.num_design = self.allocator.num_design
         self.num_state = self.allocator.num_state
         self.num_dual = self.allocator.num_dual
+
+
+    def get_rank(self):
+        """
+        Rank of current process is needed purely for purposes of printing to screen
+        """
+        return 0
 
     def eval_obj(self, at_design, at_state):
         """
@@ -214,10 +221,10 @@ class UserSolver(object):
 
     def multiply_precond(self, at_design, at_state, vec, result):
         """
-        OPTIONAL: Apply the preconditioner to the vector at 
-        ``self.kona_state[vec]`` and store the result in 
+        OPTIONAL: Apply the preconditioner to the vector at
+        ``self.kona_state[vec]`` and store the result in
         ``self.kona_state[result]``. If the preconditioner has to be
-        linearized, use the design and state vectors provided in 
+        linearized, use the design and state vectors provided in
         ``self.kona_design[at_design]`` and ``self.kona_state[at_state]``.
 
         Parameters
@@ -235,10 +242,10 @@ class UserSolver(object):
 
     def multiply_tprecond(self, at_design, at_state, vec, result):
         """
-        OPTIONAL: Apply the transpose of the preconditioner to the vector at 
-        ``self.kona_state[vec]`` and store the result in 
+        OPTIONAL: Apply the transpose of the preconditioner to the vector at
+        ``self.kona_state[vec]`` and store the result in
         ``self.kona_state[result]``. If the preconditioner has to be
-        linearized, use the design and state vectors provided in 
+        linearized, use the design and state vectors provided in
         ``self.kona_design[at_design]`` and ``self.kona_state[at_state]``.
 
         Parameters
@@ -540,8 +547,8 @@ class UserSolver(object):
 
 class UserSolverIDF(UserSolver):
     """
-    A modified base class for multidisciplinary problems that adopt the 
-    IDF (individual discipline feasible) formulation for disciplinary 
+    A modified base class for multidisciplinary problems that adopt the
+    IDF (individual discipline feasible) formulation for disciplinary
     coupling.
 
     Attributes
@@ -562,7 +569,7 @@ class UserSolverIDF(UserSolver):
         Kona storage array for vectors of size ``self.num_state``
     kona_dual : numpy.array
         Kona storage array for vectors of size ``self.num_ceq``
-        
+
     Parameters
     ----------
     num_real_design : int
