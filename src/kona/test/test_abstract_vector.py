@@ -47,6 +47,17 @@ class AbsVectorTestCase(unittest.TestCase):
 
         self.z_vec.equals_ax_p_by(2, self.x_vec, 3, self.y_vec)
 
+    def test_bad_value(self):
+        try:
+            BaseVector(size=10, val="s")
+        except ValueError as err:
+            self.assertEqual(str(err), 'val must be a scalar or array like, but was given as type str')
+
+        try:
+            BaseVector(size=10, val=np.ones(12))
+        except ValueError as err:
+            self.assertEqual(str(err), 'size given as 10, but length of value 12')
+
 
 class TestCaseProblemAllocator(unittest.TestCase):
 
