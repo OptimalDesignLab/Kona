@@ -1,5 +1,4 @@
 import numpy
-from kona.common import Singleton
 from kona.vectors.common import DesignVector, StateVector, DualVector
 from kona.vectors.composite import *
 
@@ -14,7 +13,7 @@ class VectorFactory(object):
     ----------
     _count : int
         Number of vectors required by optimization functions.
-    _memory : KonaMemory (singleton)
+    _memory : KonaMemory
         All-knowing Kona memory manager.
     _vec_type : DesignVector, StateVector, DualVector
         Kona abstracted vector type associated with this factory
@@ -39,7 +38,7 @@ class VectorFactory(object):
         data = self._memory.pop_vector(self._vec_type)
         return self._vec_type(self._memory, data)
 
-class KonaMemory(Singleton):
+class KonaMemory(object):
     """
     All-knowing Big Brother abstraction layer for Kona.
     
