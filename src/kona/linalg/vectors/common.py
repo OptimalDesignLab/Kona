@@ -112,7 +112,7 @@ class KonaVector(object):
         """
         self.times(1./val)
         
-    def equals_ax_p_b(self, a, x, b, y): # this performs self = a*x + b*y
+    def equals_ax_p_by(self, a, x, b, y): # this performs self = a*x + b*y
         """
         Performs a full a*X + b*Y operation between two vectors, and stores 
         the result in place. 
