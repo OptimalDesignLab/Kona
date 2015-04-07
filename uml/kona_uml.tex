@@ -8,39 +8,102 @@
 
 \begin{document}
 \begin{tikzpicture}[]% [ show background grid ]
-    \begin{interface}[text width =10cm ]{AbstractVector}{17,0}
-        \operation{plus(AbstractVector)}
-        \operation{times(AbstractVector)}
-        \operation{equals\_value(AbstractVector)}
-        \operation{equals\_vector(AbstractVector)}
-        \operation{equals\_ax\_p\_by(a, AbstractVector, b, AbstractVector)}
+    \begin{interface}[text width =7cm ]{IVector}{17,0}
+        \operation{plus(IVector)}
+        \operation{times(IVector)}
+        \operation{equals\_value(IVector)}
+        \operation{equals\_vector(IVector)}
+        \operation{equals\_ax\_p\_by(a, IVector, b, IVector)}
     \end{interface}
 
-    \begin{class}{BaseVector}{17,4}
-        \implement{AbstractVector}
-        \attribute{NumPy ndarray$\colon$ data}
-    \end{class}
+    \begin{interface}{IAllocator}{17,10}
+        \operation{BaseVector $\colon$ alloc\_design()}
+        \operation{BaseVector $\colon$ alloc\_state()}
+        \operation{BaseVector $\colon$ alloc\_dual()}
+    \end{interface}
 
-    \begin{class}{BaseAllocator}{17,7}
+    \begin{class}{BaseAllocator}{17,6}
+        \implement{IAllocator}
         \operation{BaseVector $\colon$ alloc\_design()}
         \operation{BaseVector $\colon$ alloc\_state()}
         \operation{BaseVector $\colon$ alloc\_dual()}
     \end{class}
 
-    \begin{class}{KonaMemory}{0,0}
-        \operation{design_vec_factory()}
-        \operation{state_vec_factory()}
-        \operation{dual_vec_factory()}
-        \operation{ReducedKKT_vec_factory()}
-        \operation{FullKKT_vec_factory()}
+    \begin{class}{BaseVector}{17,2}
+        \implement{IVector}
+        \attribute{NumPy ndarray$\colon$ data}
     \end{class}
 
-    \begin{class}{VectorFactor}{0,5}
-        \operation{tally(num_vectors)}
+    \unidirectionalAssociation{BaseAllocator}{produces}{}{BaseVector}
+
+
+    \begin{class}{KonaMemory}{9.5,10}
+        \operation{design\_vec\_factory()}
+        \operation{state\_vec\_factory()}
+        \operation{dual\_vec\_factory()}
+        \operation{ReducedKKT\_vec\_factory()}
+        \operation{FullKKT\_vec\_factory()}
+    \end{class}
+
+    \composition{KonaMemory}{}{1}{IAllocator}
+
+
+    \begin{class}{VectorFactory}{9.5,5}
+        \operation{tally(num\_vectors)}
         \operation{generate()}
     \end{class}
 
-    \unidirectionalAssociation{KonaMemory}{}{5}{ VectorFactor }
+    \begin{class}{KonaVector}{9,1}
+        \attribute{norm2}
+        \operation{equals{KonaVector}}
+        \operation{plus(KonaVector)}
+        \operation{minus(KonaVector)}
+        \operation{times(KonaVector)}
+        \operation{divide\_by(KonaVector)}
+        \operation{equals\_ax\_p\_by(KonaVector)}
+        \operation{inner(KonaVector)}
+    \end{class}
+
+    \begin{class}{DesignVector}{0,-3}
+        \inherit{KonaVector}
+    \end{class}
+
+    \begin{class}{DesignVectorIDF}{0,-2}
+        \inherit{KonaVector}
+    \end{class}
+
+    \begin{class}{StateVector}{0,-1}
+        \inherit{KonaVector}
+    \end{class}
+
+    \begin{class}{DualVector}{0,0}
+        \inherit{KonaVector}
+    \end{class}
+
+    \begin{class}{ReducedKKTVector}{0,1}
+        \inherit{KonaVector}
+    \end{class}
+
+    \unidirectionalAssociation{VectorFactory}{produces}{}{KonaVector}
+
+
+    \unidirectionalAssociation{KonaMemory}{}{}{VectorFactory}
+
+    \begin{class}{Optimizer}{0,10}
+
+    \end{class}
+
+    \begin{class}{LibMethod}{0,5}
+
+    \end{class}
+
+    \composition{Optimizer}{utility methods}{0..*}{LibMethod}
+    \composition{Optimizer}{}{1}{KonaMemory}
+    \composition{Optimizer}{one per vector type}{5}{VectorFactory}
+    \composition{LibMethod}{}{1..*}{VectorFactory}
+    \composition{LibMethod}{}{1..*}{KonaVector}
+    \composition{Optimizer}{}{1..*}{KonaVector}
+
 
 \end{tikzpicture}
 
