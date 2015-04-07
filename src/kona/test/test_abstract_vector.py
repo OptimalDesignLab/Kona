@@ -1,7 +1,9 @@
 import unittest
 
-from kona.user_tools import BaseVector
-from kona.user_tools import BaseAllocator
+import numpy as np
+
+from kona.user import BaseVector
+from kona.user import BaseAllocator
 # from kona.user_vectors.petsc_vector import NumpyVector # should follow this exact interface
 
 class AbsVectorTestCase(unittest.TestCase):
@@ -46,7 +48,7 @@ class AbsVectorTestCase(unittest.TestCase):
         self.z_vec.equals_ax_p_by(2, self.x_vec, 3, self.y_vec)
 
 
-class TestCaseProblemAllocator(self):
+class TestCaseProblemAllocator(unittest.TestCase):
 
     def setUp(self):
         self.alloc = BaseAllocator(3, 4, 5)

@@ -2,8 +2,19 @@ import numpy as np
 
 class BaseVector(object):
 
-    def __init__(self, size):
-        self.data = numpy.zeros()
+    def __init__(self, size, val=0):
+        if np.isscalar(val):
+            if val == 0:
+                self.data = np.zeros(size)
+            else:
+                self.data = np.ones(size)*val
+        elif isinstance(val, (np.ndarray, list, tuple)):
+            if size != len(val):
+                raise ValueError('size given as %d, but length of value %d' % (size, len(val)))
+            self.data = np.array(val)
+        else:
+            raise ValueError('val must be a scalar or array like')
+
 
     def plus(self, vector):
         self.data += vector
@@ -35,7 +46,7 @@ class BaseVector(object):
         """
         self.data = a*x + b*y
 
-    def inner_prod(self, vector):
+    def inner(self, vector):
         """
         User-defined linear algebra method for a vector inner product.
 
@@ -58,20 +69,20 @@ class BaseAllocator(object):
         self.num_dual = num_ceq
 
     def alloc_design(self):
-        return NumpyVector(self.num_design)
+        return BaseVector(self.num_design)
 
     def alloc_state(self):
-        return NumpyVector(self.num_state)
+        return BaseVector(self.num_state)
 
     def alloc_dual(self):
-        return NumpyVector(self.num_dual)
+        return BaseVector(self.num_dual)
 
 class BaseAllocatorIDF(BaseAllocator):
 
     def __init__(self, num_design, num_state, num_ceq):
         self.num_real_design = num_design
         self.num_real_ceq = num_ceq
-        NumpyVectors.__init__(self.num_real_design + self.num_state,
+        super(BaseAllocatorIDF, self).__init__(self.num_real_design + self.num_state,
                               self.num_state,
                               self.num_real_ceq + self.num_state)
 
