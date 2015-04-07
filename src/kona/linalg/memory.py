@@ -23,6 +23,7 @@ class VectorFactory(object):
     memory : KonaMemory
     vec_type : DesignVector, StateVector, DualVector
     """
+
     def __init__(self, memory, vec_type=None):
         self.num_vecs = 0
         self._memory = memory

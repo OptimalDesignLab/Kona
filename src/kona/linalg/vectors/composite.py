@@ -1,17 +1,17 @@
 from numpy import sqrt
-from kona.linalg.vectors.common import DesignVector, DualVector
+from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
 
 class ReducedKKTVector(object):
     
-    def __init__(self, memory, designVec, dualVec):
+    def __init__(self, memory, design_vec, dual_vec):
         self._memory = memory
         if isinstance(designVec, DesignVector):
-            self._design = designVec
+            self._design = design_vec
         else:
             raise TypeError('ReducedKKTVector() >> ' + \
                             'Unidentified design vector.')
         if isinstance(dualVec, DualVector):
-            self._dual = dualVec
+            self._dual = dual_vec
         else:
             raise TypeError('ReducedKKTVector() >> ' + \
                             'Unidentified dual vector.')

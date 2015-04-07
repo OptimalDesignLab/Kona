@@ -30,10 +30,6 @@ class VectorFactoryTestCase(unittest.TestCase):
         gc.collect()
         self.assertEqual(len(km.vector_stack[DesignVector]), 12)
 
-# class KonaMemoryTestCase(self):
-#
-#     def test_kona
-
 
 if __name__ == "__main__":
     unittest.main()

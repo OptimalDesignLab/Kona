@@ -580,9 +580,63 @@ class UserSolverIDF(UserSolver):
         Number of equality constraints, NOT including IDF constraints
     """
 
+
     def __init__(self, num_design, num_state, num_ceq, allocator=None):
-        if allocator is None:
-            allocator = BaseAllocatorIDF(num_design, num_state, num_ceq)
-        UserSolver.__init__(num_design, num_state, num_ceq, allocator)
         self.num_real_design = num_design
         self.num_real_ceq = num_ceq
+        super(BaseAllocatorIDF, self).__init__(
+            self.num_real_design + num_state,
+            num_state,
+            self.num_real_ceq + num_state,
+            allocator)
+
+    def restrict_design(self, opType, target):
+        """
+        If operation type is 0 (``type == 0``), set the target state variables
+        to zero.
+
+        If operation type is 1 (``type == 1``), set the real design variables
+        to zero.
+
+        Parameters
+        ----------
+        opType : int
+            Operation type flag.
+        vec : numpy.ndarray
+            Design vector to be operated on.
+        """
+        if opType == 0:
+            vec[self.num_real_design:] = 0.
+        elif opType == 1:
+            vec[:self.num_real_design] = 0.
+        else:
+            raise ValueError('Unexpected type in restrict_design()!')
+
+    def copy_dual_to_targstate(self, take_from, copy_to):
+        """
+        Take the target state variables from dual storage and put them into
+        design storage. Also set the real design variables to zero.
+
+        Parameters
+        ----------
+        take_from : numpy.ndarray
+            Vector from where target state variables should be taken.
+        copy_to : numpy.ndarray
+            Vector to which target state variables should be copied.
+        """
+        copy_to[:self.num_real_design] = 0.
+        copy_to[self.num_real_design:] = take_from[self.num_real_ceq:]
+
+    def copy_targstate_to_dual(self, take_from, copy_to):
+        """
+        Take the target state variables from design storage and put them into
+        dual storage.
+
+        Parameters
+        ----------
+        take_from : numpy.ndarray
+            Vector from where target state variables should be taken.
+        copy_to : numpy.ndarray
+            Vector to which target state variables should be copied.
+        """
+        copy_to[self.num_real_ceq:] = take_from[self.num_real_design:]
