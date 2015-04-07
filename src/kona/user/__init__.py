@@ -1,4 +1,3 @@
 from base_vectors import BaseVector
 from base_vectors import BaseAllocator
-from base_vectors import BaseAllocatorIDF
 from user_solver import UserSolver
