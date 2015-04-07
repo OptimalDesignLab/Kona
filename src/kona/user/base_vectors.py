@@ -17,16 +17,16 @@ class BaseVector(object):
 
 
     def plus(self, vector):
-        self.data += vector
+        self.data += vector.data
 
     def times(self, value):
-        self.data *= value
+        self.data *= value.data
 
     def equals_value(self, val):
         self.data[:] = value
 
     def equals_vector(self, vector):
-        self.data[:] = vector[:]
+        self.data[:] = vector.data[:]
 
     def equals_ax_p_by(self, a, x, b, y):
         """
@@ -59,7 +59,7 @@ class BaseVector(object):
         -------
         float : Result of the operation.
         """
-        return np.inner(self.data, vector)
+        return np.inner(self.data, vector.data)
 
 class BaseAllocator(object):
 

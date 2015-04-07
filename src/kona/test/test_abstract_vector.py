@@ -65,7 +65,6 @@ class TestCaseProblemAllocator(unittest.TestCase):
 
         self.assertEqual(base_var.data.shape[0], 4)
 
-
     def test_dual_vec(self):
         base_var = self.alloc.alloc_dual()
         self.assertTrue(isinstance(base_var, BaseVector))
