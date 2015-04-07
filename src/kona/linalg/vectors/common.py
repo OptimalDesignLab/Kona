@@ -14,10 +14,11 @@ class KonaVector(object):
         
     Parameters
     ----------
-    memory : UserMemory (singleton)
+    user_vector : BaseVector or derivative
+        User defined vector object that contains data and operations on data.
+    memory_obj : UserMemory (singleton)
         Pointer to the Kona user memory.
     """
-    _flag = None # vector basis flag -- 0 is design, 1 is state, 2 is dual
     
     def __init__(self, user_vector, memory_obj):
         self._memory = memory_obj
@@ -29,6 +30,18 @@ class KonaVector(object):
                             'Vector type mismatch. Must be %s' % type(self))
                             
     def equals(self, rhs): # the = operator cannot be overloaded
+        """
+        Used as the assignment operator. 
+        
+        If RHS is a scalar, all vector elements are set to the scalar value. 
+        
+        If RHS is a vector, the two vectors are set equal.
+        
+        Parameters
+        ----------
+        rhs : float or KonaVector derivative
+            Right hand side term for assignment.
+        """
         if isinstance(rhs, float):
             self._data.equals_value(rhs)
         else:
@@ -36,16 +49,46 @@ class KonaVector(object):
             self._data.equals_vector(rhs._data)
             
     def plus(self, vector): # this is the += operator
+        """
+        Used as the addition operator. 
+        
+        Adds the incoming vector to the current vector in place.
+        
+        Parameters
+        ----------
+        vector : KonaVector derivative
+            Vector to be added.
+        """
         self._check_type(vector)
         self._data.plus(vector._data)
         
     def minus(self, vector): # this is the -= operator
+        """
+        Used as the subtraction operator. 
+        
+        Subtracts the incoming vector from the current vector in place.
+        
+        Parameters
+        ----------
+        vector : KonaVector derivative
+            Vector to be subtracted.
+        """
         self._check_type(vector)
         self._data.times(-1.)
         self._data.plus(vector._data)
         self._data.times(-1.)
         
     def times(self, value): # this is the *= operator
+        """
+        Used as the multiplication operator. 
+        
+        Multiplies the vector by the given scalar value.
+        
+        Parameters
+        ----------
+        value : float
+            Vector to be added.
+        """
         if not isinstance(value, float):
             self._data.times(value)
         else:
@@ -53,16 +96,55 @@ class KonaVector(object):
                             'Argument must be a float.')
         
     def divide_by(self, val): # this is the /= operator
+        """
+        Used as the multiplication operator. 
+        
+        Multiplies the vector by the given scalar value.
+        
+        Parameters
+        ----------
+        value : float
+            Vector to be added.
+        """
         self.times(1./val)
         
     def equals_ax_p_b(self, a, x, b, y): # this performs self = a*x + b*y
-        self._memory.CheckType(x, type(self))
-        self._memory.CheckType(y, type(self))
-        self._memory.AXPlusBY(a, x.GetIndex(), b, y.GetIndex(), self)
+        """
+        Performs a full a*X + b*Y operation between two vectors, and stores 
+        the result in place. 
+        
+        Parameters
+        ----------
+        a, b : float
+            Coefficients for the operation.
+        x, y : KonaVector or derivative
+            Vectors for the operation
+        """
+        self._check_type(x)
+        self._check_type(y)
+        self._data.equals_ax_p_by(a, x._data, b, y._data)
+        
+    def inner(self, vector):
+        """
+        Computes an inner product with another vector.
+        
+        Returns
+        -------
+        float : Inner product.
+        """
+        self.check_type(vector)
+        return self._data.inner(vector._data)
     
     @property
     def norm2(self): # this takes the L2 norm of the vector
-        prod = self._data.inner(self._data)
+        """
+        Computes the L2 norm of the vector.
+        
+        Returns
+        -------
+        float : L2 norm.
+        """
+        prod = self.inner(self)
         if prod < 0:
             raise ValueError('KonaVector.norm2 >> ' + \
                              'Inner product is negative!')
