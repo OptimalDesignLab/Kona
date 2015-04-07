@@ -1,6 +1,6 @@
 import numpy
-from kona.vectors.common import DesignVector, StateVector, DualVector
-from kona.vectors.composite import *
+from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
+from kona.linalg.vectors.composite import *
 
 class VectorFactory(object):
     """
@@ -61,7 +61,7 @@ class KonaMemory(object):
         A user-defined solver object that implements specific elementary tasks.
     """
 
-    def __init__(self, user_obj):
+    def __init__(self, user_obj=None):
         # assign user object
         self.user_obj = user_obj
         self.rank = self.user_obj.get_rank()

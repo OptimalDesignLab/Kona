@@ -1,5 +1,7 @@
 from numpy import sqrt
 
+
+
 class KonaVector(object):
     """
     An abstract vector class connected to the Kona memory, containing a
@@ -199,11 +201,11 @@ class StateVector(KonaVector):
         self._memory.solver.eval_residual(at_design._data,
                                           at_state._data,
                                           self._data)
-        
+
     def equals_primal_solution(self, at_design):
         self._memory.solver.solve_system(at_design._data, self._data)
 
-class DualVector(BaseVector):
+class DualVector(KonaVector):
     """
     Derived from the base abstracted vector. Contains member functions specific
     to state vectors.

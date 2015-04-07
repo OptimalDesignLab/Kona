@@ -1,2 +1,1 @@
-from memory import KonaMemory
-import vectors
+# from memory import KonaMemory
