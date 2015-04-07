@@ -1,6 +1,6 @@
 from numpy import sqrt
 
-class BaseVector(object):
+class KonaVector(object):
     """
     An abstract vector class connected to the Kona user memory, containing a
     common set of algebraic member functions.
@@ -9,127 +9,206 @@ class BaseVector(object):
     ----------
     _memory : UserMemory (singleton)
         Pointer to the Kona user memory.
-    _index : int
-        Storage index for the vector. This is determined by user memory.
+    _data : BaseVector or derivative
+        User defined vector object that contains data and operations on data.
         
     Parameters
     ----------
-    memory : UserMemory (singleton)
+    user_vector : BaseVector or derivative
+        User defined vector object that contains data and operations on data.
+    memory_obj : UserMemory (singleton)
         Pointer to the Kona user memory.
     """
-    _flag = None # vector basis flag -- 0 is design, 1 is state, 2 is dual
     
-    def __init__(self, memory):
-        self._memory = memory
-        self._index = self._memory.AssignVector(self)
+    def __init__(self, user_vector, memory_obj):
+        self._memory = memory_obj
+        self._data = user_vector
         
-    def __del__(self):
-        self._memory.UnassignVector(self)
-            
-    def __iadd__(self, vec): # this is the += operator
-        self._memory.CheckType(vec, type(self))
-        self._memory.AXPlusBY(1.0, vec.GetIndex(), 1.0, self._index, self)
-        return self
-        
-    def __isub__(self, vec): # this is the -= operator
-        self._memory.CheckType(vec, type(self))
-        self._memory.AXPlusBY(-1.0, vec.GetIndex(), 1.0, self._index, self)
-        return self
-        
-    def __imul__(self, val): # this is the *= operator
-        if isinstance(val, float):
-            self._memory.AXPlusBY(val, self._index, 0.0, -1, self)
-            return self
-        else:
-            raise TypeError('_BaseVector.__imul__() >> ' + \
-                            'RHS must be a scalar value.')
+    def _check_type(self, vector):
+        if not isinstance(vector, type(self)):
+            raise TypeError('KonaVector() >> ' + \
+                            'Vector type mismatch. Must be %s' % type(self))
                             
-    def __idiv__(self, val): # this is the /= operator
-        return self.__imul__(1./val)
+    def equals(self, rhs): # the = operator cannot be overloaded
+        """
+        Used as the assignment operator. 
         
-    def Equals(self, rhs): # the = operator cannot be overloaded
+        If RHS is a scalar, all vector elements are set to the scalar value. 
+        
+        If RHS is a vector, the two vectors are set equal.
+        
+        Parameters
+        ----------
+        rhs : float or KonaVector derivative
+            Right hand side term for assignment.
+        """
         if isinstance(rhs, float):
-            self._memory.AXPlusBY(rhs, -1, 0.0, -1, self)
+            self._data.equals_value(rhs)
         else:
-            self._memory.CheckType(rhs, type(self))
-            self._memory.AXPlusBY(0.0, -1, 1.0, rhs.GetIndex(), self)
+            self._check_type(rhs)
+            self._data.equals_vector(rhs._data)
+            
+    def plus(self, vector): # this is the += operator
+        """
+        Used as the addition operator. 
         
-    def EqualsAXPlusBY(self, a, x, b, y): # this performs self = a*x + b*y
-        self._memory.CheckType(x, type(self))
-        self._memory.CheckType(y, type(self))
-        self._memory.AXPlusBY(a, x.GetIndex(), b, y.GetIndex(), self)
+        Adds the incoming vector to the current vector in place.
         
-    def Norm2(self): # this takes the L2 norm of the vector
-        val = self._memory.InnerProd(self, self)
-        if val < 0:
-            raise ValueError('BaseVector.Norm2() >> ' + \
+        Parameters
+        ----------
+        vector : KonaVector derivative
+            Vector to be added.
+        """
+        self._check_type(vector)
+        self._data.plus(vector._data)
+        
+    def minus(self, vector): # this is the -= operator
+        """
+        Used as the subtraction operator. 
+        
+        Subtracts the incoming vector from the current vector in place.
+        
+        Parameters
+        ----------
+        vector : KonaVector derivative
+            Vector to be subtracted.
+        """
+        self._check_type(vector)
+        self._data.times(-1.)
+        self._data.plus(vector._data)
+        self._data.times(-1.)
+        
+    def times(self, value): # this is the *= operator
+        """
+        Used as the multiplication operator. 
+        
+        Multiplies the vector by the given scalar value.
+        
+        Parameters
+        ----------
+        value : float
+            Vector to be added.
+        """
+        if not isinstance(value, float):
+            self._data.times(value)
+        else:
+            raise TypeError('KonaVector() >> ' + \
+                            'Argument must be a float.')
+        
+    def divide_by(self, val): # this is the /= operator
+        """
+        Used as the multiplication operator. 
+        
+        Multiplies the vector by the given scalar value.
+        
+        Parameters
+        ----------
+        value : float
+            Vector to be added.
+        """
+        self.times(1./val)
+        
+    def equals_ax_p_b(self, a, x, b, y): # this performs self = a*x + b*y
+        """
+        Performs a full a*X + b*Y operation between two vectors, and stores 
+        the result in place. 
+        
+        Parameters
+        ----------
+        a, b : float
+            Coefficients for the operation.
+        x, y : KonaVector or derivative
+            Vectors for the operation
+        """
+        self._check_type(x)
+        self._check_type(y)
+        self._data.equals_ax_p_by(a, x._data, b, y._data)
+        
+    def inner(self, vector):
+        """
+        Computes an inner product with another vector.
+        
+        Returns
+        -------
+        float : Inner product.
+        """
+        self.check_type(vector)
+        return self._data.inner(vector._data)
+    
+    @property
+    def norm2(self): # this takes the L2 norm of the vector
+        """
+        Computes the L2 norm of the vector.
+        
+        Returns
+        -------
+        float : L2 norm.
+        """
+        prod = self.inner(self)
+        if prod < 0:
+            raise ValueError('KonaVector.norm2 >> ' + \
                              'Inner product is negative!')
         else:
-            return sqrt(val)
-            
-    def GetIndex(self): # return the storage index for the vector
-        return self._index
-        
-    def GetFlag(self):
-        return self._flag
+            return sqrt(prod)
     
-class DesignVector(BaseVector):
+class DesignVector(KonaVector):
     """
     Derived from the base abstracted vector. Contains member functions specific 
     to design vectors.
-    """
-    _flag = 0
+    """    
+    def restrict_target_state(self):
+        self._memory.allocator.restrict_design(0, self._data)
         
-    def EqualsBasisVector(self, basis):
+    def restrict_real_design(self):
+        self._memory.solver.allocator.restrict_design(1, self._data)
+        
+    def convert(self, dual_vector):
+        self._memory.allocator.copy_dual_to_targstate(dual_vector._data, 
+                                                     self._data)
+        
+    def equals_init_design(self):
+        self._memory.solver.init_design(self._data)
+        
+    def equals_objective_gradient(self, at_design, at_state):
+        self._memory.solver.eval_obj_d(at_design._data,
+                                       at_state._data,
+                                       self._data)
+        
+    def equals_reduced_gradient(self, at_design, at_state, at_adjoint, work):
         pass
         
-    def RestrictToDesign(self):
-        self._memory.Restrict(0, self)
-    
-    def RestrictToTarget(self):
-        self._memory.Restrict(1, self)
-        
-    def Convert(self, dualVec):
-        self._memory.ConvertVec(dualVec, self)
-        
-    def EqualsInitialDesign(self):
-        self._memory.SetInitialDesign(self)
-        
-    def EqualsObjectiveGradient(self, atDesign, atState):
-        self._memory.ObjectiveGradient(atDesign, atState, self)
-        
-    def EqualsReducedGradient(self, atDesign, atState, atAdjoint, workVec):
-        pass
-        
-    def EqualsLagrangianReducedGradient(self, atDesign, atState, atDual, 
-                                        atAdjoint, workVec):
+    def equals_lagrangian_reduced_grad(self, at_design, atstate, at_dual, 
+                                       at_adjoint, work):
         pass
     
-class StateVector(BaseVector):
+class StateVector(KonaVector):
     """
     Derived from the base abstracted vector. Contains member functions specific 
     to state vectors.
     """
-    _flag = 1
+    def equals_objective_partial(self, at_design, at_state):
+        self._memory.solver.eval_obj_s(at_design._data,
+                                       at_state._data,
+                                       self._data)
     
-    def EqualsObjectiveGradient(self, atDesign, atState):
-        self._memory.ObjectiveGradient(atDesign, atState, self)
-    
-    def EqualsPDEResidual(self, atDesign, atState):
-        self._memory.EvaluatePDEResidual(atDesign, atState, self)
+    def equals_PDE_residual(self, at_design, at_state):
+        self._memory.solver.eval_residual(at_design._data,
+                                          at_state._data,
+                                          self._data)
         
-    def EqualsPrimalSolution(self, atDesign):
-        self._memory.SolvePDE(atDesign, self)
+    def equals_primal_solution(self, at_design):
+        self._memory.solver.solve_system(at_design._data, self._data)
         
 class DualVector(BaseVector):
     """
     Derived from the base abstracted vector. Contains member functions specific 
     to state vectors.
     """
-    _flag = 2
     
-    def Convert(self, designVec):
-        self._memory.ConvertVec(self, designVec)
+    def convert(self, design):
+        self._memory.solver.copy_targstate_to_dual(design._data, self._data)
         
-    def EqualsConstraints(self, atDesign, atState):
-        self._memory.EvaluateConstraints(atDesign, atState, self)
+    def equals_constraints(self, at_design, at_state):
+        self._memory.solver.eval_ceq(at_design._data,
+                                     at_state._data,
+                                     self._data)
