@@ -35,7 +35,7 @@ class BaseVector(object):
         """
         self.data = a*x + b*y
 
-    def inner_prod(self, vector):
+    def inner(self, vector):
         """
         User-defined linear algebra method for a vector inner product.
 
