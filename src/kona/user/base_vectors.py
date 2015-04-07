@@ -1,22 +1,22 @@
 import numpy as np
 
 class BaseVector(object):
-    
+
     def __init__(self, size):
         self.data = numpy.zeros()
-        
+
     def plus(self, vector):
         self.data += vector
-    
+
     def times(self, value):
         self.data *= value
-        
+
     def equals_value(self, val):
         self.data[:] = value
-        
+
     def equals_vector(self, vector):
         self.data[:] = vector[:]
-        
+
     def equals_ax_p_by(self, a, x, b, y):
         """
         User-defined linear algebra method for scalar multiplication and
@@ -34,7 +34,7 @@ class BaseVector(object):
             Result of the operation.
         """
         self.data = a*x + b*y
-        
+
     def inner_prod(self, vector):
         """
         User-defined linear algebra method for a vector inner product.
@@ -49,40 +49,40 @@ class BaseVector(object):
         float : Result of the operation.
         """
         return np.inner(self.data, vector)
-        
+
 class BaseAllocator(object):
-    
+
     def __init__(self, num_design, num_state, num_ceq):
         self.num_design = num_design
         self.num_state = num_state
         self.num_dual = num_ceq
-        
+
     def alloc_design(self):
         return NumpyVector(self.num_design)
-        
+
     def alloc_state(self):
         return NumpyVector(self.num_state)
-        
+
     def alloc_dual(self):
         return NumpyVector(self.num_dual)
-        
-class BaseAllocatorIDF(NumpyAllocation):
-    
+
+class BaseAllocatorIDF(BaseAllocator):
+
     def __init__(self, num_design, num_state, num_ceq):
         self.num_real_design = num_design
         self.num_real_ceq = num_ceq
-        NumpyVectors.__init__(self.num_real_design + self.num_state, 
-                              self.num_state, 
+        NumpyVectors.__init__(self.num_real_design + self.num_state,
+                              self.num_state,
                               self.num_real_ceq + self.num_state)
-        
+
     def restrict_design(self, opType, target):
         """
-        If operation type is 0 (``type == 0``), set the target state variables 
+        If operation type is 0 (``type == 0``), set the target state variables
         to zero.
-        
-        If operation type is 1 (``type == 1``), set the real design variables 
+
+        If operation type is 1 (``type == 1``), set the real design variables
         to zero.
-        
+
         Parameters
         ----------
         opType : int
@@ -99,9 +99,9 @@ class BaseAllocatorIDF(NumpyAllocation):
 
     def copy_dual_to_targstate(self, takeFrom, copyTo):
         """
-        Take the target state variables from dual storage and put them into 
+        Take the target state variables from dual storage and put them into
         design storage. Also set the real design variables to zero.
-        
+
         Parameters
         ----------
         take_from : numpy.ndarray
@@ -114,9 +114,9 @@ class BaseAllocatorIDF(NumpyAllocation):
 
     def copy_targstate_to_dual(self, take_from, copy_to):
         """
-        Take the target state variables from design storage and put them into 
+        Take the target state variables from design storage and put them into
         dual storage.
-        
+
         Parameters
         ----------
         take_from : int
