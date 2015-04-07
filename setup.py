@@ -22,16 +22,16 @@ def discover_and_run_tests():
 
     # run the test suite
     test_runner.run(test_suite)
-    
+
 class DiscoverTest(Command):
     user_options = []
-    
+
     def initialize_options(self):
         pass
-        
+
     def finalize_options(self):
         pass
-        
+
     def run(self):
         discover_and_run_tests()
 
@@ -40,7 +40,7 @@ setup(name = 'Kona',
       author = 'Jason E. Hicken',
       author_email = 'hickej2@rpi.edu',
       url = 'https://github.com/OptimalDesignLab/Kona',
-      package_dir = {'kona':'src'},
+      package_dir = {'':'src'},
       # packages = [
  #        'examples',
  #        'src',
@@ -48,6 +48,6 @@ setup(name = 'Kona',
  #        'src.linalg', 'src.linalg.vectors',
  #        'src.algorithms',
  #        'src.user'],
-      packages = find_packages(), 
+      packages = find_packages(),
       cmdclass = {'test': DiscoverTest},
       )
