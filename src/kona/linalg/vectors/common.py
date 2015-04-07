@@ -2,8 +2,9 @@ from numpy import sqrt
 
 class KonaVector(object):
     """
-    An abstract vector class connected to the Kona user memory, containing a
-    common set of algebraic member functions.
+    An abstract vector class connected to the Kona memory, containing a
+    common set of algebraic member functions. Allows Kona to operate on 
+    data spaces allocated by the user.
     
     Attributes
     ----------
@@ -20,9 +21,12 @@ class KonaVector(object):
         Pointer to the Kona user memory.
     """
     
-    def __init__(self, user_vector, memory_obj):
+    def __init__(self, memory_obj, user_vector=None):
         self._memory = memory_obj
         self._data = user_vector
+        
+    def __del__(self):
+        self._memory.push_vector(type(self), self._data)
         
     def _check_type(self, vector):
         if not isinstance(vector, type(self)):

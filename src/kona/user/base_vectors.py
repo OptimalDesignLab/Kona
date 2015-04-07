@@ -10,11 +10,12 @@ class BaseVector(object):
                 self.data = np.ones(size, dtype=float)*val
         elif isinstance(val, (np.ndarray, list, tuple)):
             if size != len(val):
-                raise ValueError('size given as %d, but length of value %d' % (size, len(val)))
+                raise ValueError('size given as %d, ' + \
+                                 'but length of value %d' % (size, len(val)))
             self.data = np.array(val)
         else:
-            raise ValueError('val must be a scalar or array like, but was given as type %s' % (type(val)))
-
+            raise ValueError('val must be a scalar or array like, ' + \
+                             'but was given as type %s' % (type(val)))
 
     def plus(self, vector):
         self.data += vector.data
@@ -68,23 +69,33 @@ class BaseAllocator(object):
         self.num_state = num_state
         self.num_dual = num_ceq
 
-    def alloc_design(self):
-        return BaseVector(self.num_design)
+    def alloc_design(self, count):
+        out = []
+        for i in range(count):
+            out.append(BaseVector(self.num_design))
+        return out
 
-    def alloc_state(self):
-        return BaseVector(self.num_state)
+    def alloc_state(self, count):
+        out = []
+        for i in range(count):
+            out.append(BaseVector(self.num_state))
+        return out
 
-    def alloc_dual(self):
-        return BaseVector(self.num_dual)
+    def alloc_dual(self, count):
+        out = []
+        for i in range(count):
+            out.append(BaseVector(self.num_dual))
+        return out
 
 class BaseAllocatorIDF(BaseAllocator):
 
     def __init__(self, num_design, num_state, num_ceq):
         self.num_real_design = num_design
         self.num_real_ceq = num_ceq
-        super(BaseAllocatorIDF, self).__init__(self.num_real_design + self.num_state,
-                              self.num_state,
-                              self.num_real_ceq + self.num_state)
+        super(BaseAllocatorIDF, self).__init__(
+            self.num_real_design + self.num_state,
+            self.num_state,
+            self.num_real_ceq + self.num_state)
 
     def restrict_design(self, opType, target):
         """
