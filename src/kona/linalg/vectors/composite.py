@@ -2,7 +2,24 @@ from numpy import sqrt
 from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
 
 class ReducedKKTVector(object):
+    """
+    A composite vector representing a combined design and dual vectors.
     
+    Parameters
+    ----------
+    _memory : KonaMemory
+        All-knowing Kona memory manager.
+    _design : DesignVector
+        Design component of the composite vector.
+    _dual : DualVector
+        Dual components of the composite vector.
+        
+    Parameters
+    ----------
+    memory: KonaMemory
+    design_vec : DesignVector
+    dual_vec : DualVector
+    """
     def __init__(self, memory, design_vec, dual_vec):
         self._memory = memory
         if isinstance(designVec, DesignVector):
@@ -18,69 +35,56 @@ class ReducedKKTVector(object):
                             
     def _checkType(self, vec):
         if not isinstance(vec, type(self)):
-            raise TypeError('ReducedKKTVector.__iadd__() >> ' + \
+            raise TypeError('ReducedKKTVector() >> ' + \
                             'Wrong vector type. Must be %s' % type(self))
                             
-    def __iadd__(self, vec):
-        self._checkType(vec)
-        self._design += vec.GetDesign()
-        self._dual += vec.GetDual()
-        return self
+    def equals(self, vector):
+        self._check_type(vector)
+        self._design.equals(vector._design)
+        self._dual.equals(vector._dual)
+                            
+    def plus(self, vector):
+        self._check_type(vector)
+        self._design.plus(vector._design)
+        self._dual.plus(vector._dual)
             
-    def __isub__(self, vec):
-        self._checkType(vec)
-        self._design -= vec.GetDesign()
-        self._dual -= vec.GetDual()
-        return self
+    def minus(self, vector):
+        self._check_type(vector)
+        self._design.minus(vector._design)
+        self._dual.minus(vector._dual)
         
-    def __imul__(self, val):
-        if isinstance(val, float):
-            self._design *= val
-            self._dual *= val
-            return self
+    def times(self, value):
+        if isinstance(value, float):
+            self._design.times(value)
+            self._dual.times(value)
         else:
-            raise TypeError('ReducedKKTVector.__imul__() >> ' + \
+            raise TypeError('ReducedKKTVector.times() >> ' + \
                             'Wrong argument type. Must be FLOAT.')
                             
-    def __idiv__(self, val):
-        self._checkType(vec)
-        self._design /= val
-        self._dual /= val
-        return self
+    def divide_by(self, value):
+        self.times(1./value)
+        
+    def equals_ax_p_by(self, a, x, b, y):
+        self._check_type(x)
+        self._check_type(y)
+        self._design.equals_ax_p_by(a, x._design, b, y_design)
+        self._dual.equals_ax_p_by(a, x._dual, b, y_dual)
+        
+    def inner(self, vector):
+        self._check_type(vector)
+        design_prod = self._design.inner(vector._design)
+        dual_prod = self._dual.inner(vector._dual)
+        return design_prod + dual_prod
     
-    def Equals(self, vec):
-        self._checkType(vec)
-        self._design = vec.GetDesign()
-        self._dual = vec.GetDual()
-        
-    def EqualsAXPlusBY(self, a, x, b, y):
-        self._checkType(x)
-        self._checkType(y)
-        self._design.EqualsAXPlusBY(a, x.GetDesign(), b, y.GetDesign())
-        self._dual.EqualsAXPlusBY(a, x.GetDual(), b, y.GetDual())
-        
-    def Norm2(self):
-        prodDesign = self._memory.InnerProd(self._design, self._design)
-        prodDual = self._memory.InnerProd(self._dual, self._dual)
-        totalProd = prodDesign + prodDual
-        if totalProd < 0:
-            raise ValueError('ReducedKKTVector.Norm2() >> ' + \
+    @property
+    def norm2(self):
+        prod = self.inner(self)
+        if prod < 0:
+            raise ValueError('ReducedKKTVector.norm2 >> ' + \
                              'Inner product is negative!')
         else:
-            return sqrt(totalProd)
+            return sqrt(prod)
             
-    def EqualsInitialGuess(self):
-        self._design.EqualsInitialDesign()
-        self._dual = 0.0
-        
-    def SetDesign(self, designVec):
-        self._design = designVec
-        
-    def SetDual(self, dualVec):
-        self._dual = dualVec
-        
-    def GetDesign(self):
-        return self._design
-        
-    def GetDual(self):
-        return self._dual
+    def equals_initial_guess(self):
+        self._design.equals_initial_design()
+        self._dual.equals(0.0)
