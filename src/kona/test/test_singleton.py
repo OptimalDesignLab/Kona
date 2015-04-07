@@ -1,9 +1,6 @@
 import unittest
 import os, sys
-lib_path = os.path.abspath(os.path.join('..','src'))
-sys.path.append(lib_path)
-
-from common import Singleton
+from kona.common import Singleton
 
 # define a new class as a Singleton
 class Cat(Singleton):
