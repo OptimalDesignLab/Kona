@@ -1,1 +1,3 @@
-# from memory import KonaMemory
+from memory import KonaMemory
+import vectors
+import matrices
