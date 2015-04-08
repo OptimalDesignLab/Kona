@@ -64,8 +64,8 @@ class TestCaseProblemAllocator(unittest.TestCase):
     def setUp(self):
         self.alloc = BaseAllocator(3, 4, 5)
 
-    def test_design_vec(self):
-        base_var = self.alloc.alloc_design(1)[0]
+    def test_primal_vec(self):
+        base_var = self.alloc.alloc_primal(1)[0]
         self.assertTrue(isinstance(base_var, BaseVector))
 
         self.assertEqual(base_var.data.shape[0], 3)
