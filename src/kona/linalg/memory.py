@@ -36,14 +36,17 @@ class VectorFactory(object):
 
     def request_num_vectors(self, count):
         if count < 1:
-            raise ValueError('VectorFactory() >> ' + \
-                             'Cannot request less than 1 vector.')
+            raise ValueError('VectorFactory() >> Cannot request less than 1 vector.')
         self.num_vecs += count
 
     def generate(self):
-        data = self._memory.pop_vector(self._vec_type)
-        return self._vec_type(self._memory, data)
+        if self._memory.is_allocated:
+            data = self._memory.pop_vector(self._vec_type)
+            return self._vec_type(self._memory, data)
+        else:
+            raise RuntimeError('Can not generate vectors before memory allocation has happened')
 
+            
 class KonaMemory(object):
     """
     All-knowing Big Brother abstraction layer for Kona.
@@ -86,6 +89,8 @@ class KonaMemory(object):
 
         # cost tracking
         self.precond_count = 0
+
+        self.is_allocated = False
 
 
     def push_vector(self, vec_type, user_data):
@@ -131,8 +136,14 @@ class KonaMemory(object):
         factories, this function will manipulate the user-defined solver object
         to allocate all actual, real memory required for the optimization.
         """
+
+        if self.is_allocated:
+            raise RuntimeError('Memory allready allocated, can-not re-allocate')
+
         allocator = self.user_obj.allocator
 
         self.vector_stack[PrimalVector] = allocator.alloc_primal(self.primal_factory.num_vecs)
         self.vector_stack[StateVector] = allocator.alloc_state(self.state_factory.num_vecs)
         self.vector_stack[DualVector] = allocator.alloc_dual(self.dual_factory.num_vecs)
+
+        self.is_allocated = True
