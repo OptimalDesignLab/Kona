@@ -183,13 +183,13 @@ class PrimalVector(KonaVector):
                                       at_state._data,
                                       self._data)
 
-    def equals_reduced_gradient(self, at_primal, at_state, adjoint, primal_work):
+    def equals_reduced_gradient(self, at_primal, at_state, at_adjoint, primal_work):
         jacobian = dRdX(at_primal, at_state)
         primal_work.equals_objective_partial(at_primal, at_state)
-        jacobian.T.product(adjoint, self)
+        jacobian.T.product(at_adjoint, self)
         self.plus(primal_work)
 
-    def equals_lagrangian_reduced_grad(self, at_primal, atstate, at_dual,
+    def equals_lagrangian_reduced_grad(self, at_primal, at_state, at_dual,
                                        at_adjoint, work):
         pass
 
@@ -215,7 +215,7 @@ class StateVector(KonaVector):
         jacobian = dRdU(at_primal, at_state)
         state_work.equals_objective_partial(at_primal, at_state)
         state_work.times(-1) # negative of the objective partial (-dF/dU)
-        jacobian.T.solve(work, 1.e-12, self) # this is the adjoint solution now
+        jacobian.T.solve(state_work, 1.e-12, self) # this is the adjoint solution now
 
 class DualVector(KonaVector):
     """
