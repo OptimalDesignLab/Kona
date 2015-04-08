@@ -1,7 +1,7 @@
 import numpy
-from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
+from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.matrices.common import PDEJacobian, ConstraintJacobian
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.composite import Hessian, ReducedKKTMatrix
 
 class VectorFactory(object):
@@ -17,13 +17,13 @@ class VectorFactory(object):
         Number of vectors required by optimization functions.
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    _vec_type : DesignVector, StateVector, DualVector
+    _vec_type : PrimalVector, StateVector, DualVector
         Kona abstracted vector type associated with this factory
 
     Parameters
     ----------
     memory : KonaMemory
-    vec_type : DesignVector, StateVector, DualVector
+    vec_type : PrimalVector, StateVector, DualVector
     """
 
     def __init__(self, memory, vec_type=None):
@@ -36,7 +36,8 @@ class VectorFactory(object):
 
     def request_num_vectors(self, count):
         if count < 1:
-            raise ValueError('number of vectors requested can not be less than 1')
+            raise ValueError('VectorFactory() >> ' + \
+                             'Cannot request less than 1 vector.')
         self.num_vecs += count
 
     def generate(self):
@@ -73,13 +74,13 @@ class KonaMemory(object):
 
         # allocate vec assignments
         self.vector_stack = {
-            DesignVector : [],
+            PrimalVector : [],
             StateVector : [],
             DualVector : [],
         }
 
         # prepare vector factories
-        self.design_factory = VectorFactory(self, DesignVector)
+        self.primal_factory = VectorFactory(self, PrimalVector)
         self.state_factory = VectorFactory(self, StateVector)
         self.dual_factory = VectorFactory(self, DualVector)
 
@@ -94,7 +95,7 @@ class KonaMemory(object):
 
         Parameters
         ----------
-        vec_type : DesignVector, StateVector, DualVector
+        vec_type : PrimalVector, StateVector, DualVector
             Vector type of the memory stack.
         user_data : BaseVector or derivative
             Unused user vector data container.
@@ -109,7 +110,7 @@ class KonaMemory(object):
 
         Parameters
         ----------
-        vec_type : DesignVector, StateVector, DualVector
+        vec_type : PrimalVector, StateVector, DualVector
             Vector type to be popped from the stack.
 
         Returns
@@ -132,6 +133,6 @@ class KonaMemory(object):
         """
         allocator = self.user_obj.allocator
 
-        self.vector_stack[DesignVector] = allocator.alloc_design(self.design_factory.num_vecs)
+        self.vector_stack[PrimalVector] = allocator.alloc_primal(self.primal_factory.num_vecs)
         self.vector_stack[StateVector] = allocator.alloc_state(self.state_factory.num_vecs)
         self.vector_stack[DualVector] = allocator.alloc_dual(self.dual_factory.num_vecs)

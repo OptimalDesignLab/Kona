@@ -19,12 +19,12 @@ class UserSolver(object):
         Size of the equality constraint residual
     """
 
-    def __init__(self, num_design=0, num_state=0, num_ceq=0, allocator=None):
+    def __init__(self, num_primal=0, num_state=0, num_ceq=0, allocator=None):
         if allocator is None:
-            self.allocator = BaseAllocator(num_design, num_state, num_ceq)
+            self.allocator = BaseAllocator(num_primal, num_state, num_ceq)
         else:
             self.allocator = allocator
-        self.num_design = self.allocator.num_design
+        self.num_primal = self.allocator.num_primal
         self.num_state = self.allocator.num_state
         self.num_dual = self.allocator.num_dual
 

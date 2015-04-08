@@ -1,4 +1,5 @@
-from numpy import sqrt
+import numpy as np
+
 
 class KonaVector(object):
     """
@@ -28,10 +29,10 @@ class KonaVector(object):
     def __del__(self):
         self._memory.push_vector(type(self), self._data)
 
+
     def _check_type(self, vector):
         if not isinstance(vector, type(self)):
-            raise TypeError('KonaVector() >> ' + \
-                            'Vector type mismatch. Must be %s' % type(self))
+            raise TypeError('Vector type mismatch. Must be %s' % type(self))
 
     def equals(self, rhs): # the = operator cannot be overloaded
         """
@@ -46,7 +47,7 @@ class KonaVector(object):
         rhs : float or KonaVector derivative
             Right hand side term for assignment.
         """
-        if isinstance(rhs, float):
+        if isinstance(rhs, (np.float, np.int)):
             self._data.equals_value(rhs)
         else:
             self._check_type(rhs)
@@ -136,7 +137,7 @@ class KonaVector(object):
         -------
         float : Inner product.
         """
-        self.check_type(vector)
+        self._check_type(vector)
         return self._data.inner(vector._data)
 
     @property
@@ -153,9 +154,9 @@ class KonaVector(object):
             raise ValueError('KonaVector.norm2 >> ' + \
                              'Inner product is negative!')
         else:
-            return sqrt(prod)
+            return np.sqrt(prod)
 
-class DesignVector(KonaVector):
+class PrimalVector(KonaVector):
     """
     Derived from the base abstracted vector. Contains member functions specific
     to design vectors.
@@ -191,9 +192,9 @@ class StateVector(KonaVector):
     to state vectors.
     """
     def equals_objective_partial(self, at_design, at_state):
-        self._memory.solver.eval_obj_s(at_design._data,
-                                       at_state._data,
-                                       self._data)
+        self._memory.solver.eval_obj_s(
+            at_design._data, at_state._data, self._data
+            )
 
     def equals_PDE_residual(self, at_design, at_state):
         self._memory.solver.eval_residual(at_design._data,
