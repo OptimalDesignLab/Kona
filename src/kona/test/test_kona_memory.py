@@ -30,6 +30,8 @@ class VectorFactoryTestCase(unittest.TestCase):
         gc.collect()
         self.assertEqual(len(km.vector_stack[PrimalVector]), 12)
 
+    def test_error_generate(self):
+        pass
 
 if __name__ == "__main__":
     unittest.main()

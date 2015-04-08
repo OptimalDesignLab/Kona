@@ -94,11 +94,10 @@ class KonaVector(object):
         value : float
             Vector to be added.
         """
-        if not isinstance(value, float):
+        if isinstance(value, (float, np.float32, np.float64, int, np.int32, np.int64)):
             self._data.times(value)
         else:
-            raise TypeError('KonaVector() >> ' + \
-                            'Argument must be a float.')
+            raise TypeError('Argument must be a float.')
 
     def divide_by(self, val): # this is the /= operator
         """
