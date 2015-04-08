@@ -4,8 +4,6 @@ class Optimizer(object):
     """
     This is a top-level wrapper for all optimization algorithms contained in
     the Kona library, and also the only class exposed to the outside user.
-
-
     """
 
     def __init__(self, userObj, optns=None):
@@ -16,10 +14,10 @@ class Optimizer(object):
         self._readOptions(optns)
 
         # calculate memory requirements
-        numDesignVec, numStateVec, numDualVec = self_memoryRequirements(self)
+        num_primal_vec, num_state_vec, num_dual_vec = _memoryRequirements(self)
 
         # initialize optimization memory
-        self.memory = KonaMemory(userObj, numDesignVec, numStateVec, numDualVec)
+        self.memory = KonaMemory(userObj, num_primal_vec, num_state_vec, num_dual_vec)
 
     def _readOptions(self, optns):
         pass
