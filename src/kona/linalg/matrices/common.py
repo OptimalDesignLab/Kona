@@ -1,5 +1,4 @@
 import numpy
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 
 class KonaMatrix(object):
     """
@@ -94,13 +93,13 @@ class dRdX(KonaMatrix):
     def product(self, in_vec, out_vec):
         self._check_linearization()
         if not self._transposed:
-            self._check_type(in_vec, PrimalVector)
-            self._check_type(out_vec, StateVector)
+            # self._check_type(in_vec, PrimalVector)
+            # self._check_type(out_vec, StateVector)
             self._solver.multiply_dRdX(self._primal._data, self._state._data,
                                         in_vec._data, out_vec._data)
         else:
-            self._check_type(in_vec, StateVector)
-            self._check_type(out_vec, PrimalVector)
+            # self._check_type(in_vec, StateVector)
+            # self._check_type(out_vec, PrimalVector)
             self._solver.multiply_dRdX_T(self._primal._data, self._state._data,
                                         in_vec._data, out_vec._data)
 
@@ -108,8 +107,8 @@ class dRdU(KonaMatrix):
 
     def product(self, in_vec, out_vec):
         self._check_linearization()
-        self._check_type(in_vec, StateVector)
-        self._check_type(out_vec, StateVector)
+        # self._check_type(in_vec, StateVector)
+        # self._check_type(out_vec, StateVector)
         if not self._transposed:
             self._solver.multiply_dRdU(self._primal._data, self._state._data,
                                         in_vec._data, out_vec._data)
@@ -138,8 +137,8 @@ class dRdU(KonaMatrix):
         solution : StateVector
         """
         self._check_linearization()
-        self._check_type(solution, StateVector)
-        self._check_type(rhs_vec, StateVector)
+        # self._check_type(solution, StateVector)
+        # self._check_type(rhs_vec, StateVector)
         if not self._transposed:
             self._solver.solve_linear(self._primal._data, self._state.data,
                                       rhs_vec, rel_tol, solution._data)
@@ -153,13 +152,13 @@ class dCdX(KonaMatrix):
     def product(self, in_vec, out_vec):
         self._check_linearization()
         if not self._transposed:
-            self._check_type(in_vec, PrimalVector)
-            self._check_type(out_vec, DualVector)
+            # self._check_type(in_vec, PrimalVector)
+            # self._check_type(out_vec, DualVector)
             self._solver.multiply_dCdX(self._primal._data, self._state._data,
                                            in_vec._data, out_vec._data)
         else:
-            self._check_type(in_vec, DualVector)
-            self._check_type(out_vec, PrimalVector)
+            # self._check_type(in_vec, DualVector)
+            # self._check_type(out_vec, PrimalVector)
             self._solver.multiply_dCdX_T(self._primal._data, self._state._data,
                                             in_vec._data, out_vec._data)
 
@@ -168,13 +167,13 @@ class dCdU(KonaMatrix):
     def product(self, in_vec, out_vec):
         self._check_linearization()
         if not self._transposed:
-            self._check_type(in_vec, StateVector)
-            self._check_type(out_vec, DualVector)
+            # self._check_type(in_vec, StateVector)
+            # self._check_type(out_vec, DualVector)
             self._solver.multiply_dCdU(self._primal._data, self._state._data,
                                            in_vec._data, out_vec._data)
         else:
-            self._check_type(in_vec, DualVector)
-            self._check_type(out_vec, StateVector)
+            # self._check_type(in_vec, DualVector)
+            # self._check_type(out_vec, StateVector)
             self._solver.multiply_dCdU_T(self._primal._data, self._state._data,
                                             in_vec._data, out_vec._data)
 

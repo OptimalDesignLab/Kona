@@ -27,7 +27,11 @@ class ObjectiveMerit(object):
     def __init__(self, primal_factory, optns, out_file=sys.stdout):
         self.primal_factory = primal_factory
         self.out_file = out_file
-        self.primal_factory.request_num_vectors(1)
+        self.primal_factory.request_num_vectors(0)
+
+    def reset(self, p, x, p_dot_grad, state, adjoint):
+        self.x_start = x
+        self.search_dir = p
 
     def eval_func(self, alpha):
         self.design_work.equals_ax_plus_by(1.0, self.x_start, alpha,
