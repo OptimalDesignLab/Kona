@@ -20,7 +20,8 @@ class QuasiNewtonTestCase(unittest.TestCase):
         solver = UserSolver(num_primal=3)
         km = KonaMemory(solver)
         vf = km.primal_factory
-        lbfgs = LimitedMemoryBFGS(max_stored, vf)
+        optns = {'max_stored': max_stored}
+        lbfgs = LimitedMemoryBFGS(vf, optns)
         vf.request_num_vectors(2)
         km.allocate_memory()
 
