@@ -35,7 +35,7 @@ class DiscoverTest(Command):
     def run(self):
         discover_and_run_tests()
 
-setup(name = 'Kona',
+setup(name = 'kona',
       version = '1.0',
       author = 'Jason E. Hicken',
       author_email = 'hickej2@rpi.edu',
