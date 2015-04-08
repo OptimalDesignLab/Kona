@@ -117,7 +117,7 @@ class PrimalVectorTestCase(unittest.TestCase):
     def test_equals_objective_gradient(self):
         at_design = self.km.primal_factory.generate()
         at_design.equals(1)
-        at_state = self.km.state_factory.generate()
+        at_state = self.sv
         at_state.equals(2)
         self.pv.equals_objective_gradient(at_design, at_state)
         self.assertEqual(self.pv.inner(self.pv), 4000)
