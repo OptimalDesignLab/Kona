@@ -1,5 +1,7 @@
 import numpy as np
 
+from kona.linalg.matrices.common import dRdX, dRdU
+
 
 class KonaVector(object):
     """
@@ -176,15 +178,18 @@ class PrimalVector(KonaVector):
     def equals_init_design(self):
         self._memory.solver.init_design(self._data)
 
-    def equals_objective_gradient(self, at_design, at_state):
-        self._memory.solver.eval_dFdX(at_design._data,
+    def equals_objective_partial(self, at_primal, at_state):
+        self._memory.solver.eval_dFdX(at_primal._data,
                                       at_state._data,
                                       self._data)
 
-    def equals_reduced_gradient(self, at_design, at_state, at_adjoint, work):
-        pass
+    def equals_reduced_gradient(self, at_primal, at_state, adjoint, primal_work):
+        jacobian = dRdX(at_primal, at_state)
+        primal_work.equals_objective_partial(at_primal, at_state)
+        jacobian.T.product(adjoint, self)
+        self.plus(primal_work)
 
-    def equals_lagrangian_reduced_grad(self, at_design, atstate, at_dual,
+    def equals_lagrangian_reduced_grad(self, at_primal, atstate, at_dual,
                                        at_adjoint, work):
         pass
 
@@ -193,18 +198,24 @@ class StateVector(KonaVector):
     Derived from the base abstracted vector. Contains member functions specific
     to state vectors.
     """
-    def equals_objective_partial(self, at_design, at_state):
+    def equals_objective_partial(self, at_primal, at_state):
         self._memory.solver.eval_dFdU(
-            at_design._data, at_state._data, self._data
+            at_primal._data, at_state._data, self._data
             )
 
-    def equals_PDE_residual(self, at_design, at_state):
-        self._memory.solver.eval_residual(at_design._data,
+    def equals_residual(self, at_primal, at_state):
+        self._memory.solver.eval_residual(at_primal._data,
                                           at_state._data,
                                           self._data)
 
-    def equals_primal_solution(self, at_design):
-        self._memory.solver.solve_nonlinear(at_design._data, self._data)
+    def equals_primal_solution(self, at_primal):
+        self._memory.solver.solve_nonlinear(at_primal._data, self._data)
+
+    def equals_adjoint_solution(self, at_primal, at_state, state_work):
+        jacobian = dRdU(at_primal, at_state)
+        state_work.equals_objective_partial(at_primal, at_state)
+        state_work.times(-1) # negative of the objective partial (-dF/dU)
+        jacobian.T.solve(work, 1.e-12, self) # this is the adjoint solution now
 
 class DualVector(KonaVector):
     """
@@ -215,7 +226,7 @@ class DualVector(KonaVector):
     def convert(self, design):
         self._memory.solver.copy_targstate_to_dual(design._data, self._data)
 
-    def equals_constraints(self, at_design, at_state):
-        self._memory.solver.eval_ceq(at_design._data,
+    def equals_constraints(self, at_primal, at_state):
+        self._memory.solver.eval_ceq(at_primal._data,
                                      at_state._data,
                                      self._data)

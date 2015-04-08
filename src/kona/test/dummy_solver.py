@@ -18,13 +18,13 @@ class DummySolver(UserSolver):
         out_vec.data[:] = numpy.inner(at_design.data, in_vec.data) + at_state.data[:]
 
     def multiply_dRdU(self, at_design, at_state, in_vec, out_vec):
-        pass
+        out_vec.data[:] = numpy.sum(at_design.data)*at_state.data[:] + in_vec.data[:]
 
     def multiply_dRdX_T(self, at_design, at_state, in_vec, out_vec):
         out_vec.data[:] = numpy.inner(at_state.data, in_vec.data) + at_design.data[:]
 
     def multiply_dRdU_T(self, at_design, at_state, in_vec, out_vec):
-        pass
+        out_vec.data[:] = numpy.sum(at_design.data)*in_vec.data[:] + at_state.data[:]
 
     def build_precond(self):
         pass

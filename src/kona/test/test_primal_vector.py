@@ -87,9 +87,6 @@ class PrimalVectorTestCase(unittest.TestCase):
         self.assertEqual(self.pv.inner(self.pv), 40)
 
     def test_equals_ax_p_by(self):
-
-        # TODO: add better error message if you ask for more vectors than you could allocate
-
         self.pv.equals(1)
         pv2 = self.km.primal_factory.generate()
         pv2.equals(1)
@@ -112,7 +109,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         at_design.equals(1)
         at_state = self.sv
         at_state.equals(2)
-        self.pv.equals_objective_gradient(at_design, at_state)
+        self.pv.equals_objective_partial(at_design, at_state)
         self.assertEqual(self.pv.inner(self.pv), 4000)
 
 if __name__ == "__main__":
