@@ -65,19 +65,19 @@ class TestCaseProblemAllocator(unittest.TestCase):
         self.alloc = BaseAllocator(3, 4, 5)
 
     def test_design_vec(self):
-        base_var = self.alloc.alloc_design()
+        base_var = self.alloc.alloc_design(1)[0]
         self.assertTrue(isinstance(base_var, BaseVector))
 
         self.assertEqual(base_var.data.shape[0], 3)
 
     def test_state_vec(self):
-        base_var = self.alloc.alloc_state()
+        base_var = self.alloc.alloc_state(1)[0]
         self.assertTrue(isinstance(base_var, BaseVector))
 
         self.assertEqual(base_var.data.shape[0], 4)
 
     def test_dual_vec(self):
-        base_var = self.alloc.alloc_dual()
+        base_var = self.alloc.alloc_dual(1)[0]
         self.assertTrue(isinstance(base_var, BaseVector))
 
         self.assertEqual(base_var.data.shape[0], 5)
