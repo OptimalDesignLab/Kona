@@ -72,9 +72,9 @@ class ReducedKKTVector(object):
 
     def inner(self, vector):
         self._check_type(vector)
-        design_prod = self._primal.inner(vector._primal)
+        primal_prod = self._primal.inner(vector._primal)
         dual_prod = self._dual.inner(vector._dual)
-        return design_prod + dual_prod
+        return primal_prod + dual_prod
 
     @property
     def norm2(self):

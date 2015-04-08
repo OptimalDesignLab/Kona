@@ -1,4 +1,3 @@
-
 import sys
 
 class QuasiNewton(object):
@@ -26,21 +25,8 @@ class QuasiNewton(object):
         self.out_file = out_file
 
         self.norm_init = 1.0
-        self.init_hessian = 1.0
         self.s_list = []
         self.y_list = []
-
-        vector_factory.tally(max_stored)
-
-    def set_inverse_Hessian_to_identity(self):
-        """
-        Set the initial inverse Hessian to the identity matrix.
-        """
-        self.init_Hessian = 1.0
-        
-        ones = vector_factory.generate()
-        ones.equals(1.0)
-        #INCOMPLETE
 
     def add_correction(self, s_new, y_new):
         """
