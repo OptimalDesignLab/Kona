@@ -27,7 +27,6 @@ class AbsVectorTestCase(unittest.TestCase):
 
     def test_times_equals(self):
         self.x_vec.times(3)
-        norm = self.x_vec.inner(self.x_vec)
         self.assertEquals(self.x_vec.inner(self.x_vec), 90)
 
     def test_plus_equals(self):
