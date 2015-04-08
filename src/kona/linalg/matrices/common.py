@@ -25,10 +25,24 @@ class KonaMatrix(object):
     memory : KonaMemory
     transposed : boolean (optional)
     """
-    def __init__(self, memory, transposed=False):
-        self._memory = memory
-        self._solver = self._memory.solver
+    def __init__(self, primal=None, state=None, transposed=False):
+        self._memory = None
+        self._solver = None
+        if primal is None or state is None:
+            self._linearized = False
+        else:
+            self.linearize(primal, state)
         self._transposed = transposed
+
+    def _check_type(self, vector, reference):
+        if not isinstance(vector, reference):
+            raise TypeError('KonaMatrix() >> ' + \
+                            'Wrong vector type. Must be a %s.' % reference)
+
+    def _check_linearization(self):
+        if not self._linearized:
+            raise RuntimeError('KonaMatrix.product() >> ' + \
+                               'Matrix must be linearized first!')
 
     def linearize(self, primal, state):
         """
@@ -42,11 +56,13 @@ class KonaMatrix(object):
         """
         self._primal = primal
         self._state = state
-
-    def _check_type(self, vector, reference):
-        if not isinstance(vector, reference):
-            raise TypeError('KonaMatrix() >> ' + \
-                            'Wrong vector type. Must be a %s.' % reference)
+        if self._primal._memory != self._state._memory:
+            raise RuntimeError('KonaMatrix() >> ' + \
+                               'Vectors live on different memory!')
+        else:
+            self._memory = self._primal._memory
+            self._solver = self._memory.solver
+        self._linearized = True
 
     def product(self, in_vec, out_vec):
         """
@@ -68,11 +84,14 @@ class KonaMatrix(object):
         """
         Returns the transposed version of the matrix.
         """
-        return self.__class__(self._solver, True)
+        transposed = self.__class__(self._solver, True)
+        transposed.linearize(self._primal, self._state)
+        return transposed
 
 class dRdX(KonaMatrix):
 
     def product(self, in_vec, out_vec):
+        self._check_linearization()
         if not self._transposed:
             self._check_type(in_vec, PrimalVector)
             self._check_type(out_vec, StateVector)
@@ -87,6 +106,7 @@ class dRdX(KonaMatrix):
 class dRdU(KonaMatrix):
 
     def product(self, in_vec, out_vec):
+        self._check_linearization()
         self._check_type(in_vec, StateVector)
         self._check_type(out_vec, StateVector)
         if not self._transposed:
@@ -116,6 +136,7 @@ class dRdU(KonaMatrix):
         -------
         solution : StateVector
         """
+        self._check_linearization()
         self._check_type(solution, StateVector)
         if not self._transposed:
             self._check_type(rhs_vec, StateVector)
@@ -131,30 +152,32 @@ class dRdU(KonaMatrix):
 class dCdX(KonaMatrix):
 
     def product(self, in_vec, out_vec):
+        self._check_linearization()
         if not self._transposed:
             self._check_type(in_vec, PrimalVector)
             self._check_type(out_vec, DualVector)
             self._solver.multiply_ceqjac_d(self._primal._data, self._state._data,
-                                        in_vec._data, out_vec._data)
+                                           in_vec._data, out_vec._data)
         else:
             self._check_type(in_vec, DualVector)
             self._check_type(out_vec, PrimalVector)
             self._solver.multiply_tceqjac_d(self._primal._data, self._state._data,
-                                        in_vec._data, out_vec._data)
+                                            in_vec._data, out_vec._data)
 
 class dCdU(KonaMatrix):
 
     def product(self, in_vec, out_vec):
+        self._check_linearization()
         if not self._transposed:
             self._check_type(in_vec, StateVector)
             self._check_type(out_vec, DualVector)
             self._solver.multiply_ceqjac_s(self._primal._data, self._state._data,
-                                        in_vec._data, out_vec._data)
+                                           in_vec._data, out_vec._data)
         else:
             self._check_type(in_vec, DualVector)
             self._check_type(out_vec, StateVector)
             self._solver.multiply_tceqjac_s(self._primal._data, self._state._data,
-                                        in_vec._data, out_vec._data)
+                                            in_vec._data, out_vec._data)
 
 class IdentityMatrix(KonaMatrix):
 
