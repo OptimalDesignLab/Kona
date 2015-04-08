@@ -1,8 +1,9 @@
 import sys
 
 from kona.linalg.matrices.composite import LimitedMemoryBFGS, LimitedMemorySR1
-from kona.algorithms.util.linesearch import StrongWolfe, BackTracking, ObjectiveMerit
-from kona import BadKonaOption
+from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
+from kona.algorithms.util.merit import ObjectiveMerit
+from kona.errors import BadKonaOption
 
 class ReducedSpaceQuasiNewton(object):
     """
@@ -100,6 +101,3 @@ class ReducedSpaceQuasiNewton(object):
             nonlinear_sum += 1
 
         info.write('Total number of nonlinear iterations:',nonlinear_sum,'\n')
-
-
-

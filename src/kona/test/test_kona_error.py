@@ -1,6 +1,6 @@
 import unittest
 
-from kona.util import BadKonaOption
+from kona.errors import BadKonaOption
 
 
 class KonaOptionTestCase(unittest.TestCase):
