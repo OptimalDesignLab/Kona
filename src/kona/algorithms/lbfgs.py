@@ -13,7 +13,9 @@ class LimitedMemoryBFGS(QuasiNewton):
     s_dot_s_list : list of floats
         the two-norm of the step vector
     s_dot_y_list : list of floats
-        curvature        
+        curvature
+    vec_fac: VectoryFactory
+        used to declare the number of requested vectors and generate vectors
     """
 
     def __init__(self, max_stored, vector_factory, out_file=sys.stdout):
@@ -22,18 +24,25 @@ class LimitedMemoryBFGS(QuasiNewton):
         self.lambda0 = 0
         self.s_dot_s_list = []
         self.s_dot_y_list = []
+        self.vec_fac = vector_factory
 
-        vector_factor.tally(2*max_stored + 1)
+        vector_factory.request_num_vectors(2*max_stored)
 
-    def add_correction(self, s_new, y_new):
+    def add_correction(self, s_in, y_in):
         """
         Add the step, change in gradient, curvature, and two-norm
         to the list storing the history.
         """
+        s_new = self.vec_fac.generate()
+        y_new = self.vec_fac.generate()
+
+        s_new.equals(s_in)
+        y_new.equals(y_in)
+
         two_norm = s_new.inner(s_new)
         curvature = s_new.inner(y_new)
 
-        if curvature < np.finfo(float).eps:
+        if curvature < numpy.finfo(float).eps:
             self.out_file.write('LimitedMemoryBFGS::AddCorrection():' +
                                 'correction skipped due to curvature condition.')
             return
