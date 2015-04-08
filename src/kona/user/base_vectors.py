@@ -64,15 +64,15 @@ class BaseVector(object):
 
 class BaseAllocator(object):
 
-    def __init__(self, num_design, num_state, num_ceq):
-        self.num_design = num_design
+    def __init__(self, num_primal, num_state, num_ceq):
+        self.num_primal = num_primal
         self.num_state = num_state
         self.num_dual = num_ceq
 
-    def alloc_design(self, count):
+    def alloc_primal(self, count):
         out = []
         for i in xrange(count):
-            out.append(BaseVector(self.num_design))
+            out.append(BaseVector(self.num_primal))
         return out
 
     def alloc_state(self, count):

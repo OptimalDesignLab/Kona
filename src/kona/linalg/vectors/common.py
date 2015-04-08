@@ -155,7 +155,7 @@ class KonaVector(object):
         else:
             return sqrt(prod)
 
-class DesignVector(KonaVector):
+class PrimalVector(KonaVector):
     """
     Derived from the base abstracted vector. Contains member functions specific
     to design vectors.
@@ -191,9 +191,9 @@ class StateVector(KonaVector):
     to state vectors.
     """
     def equals_objective_partial(self, at_design, at_state):
-        self._memory.solver.eval_obj_s(at_design._data,
-                                       at_state._data,
-                                       self._data)
+        self._memory.solver.eval_obj_s(
+            at_design._data, at_state._data, self._data
+            )
 
     def equals_PDE_residual(self, at_design, at_state):
         self._memory.solver.eval_residual(at_design._data,
