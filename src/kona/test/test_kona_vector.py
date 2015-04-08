@@ -82,16 +82,9 @@ class PrimalVectorTestCase(unittest.TestCase):
 
 
     def test_divide_by(self):
-        self.pv.equals(2)
-        self.pv.divide_by(self.pv)
-        self.assertEqual(self.pv.inner(self.pv), 10)
-
-
-        pv2 = self.km.primal_factory.generate()
         self.pv.equals(10)
-        pv2.equals(2)
-        self.pv.divide_by(pv2)
-        self.assertEqual(self.pv.inner(self.pv), 50)
+        self.pv.divide_by(5)
+        self.assertEqual(self.pv.inner(self.pv), 40)
 
     def test_equals_ax_p_by(self):
 

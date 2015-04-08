@@ -42,7 +42,10 @@ class VectorFactory(object):
 
     def generate(self):
         if self._memory.is_allocated:
-            data = self._memory.pop_vector(self._vec_type)
+            try:
+                data = self._memory.pop_vector(self._vec_type)
+            except IndexError:
+                raise MemoryError('no more vector memory available. Allocate more vectors in your algorithm initialization')
             return self._vec_type(self._memory, data)
         else:
             raise RuntimeError('VectorFactory() >> ' + \
