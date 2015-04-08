@@ -9,16 +9,21 @@ class Cat(Singleton):
 
 # unit tests begin here
 class testSingleton(unittest.TestCase):
-        
+
     def testConstruct(self):
         # construct an instance of the singleton
         pet = Cat('Maple')
         self.assertTrue(isinstance(pet, Cat) and isinstance(pet, Singleton))
-        
+
     def testInstance(self):
         # test if Singleton raises the correct error when new instance is called
-        with self.assertRaises(RuntimeError):
+        # with self.assertRaises(RuntimeError):
+        try:
             newPet = Cat('Midna')
+        except RuntimeError:
+            pass
+        else:
+            self.fail('RuntimeError expected')
 
 if __name__ == '__main__':
     unittest.main()
