@@ -155,3 +155,14 @@ class dCdU(KonaMatrix):
             self._check_type(out_vec, StateVector)
             self._solver.multiply_tceqjac_s(self._primal._data, self._state._data,
                                         in_vec._data, out_vec._data)
+
+class IdentityMatrix(KonaMatrix):
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def linearize(self, *args, **kwargs):
+        pass
+
+    def product(self, in_vec, out_vec):
+        out_vec.equals(in_vec)
