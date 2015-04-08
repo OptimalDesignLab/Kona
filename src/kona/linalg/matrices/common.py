@@ -47,8 +47,17 @@ class dCdX(KonaMatrix):
                                     in_vec._data, out_vec._data)
 
 class dCdU(KonaMatrix):
+
     def product(self, in_vec, out_vec):
         self._check_type(in_vec, StateVector)
         self._check_type(out_vec, DualVector)
         self._solver.multiply_ceqjac_s(self._primal._data, self._state._data,
                                     in_vec._data, out_vec._data)
+
+class IdentityMatrix(KonaMatrix):
+
+    def __init__(self):
+        pass
+
+    def product(self, in_vec, out_vec):
+        out_vec.equals(in_vec)
