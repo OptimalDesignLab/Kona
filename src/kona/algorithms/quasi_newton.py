@@ -7,6 +7,8 @@ class QuasiNewton(object):
     ----------
     max_stored : int
         maximum number of corrections stored
+    vec_fac: VectoryFactory
+        used to declare the number of requested vectors and generate vectors
     out_file : file handle
         output file for diagnostics
     norm_init : float
@@ -19,9 +21,9 @@ class QuasiNewton(object):
         difference between subsequent gradients: .. math:: y_k = g_{k+1} - g_k
     """
 
-    def __init__(self, max_stored, vector_factory, out_file=sys.stdout):
-        self.max_stored = max_stored
-        self.vector_factory = vector_factory
+    def __init__(self, vector_factory, optns, out_file=sys.stdout):
+        self.max_stored = optns['max_stored']
+        self.vec_fac = vector_factory
         self.out_file = out_file
 
         self.norm_init = 1.0
@@ -39,3 +41,6 @@ class QuasiNewton(object):
 
         self.s_list.append(s_new)
         self.y_list.append(y_new)
+
+    def apply_inv_Hessian_approx(self, u_vec, v_vec):
+        pass

@@ -219,7 +219,7 @@ class UserSolver(object):
         """
         pass
 
-    def multiply_precond(self, at_design, at_state, vec, result):
+    def apply_precond(self, at_design, at_state, vec, result):
         """
         OPTIONAL: Apply the preconditioner to the vector at
         ``self.kona_state[vec]`` and store the result in
@@ -240,7 +240,7 @@ class UserSolver(object):
         """
         return 0
 
-    def multiply_precond_T(self, at_design, at_state, vec, result):
+    def apply_precond_T(self, at_design, at_state, vec, result):
         """
         OPTIONAL: Apply the transpose of the preconditioner to the vector at
         ``self.kona_state[vec]`` and store the result in

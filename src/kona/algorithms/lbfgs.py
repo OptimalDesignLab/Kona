@@ -14,38 +14,35 @@ class LimitedMemoryBFGS(QuasiNewton):
         the two-norm of the step vector
     s_dot_y_list : list of floats
         curvature
-    vec_fac: VectoryFactory
-        used to declare the number of requested vectors and generate vectors
     """
 
-    def __init__(self, max_stored, vector_factory, out_file=sys.stdout):
-        super(LimitedMemoryBFGS, self).__init__(max_stored, vector_factory, out_file)
+    def __init__(self, vector_factory, optns, out_file=sys.stdout):
+        super(LimitedMemoryBFGS, self).__init__(vector_factory, optns, out_file)
 
         self.lambda0 = 0
         self.s_dot_s_list = []
         self.s_dot_y_list = []
-        self.vec_fac = vector_factory
 
-        vector_factory.request_num_vectors(2*max_stored)
+        vector_factory.request_num_vectors(2*optns['max_stored'])
 
     def add_correction(self, s_in, y_in):
         """
         Add the step, change in gradient, curvature, and two-norm
-        to the list storing the history.
+        to the lists storing the history.
         """
-        s_new = self.vec_fac.generate()
-        y_new = self.vec_fac.generate()
-
-        s_new.equals(s_in)
-        y_new.equals(y_in)
-
-        two_norm = s_new.inner(s_new)
-        curvature = s_new.inner(y_new)
+        two_norm = s_in.inner(s_in)
+        curvature = s_in.inner(y_in)
 
         if curvature < numpy.finfo(float).eps:
             self.out_file.write('LimitedMemoryBFGS::AddCorrection():' +
                                 'correction skipped due to curvature condition.')
             return
+
+        s_new = self.vec_fac.generate()
+        y_new = self.vec_fac.generate()
+
+        s_new.equals(s_in)
+        y_new.equals(y_in)
 
         if len(self.s_list) == self.max_stored:
             del self.s_list[0]
