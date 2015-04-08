@@ -44,12 +44,12 @@ class QuasiNewtonTestCase(unittest.TestCase):
         s_new._data.data[2] = -1.0
         y_new._data.data[2] = -10.0
         lbfgs.add_correction(s_new, y_new)
+
         # testing first column of H*H^{-1}
         s_new._data.data[:] = 0.0
         y_new._data.data[:] = 0.0
         s_new._data.data[0] = 1.0
         lbfgs.apply_inv_Hessian_approx(s_new, y_new)
-        print y_new._data.data
         self.assertRelError(y_new._data.data,
                             np.array([1.,0.,0.]), atol=1e-15)
         # testing second column of H*H^{-1}
