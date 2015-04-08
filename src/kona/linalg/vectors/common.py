@@ -80,7 +80,7 @@ class KonaVector(object):
         """
         if vector == self: # special case...
             self.equals(0)
-            
+
         self._check_type(vector)
         self._data.times(-1.)
         self._data.plus(vector._data)

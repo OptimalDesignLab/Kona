@@ -81,12 +81,22 @@ class PrimalVectorTestCase(unittest.TestCase):
 
 
     def divide_by(self):
-        pass
+        self.pv.equals(2)
+        self.pv.divide_by(self.pv)
+        self.assertEqual(self.pv.inner(self.pv), 10)
 
-    def equals_ax_p_by(self):
+
+        pv2 = self.km.primal_factory.generate()
+        self.pv.equals(10)
+        pv2.equals(2)
+        self.pv.divide_by(pv2)
+        self.assertEqual(self.pv.inner(self.pv), 50)
+
+    def test_equals_ax_p_by(self):
 
         # TODO: add better error message if you ask for more vectors than you could allocate
 
+        self.pv.equals(1)
         pv2 = self.km.primal_factory.generate()
         pv2.equals(1)
 
@@ -95,6 +105,9 @@ class PrimalVectorTestCase(unittest.TestCase):
 
         pv3.equals_ax_p_by(2, self.pv, 3, pv3)
         self.assertEqual(pv3.inner(self.pv), 80)
+
+        pv2.equals_ax_p_by(2, self.pv, 3, pv2)
+        self.assertEqual(pv2.inner(self.pv), 50)
 
 
 
