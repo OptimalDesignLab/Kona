@@ -54,7 +54,7 @@ class DummySolver(UserSolver):
         pass
 
     def init_design(self, store_here):
-        store_here.data = 4.*numpy.ones(self.num_design)
+        store_here.data = 4.*numpy.ones(self.num_primal)
 
     def solve_nonlinear(self, at_design, result):
         return 0
