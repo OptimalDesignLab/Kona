@@ -104,7 +104,7 @@ class UserSolver(object):
         """
         pass
 
-    def multiply_jac_d(self, at_design, at_state, vec, result):
+    def multiply_dRdX(self, at_design, at_state, vec, result):
         """
         Perform the following tasks:
 
@@ -130,7 +130,7 @@ class UserSolver(object):
         """
         pass
 
-    def multiply_jac_s(self, at_design, at_state, vec, result):
+    def multiply_dRdU(self, at_design, at_state, vec, result):
         """
         Perform the following tasks:
 
@@ -156,7 +156,7 @@ class UserSolver(object):
         """
         pass
 
-    def multiply_tjac_d(self, at_design, at_state, vec, result):
+    def multiply_dRdX_T(self, at_design, at_state, vec, result):
         """
         Perform the following tasks:
 
@@ -187,7 +187,7 @@ class UserSolver(object):
         """
         self.kona_design[result] = np.zeros(self.num_design)
 
-    def multiply_tjac_s(self, at_design, at_state, vec, result):
+    def multiply_dRdU_T(self, at_design, at_state, vec, result):
         """
         Perform the following tasks:
 
@@ -240,7 +240,7 @@ class UserSolver(object):
         """
         return 0
 
-    def multiply_tprecond(self, at_design, at_state, vec, result):
+    def multiply_precond_T(self, at_design, at_state, vec, result):
         """
         OPTIONAL: Apply the transpose of the preconditioner to the vector at
         ``self.kona_state[vec]`` and store the result in
@@ -261,7 +261,7 @@ class UserSolver(object):
         """
         return 0
 
-    def multiply_ceqjac_d(self, at_design, at_state, vec, result):
+    def multiply_dCdX(self, at_design, at_state, vec, result):
         """
         Perform the following tasks:
 
@@ -287,7 +287,7 @@ class UserSolver(object):
         """
         pass
 
-    def multiply_ceqjac_s(self, at_design, at_state, vec, result):
+    def multiply_dCdU(self, at_design, at_state, vec, result):
         """
         Perform the following tasks:
 
@@ -313,7 +313,7 @@ class UserSolver(object):
         """
         pass
 
-    def multiply_tceqjac_d(self, at_design, at_state, vec, result):
+    def multiply_dCdX_T(self, at_design, at_state, vec, result):
         """
         Perform the following tasks:
 
@@ -344,7 +344,7 @@ class UserSolver(object):
         """
         self.kona_design[result] = np.zeros(self.num_design)
 
-    def multiply_tceqjac_s(self, at_design, at_state, vec, result):
+    def multiply_dCdU_T(self, at_design, at_state, vec, result):
         """
         Perform the following tasks:
 
@@ -370,7 +370,7 @@ class UserSolver(object):
         """
         pass
 
-    def eval_grad_d(self, at_design, at_state, result):
+    def eval_dFdX(self, at_design, at_state, result):
         """
         Evaluate the design component of the objective gradient at the
         design point stored in ``self.kona_design[vec]`` and store the
@@ -391,7 +391,7 @@ class UserSolver(object):
         """
         raise NotImplementedError
 
-    def eval_grad_s(self, at_design, at_state, result):
+    def eval_dFdU(self, at_design, at_state, result):
         """
         Evaluate the state component of the objective gradient at the
         design point stored in ``self.kona_state[vec]`` and store the
@@ -420,9 +420,9 @@ class UserSolver(object):
         """
         raise NotImplementedError
 
-    def solve_system(self, at_design, result):
+    def solve_nonlinear(self, at_design, result):
         """
-        Solve the linearized system at the design point stored in
+        Solve the non linear system at the design point stored in
         ``self.kona_design[at_design]. Store the calculated state variables (u)
         under ``self.kona_state[result]``.
 
@@ -461,7 +461,7 @@ class UserSolver(object):
             # it needs to back-track on the optimization.
             return -1
 
-    def solve_linearsys(self, at_design, at_state, rhs, tol, result):
+    def solve_linear(self, at_design, at_state, rhs, tol, result):
         """
         Evaluate the state jacobian, ``A``, at the design point stored in
         ``self.kona_design[at_design]`` and the state variables stored in
@@ -499,7 +499,7 @@ class UserSolver(object):
         :math:`A^T\\mathbf{u}=\\mathbf{v}`
         where the right hand side vector, :math:`\\mathbf{v}`, is:
 
-            1. If ``rhs == None``, then :math:`\\mathbf{v}` is the negative
+            1. If ``rhs == -1``, then :math:`\\mathbf{v}` is the negative
             derivative of the objective function with respect to the state
             variables (:math:`\\mathbf{v} = -\\frac{dJ}{du}).
 
