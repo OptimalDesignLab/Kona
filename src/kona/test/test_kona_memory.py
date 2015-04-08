@@ -31,7 +31,26 @@ class VectorFactoryTestCase(unittest.TestCase):
         self.assertEqual(len(km.vector_stack[PrimalVector]), 12)
 
     def test_error_generate(self):
-        pass
+        solver = UserSolver()
+        km = KonaMemory(solver)
+        vf = km.primal_factory
 
+        vf.request_num_vectors(1)
+
+        try:
+            vf.generate()
+        except RuntimeError as err:
+            self.assertEqual(str(err), 'Can not generate vectors before memory allocation has happened')
+        else:
+            self.fail('RuntimeError')
+
+        km.allocate_memory()
+
+        try:
+            km.allocate_memory()
+        except RuntimeError as err:
+            self.assertEqual(str(err), 'Memory allready allocated, can-not re-allocate')
+        else:
+            self.fail("RuntimeError expected")
 if __name__ == "__main__":
     unittest.main()
