@@ -2,16 +2,17 @@ import unittest
 import numpy as np
 
 from kona.linalg.memory import KonaMemory
-from kona.user.user_solver import UserSolver
 
-from kona.user.base_vectors import BaseVector
+from kona.user import BaseVector
 
 from kona.linalg.vectors.common import KonaVector
+
+from dummy_solver import DummySolver
 
 class PrimalVectorTestCase(unittest.TestCase):
 
     def setUp(self):
-        solver = UserSolver(10, 10, 0)
+        solver = DummySolver(10, 10, 0)
         self.km = km = KonaMemory(solver)
 
         km.primal_factory.request_num_vectors(3)
@@ -80,7 +81,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         self.assertEqual(self.pv.inner(self.pv), 1000.0)
 
 
-    def divide_by(self):
+    def test_divide_by(self):
         self.pv.equals(2)
         self.pv.divide_by(self.pv)
         self.assertEqual(self.pv.inner(self.pv), 10)
@@ -109,9 +110,17 @@ class PrimalVectorTestCase(unittest.TestCase):
         pv2.equals_ax_p_by(2, self.pv, 3, pv2)
         self.assertEqual(pv2.inner(self.pv), 50)
 
+    def test_init_design(self):
+        self.pv.equals_init_design()
+        self.assertEqual(self.pv.inner(self.pv), 160)
 
-
-
+    def test_equals_objective_gradient(self):
+        at_design = self.km.primal_factory.generate()
+        at_design.equals(1)
+        at_state = self.km.state_factory.generate()
+        at_state.equals(2)
+        self.pv.equals_objective_gradient(at_design, at_state)
+        self.assertEqual(self.pv.inner(self.pv), 4000)
 
 if __name__ == "__main__":
     unittest.main()

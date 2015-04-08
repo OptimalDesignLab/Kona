@@ -48,13 +48,13 @@ class DummySolver(UserSolver):
         pass
 
     def eval_dFdX(self, at_design, at_state, store_here):
-        store_here.data[:] =
+        store_here.data[:] = numpy.sum(at_state.data)*at_design.data[:]
 
     def eval_dFdU(self, at_design, at_state, store_here):
         pass
 
     def init_design(self, store_here):
-        pass
+        store_here.data = 4.*numpy.ones(self.num_design)
 
     def solve_nonlinear(self, at_design, result):
         return 0
