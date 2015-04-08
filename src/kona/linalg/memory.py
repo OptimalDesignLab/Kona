@@ -45,6 +45,8 @@ class VectorFactory(object):
             return self._vec_type(self._memory, data)
         else:
             raise RuntimeError('Can not generate vectors before memory allocation has happened')
+
+            
 class KonaMemory(object):
     """
     All-knowing Big Brother abstraction layer for Kona.
