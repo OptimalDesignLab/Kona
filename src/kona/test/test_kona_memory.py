@@ -52,5 +52,24 @@ class VectorFactoryTestCase(unittest.TestCase):
             self.assertEqual(str(err), 'Memory allready allocated, can-not re-allocate')
         else:
             self.fail("RuntimeError expected")
+
+    def test_too_many_vectors(self):
+        solver = UserSolver()
+        km = KonaMemory(solver)
+        vf = km.primal_factory
+
+        vf.request_num_vectors(2)
+        km.allocate_memory()
+
+        try:
+            vec0 = vf.generate()
+            vec1 = vf.generate()
+            vec2 = vf.generate()
+        except MemoryError as err:
+            self.assertEqual(str(err), 'no more vector memory available. Allocate more vectors in your algorithm initialization')
+        else:
+            self.fail('MemoryError expected')
+
+
 if __name__ == "__main__":
     unittest.main()
