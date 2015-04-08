@@ -22,7 +22,8 @@ class KonaMatrix(object):
 
     Parameters
     ----------
-    memory : KonaMemory
+    primal : PrimalVector
+    state : StateVector
     transposed : boolean (optional)
     """
     def __init__(self, primal=None, state=None, transposed=False):
