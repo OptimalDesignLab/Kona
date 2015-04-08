@@ -135,12 +135,12 @@ class dCdX(KonaMatrix):
             self._check_type(in_vec, PrimalVector)
             self._check_type(out_vec, DualVector)
             self._solver.multiply_ceqjac_d(self._primal._data, self._state._data,
-                                        in_vec._data, out_vec._data)
+                                           in_vec._data, out_vec._data)
         else:
             self._check_type(in_vec, DualVector)
             self._check_type(out_vec, PrimalVector)
             self._solver.multiply_tceqjac_d(self._primal._data, self._state._data,
-                                        in_vec._data, out_vec._data)
+                                            in_vec._data, out_vec._data)
 
 class dCdU(KonaMatrix):
 
@@ -149,12 +149,12 @@ class dCdU(KonaMatrix):
             self._check_type(in_vec, StateVector)
             self._check_type(out_vec, DualVector)
             self._solver.multiply_ceqjac_s(self._primal._data, self._state._data,
-                                        in_vec._data, out_vec._data)
+                                           in_vec._data, out_vec._data)
         else:
             self._check_type(in_vec, DualVector)
             self._check_type(out_vec, StateVector)
             self._solver.multiply_tceqjac_s(self._primal._data, self._state._data,
-                                        in_vec._data, out_vec._data)
+                                            in_vec._data, out_vec._data)
 
 class IdentityMatrix(KonaMatrix):
 

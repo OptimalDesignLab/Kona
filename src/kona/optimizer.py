@@ -1,3 +1,4 @@
+import os.path
 from kona.linalg.memory import KonaMemory
 
 class Optimizer(object):
@@ -5,27 +6,37 @@ class Optimizer(object):
     This is a top-level wrapper for all optimization algorithms contained in
     the Kona library, and also the only class exposed to the outside user.
 
+    Attributes
+    ----------
+    _memory : KonaMemory
+        All-knowing Kona memory controller.
+    _algorithm : Algorithm
+        Optimization algorithm object.
 
+    Parameters
+    ----------
+    solver : UserSolver-like
+    algorithm : Algorithm
+    optns : dict (optional)
     """
-
-    def __init__(self, userObj, optns=None):
-        # initialize default options
-        self.options = {}
-
+    def __init__(self, solver, algorithm, optns=None):
         # modify defaults either from config file or from given dictionary
-        self._readOptions(optns)
-
-        # calculate memory requirements
-        numDesignVec, numStateVec, numDualVec = self_memoryRequirements(self)
+        self._read_options(optns)
 
         # initialize optimization memory
-        self.memory = KonaMemory(userObj, numDesignVec, numStateVec, numDualVec)
+        self._memory = KonaMemory(user_solver)
 
-    def _readOptions(self, optns):
-        pass
+        # set the algorithm
+        self._algorithm = algorithm
 
-    def _memoryRequirements(self):
-        return (0, 0, 0)
+    def _read_options(self, optns):
+        if optns is None:
+            if os.path.isfile('kona.cfg')
+                pass
+            else:
+                self._optns = {}
+        else:
+            self._optns = optns
 
-    def Optimize():
-        pass
+    def solve():
+        self._algorithm.solve()
