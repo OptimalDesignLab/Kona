@@ -138,13 +138,11 @@ class dRdU(KonaMatrix):
         """
         self._check_linearization()
         self._check_type(solution, StateVector)
+        self._check_type(rhs_vec, StateVector)
         if not self._transposed:
-            self._check_type(rhs_vec, StateVector)
             self._solver.solve_linear(self._primal._data, self._state.data,
                                       rhs_vec, rel_tol, solution._data)
         else:
-            if rhs_vec is not None:
-                self._check_type(rhs_vec, StateVector)
             self._solver.solve_adjoint(self._primal._data, self._state._data,
                                        rhs_vec, rel_tol, solution._data)
 
