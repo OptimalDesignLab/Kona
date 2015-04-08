@@ -47,7 +47,7 @@ class KonaVector(object):
         rhs : float or KonaVector derivative
             Right hand side term for assignment.
         """
-        if isinstance(rhs, (np.float, np.int)):
+        if isinstance(rhs, (float, np.float32, np.float64, int, np.int32, np.int64)):
             self._data.equals_value(rhs)
         else:
             self._check_type(rhs)
@@ -78,6 +78,9 @@ class KonaVector(object):
         vector : KonaVector derivative
             Vector to be subtracted.
         """
+        if vector == self: # special case...
+            self.equals(0)
+
         self._check_type(vector)
         self._data.times(-1.)
         self._data.plus(vector._data)
