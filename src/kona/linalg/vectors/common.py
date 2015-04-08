@@ -166,32 +166,102 @@ class PrimalVector(KonaVector):
     to design vectors.
     """
     def restrict_target_state(self):
+        """
+        Set target state variables to zero. Used only for IDF problems.
+        """
         self._memory.solver.allocator.restrict_design(0, self._data)
 
     def restrict_real_design(self):
+        """
+        Set design variables to zero. Used only for IDF problems.
+        """
         self._memory.solver.allocator.restrict_design(1, self._data)
 
     def convert(self, dual_vector):
+        """
+        Copy target state variables from the dual space into the design space.
+        Used only for IDF problems.
+
+        Parameters
+        ----------
+        dual_vector : DualVector
+            Source vector for target state variable data.
+        """
         self._memory.solver.allocator.copy_dual_to_targstate(dual_vector._data,
                                                      self._data)
 
     def equals_init_design(self):
+        """
+        Sets this vector equal to the initial design point.
+        """
         self._memory.solver.init_design(self._data)
 
     def equals_objective_partial(self, at_primal, at_state):
+        """
+        Computes in-place the partial derivative of the objective function with
+        respect to design variables.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        """
         self._memory.solver.eval_dFdX(at_primal._data,
                                       at_state._data,
                                       self._data)
 
     def equals_reduced_gradient(self, at_primal, at_state, at_adjoint, primal_work):
-        jacobian = dRdX(at_primal, at_state)
+        """
+        Computes in-place the total derivative of the objective function.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        at_adjoint : StateVector
+            Current adjoint variables.
+        primal_work : PrimalVector
+            Temporary work vector of Primal type.
+        """
+        # first compute the objective partial
         primal_work.equals_objective_partial(at_primal, at_state)
+        # construct the residual jacobian
+        jacobian = dRdX(at_primal, at_state)
+        # multiply the adjoint variables with the jacobian
         jacobian.T.product(at_adjoint, self)
+        # add it to the objective partial
         self.plus(primal_work)
 
-    def equals_lagrangian_reduced_grad(self, at_primal, at_state, at_dual,
-                                       at_adjoint, work):
-        pass
+    def equals_lagrangian_reduced_gradient(self, at_primal, at_state, at_dual,
+                                           at_adjoint, primal_work):
+        """
+        Computes in-place the total derivative of the Lagrangian.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        at_dual : DualVector
+            Current lagrange multipliers.
+        at_adjoint : StateVector
+            Current adjoint variables.
+        primal_work : PrimalVector
+            Temporary work vector of Primal type.
+        """
+        # first compute the total derivative of the objective
+        self.equals_reduced_gradient(at_primal, at_state, at_adjoint, primal_work)
+        # initialize the linearized constraint jacobian
+        cnstr_jac = dCdX(at_primal, at_state)
+        # multiply the lagrange multipliers by the constraint jacobian
+        cnstr_jac.T.product(at_dual, primal_work)
+        # add it to the total objective derivative
+        self.plus(primal_work)
 
 class StateVector(KonaVector):
     """
@@ -199,19 +269,62 @@ class StateVector(KonaVector):
     to state vectors.
     """
     def equals_objective_partial(self, at_primal, at_state):
+        """
+        Computes in-place the partial derivative of the objective function with
+        respect to state variables.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        """
         self._memory.solver.eval_dFdU(
             at_primal._data, at_state._data, self._data
             )
 
     def equals_residual(self, at_primal, at_state):
+        """
+        Computes in-place the system residual vector.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        """
         self._memory.solver.eval_residual(at_primal._data,
                                           at_state._data,
                                           self._data)
 
     def equals_primal_solution(self, at_primal):
+        """
+        Performs a non-linear system solution at the given primal point and
+        stores the result in-place.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        """
         self._memory.solver.solve_nonlinear(at_primal._data, self._data)
 
     def equals_adjoint_solution(self, at_primal, at_state, state_work):
+        """
+        Computes in-place the adjoint variables for the objective function,
+        linearized at the given primal and state points.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        state_work : StateVector
+            Temporary work vector of State type.
+        """
         jacobian = dRdU(at_primal, at_state)
         state_work.equals_objective_partial(at_primal, at_state)
         state_work.times(-1) # negative of the objective partial (-dF/dU)
@@ -222,11 +335,30 @@ class DualVector(KonaVector):
     Derived from the base abstracted vector. Contains member functions specific
     to state vectors.
     """
+    def convert(self, primal_vector):
+        """
+        Copy target state variables from the design space into dual space. Used
+        only for IDF problems.
 
-    def convert(self, design):
-        self._memory.solver.copy_targstate_to_dual(design._data, self._data)
+        Parameters
+        ----------
+        primal_vector : PrimalVector
+            Source vector for target state variable data.
+        """
+        self._memory.solver.copy_targstate_to_dual(primal_vector._data, self._data)
 
     def equals_constraints(self, at_primal, at_state):
+        """
+        Evaluate all constraints at the given primal and state points, and
+        store the result in-place.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        """
         self._memory.solver.eval_ceq(at_primal._data,
                                      at_state._data,
                                      self._data)

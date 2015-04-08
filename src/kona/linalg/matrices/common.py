@@ -8,20 +8,17 @@ class KonaMatrix(object):
 
     Attributes
     ----------
-    _memory : KonaMemory
-        All-knowing Kona memory manager.
-    _solver : UserSolver-like
-        User solver object that performs the actual data manipulation.
-    _transposed : boolean
-        Flag to determine if the matrix is transposed
     _primal : PrimalVector
         Primal vector point for linearization.
     _state : StateVector
         State vector point for linearization
+    _transposed : boolean
+        Flag to determine if the matrix is transposed
 
     Parameters
     ----------
-    memory : KonaMemory
+    primal : PrimalVector
+    state : StateVector
     transposed : boolean (optional)
     """
     def __init__(self, primal=None, state=None, transposed=False):
@@ -82,13 +79,19 @@ class KonaMatrix(object):
     def T(self):
         """
         Returns the transposed version of the matrix.
+
+        Returns
+        -------
+        KonaMatrix-like : Transposed version of the matrix.
         """
         transposed = self.__class__(self._solver, True)
         transposed.linearize(self._primal, self._state)
         return transposed
 
 class dRdX(KonaMatrix):
-
+    """
+    Partial jacobian of the system residual with respect to primal variables.
+    """
     def product(self, in_vec, out_vec):
         self._check_linearization()
         if not self._transposed:
@@ -103,7 +106,9 @@ class dRdX(KonaMatrix):
                                         in_vec._data, out_vec._data)
 
 class dRdU(KonaMatrix):
-
+    """
+    Partial jacobian of the system residual with respect to state variables.
+    """
     def product(self, in_vec, out_vec):
         self._check_linearization()
         # self._check_type(in_vec, StateVector)
@@ -147,7 +152,9 @@ class dRdU(KonaMatrix):
 
 
 class dCdX(KonaMatrix):
-
+    """
+    Partial jacobian of the constraints with respect to primal variables.
+    """
     def product(self, in_vec, out_vec):
         self._check_linearization()
         if not self._transposed:
@@ -162,7 +169,9 @@ class dCdX(KonaMatrix):
                                             in_vec._data, out_vec._data)
 
 class dCdU(KonaMatrix):
-
+    """
+    Partial jacobian of the constraints with respect to state variables.
+    """
     def product(self, in_vec, out_vec):
         self._check_linearization()
         if not self._transposed:
@@ -177,7 +186,10 @@ class dCdU(KonaMatrix):
                                             in_vec._data, out_vec._data)
 
 class IdentityMatrix(KonaMatrix):
-
+    """
+    Simple identity matrix abstraction. Like all identity matrices, this one
+    does not do anything particularly useful either.
+    """
     def __init__(self, *args, **kwargs):
         pass
 

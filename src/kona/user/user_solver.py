@@ -17,6 +17,8 @@ class UserSolver(object):
         Number of state variables
     num_ceq : int (optional)
         Size of the equality constraint residual
+    allocator : BaseAllocator-like
+        Object that allocates BaseVector instances when Kona asks for it.
     """
 
     def __init__(self, num_primal=0, num_state=0, num_ceq=0, allocator=None):
@@ -38,12 +40,7 @@ class UserSolver(object):
     def eval_obj(self, at_design, at_state):
         """
         Evaluate the objective function using the design variables stored at
-        ``self.kona_design[at_design]`` and the state variables stored at
-        ``self.kona_state[at_state]``.
-
-        If ``at_state == -1``, the state variables should be calculated at the
-        provided design point before being used in the objective function. In
-        this case, the user should keep track of
+        ``at_design`` and the state variables stored at ``at_state``.
 
         This function should return a tuple containing the objective function
         value as the first element, and the number of preconditioner calls as
@@ -55,10 +52,10 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
 
         Returns
         -------
@@ -68,106 +65,101 @@ class UserSolver(object):
         """
         raise NotImplementedError
 
-    def eval_residual(self, at_design, at_state, result):
+    def eval_residual(self, at_design, at_state, store_here):
         """
         Evaluate the linearized system (PDE) using the design point stored in
-        ``self.kona_design[x]`` and the state variables stored in
-        ``self.kona_state[y]``. Put the residual vector in
-        ``self.kona_state[result]``.
+        ``at_design`` and the state variables stored in ``at_state``. Put the
+        residual vector in ``store_here``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        result : BaseVector-like
             Location where user should store the result.
         """
         pass
 
-    def eval_ceq(self, at_design, at_state, result):
+    def eval_ceq(self, at_design, at_state, store_here):
         """
-        Evaluate the vector of equality constraints using the design
-        variables stored at `self.kona_design[x]`` and the state
-        variables stored at ``self.kona_state[y]``. Store the constraint
-        residual at ``self.kona_dual[result].
+        Evaluate the vector of equality constraints using the design variables
+        stored at `at_design`` and the state variables stored at ``at_state``.
+        Store the constraint residual at ``store_here``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        result : BaseVector-like
             Location where user should store the result.
         """
         pass
 
-    def multiply_dRdX(self, at_design, at_state, vec, result):
+    def multiply_dRdX(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:
 
         * Update the linearized system jacobian using the design point in
-          ``self.kona_design[at_design]`` and the state variables in
-          ``self.kona_state[at_state]``.
+          ``at_design`` and the state variables in ``at_state``.
 
         * Multiply the design component of the system jacobian with the vector
-          stored in ``self.kona_design[vec]``.
+          stored in ``in_vec``.
 
-        * Store the result in ``self.kona_state[result]``.
+        * Store the result in ``out_vec``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
         """
         pass
 
-    def multiply_dRdU(self, at_design, at_state, vec, result):
+    def multiply_dRdU(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:
 
-        * Linearize the system about the design point in
-          ``self.kona_design[at_design]`` and the state variables in
-          ``self.kona_state[at_state]``.
+        * Update the linearized system jacobian using the design point in
+          ``at_design`` and the state variables in ``at_state``.
 
         * Multiply the state component of the system jacobian with the vector
-          stored in ``self.kona_state[vec]``.
+          stored in ``in_vec``.
 
-        * Store the result in ``self.kona_state[result]``.
+        * Store the result in ``out_vec``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
         """
         pass
 
-    def multiply_dRdX_T(self, at_design, at_state, vec, result):
+    def multiply_dRdX_T(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:
 
-        * Linearize the system about the design point in
-          ``self.kona_design[at_design]`` and the state variables in
-          ``self.kona_state[at_state]``.
+        * Update the linearized system jacobian using the design point in
+          ``at_design`` and the state variables in ``at_state``.
 
         * Multiply the transposed design component of the system jacobian with
-          the vector stored in ``self.kona_state[vec]``.
+          the vector stored in ``in_vec``.
 
-        * Store the result in ``self.kona_design[result]``.
+        * Store the result in ``out_vec``.
 
         .. note::
 
@@ -176,39 +168,38 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
         """
-        self.kona_design[result] = np.zeros(self.num_design)
+        result.data[:] = 0.0
 
-    def multiply_dRdU_T(self, at_design, at_state, vec, result):
+    def multiply_dRdU_T(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:
 
-        * Linearize the system about the design point in
-          ``self.kona_design[at_design]`` and the state variables in
-          ``self.kona_state[at_state]``.
+        * Update the linearized system jacobian using the design point in
+          ``at_design`` and the state variables in ``at_state``.
 
         * Multiply the transposed state component of the system jacobian with
-          the vector stored in ``self.kona_state[vec]``.
+          the vector stored in ``in_vec``.
 
-        * Store the result in ``self.kona_state[result]``.
+        * Store the result in ``out_vec``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
         """
         pass
@@ -219,19 +210,22 @@ class UserSolver(object):
         """
         pass
 
-    def apply_precond(self, at_design, at_state, vec, result):
+    def apply_precond(self, at_design, at_state, in_vec, out_vec):
         """
-        OPTIONAL: Apply the preconditioner to the vector at
-        ``self.kona_state[vec]`` and store the result in
-        ``self.kona_state[result]``. If the preconditioner has to be
-        linearized, use the design and state vectors provided in
-        ``self.kona_design[at_design]`` and ``self.kona_state[at_state]``.
+        OPTIONAL: Apply the preconditioner to the vector at ``in_vec`` and
+        store the result in ``out_vec``. If the preconditioner has to be
+        linearized, use the design and state vectors provided in ``at_design``
+        and ``at_state``.
 
         Parameters
         ----------
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
 
         Returns
@@ -240,19 +234,22 @@ class UserSolver(object):
         """
         return 0
 
-    def apply_precond_T(self, at_design, at_state, vec, result):
+    def apply_precond_T(self, at_design, at_state, in_vec, out_vec):
         """
-        OPTIONAL: Apply the transpose of the preconditioner to the vector at
-        ``self.kona_state[vec]`` and store the result in
-        ``self.kona_state[result]``. If the preconditioner has to be
-        linearized, use the design and state vectors provided in
-        ``self.kona_design[at_design]`` and ``self.kona_state[at_state]``.
+        OPTIONAL: Apply the transposed preconditioner to the vector at
+        ``in_vec`` and store the result in ``out_vec``. If the preconditioner
+        has to be linearized, use the design and state vectors provided in
+        ``at_design`` and ``at_state``.
 
         Parameters
         ----------
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
 
         Returns
@@ -261,70 +258,67 @@ class UserSolver(object):
         """
         return 0
 
-    def multiply_dCdX(self, at_design, at_state, vec, result):
+    def multiply_dCdX(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:
 
-        * Linearize the equality constraints about the design point in
-          ``self.kona_design[at_design]`` and the state variables in
-          ``self.kona_state[at_state]``.
+        * Linearize the constraint jacobian about the design point in
+          ``at_design`` and the state variables in ``at_state``.
 
         * Multiply the design component of the constraint jacobian with
-          the vector stored in ``self.kona_design[vec]``.
+          the vector stored in ``in_vec``.
 
-        * Store the result in ``self.kona_dual[result]``.
+        * Store the result in ``out_vec``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
         """
         pass
 
-    def multiply_dCdU(self, at_design, at_state, vec, result):
+    def multiply_dCdU(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:
 
-        * Linearize the equality constraints about the design point in
-          ``self.kona_design[at_design]`` and the state variables in
-          ``self.kona_state[at_state]``.
+        * Linearize the constraint jacobian about the design point in
+          ``at_design`` and the state variables in ``at_state``.
 
         * Multiply the state component of the constraint jacobian with
-          the vector stored in ``self.kona_state[vec]``.
+          the vector stored in ``in_vec``.
 
-        * Store the result in ``self.kona_dual[result]``.
+        * Store the result in ``out_vec``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
         """
         pass
 
-    def multiply_dCdX_T(self, at_design, at_state, vec, result):
+    def multiply_dCdX_T(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:
 
-        * Linearize the equality constraints about the design point in
-          ``self.kona_design[at_design]`` and the state variables in
-          ``self.kona_state[at_state]``.
+        * Linearize the constraint jacobian about the design point in
+          ``at_design`` and the state variables in ``at_state``.
 
         * Multiply the transposed design component of the constraint jacobian
-          with the vector stored in ``self.kona_dual[vec]``.
+          with the vector stored in ``in_vec``.
 
-        * Store the result in ``self.kona_design[result]``.
+        * Store the result in ``out_vec``.
 
         .. note::
 
@@ -333,48 +327,47 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
         """
-        self.kona_design[result] = np.zeros(self.num_design)
+        out_vec.data[:] = 0.
 
-    def multiply_dCdU_T(self, at_design, at_state, vec, result):
+    def multiply_dCdU_T(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:
 
-        * Linearize the equality constraints about the design point in
-          ``self.kona_design[at_design]`` and the state variables in
-          ``self.kona_state[at_state]``.
+        * Linearize the constraint jacobian about the design point in
+          ``at_design`` and the state variables in ``at_state``.
 
         * Multiply the transposed state component of the constraint jacobian
-          with the vector stored in ``self.kona_dual[vec]``.
+          with the vector stored in ``in_vec``.
 
-        * Store the result in ``self.kona_state[result]``.
+        * Store the result in ``out_vec``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        vec : int
-            Storage index for the vector to be operated on.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        in_vec : BaseVector-like
+            Vector to be operated on.
+        out_vec : BaseVector-like
             Location where user should store the result.
         """
         pass
 
-    def eval_dFdX(self, at_design, at_state, result):
+    def eval_dFdX(self, at_design, at_state, store_here):
         """
         Evaluate the design component of the objective gradient at the
-        design point stored in ``self.kona_design[vec]`` and store the
-        result in ``self.kona_design[result]``.
+        design point stored in ``at_design`` and the state variables stored in
+        ``at_state``. Store the result in ``store_here``.
 
         .. note::
 
@@ -382,37 +375,36 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        store_here : BaseVector-like
             Location where user should store the result.
         """
         raise NotImplementedError
 
-    def eval_dFdU(self, at_design, at_state, result):
+    def eval_dFdU(self, at_design, at_state, store_here):
         """
-        Evaluate the state component of the objective gradient at the
-        design point stored in ``self.kona_state[vec]`` and store the
-        result in ``self.kona_state[result]``.
+        Evaluate the design component of the objective gradient at the
+        design point stored in ``at_design`` and the state variables stored in
+        ``at_state``. Store the result in ``store_here``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-like
+            Current state vector.
+        store_here : BaseVector-like
             Location where user should store the result.
         """
         pass
 
-    def init_design(self, store):
+    def init_design(self, store_here):
         """
         Initialize the first design point. Store the design vector at
-        ``self.kona_design[store]``. The optimization will start from
-        here.
+        ``store_here``. The optimization will start from this point.
 
         .. note::
 
@@ -423,27 +415,28 @@ class UserSolver(object):
     def solve_nonlinear(self, at_design, result):
         """
         Solve the non linear system at the design point stored in
-        ``self.kona_design[at_design]. Store the calculated state variables (u)
-        under ``self.kona_state[result]``.
+        ``at_design``. Store the calculated state variables (u) under
+        ``result``.
 
-        .. math:: \mathcal{K}\mathbf{u} = \mathbf{F}
+        A simple example is provided below, where the stiffness matrix is
+        nonlinearly dependent on the solution.
 
-        If the linearized system solution requires an iterative method, the
-        user should return a ``-1`` integer when this solution fails to
-        converge. Kona can use this information to backtrack on the
-        optimization and ensure that the non-linear system is consistent at
-        each step.
+        .. math:: \mathcal{K}(\mathbf{u})\mathbf{u} = \mathbf{F}
+
+        If the nonlinear solution fails to converge, the user should return a
+        ``-1`` integer in order to let Kona decide to backtrack on the
+        optimization.
 
         Similarly, in the case of correct convergence, the user is encouraged
         to return the number of preconditioner calls it took to solve the
-        linearized system. Kona uses this information to track the
+        nonlinear system. Kona uses this information to track the
         computational cost of the optimization.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        result : BaseVector-like
             Location where user should store the result.
 
         Returns
@@ -451,38 +444,40 @@ class UserSolver(object):
         int : Number of preconditioner calls required for the solution.
         """
         converged = True
+        cost = 0
         if converged:
             # You can return the number of preconditioner calls here.
             # This is used by Kona to track computational cost.
-            return 0
+            return cost
         else:
             # Must return negative cost to Kona when your system solve fails to
             # converge. This is important because it helps Kona determine when
             # it needs to back-track on the optimization.
             return -1
 
-    def solve_linear(self, at_design, at_state, rhs, tol, result):
+    def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
         """
-        Evaluate the state jacobian, ``A``, at the design point stored in
-        ``self.kona_design[at_design]`` and the state variables stored in
-        ``self.kona_state[at_state]``. Solve the linear system
-        :math:`A\\mathbf{u}=\\mathbf{v}` where the right hand side vector,
-        :math:`\\mathbf{v}`, is the vector stored in ``self.kona_state[rhs]``.
+        Evaluate the state jacobian, :math:`\\frac{\partial R}{\partial U}`,
+        at the design point stored in ``at_design`` and the state variables
+        stored in ``at_state``. Solve the linear system
+        :math:`\\frac{\partial R}{\partial U}\\mathbf{u}=\\mathbf{v}` where the
+        right hand side vector, :math:`\\mathbf{v}`, is the vector stored in
+        ``rhs_vec``.
 
         The solution vector, :math:`\\mathbf{u}`, should be stored at
-        ``self.kona_state[result]``.
+        ``result``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        rhs : int
-            Storage index for the right hand side vector.
-        tol : float
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-line
+            Current state vector.
+        rhs_vec : BaseVector-like
+            Right hand side vector.
+        rel_tol : float
             Tolerance that the linear system should be solved to.
-        result : int
+        result : BaseVector-like
             Location where user should store the result.
 
         Returns
@@ -491,35 +486,30 @@ class UserSolver(object):
         """
         return 0
 
-    def solve_adjoint(self, at_design, at_state, rhs, tol, result):
+    def solve_adjoint(self, at_design, at_state, rhs_vec, tol, result):
         """
-        Evaluate the state jacobian, ``A``, at the design point stored in
-        ``self.kona_design[at_design]`` and the state variables stored in
-        ``self.kona_state[at_state]``. Solve the adjoint system
-        :math:`A^T\\mathbf{u}=\\mathbf{v}`
-        where the right hand side vector, :math:`\\mathbf{v}`, is:
-
-            1. If ``rhs == -1``, then :math:`\\mathbf{v}` is the negative
-            derivative of the objective function with respect to the state
-            variables (:math:`\\mathbf{v} = -\\frac{dJ}{du}).
-
-            2. Otherwise, :math:`\\mathbf{v}` is the vector that is stored in
-            ``self.kona_state[rhs]``.
+        Evaluate the transposed state jacobian,
+        :math:`\\frac{\partial R}{\partial U}^T`, at the design point stored in
+        ``at_design`` and the state variables stored in ``at_state``. Solve the
+        adjoint system
+        :math:`\\frac{\partial R}{\partial U}^T\\mathbf{u}=\\mathbf{v}` where
+        the right hand side vector, :math:`\\mathbf{v}`, is the vector stored
+        in ``rhs_vec``.
 
         The solution vector, :math:`\\mathbf{u}`, should be stored at
-        ``self.kona_state[result]``.
+        ``result``.
 
         Parameters
         ----------
-        at_design : int
-            Storage index for the current design vector.
-        at_state : int
-            Storage index for the current state vector.
-        rhs : int
-            Storage index for the right hand side vector.
-        tol : float
-            Tolerance that the adjoint system should be solved to.
-        result : int
+        at_design : BaseVector-like
+            Current design vector.
+        at_state : BaseVector-line
+            Current state vector.
+        rhs_vec : BaseVector-like
+            Right hand side vector.
+        rel_tol : float
+            Tolerance that the linear system should be solved to.
+        result : BaseVector-like
             Location where user should store the result.
 
         Returns
@@ -530,18 +520,25 @@ class UserSolver(object):
 
     def user_info(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
         """
-        Kona will evaluate this method at every optimization iteration. It
-        can be used to print out useful information to monitor the process, or
-        to save design points of the intermediate iterations.
+        Kona will evaluate this method at every outer optimization iteration.
+        It can be used to print out useful information to monitor the process,
+        or to save design points of the intermediate iterations.
 
-        The storage indexes for current design vector, current state vector and
-        current adjoint vector have been made available to the user. These can
-        be accessed via:
+        The current design vector, current state vector and current adjoint
+        vector have been made available to the user via the arguments.
 
-        Current Design Variables = ``self.kona_design[curr_design]``
-        Current State Variables = ``self.kona_state[curr_state]``
-        Current Adjoint Variables ``self.kona_state[curr_adj]``
-        Optimization iteration number = ``num_iter``
+        Parameters
+        ----------
+        curr_design : BaseVector-like
+            Current design point.
+        curr_state : BaseVector-like
+            Current state variables.
+        curr_adj : BaseVector-like
+            Currently adjoint variables for the objective.
+        curr_dual : BaseVector-like
+            Current dual vector in storage. (This might be unnecessary!)
+        num_iter : int
+            Current outer iteration number.
         """
         pass
 
