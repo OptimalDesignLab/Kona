@@ -499,7 +499,7 @@ class UserSolver(object):
         :math:`A^T\\mathbf{u}=\\mathbf{v}`
         where the right hand side vector, :math:`\\mathbf{v}`, is:
 
-            1. If ``rhs == -1``, then :math:`\\mathbf{v}` is the negative
+            1. If ``rhs == None``, then :math:`\\mathbf{v}` is the negative
             derivative of the objective function with respect to the state
             variables (:math:`\\mathbf{v} = -\\frac{dJ}{du}).
 
