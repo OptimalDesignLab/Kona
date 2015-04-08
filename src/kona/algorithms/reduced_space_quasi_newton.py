@@ -1,6 +1,7 @@
 import sys
 
-from kona.linalg.matrices.composite import LimitedMemoryBFGS, LimitedMemorySR1
+from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
+from kona.linalg.matrices.lsr1 import LimitedMemorySR1
 from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
 from kona.algorithms.util.merit import ObjectiveMerit
 from kona.errors import BadKonaOption

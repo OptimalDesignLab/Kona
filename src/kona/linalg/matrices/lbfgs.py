@@ -1,9 +1,9 @@
-from quasi_newton import QuasiNewton
+from quasi_newton import QuasiNewtonApprox
 import numpy
 import sys
 
 
-class LimitedMemoryBFGS(QuasiNewton):
+class LimitedMemoryBFGS(QuasiNewtonApprox):
     """ Limited-memory BFGS
     
     Attributes
@@ -55,7 +55,7 @@ class LimitedMemoryBFGS(QuasiNewton):
         self.s_dot_s_list.append(two_norm)
         self.s_dot_y_list.append(curvature)
 
-    def apply_inv_Hessian_approx(self, u_vec, v_vec):
+    def solve(self, u_vec, v_vec, rel_tol=1e-15):
         lambda0 = self.lambda0
         s_list = self.s_list
         y_list = self.y_list

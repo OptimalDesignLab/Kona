@@ -1,9 +1,9 @@
-from quasi_newton import QuasiNewton
+from quasi_newton import QuasiNewtonApprox
 import numpy
 import sys
 
 
-class LimitedMemorySR1(QuasiNewton):
+class LimitedMemorySR1(QuasiNewtonApprox):
     """ Limited memory symmetric rank-one update
 
     Attributes
@@ -54,7 +54,7 @@ class LimitedMemorySR1(QuasiNewton):
         self.s_list.append(s_new)
         self.y_list.append(y_new)
 
-    def apply_inv_Hessian_approx(self, u_vec, v_vec):
+    def solve(self, u_vec, v_vec, rel_tol=1e-15):
         lambda0 = self.lambda0
         norm_init = self.norm_init
         s_list = self.s_list
@@ -111,7 +111,7 @@ class LimitedMemorySR1(QuasiNewton):
             v_vec.equals_ax_p_by(1.0, v_vec,
                                  alpha[k] * z_list[k].inner(u_vec), z_list[k])
 
-    def apply_Hessian_approx(u_vec, v_vec):
+    def apply(u_vec, v_vec):
         s_list = self.s_list
         y_list = self.y_list
         num_stored = len(s_list)

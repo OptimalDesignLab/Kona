@@ -5,7 +5,7 @@ import numpy as np
 from kona.linalg.memory import KonaMemory
 from kona.linalg.vectors.common import PrimalVector
 from kona.user.user_solver import UserSolver
-from kona.algorithms.lbfgs import LimitedMemoryBFGS
+from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
 
 class QuasiNewtonTestCase(unittest.TestCase):
     '''Test case for quasi-Newton classes'''
@@ -50,19 +50,19 @@ class QuasiNewtonTestCase(unittest.TestCase):
         s_new._data.data[:] = 0.0
         y_new._data.data[:] = 0.0
         s_new._data.data[0] = 1.0
-        lbfgs.apply_inv_Hessian_approx(s_new, y_new)
+        lbfgs.solve(s_new, y_new)
         self.assertRelError(y_new._data.data,
                             np.array([1.,0.,0.]), atol=1e-15)
         # testing second column of H*H^{-1}
         s_new._data.data[:] = 0.0
         s_new._data.data[1] = 100.0
-        lbfgs.apply_inv_Hessian_approx(s_new, y_new)
+        lbfgs.solve(s_new, y_new)
         self.assertRelError(y_new._data.data,
                             np.array([0.,1.,0.]), atol=1e-15)
         # testing second column of H*H^{-1}
         s_new._data.data[:] = 0.0
         s_new._data.data[2] = 10.0
-        lbfgs.apply_inv_Hessian_approx(s_new, y_new)
+        lbfgs.solve(s_new, y_new)
         self.assertRelError(y_new._data.data,
                             np.array([0.,0.,1.]), atol=1e-15)
 

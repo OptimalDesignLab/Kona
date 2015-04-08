@@ -1,6 +1,7 @@
+from composite import Hessian
 import sys
 
-class QuasiNewton(object):
+class QuasiNewtonApprox(Hessian):
     """ Base class for quasi-Newton methods
 
     Attributes
@@ -41,6 +42,3 @@ class QuasiNewton(object):
 
         self.s_list.append(s_new)
         self.y_list.append(y_new)
-
-    def apply_inv_Hessian_approx(self, u_vec, v_vec):
-        pass
