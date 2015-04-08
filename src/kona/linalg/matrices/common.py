@@ -95,12 +95,12 @@ class dRdX(KonaMatrix):
         if not self._transposed:
             self._check_type(in_vec, PrimalVector)
             self._check_type(out_vec, StateVector)
-            self._solver.multiply_jac_d(self._primal._data, self._state._data,
+            self._solver.multiply_dRdX(self._primal._data, self._state._data,
                                         in_vec._data, out_vec._data)
         else:
             self._check_type(in_vec, StateVector)
             self._check_type(out_vec, PrimalVector)
-            self._solver.multiply_tjac_d(self._primal._data, self._state._data,
+            self._solver.multiply_dRdX_T(self._primal._data, self._state._data,
                                         in_vec._data, out_vec._data)
 
 class dRdU(KonaMatrix):
@@ -110,10 +110,10 @@ class dRdU(KonaMatrix):
         self._check_type(in_vec, StateVector)
         self._check_type(out_vec, StateVector)
         if not self._transposed:
-            self._solver.multiply_jac_s(self._primal._data, self._state._data,
+            self._solver.multiply_dRdU(self._primal._data, self._state._data,
                                         in_vec._data, out_vec._data)
         else:
-            self._solver.multiply_tjac_s(self._primal._data, self._state._data,
+            self._solver.multiply_dRdU_T(self._primal._data, self._state._data,
                                         in_vec._data, out_vec._data)
 
     def solve(self, rhs_vec, rel_tol, solution):
@@ -140,8 +140,8 @@ class dRdU(KonaMatrix):
         self._check_type(solution, StateVector)
         if not self._transposed:
             self._check_type(rhs_vec, StateVector)
-            self._solver.solve_linearsys(self._primal._data, self._state.data,
-                                         rhs_vec, rel_tol, solution._data)
+            self._solver.solve_linear(self._primal._data, self._state.data,
+                                      rhs_vec, rel_tol, solution._data)
         else:
             if rhs_vec is not None:
                 self._check_type(rhs_vec, StateVector)
@@ -156,12 +156,12 @@ class dCdX(KonaMatrix):
         if not self._transposed:
             self._check_type(in_vec, PrimalVector)
             self._check_type(out_vec, DualVector)
-            self._solver.multiply_ceqjac_d(self._primal._data, self._state._data,
+            self._solver.multiply_dCdX(self._primal._data, self._state._data,
                                            in_vec._data, out_vec._data)
         else:
             self._check_type(in_vec, DualVector)
             self._check_type(out_vec, PrimalVector)
-            self._solver.multiply_tceqjac_d(self._primal._data, self._state._data,
+            self._solver.multiply_dCdX_T(self._primal._data, self._state._data,
                                             in_vec._data, out_vec._data)
 
 class dCdU(KonaMatrix):
@@ -171,12 +171,12 @@ class dCdU(KonaMatrix):
         if not self._transposed:
             self._check_type(in_vec, StateVector)
             self._check_type(out_vec, DualVector)
-            self._solver.multiply_ceqjac_s(self._primal._data, self._state._data,
+            self._solver.multiply_dCdU(self._primal._data, self._state._data,
                                            in_vec._data, out_vec._data)
         else:
             self._check_type(in_vec, DualVector)
             self._check_type(out_vec, StateVector)
-            self._solver.multiply_tceqjac_s(self._primal._data, self._state._data,
+            self._solver.multiply_dCdU_T(self._primal._data, self._state._data,
                                             in_vec._data, out_vec._data)
 
 class IdentityMatrix(KonaMatrix):

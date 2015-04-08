@@ -177,9 +177,9 @@ class PrimalVector(KonaVector):
         self._memory.solver.init_design(self._data)
 
     def equals_objective_gradient(self, at_design, at_state):
-        self._memory.solver.eval_obj_d(at_design._data,
-                                       at_state._data,
-                                       self._data)
+        self._memory.solver.eval_dFdX(at_design._data,
+                                      at_state._data,
+                                      self._data)
 
     def equals_reduced_gradient(self, at_design, at_state, at_adjoint, work):
         pass
@@ -194,7 +194,7 @@ class StateVector(KonaVector):
     to state vectors.
     """
     def equals_objective_partial(self, at_design, at_state):
-        self._memory.solver.eval_obj_s(
+        self._memory.solver.eval_dFdU(
             at_design._data, at_state._data, self._data
             )
 
@@ -204,7 +204,7 @@ class StateVector(KonaVector):
                                           self._data)
 
     def equals_primal_solution(self, at_design):
-        self._memory.solver.solve_system(at_design._data, self._data)
+        self._memory.solver.solve_nonlinear(at_design._data, self._data)
 
 class DualVector(KonaVector):
     """
