@@ -420,7 +420,7 @@ class UserSolver(object):
         """
         raise NotImplementedError
 
-    def solve_system(self, at_design, result):
+    def solve_nonlinear(self, at_design, result):
         """
         Solve the non linear system at the design point stored in
         ``self.kona_design[at_design]. Store the calculated state variables (u)
@@ -461,7 +461,7 @@ class UserSolver(object):
             # it needs to back-track on the optimization.
             return -1
 
-    def solve_linearsys(self, at_design, at_state, rhs, tol, result):
+    def solve_linear(self, at_design, at_state, rhs, tol, result):
         """
         Evaluate the state jacobian, ``A``, at the design point stored in
         ``self.kona_design[at_design]`` and the state variables stored in
