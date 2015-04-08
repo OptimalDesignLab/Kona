@@ -11,8 +11,13 @@ class Hessian(object):
     def solve(self, rhs_vec, rel_tol):
         pass
 
-class LimitedMemoryBFGS(Hessian):
+class QuasiNewtonApprox(Hessian):
     pass
+
+class LimitedMemoryBFGS(QuasiNewtonApprox):
+    pass
+
+class LimitedMemorySR1(QuasiNewtonApprox):
 
 class ReducedKKTMatrix(object):
     pass

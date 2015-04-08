@@ -1,4 +1,8 @@
-from kona.linalg.memory import KonaMemory
+import sys
+
+from kona.linalg.matrices.composite import LimitedMemoryBFGS, LimitedMemorySR1
+from kona.algorithms.util.linesearch import StrongWolfe, BackTracking, ObjectiveMerit
+from kona.util import BadKonaOption
 
 class ReducedSpaceQuasiNewton(object):
     """
