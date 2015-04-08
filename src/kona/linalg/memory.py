@@ -36,7 +36,8 @@ class VectorFactory(object):
 
     def request_num_vectors(self, count):
         if count < 1:
-            raise ValueError('VectorFactory() >> Cannot request less than 1 vector.')
+            raise ValueError('VectorFactory() >> ' + \
+                             'Cannot request less than 1 vector.')
         self.num_vecs += count
 
     def generate(self):
@@ -44,16 +45,16 @@ class VectorFactory(object):
             data = self._memory.pop_vector(self._vec_type)
             return self._vec_type(self._memory, data)
         else:
-            raise RuntimeError('Can not generate vectors before memory allocation has happened')
+            raise RuntimeError('VectorFactory() >> ' + \
+                               'Must allocate memory before generating vector.')
 
-            
 class KonaMemory(object):
     """
     All-knowing Big Brother abstraction layer for Kona.
 
     Attributes
     ----------
-    user_obj : UserSolver or derivative
+    solver : UserSolver or derivative
         A user-defined solver object that implements specific elementary tasks.
     design_factory, state_factory, dual_factory: VectorFactory
         Factory objects for generating Kona's abstracted vector classes.
@@ -66,14 +67,14 @@ class KonaMemory(object):
 
     Parameters
     ----------
-    user_obj : UserSolver or derivative
+    solver : UserSolver or derivative
         A user-defined solver object that implements specific elementary tasks.
     """
 
-    def __init__(self, user_obj=None):
+    def __init__(self, solver=None):
         # assign user object
-        self.user_obj = user_obj
-        self.rank = self.user_obj.get_rank()
+        self.solver = solver
+        self.rank = self.solver.get_rank()
 
         # allocate vec assignments
         self.vector_stack = {
@@ -140,7 +141,7 @@ class KonaMemory(object):
         if self.is_allocated:
             raise RuntimeError('Memory allready allocated, can-not re-allocate')
 
-        allocator = self.user_obj.allocator
+        allocator = self.solver.allocator
 
         self.vector_stack[PrimalVector] = allocator.alloc_primal(self.primal_factory.num_vecs)
         self.vector_stack[StateVector] = allocator.alloc_state(self.state_factory.num_vecs)
