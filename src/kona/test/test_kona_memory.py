@@ -40,7 +40,7 @@ class VectorFactoryTestCase(unittest.TestCase):
         try:
             vf.generate()
         except RuntimeError as err:
-            self.assertEqual(str(err), 'Can not generate vectors before memory allocation has happened')
+            self.assertEqual(str(err), 'VectorFactory() >> Must allocate memory before generating vector.')
         else:
             self.fail('RuntimeError')
 

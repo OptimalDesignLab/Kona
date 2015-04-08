@@ -31,7 +31,7 @@ class Optimizer(object):
 
     def _read_options(self, optns):
         if optns is None:
-            if os.path.isfile('kona.cfg')
+            if os.path.isfile('kona.cfg'):
                 pass
             else:
                 self._optns = {}
