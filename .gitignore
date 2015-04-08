@@ -55,3 +55,24 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# text and latex files
+*.aux 
+*.dvi
+*.toc
+*.log
+*.ps
+*.toc
+*.idx
+*.ind
+*.ilg
+*.out
+*.txt
+*.pdf
+
+# Mac files
+*.DS_Store
+
+# ignore temporary files created by emacs, etc.
+*~
+\#*
