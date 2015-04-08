@@ -18,6 +18,6 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
     pass
 
 class LimitedMemorySR1(QuasiNewtonApprox):
-
+    
 class ReducedKKTMatrix(object):
     pass

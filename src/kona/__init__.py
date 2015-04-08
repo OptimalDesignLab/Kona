@@ -5,7 +5,7 @@ import user
 import examples
 
 
-# Helpers to make the BadKonaOption work 
+# Helpers to make the BadKonaOption work
 
 def make_optn_key_str(keys):
     return "".join(["['%s']"%k for k in keys])
