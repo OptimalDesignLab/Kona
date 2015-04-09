@@ -25,8 +25,7 @@ kEpsilon = np.finfo(float).eps
 #===================================================================================================
 
 def sign(x, y):
-
-    "x: float     y: float"
+    """x = sign(y)* abs(x)"""
 
     if y == 0.0:
         return 0.0
@@ -54,7 +53,7 @@ def CalcEpsilon(eval_at_norm, mult_by_norm):
 
 
 def eigenvalues(A):
-    egi_vals, eig_vec = np.linalg.eig(A)
+    eig_vals, eig_vec = np.linalg.eig(A)
     idx = eig_vals.argsort() # eig doesn't sort, so we have to
     eig_vals = eig_vals[idx]
     eig_vec = eig_vec[idx]
