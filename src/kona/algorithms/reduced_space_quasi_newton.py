@@ -29,11 +29,11 @@ class ReducedSpaceQuasiNewton(object):
             self.quasi_newton = LimitedMemorySR1(primal_factory, optns['quasi_newton'],
                                                  out_file)
 
-        qn = optns['quasi_newton']['type']
-        if qn:
-            self.quasi_newton = qn(primal_factory, optns['quasi_newton'],out_file)
-        else:
-            raise BadKonaOption(optns, ('quasi_newton', 'type'))
+        # qn = optns['quasi_newton']['type']
+        # if qn:
+        #     self.quasi_newton = qn(primal_factory, optns['quasi_newton'],out_file)
+        # else:
+        #     raise BadKonaOption(optns, ('quasi_newton', 'type'))
 
         # set the type of line-search algorithm
         if optns['line_search']['type'] == 'wolfe':

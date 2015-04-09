@@ -80,6 +80,12 @@ class PrimalVectorTestCase(unittest.TestCase):
         self.pv.times(5.0)
         self.assertEqual(self.pv.inner(self.pv), 1000.0)
 
+        try:
+            self.pv.times(self.pv)
+        except TypeError as err:
+            self.assertEqual(str(err), 'Argument must be a float.')
+        else:
+            self.fail('TypeError expected')
 
     def test_divide_by(self):
         self.pv.equals(10)
@@ -111,6 +117,26 @@ class PrimalVectorTestCase(unittest.TestCase):
         at_state.equals(2)
         self.pv.equals_objective_partial(at_design, at_state)
         self.assertEqual(self.pv.inner(self.pv), 4000)
+
+    def test_equals_reduced_gradient(self):
+        self.fail('Untested')
+
+    def test_equals_lagrangian_reduced_gradient(self):
+        self.fail('Untested')
+
+
+class TestCasePrimalVectorIDF():
+
+    def test_restrict_target_state(self):
+        self.fail('Untested')
+
+    def test_restrict_real_design(self):
+        self.fail('Untested')
+
+    def test_convert(self):
+        self.fail('Untested')
+
+
 
 if __name__ == "__main__":
     unittest.main()

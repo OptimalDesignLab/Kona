@@ -154,11 +154,7 @@ class KonaVector(object):
         float : L2 norm.
         """
         prod = self.inner(self)
-        if prod < 0:
-            raise ValueError('KonaVector.norm2 >> ' + \
-                             'Inner product is negative!')
-        else:
-            return np.sqrt(prod)
+        return np.sqrt(prod)
 
 class PrimalVector(KonaVector):
     """
