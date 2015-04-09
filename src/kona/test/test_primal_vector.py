@@ -3,10 +3,6 @@ import numpy as np
 
 from kona.linalg.memory import KonaMemory
 
-from kona.user import BaseVector
-
-from kona.linalg.vectors.common import KonaVector
-
 from dummy_solver import DummySolver
 
 class PrimalVectorTestCase(unittest.TestCase):
