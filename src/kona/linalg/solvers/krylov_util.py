@@ -1,10 +1,10 @@
 
 """
-# question:  
+# question:
 # 3  line 85 dsyev_
 # 4  line 140 doubts
-# 5  line 153 228 c++ iterator counterparts in python?? 
-# 7  line 512  recast in c++ ??                                   # 
+# 5  line 153 228 c++ iterator counterparts in python??
+# 7  line 512  recast in c++ ??                                   #
 
 
 
@@ -19,16 +19,14 @@ from usermemory import UserMemory
 from vectors import DesignVector
 
 """
-Translated from krylov.cpp 
+Translated from krylov.cpp
 
 Version on the move...
 """
 
-# const double kEpsilon = numeric_limits<double>::epsilon();   Tranlate this!! 
+# const double kEpsilon = numeric_limits<double>::epsilon();   Tranlate this!!
 
 kEpsilon = np.finfo(float).eps
-
-#===================================================================================================
 
 def sign(x, y):
 
@@ -36,17 +34,15 @@ def sign(x, y):
 
     if y == 0.0:
         return 0.0
-    else: 
+    else:
         if y < 0:
             return -abs(x)
         else:
             return abs(x)
 
-#===================================================================================================
-
 def CalcEpsilon(eval_at_norm, mult_by_norm):
-    """ Type: 
-    eval_at_norm : double  
+    """ Type:
+    eval_at_norm : double
     mult_by_norm : double   """
 
     if (mult_by_norm < kEpsilon*eval_at_norm) or (mult_by_norm < kEpsilon):
@@ -58,9 +54,6 @@ def CalcEpsilon(eval_at_norm, mult_by_norm):
             return sqrt(kEpsilon)/mult_by_norm
         else:
             return sqrt(kEpsilon)*eval_at_norm/mult_by_norm
-
-#===================================================================================================
-
 
 def eigenvalues(A, eig):
     egi_vals, eig_vec = np.linalg.eig(A)
@@ -98,13 +91,13 @@ def eigenvalues(A, eig):
 #     # work = np.zeros(lwork)
 
 #     # ##########################
-#     # # ublas::vector<double>::iterator tau = QR.end() - ncol;    ## ??? 
+#     # # ublas::vector<double>::iterator tau = QR.end() - ncol;    ## ???
 #     # # dgeqrf_(&m, &n, &*QR.begin(), &m, &*tau, &*work.begin(), &lwork, &info);
 
 #     q, r = np.linalg.qr(QR)
 #     ##########################
 
-#     if info!=0:    
+#     if info!=0:
 #         raise ValueError('krylov.cpp (factorQR): LAPACK routine dgeqrf failed with info ='  + info)
 
 
@@ -116,31 +109,31 @@ def eigenvalues(A, eig):
 #     if (nrow < 1) or (ncol < 1):
 #         raise ValueError('krylov.cpp (invertR): matrix dimensions must be greater than 0.')
 
-#     if nrow < ncol: 
+#     if nrow < ncol:
 #         raise ValueError('krylov.cpp (invertR): number of rows must be greater than or equal the number of columns.')
 
 #     if (len(b) < ncol) or (len(x) < ncol):
 #         raise ValueError('krylov.cpp (invertR): vector b and/or x are smaller than size of R.')
 
 #     # copy rhs vector b into x (which is later overwritten with solution)
-#     x = b 
+#     x = b
 
 #     uplo = 'U'
 #     trans = 'N'
 
-#     if transpose: 
+#     if transpose:
 #         trans = 'T'
 
 #     diag = 'N'
 #     m = nrow
 #     n = ncol
 #     nrhs = 1
- 
+
 #      ####################
 #     dtrtrs_(&uplo, &trans, &diag, &n, &nrhs, &*QR.begin(), &m, &*x.begin(), &n, &info);
 #     ####################
 
-#     if info>0 : 
+#     if info>0 :
 #         raise ValueError('krylov.cpp (solveR): the' + info + '-th diagonal entry of R is zero')
 
 #     else:
@@ -156,18 +149,18 @@ def eigenvalues(A, eig):
 #     if (nrow < 1) or (ncol < 1):
 #         raise ValueError('krylov.cpp (applyQ): matrix dimensions must be greater than 0.')
 
-#     if nrow < ncol: 
+#     if nrow < ncol:
 #         raise ValueError('krylov.cpp (applyQ): number of rows must be greater than or equal the number of columns.')
 
-#     if (len(b) < nrow) or (len(x) < nrow): 
+#     if (len(b) < nrow) or (len(x) < nrow):
 #         raise ValueError('krylov.cpp (applyQ): vector b and/or x are smaller than nrow.')
 
 #     # copy rhs vector b into x (which is later overwritten with solution)
-#     x = b 
+#     x = b
 #     side = 'L'
 #     trans = 'N'
 
-#     if transpose: 
+#     if transpose:
 #         trans = 'T'
 
 #     m = nrow
@@ -182,7 +175,7 @@ def eigenvalues(A, eig):
 #     dormqr_(&side, &trans, &m, &nrhs, &n, &*QR.begin(), &m, &*tau, &*x.begin(),&m, &*work.begin(), &lwork, &info);
 #     ##########################
 
-#     if info!=0:    
+#     if info!=0:
 #         raise ValueError('krylov.cpp (applyQ): LAPACK routine dormqr failed with info = ' + info)
 
 
@@ -191,7 +184,7 @@ def eigenvalues(A, eig):
 
 # def factorCholesky(n, A, UTU):
 
-#     if n<1: 
+#     if n<1:
 #         raise ValueError('krylov.cpp (factorCholesky): matrix dimension must be greater than 0.')
 
 #     if (A.shape[0] < n) or (A.shape[1] < n):
@@ -213,7 +206,7 @@ def eigenvalues(A, eig):
 #     dpotrf_(&uplo, &Adim, &*UTU.begin(), &Adim, &info);
 #     ###########################
 
-#     if info < 0: 
+#     if info < 0:
 #         raise ValueError('krylov.cpp (factorCholesky): LAPACK routine dpotrf failed with info =' + info)
 
 
@@ -224,16 +217,16 @@ def eigenvalues(A, eig):
 #     if n<1:
 #         raise ValueError('krylov.cpp (applyU): matrix dimension must be greater than 0.')
 
-#     if (b.size() < n) or (x.size() < n): 
+#     if (b.size() < n) or (x.size() < n):
 #         raise ValueError('krylov.cpp (applyU): vector b and/or x are smaller than n.')
 
-#     x = b 
+#     x = b
 
 #     side = 'L'
 #     uplo = 'U'
 #     trans = 'N'
 
-#     if transpose: 
+#     if transpose:
 #         trans = 'T'
 
 #     diag = 'N'
@@ -247,19 +240,19 @@ def eigenvalues(A, eig):
 
 #===================================================================================================
 
-    
+
 # def computeSVD(nrow, ncol, A, Sigma, U, VT, All_of_U):
 
-#     if (nrow < 1) or (ncol < 1): 
+#     if (nrow < 1) or (ncol < 1):
 #         raise ValueError('krylov.cpp (computeSVD): matrix dimensions must be greater than 0.')
 
 #     if (A.size1() < nrow) or (A.size2() < ncol):
 #         raise ValueError('krylov.cpp (computeSVD): given matrix has fewer rows/columns than given dimensions.')
 
-#     if nrow < ncol: 
+#     if nrow < ncol:
 #         raise ValueError('krylov.cpp (computeSVD): number of rows must be greater than or equal the number of columns.')
 
-#      if All_of_U: 
+#      if All_of_U:
 #         # Resize output vectors and copy A into work array
 #         Sigma.reshape(ncol)
 #         U.reshape(nrow*nrow)
@@ -281,7 +274,7 @@ def eigenvalues(A, eig):
 #                 &*U.begin(), &m, &*VT.begin(), &n, &*work.begin(), &lwork, &info);
 #         ############################
 
-#     else 
+#     else
 #         # Resize output vectors, and copy A into U in column-major ordering
 #         Sigma.reshape(ncol)
 #         U.reshape(nrow*ncol)
@@ -307,7 +300,7 @@ def eigenvalues(A, eig):
 #         dgesvd_(&jobu, &jobvt, &m, &n, &*U.begin(), &m, &*Sigma.begin(), Ujunk, &ldu,
 #                 &*VT.begin(), &n, &*work.begin(), &lwork, &info)
 #         ##############################
-        
+
 #         if (info != 0):
 #             raise ValueError('krylov.cpp (computeSVD): LAPACK routine dgesvd failed with info =' + info)
 
@@ -328,7 +321,7 @@ def generateGivens(dx, dy, s, c):
     if (dx == 0.0) and (dy == 0.0):
         c = 1.0
         s = 0.0
-    elif abs(dy) > abs(dx): 
+    elif abs(dy) > abs(dx):
         tmp = dx/dy
         dx = sqrt(1.0 + tmp*tmp)
         s = sign(1.0/dx, dy)
@@ -353,7 +346,7 @@ def generateGivens(dx, dy, s, c):
 
 # def solveReduced(n, A, rhs, x):
 
-#     if n<1: 
+#     if n<1:
 #         raise ValueError('krylov.cpp (solveReduced): matrix dimensions must be greater than 0.')
 
 #     if (A.shape[0] < n) or (A.shape[1] < n):
@@ -362,13 +355,13 @@ def generateGivens(dx, dy, s, c):
 #     if len(rhs) < n:
 #         raise ValueError('krylov.cpp (solveReduced): given rhs has fewer rows than given dimensions.')
 
-#     if len(x) < n: 
+#     if len(x) < n:
 #         raise ValueError('krylov.cpp (solveReduced): given x has fewer rows than given dimensions.')
 
 #     # LU stores A in column-major ordering (eventually, LU will hold the
-#     # LU-factorization of A    
+#     # LU-factorization of A
 
-#     LU = np.zeros(n*n) 
+#     LU = np.zeros(n*n)
 #     for j in range(n):
 #         for i in range(n):
 #             LU[j*n + i] = A[i,j]
@@ -388,7 +381,7 @@ def generateGivens(dx, dy, s, c):
 #     &info)
 #     #########################
 
-#     if info!=0: 
+#     if info!=0:
 #         raise ValueError('krylov.cpp (solveReduced): LAPACK routine dgesv failed with info = ' + info)
 
 #     # put solution into x
@@ -401,7 +394,7 @@ def generateGivens(dx, dy, s, c):
 
 # def solveReducedMultipleRHS(n, A, nrhs, RHS, X):
 
-#     if (n < 1) or (nrhs < 1): 
+#     if (n < 1) or (nrhs < 1):
 #         raise ValueError('krylov.cpp (solveReducedMultipleRHS): matrix dimensions must be greater than 0.')
 
 #     if (A.shape[0] < n) or (A.shape[1] < n):
@@ -447,7 +440,7 @@ def generateGivens(dx, dy, s, c):
 #     lwork = static_cast<int>(work(0))
 #     ###############################
 
-#     work.reshape(lwork)  
+#     work.reshape(lwork)
 
 #     ###############################
 #     dgelsd_(&Arow, &Arow, &RHScol, &*LU.begin(), &Arow, &*Y.begin(), &Arow,
@@ -455,7 +448,7 @@ def generateGivens(dx, dy, s, c):
 #     &info)
 #     ###############################
 
-#     if info!=0: 
+#     if info!=0:
 #         raise ValueError('krylov.cpp (solveReducedMultipleRHS): LAPACK routine dgelsd failed with info = ' + info)
 
 #     for j in range(nrhs):
@@ -463,7 +456,7 @@ def generateGivens(dx, dy, s, c):
 #             X[i,j] = Y[j*n + i]
 
 
-# def solveReducedHessenberg(n, Hsbg, rhs, x): 
+# def solveReducedHessenberg(n, Hsbg, rhs, x):
 
 #     # initialize...
 #     x = rhs
@@ -488,7 +481,7 @@ def trustFunction(H, g, lambda2, radius):
     while semidefinite:
         regiter = regiter + 1
 
-        try: 
+        try:
             for i in range(n):
                 for j in range(n):
                     Hhat[i,j] = H[i,j]
@@ -496,8 +489,8 @@ def trustFunction(H, g, lambda2, radius):
 
             factorCholesky(n, Hhat, UTU)
             semidefinite = false
-            
-        except factor_failed: 
+
+        except factor_failed:
             diag = diag*100.0
 
         #ifdef VERBOSE_DEBUG
@@ -515,7 +508,7 @@ def trustFunction(H, g, lambda2, radius):
     y = y*(-1.0)     # to "move" g to rhs
 
     # compute the function
-    norm_y = norm_2(y)  
+    norm_y = norm_2(y)
     fnc = 1.0/radius - 1.0/norm_y
 
     # find derivative of the function
@@ -528,50 +521,55 @@ def trustFunction(H, g, lambda2, radius):
     return boost::make_tuple(y, fnc, dfnc)
 
 
-def solveTrustReduced(n, H, radius, g, y, lambda2, pred):
+def solveTrustReduced(n, H, g, radius):
+    """
+    Solves the reduced-space trust-region subproblem
 
-    if n<0 : 
-        raise ValueError('krylov.cpp (solveTrustReduced): matrix dimensions must be greater than 0.')
+    Parameters
+    ----------
+    n : int
+        size of the reduced space
+    H : numpy 2d array
+        reduced-space Hessian
+    g : numpy array
+        gradient in the reduced space
+    radius : float
+        trust-region radius
 
-    if radius < 0.0: 
-        raise ValueError('krylov.cpp (solveTrustReduced): trust-region radius must be nonnegative: radius = ' + radius)
-
-    if (H.shape[0] < n) or (H.shape[1] < n):
-        raise ValueError('krylov.cpp (solveTrustReduced): H matrix dimension(s) smaller than necessary.')
-
-    if (len(g) < n) or (len(y) < n):
-        raise ValueError('krylov.cpp (solveTrustReduced): g and/or y vectors are smaller than necessary.')
+    Returns
+    -------
+    y : numpy array
+        solution to reduced-space trust-region problem
+    lam : float
+        Lagrange multiplier value
+    pred : float
+        predicted decrease in the objective
+    """
+    if n < 0:
+        raise ValueError('reduced-space dimension must be greater than 0')
+    if radius < 0.0:
+        raise ValueError('trust-region radius must be nonnegative: radius = ' + radius)
 
     eig_vals, eig = eigenvalues(H)
-
-    eigmin = eig[0]  
-
-    lambda2 = 0.0 
-    if  eigmin > 1e-12: 
-
-        # //sqrt(kEpsilon)) {
-        # // Hessian is semi-definite on span(Z), so solve for y and check if ||y|| is
-        # // in trust region radius
-
-        ##############################
-        boost::tie(y_tmp, fnc, dfnc) = trustFunction(n, H, g, lambda2, radius)
-        ##############################
-
-        if (fnc < 0.0):   
-            # // i.e. norm_2(y) < raidus
+    eigmin = eig[0]
+    lam = 0.0
+    if eigmin > 1e-12:
+        # Hessian is semi-definite on span(Z), so solve for y and check if ||y||
+        # is in trust region radius
+        y_tmp, fnc, dfnc = trust_function(n, H, g, lam, radius)
+        if (fnc < 0.0): # i.e. norm_2(y) < raidus
             # // compute predicted decrease in objective
             pred = 0.0
-
-            for i in range(n):
-                y[i] = y_tmp[i]
-
+            y = y_tmp[0:n].copy()
+            pred = -y[0:n].dot(0.5*H[0:n][0:n].dot(y[0:n]) + g[0:n])
+            
             for i in range(n):
                 for j in range(n):
                     pred = pred - 0.5*y[i]*H[i,j]*y[j]
                     pred = pred - g[i]*y[i]
 
             # pred = rhs(0)*y(0) - 0.5*pred;
-            return 
+            return
 
         # #ifdef DEBUG
         #     cout << "\t\tsolveTrustReduced: norm_2(y) = " << norm_2(y_tmp) << " > "
@@ -584,7 +582,7 @@ def solveTrustReduced(n, H, radius, g, y, lambda2, pred):
     max_brk = 20
     dlam = 0.1*max(-eigmin, kEpsilon)
     lambda_h = max(-eigmin, 0.0) + dlam
-    
+
     ######################################
     boost::tie(y_tmp, fnc_h, dfnc) = trustFunction(n, H, g, lambda_h, radius)
     ######################################
@@ -623,7 +621,7 @@ def solveTrustReduced(n, H, radius, g, y, lambda2, pred):
     dlam *= 100.0;
     lambda_l = std::max(-eigmin, 0.0) + dlam;
     boost::tie(y_tmp, fnc_l, dfnc) = trustFunction(n, H, g, lambda_l, radius);
-    }  
+    }
 
 
     lambda2 = 0.5*(lambda_l + lambda_h)
@@ -650,17 +648,17 @@ def solveTrustReduced(n, H, radius, g, y, lambda2, pred):
 
     for l in range(maxNewt):
         # check if y lies on the trust region; if so, exit
-        
+
         ######################
         #ifdef VERBOSE_DEBUG
             # cout << "\t\tsolveTrustReduced: Newton iter = " << l << ": res = "
             #     << fabs(fnc) << ": lambda = " << lambda << endl;
             # #endif
 
-        # if  (fabs(fnc) < tol*res0) or fabs(dlam) < lam_tol)  
+        # if  (fabs(fnc) < tol*res0) or fabs(dlam) < lam_tol)
         #     # #ifdef DEBUG
         #         cout << "\t\tsolveTrustReduced: Newton converged with lambda2 = "
-        #         << lambda2 << endl   
+        #         << lambda2 << endl
         #     # #endif
         #     break
 
@@ -674,7 +672,7 @@ def solveTrustReduced(n, H, radius, g, y, lambda2, pred):
             lambda2 = lambda_l + dlam;
             if (lambda_l == lambda2):
                 break
-        else: 
+        else:
             # Newton-step is acceptable
             dlam_old = dlam
             dlam = fnc/dfnc
@@ -687,12 +685,12 @@ def solveTrustReduced(n, H, radius, g, y, lambda2, pred):
         ############################
         boost::tie(y_tmp, fnc, dfnc) = trustFunction(n, H, g, lambda, radius)
         #############################
-        if fnc < 0.0: 
+        if fnc < 0.0:
             lambda_l = lambda2
-        else: 
+        else:
             lambda_h = lambda2
 
-    if (l == maxNewt): 
+    if (l == maxNewt):
     # Newton's method failed to converge
         raise ValueError('krylov.cpp (solveTrustReduced): Newtons method failed to converge to a valid lambda')
 
@@ -702,7 +700,7 @@ def solveTrustReduced(n, H, radius, g, y, lambda2, pred):
         y[i] = y_tmp[i]
 
     for i in range(n):
-        for j in range(n): 
+        for j in range(n):
             pred = pred - 0.5*y[i]*H[i,j]*y[j]
             pred = pred - g[i]*y[i]
 
@@ -736,11 +734,11 @@ def solveUnderdeterminedMinNorm(nrow, ncol, A, b, x):
     # PTmat = np.empty(ncol, ncol)
     # Qmat = np.empty(nrow, nrow)
 
-    # for k in xrange(ncol): 
+    # for k in xrange(ncol):
     #     for j in xrange(ncol):
     #         PTmat[k,j] = P[k*ncol+j]
-    # for k in xrange(nrow): 
-    #     for j in xrange(nrow):  
+    # for k in xrange(nrow):
+    #     for j in xrange(nrow):
     #         Qmat[k,j] = QT[k*nrow+j]
 
     solveUnderdeterminedMinNorm(nrow, ncol, Sigma, Qmat, PTmat, b, x)
@@ -759,21 +757,21 @@ def solveUnderdeterminedMinNorm(nrow, ncol, Sigma, U, VT, b,x):
     if ( (U.shape[0] < nrow) or (U.shape[1] < nrow) or \
         (VT.shape[0] < nrow) or (VT.shape[1] < ncol) or \
         (len(Sigma) < nrow)):
-        raise ValueError('krylov.cpp (solveUnderdeterminedMinNorm): ' + 
-            'matrices of left or right singular vectors, or Sigma matrix,' + 
+        raise ValueError('krylov.cpp (solveUnderdeterminedMinNorm): ' +
+            'matrices of left or right singular vectors, or Sigma matrix,' +
             'are smaller than necessary.')
 
     if (len(b) < nrow) or (len(x) < ncol):
-        raise ValueError('krylov.cpp (solveUnderdeterminedMinNorm):' 
+        raise ValueError('krylov.cpp (solveUnderdeterminedMinNorm):'
             'b and/or x vectors are smaller than necessary.')
 
     # compute rank of A = U*Sigma*VT
     rank = 0
-    for i in range(nrow): 
-        if Sigma[i] > 0.01*Sigma[0]: 
+    for i in range(nrow):
+        if Sigma[i] > 0.01*Sigma[0]:
             rank = rank + 1     # kEpsilon*Sigma(0)) rank++;
 
-    if (rank == 0) or (Sigma(0) < kEpsilon): 
+    if (rank == 0) or (Sigma(0) < kEpsilon):
         raise ValueError('krylov.cpp (solveUnderdeterminedMinNorm): singular values are all zero or negative.')
 
     y = np.zeros(rank)
@@ -789,8 +787,8 @@ def solveUnderdeterminedMinNorm(nrow, ncol, Sigma, U, VT, b,x):
                 x[j] += y[i]*VT[i,j]
 
 
-# =================================================================                  
-def solveLeastSquares(nrow, ncol, A, b, x): 
+# =================================================================
+def solveLeastSquares(nrow, ncol, A, b, x):
 
     if ( nrow < 0 ) or (ncol < 0):
         raise ValueError('krylov.cpp (solveLeastSquares): matrix dimensions must be greater than 0.')
@@ -800,7 +798,7 @@ def solveLeastSquares(nrow, ncol, A, b, x):
 
     # copy A into Awrk in column major ordering
     Awrk = np.zeros(nrow*ncol)
-    for j in range(ncol):   
+    for j in range(ncol):
         for i in range(nrow):
             Awrk[j*nrow + i] = A[i,j]
 
@@ -838,37 +836,37 @@ def solveLeastSquaresOverSphere(nrow, ncol, radius, Sigma, U, VT, b, x):
     if ( (U.shape[0] < nrow) or (U.shape[1] < ncol) or \
         (VT.shape[0] < ncol) or (VT.shape[1] < ncol) or \
         (len(Sigma) < ncol)):
-        raise ValueError('krylov.cpp (solveLeastSquaresOverSphere): ' + 
-            'matrices of left or right singular vectors, or Sigma matrix,' + 
+        raise ValueError('krylov.cpp (solveLeastSquaresOverSphere): ' +
+            'matrices of left or right singular vectors, or Sigma matrix,' +
             'are smaller than necessary.')
 
     if (len(b) < nrow) or (len(x) < ncol):
-        raise ValueError('krylov.cpp (solveLeastSquaresOverSphere):' 
+        raise ValueError('krylov.cpp (solveLeastSquaresOverSphere):'
             'b and/or x vectors are smaller than necessary.')
 
     # compute rank of A = U*Sigma*VT
     rank = 0
-    for i in range(ncol): 
+    for i in range(ncol):
         if (Sigma(i) > kEpsilon*Sigma(0)):
-            rank = rank + 1 
+            rank = rank + 1
 
     if (rank == 0) or (Sigma(0) < kEpsilon):
     raise ValueError('krylov.cpp (solveLeastSquaresOverSphere): singular values are all zero or negative.')
 
     # compute the tentative reduced-space solution, y = Sigma^{-1} U^T b
-    g = np.zeros(rank) 
+    g = np.zeros(rank)
     y = np.zeros(rank)
 
     sol_norm = 0.0;
     for i in range(rank):
-        for j in range(nrow):   
+        for j in range(nrow):
             g[i] += U[j,i]*b[j]
     y[i] = g[i]/Sigma[i]
     sol_norm = sol_norm + y[i]*y[i]
 
     rad2 = radius*radius
     lambda2 = 0.0
-    if (sol_norm > rad2):  
+    if (sol_norm > rad2):
         # tentative solution is outside sphere, so solve secular equation
         phi = sol_norm - rad2
         phi0 = phi
@@ -883,38 +881,38 @@ def solveLeastSquaresOverSphere(nrow, ncol, radius, Sigma, U, VT, b, x):
 
             dphi = 0.0
 
-            for i in range(rank): 
+            for i in range(rank):
                 dphi = dphi - 2.0*pow(Sigma[i]*g[i], 2.0)/pow(Sigma[i]]*Sigma[i]] + lambda2, 3.0)
 
-            lambda2 = lambda2 - phi/dphi    
+            lambda2 = lambda2 - phi/dphi
             sol_norm = 0.0
 
-            for i in range(rank): 
+            for i in range(rank):
                 y[i] = Sigma[i]]*g[i]/(Sigma[i]*Sigma[i] + lambda2)
                 sol_norm = sol_norm + y[i]*y[i]
 
             phi = sol_norm - rad2;
 
 
-        if k == kMaxIter: 
-            print 'fabs(phi) = ' + fabs(phi) 
+        if k == kMaxIter:
+            print 'fabs(phi) = ' + fabs(phi)
             print 'kTol*phi0 = ' + kTol*phi0
-            raise ValueError('krylov.cpp (solveLeastSquaresOverSphere): maximum number of Newton iterations exceeded.') 
+            raise ValueError('krylov.cpp (solveLeastSquaresOverSphere): maximum number of Newton iterations exceeded.')
 
-    for j in range(ncol): 
+    for j in range(ncol):
         x[j]] = 0.0
-        for i in range(rank): 
+        for i in range(rank):
             x[j] = x[j] + y[j]*VT[i,j]
 
 
 # =================================================================
 
-def double trustResidual(n, H, B, g, y, lambda2): 
+def double trustResidual(n, H, B, g, y, lambda2):
 
     if ( n < 0 ):
         raise ValueError('krylov.cpp (trustResidual): matrix dimensions must be greater than 0.')
 
-    if (H.shape[0] < n+1) or (H.shape[1] < n) or (B.shape[0] < n+1) or (B.shape[1] < n): 
+    if (H.shape[0] < n+1) or (H.shape[1] < n) or (B.shape[0] < n+1) or (B.shape[1] < n):
         raise ValueError('krylov.cpp (trustResidual): H and/or B matrix are smaller than necessary.')
 
     if (len(g) < 2*n+1) or (len(y) < n):
@@ -922,31 +920,31 @@ def double trustResidual(n, H, B, g, y, lambda2):
 
 
     # // find SVD of B, and find index s such that
-    # //     1 = Sigma(0) = --- = Sigma(s-1) > Sigma(s)  
+    # //     1 = Sigma(0) = --- = Sigma(s-1) > Sigma(s)
     # // Note: for the given B, the Sigma should lie between 0 and 1 (see pg 603,
     # // Golub and van Loan); check this here too
 
 
     Sigma = np.array
-    P = np.array 
+    P = np.array
     UT = np.array
     computeSVD(n+1, n, B, Sigma, P, UT)
 
     for s in range(n):
-        if (Sigma[s] < - 1E+4*kEpsilon or (Sigma[s] > 1.0+1E+4*kEpsilon): 
+        if (Sigma[s] < - 1E+4*kEpsilon or (Sigma[s] > 1.0+1E+4*kEpsilon):
             raise ValueError('krylov.cpp (trustResidual): Singular values of B are not in [0,1]. check that Z and V have orthogonal columns')
             print "B sigma = "
-            for i in range(n): 
-                print Sigma[i] 
+            for i in range(n):
+                print Sigma[i]
 
     for s in range(n):
-        if (abs(Sigma[s] - 1.0) > sqrt(kEpsilon)): 
+        if (abs(Sigma[s] - 1.0) > sqrt(kEpsilon)):
             break                       # //1E+4*kEpsilon) break;
 
     # #ifdef DEBUG
     # cout << "\t\ttrustResidual: singular values = ";
     # for (int i = 0; i < n; i++)
-    # cout << std::setw(16) << std::setprecision(12) << Sigma(i) << " ";    
+    # cout << std::setw(16) << std::setprecision(12) << Sigma(i) << " ";
     # cout << endl;
     # cout << "\t\ttrustResidual: n, s, n-s = " << n << ", " << s << ", "
     # << n-s << endl;
@@ -957,28 +955,28 @@ def double trustResidual(n, H, B, g, y, lambda2):
     # // compute the matrix C = W^T * Z = N*UT(s:n-1)*(I - B^T*B)
     # // where N^{-1} = diag(sqrt(1 - Sigma(s:n-1)))
 
-    if (s < n): 
+    if (s < n):
         C.reshape(n-s,n)
         # // Step 1: compute P := I - B^T*B (stored column major)
-        for j in range(n): 
-            for i in range(n): 
+        for j in range(n):
+            for i in range(n):
                 P[i+j*n] = 0.0
-                for k in range(n+1): 
+                for k in range(n+1):
                     P[i+j*n] = P[i+j*n] - B[k,i]*B[k,j]
 
             P[j+j*n] += 1.0
 
 
         # // Step 2: compute C := QT(s:n-1)*P
-        for i in range(n-s): 
-            for j in range(n): 
+        for i in range(n-s):
+            for j in range(n):
                 C[i,j] = 0.0
-                for k in range(n):  
+                for k in range(n):
                     C[i,j] = C[i,j] + UT[s+i+k*n]*P[k+j*n]
 
 
         # // Step 3: compute C := N*C
-        for i in range(n-s): 
+        for i in range(n-s):
             fac = 1.0/sqrt(1.0 - Sigma[s+i]*Sigma[s+i]
             for j in range(n):
                 C[i,j] = C[i,j]*fac
@@ -986,13 +984,13 @@ def double trustResidual(n, H, B, g, y, lambda2):
     # // compute reduced residual
     r = np.array(2*n+1-s)
     res_norm = 0.0
-    for i in range(n+1): 
+    for i in range(n+1):
         tmp = g[i]
         for j in range(n):
-            tmp = tmp - (H[i,j] + lambda2*B[i,j]*y[j]            
+            tmp = tmp - (H[i,j] + lambda2*B[i,j]*y[j]
         res_norm += tmp*tmp;
 
-    for i in range(n-s): 
+    for i in range(n-s):
         tmp = g[n+1+i]
         for j in range(n):
             tmp = tmp - lambda2*C[i,j]*y[j]
@@ -1000,22 +998,22 @@ def double trustResidual(n, H, B, g, y, lambda2):
 
     return sqrt(res_norm)
 
-                      
+
 # =================================================================
 
-def triMatixInvertible(n, T): 
+def triMatixInvertible(n, T):
 
-    for i in range(n): 
+    for i in range(n):
         if abs(T[i,i] < kEpsilon:
             return false
     return true;
-      
+
 # =================================================================
 
 def writeKrylovHeader(os, solver, restol, resinit, col_header):
 
-    # ostream & os ? 
-    
+    # ostream & os ?
+
     # if 0:
     # endif
 
