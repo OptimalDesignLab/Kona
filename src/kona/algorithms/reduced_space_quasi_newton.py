@@ -19,7 +19,7 @@ class ReducedSpaceQuasiNewton(object):
 
         # number of vectors required in solve() method
         primal_factory.request_num_vectors(6)
-        state_factory.request_num_vectors(2)
+        state_factory.request_num_vectors(3)
 
         # set the type of quasi-Newton method
         if optns['quasi_newton']['type'] == 'lbfgs':
