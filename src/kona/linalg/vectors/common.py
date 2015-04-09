@@ -5,11 +5,24 @@ from kona.linalg.matrices.common import dRdX, dRdU
 
 def objective_value(at_design, at_state):
         """
-        Evaluate the objective value at_design and at_state
+        Evaluate the objective value the given Primal and State point.
+
+        Parameters
+        ----------
+        at_design : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+
+        Returns
+        -------
+        float : Objective function value.
         """
-        # TODO: If you really don't trust the user, you should
-        #       check that the solver from the state is the same
         solver = at_design._memory.solver
+
+        if solver != at_state._memory.solver:
+            raise MemoryError('objective_value() >> Primal and State ' + \
+                              'vectors are not on the same memory manager!')
 
         return solver.eval_obj(at_design._data, at_state._data)
 
@@ -47,7 +60,7 @@ class KonaVector(object):
         if not isinstance(vector, type(self)):
             raise TypeError('Vector type mismatch. Must be %s' % type(self))
 
-    def equals(self, val): # the = operator cannot be overloaded
+    def equals(self, val):
         """
         Used as the assignment operator.
 
@@ -66,7 +79,7 @@ class KonaVector(object):
             self._check_type(val)
             self._data.equals_vector(val._data)
 
-    def plus(self, vector): # this is the += operator
+    def plus(self, vector):
         """
         Used as the addition operator.
 
@@ -80,7 +93,7 @@ class KonaVector(object):
         self._check_type(vector)
         self._data.plus(vector._data)
 
-    def minus(self, vector): # this is the -= operator
+    def minus(self, vector):
         """
         Used as the subtraction operator.
 
@@ -99,7 +112,7 @@ class KonaVector(object):
         self._data.plus(vector._data)
         self._data.times(-1.)
 
-    def times(self, value): # this is the *= operator
+    def times(self, value):
         """
         Used as the multiplication operator.
 
@@ -115,7 +128,7 @@ class KonaVector(object):
         else:
             raise TypeError('Argument must be a float.')
 
-    def divide_by(self, val): # this is the /= operator
+    def divide_by(self, val):
         """
         Used as the multiplication operator.
 
@@ -128,7 +141,7 @@ class KonaVector(object):
         """
         self.times(1./val)
 
-    def equals_ax_p_by(self, a, x, b, y): # this performs self = a*x + b*y
+    def equals_ax_p_by(self, a, X, b, Y):
         """
         Performs a full a*X + b*Y operation between two vectors, and stores
         the result in place.
@@ -140,9 +153,9 @@ class KonaVector(object):
         x, y : KonaVector or derivative
             Vectors for the operation
         """
-        self._check_type(x)
-        self._check_type(y)
-        self._data.equals_ax_p_by(a, x._data, b, y._data)
+        self._check_type(X)
+        self._check_type(Y)
+        self._data.equals_ax_p_by(a, X._data, b, Y._data)
 
     def inner(self, vector):
         """
@@ -173,23 +186,26 @@ class PrimalVector(KonaVector):
     to design vectors.
     """
 
-
-
     def restrict_target_state(self):
         """
-        Set target state variables to zero. Used only for IDF problems.
+        Set target state variables to zero.
+
+        Used only for IDF problems.
         """
         self._memory.solver.allocator.restrict_design(0, self._data)
 
     def restrict_real_design(self):
         """
-        Set design variables to zero. Used only for IDF problems.
+        Set design variables to zero.
+
+        Used only for IDF problems.
         """
         self._memory.solver.allocator.restrict_design(1, self._data)
 
     def convert(self, dual_vector):
         """
         Copy target state variables from the dual space into the design space.
+
         Used only for IDF problems.
 
         Parameters
