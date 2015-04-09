@@ -26,5 +26,19 @@ class STCG(object)
 
         r = self.vec_factory.generate()
         z = self.vec_factory.generate()
-        
+        p = self.vec_factory.generate()
+        Ap = self.vec_factory.generate()
+
+        # define initial residual and other scalars
+        r.equals(b)
+        x.equals(0.0)
+        alpha = 0.0
+        x_norm2 = 0.0
+        norm0 = r.norm2
+        res_norm2 = norm0
+
+        precond.product(r, z)
+        r_dot_z = r.inner(z)
+        if (optns['proj_cg'):
+            norm0 = r_dot_z
 
