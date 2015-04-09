@@ -10,13 +10,7 @@
 
 """
 
-
-# import numpy
-from numpy import sqrt
 import numpy as np
-from usertemplate import UserTemplate
-from usermemory import UserMemory
-from vectors import DesignVector
 
 """
 Translated from krylov.cpp 
