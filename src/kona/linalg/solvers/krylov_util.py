@@ -62,7 +62,7 @@ def CalcEpsilon(eval_at_norm, mult_by_norm):
 #===================================================================================================
 
 
-def eigenvalues(A, eig):
+def eigenvalues(A):
     egi_vals, eig_vec = np.linalg.eig(A)
     idx = eig_vals.argsort() # eig doesn't sort, so we have to
     eig_vals = eig_vals[idx]
@@ -496,7 +496,7 @@ def trustFunction(H, g, lambda2, radius):
 
             factorCholesky(n, Hhat, UTU)
             semidefinite = false
-            
+
         except factor_failed: 
             diag = diag*100.0
 
