@@ -1,2 +1,0 @@
-class BadKonaOption(Exception):
-    pass

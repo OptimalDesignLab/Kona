@@ -1,11 +1,11 @@
-class LineSearch(object):
+class ILineSearch(object):
     pass
 
-class StrongWolfe(LineSearch):
+class StrongWolfe(object):
     pass
 
-class BackTracking(LineSearch):
-
+class BackTracking(object):
+    
     def __init__(self):
         self.alpha_init = 1.0
         self.alpha_min = 1e-4
@@ -28,7 +28,7 @@ class BackTracking(LineSearch):
     def set_conv(self, decr_cond, curv_cond, max_iter):
         self.decr_cond = decr_cond
         self.curv_cond = curv_cond
-        self.max_iter = max_iter    
+        self.max_iter = max_iter
 
     def set_search_dot_grad(self, p_dot_grad):
         self.p_dot_dfdx_ = p_dot_grad

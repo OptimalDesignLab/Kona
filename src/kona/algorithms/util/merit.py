@@ -35,4 +35,4 @@ class ObjectiveMerit(object):
 
     def eval_func(self, alpha):
         self.design_work.equals_ax_plus_by(1.0, self.x_start, alpha,
-                                           self.search_dir)
+            self.search_dir)
