@@ -121,7 +121,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         self.fail('Untested')
 
 
-class TestCasePrimalVectorIDF():
+class TestCasePrimalVectorIDF(unittest.TestCase):
 
     def test_restrict_target_state(self):
         self.fail('Untested')
