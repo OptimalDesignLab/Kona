@@ -25,8 +25,8 @@ Version on the move...
 """
 
 # const double kEpsilon = numeric_limits<double>::epsilon();   Tranlate this!! 
-kEpsilon = 1e-16
 
+kEpsilon = np.finfo(float).eps
 
 #===================================================================================================
 
@@ -64,37 +64,39 @@ def CalcEpsilon(eval_at_norm, mult_by_norm):
 
 def eigenvalues(n, A, eig):
 	"""
-	n:   integer
-	A:   numpy 2d array
-	eig:  numpy 1d array """
+	# n:   integer
+	# A:   numpy 2d array
+	# eig:  numpy 1d array """
 
-	if n<1: 				
-		raise ValueError('krylov.cpp (eigenvalues): matrix dimension must be greater than 0.')
+	# if n<1: 				
+	# 	raise ValueError('krylov.cpp (eigenvalues): matrix dimension must be greater than 0.')
 
-	if (A.shape[0]  < n) or (A.shape[1]  < n):
-		raise ValueError('krylov.cpp (eigenvalues): given matrix has fewer rows/columns than given dimension.')
+	# if (A.shape[0]  < n) or (A.shape[1]  < n):
+	# 	raise ValueError('krylov.cpp (eigenvalues): given matrix has fewer rows/columns than given dimension.')
 
-	Asym = np.zeros(n*n)
+	# Asym = np.zeros(n*n)
 
-	for i in range(n):
-		for j in range(i,n):
-			Asym[i*n + j] = 0.5*(A[i,j] + A[j,i])
-			Asym[j*n + i] = Asym[i*n + j]
+	# for i in range(n):
+	# 	for j in range(i,n):
+	# 		Asym[i*n + j] = 0.5*(A[i,j] + A[j,i])
+	# 		Asym[j*n + i] = Asym[i*n + j]
 
-	jobz = 'N'
-	uplo = 'U'
-	Adim = n
-	lwork = 3*n
+	# jobz = 'N'
+	# uplo = 'U'
+	# Adim = n
+	# lwork = 3*n
 
-	work = np.zeros(lwork)
+	# work = np.zeros(lwork)
 
 	######################################
-	dsyev_(&jobz, &uplo, &Adim, &*Asym.begin(), &Adim, &*eig.begin(),    # ??? 
-         &*work.begin(), &lwork, &info);
+	# dsyev_(&jobz, &uplo, &Adim, &*Asym.begin(), &Adim, &*eig.begin(),    # ??? 
+    #    &*work.begin(), &lwork, &info);
 	######################################
 
-	if info!=0:	
-		raise ValueError('krylov.cpp (eigenvalues): LAPACK routine dsyev failed with info ='  + info)
+	eig, e_vec = np.linalg.eig(A)
+
+	# if info!=0:	
+	# 	raise ValueError('krylov.cpp (eigenvalues): LAPACK routine dsyev failed with info ='  + info)
 
 
 #===================================================================================================
@@ -125,8 +127,9 @@ def eigenvaluesAndVectors(n, A, eig, E):
 	work = np.zeros(lwork)
 
 	#######################################
-	dsyev_(&jobz, &uplo, &Adim, &*Asym.begin(), &Adim, &*eig.begin(),
-		&*work.begin(), &lwork, &info);
+	# dsyev_(&jobz, &uplo, &Adim, &*Asym.begin(), &Adim, &*eig.begin(),
+	# 	&*work.begin(), &lwork, &info)
+	eig, e_vec = np.linalg.eig(Asym)
 	#######################################
 
 	if info!=0:	
@@ -142,30 +145,32 @@ def eigenvaluesAndVectors(n, A, eig, E):
 
 def factorQR(nrow, ncol, A, QR):
 
-	if (nrow < 1) or (ncol < 1):
-		raise ValueError('krylov.cpp (factorQR): matrix dimensions must be greater than 0.')
+	# if (nrow < 1) or (ncol < 1):
+	# 	raise ValueError('krylov.cpp (factorQR): matrix dimensions must be greater than 0.')
 
-	if (A.shape[0] < nrow) or (A.shape[1] < ncol):
-		raise ValueError('krylov.cpp (factorQR): given matrix has fewer rows/columns than given dimensions.')
+	# if (A.shape[0] < nrow) or (A.shape[1] < ncol):
+	# 	raise ValueError('krylov.cpp (factorQR): given matrix has fewer rows/columns than given dimensions.')
 
-	if nrow < ncol:
-		raise ValueError('krylov.cpp (factorQR): number of rows must be greater than or equal the number of columns.')
+	# if nrow < ncol:
+	# 	raise ValueError('krylov.cpp (factorQR): number of rows must be greater than or equal the number of columns.')
 
-	# Copy A into QR in column-major ordering
-	QR.reshape(nrow*ncol + ncol)
-	for j in range(ncol):
-		for i in range(nrow):
-			QR[j*nrow + i] = A[i,j]
+	# # Copy A into QR in column-major ordering
+	# QR.reshape(nrow*ncol + ncol)
+	# for j in range(ncol):
+	# 	for i in range(nrow):
+	# 		QR[j*nrow + i] = A[i,j]
 
-	m = nrow
-	n = ncol
-	lwork = ncol
+	# m = nrow
+	# n = ncol
+	# lwork = ncol
 
-	work = np.zeros(lwork)
+	# work = np.zeros(lwork)
 
-	##########################
-	ublas::vector<double>::iterator tau = QR.end() - ncol;    ## ??? 
-	dgeqrf_(&m, &n, &*QR.begin(), &m, &*tau, &*work.begin(), &lwork, &info);
+	# ##########################
+	# # ublas::vector<double>::iterator tau = QR.end() - ncol;    ## ??? 
+	# # dgeqrf_(&m, &n, &*QR.begin(), &m, &*tau, &*work.begin(), &lwork, &info);
+
+	q, r = np.linalg.qr(QR)
 	##########################
 
 	if info!=0:	
