@@ -8,7 +8,7 @@ omit =
     */site-packages/ordereddict.py
     */site-packages/nose/*
     */unittest2/*
-    */src/kona/tests/*
+    */src/kona/test/*
     */setup.py
 
 [report]
