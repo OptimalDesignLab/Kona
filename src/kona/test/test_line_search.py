@@ -28,10 +28,11 @@ class BackTrackingTestCase(unittest.TestCase):
         '''Assuming your first guess viloates sufficient decrease condition'''
 
         search_dir = self.pf.generate()
-        search_dir.equals(1)
+        # search_dir.equals(-.5)
+        search_dir._data.data[:] = [-1,0]
 
         at_design = self.pf.generate()
-        at_design.equals(2)
+        at_design.equals(1)
 
         at_state = self.sf.generate()
         at_state.equals_primal_solution(at_design)
@@ -45,13 +46,13 @@ class BackTrackingTestCase(unittest.TestCase):
 
         dfdx = self.pf.generate()
         dfdx.equals_reduced_gradient(at_design, at_state, adjoint, primal_work)
-        self.bt.p_dot_fx = dfdx.inner(search_dir)
+        self.bt.p_dot_dfdx = dfdx.inner(search_dir)
 
 
         self.merit.reset(search_dir, at_design)
 
         self.bt.merit_function = self.merit.eval_func
-        self.bt.alpha_init = .1 #should evaluate 2.5, 2.5
+        self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
         alpha, n_iter = self.bt.find_step_length()
 
         self.assertEqual(n_iter, 1)
