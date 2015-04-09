@@ -44,8 +44,8 @@ setup(name = 'kona',
       packages = find_packages(),
       cmdclass = {'test': DiscoverTest},
       install_requires=[
-        sphinx>=1.3.1,
-        numpydoc>=0.5,
-        numpy>1.9, 
+        'sphinx>=1.3.1',
+        'numpydoc>=0.5',
+        'numpy>1.9', 
       ],
       )
