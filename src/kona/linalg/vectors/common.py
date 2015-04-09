@@ -3,6 +3,17 @@ import numpy as np
 from kona.linalg.matrices.common import dRdX, dRdU
 
 
+def objective_value(at_design, at_state):
+        """
+        Evaluate the objective value at_design and at_state
+        """
+        # TODO: If you really don't trust the user, you should
+        #       check that the solver from the state is the same
+        solver = at_design._memory.solver
+
+        return solver.eval_obj(at_design._data, at_state._data)
+
+
 class KonaVector(object):
     """
     An abstract vector class connected to the Kona memory, containing a
@@ -36,24 +47,24 @@ class KonaVector(object):
         if not isinstance(vector, type(self)):
             raise TypeError('Vector type mismatch. Must be %s' % type(self))
 
-    def equals(self, rhs): # the = operator cannot be overloaded
+    def equals(self, val): # the = operator cannot be overloaded
         """
         Used as the assignment operator.
 
-        If RHS is a scalar, all vector elements are set to the scalar value.
+        If val is a scalar, all vector elements are set to the scalar value.
 
-        If RHS is a vector, the two vectors are set equal.
+        If val is a vector, the two vectors are set equal.
 
         Parameters
         ----------
-        rhs : float or KonaVector derivative
+        val : float or KonaVector derivative
             Right hand side term for assignment.
         """
-        if isinstance(rhs, (float, np.float32, np.float64, int, np.int32, np.int64)):
-            self._data.equals_value(rhs)
+        if isinstance(val, (float, np.float32, np.float64, int, np.int32, np.int64)):
+            self._data.equals_value(val)
         else:
-            self._check_type(rhs)
-            self._data.equals_vector(rhs._data)
+            self._check_type(val)
+            self._data.equals_vector(val._data)
 
     def plus(self, vector): # this is the += operator
         """
@@ -161,6 +172,9 @@ class PrimalVector(KonaVector):
     Derived from the base abstracted vector. Contains member functions specific
     to design vectors.
     """
+
+
+
     def restrict_target_state(self):
         """
         Set target state variables to zero. Used only for IDF problems.

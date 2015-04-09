@@ -7,7 +7,7 @@ from kona.user import BaseVector
 class Simple2x2(UserSolver):
 
     def __init__(self):
-        super(Simple2x2, self).__init__(4,2,0)
+        super(Simple2x2, self).__init__(2,2,0)
 
         self.dRdX = -1*numpy.eye(2)
         self.dRdU = numpy.array([[1,1],[0,1]])

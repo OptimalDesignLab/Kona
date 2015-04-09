@@ -4,11 +4,15 @@ from kona.algorithms.util.linsearch import BackTracking
 from kona.algorithms.util.merit import ObjectiveMerit
 
 
+
 class BackTrackingTestCase(unittest.testcase):
 
 
     def setUp(self):
         self.bt = BackTracking()
+
+        self.merit = ObjectiveMerit(primal_factory, state_factory)
+
 
     def test_stops_after_multiple_iter(self):
         '''Assuming your first guess viloates sufficient decrease condition'''
