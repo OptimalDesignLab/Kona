@@ -114,7 +114,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         self.pv.equals_objective_partial(at_design, at_state)
         self.assertEqual(self.pv.inner(self.pv), 4000)
 
-    def test_equals_reduced_gradient(self):
+    def test_equals_total_gradient(self):
         self.fail('Untested')
 
     def test_equals_lagrangian_reduced_gradient(self):

@@ -238,7 +238,7 @@ class PrimalVector(KonaVector):
                                       at_state._data,
                                       self._data)
 
-    def equals_reduced_gradient(self, at_primal, at_state, at_adjoint, primal_work):
+    def equals_total_gradient(self, at_primal, at_state, at_adjoint, primal_work):
         """
         Computes in-place the total derivative of the objective function.
 
@@ -281,7 +281,7 @@ class PrimalVector(KonaVector):
             Temporary work vector of Primal type.
         """
         # first compute the total derivative of the objective
-        self.equals_reduced_gradient(at_primal, at_state, at_adjoint, primal_work)
+        self.equals_total_gradient(at_primal, at_state, at_adjoint, primal_work)
         # initialize the linearized constraint jacobian
         cnstr_jac = dCdX(at_primal, at_state)
         # multiply the lagrange multipliers by the constraint jacobian
