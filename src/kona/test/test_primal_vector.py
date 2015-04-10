@@ -8,11 +8,12 @@ from dummy_solver import DummySolver
 class PrimalVectorTestCase(unittest.TestCase):
 
     def setUp(self):
-        solver = DummySolver(10, 10, 0)
+        solver = DummySolver(10, 10, 10)
         self.km = km = KonaMemory(solver)
 
         km.primal_factory.request_num_vectors(3)
-        km.state_factory.request_num_vectors(1)
+        km.state_factory.request_num_vectors(3)
+        km.dual_factory.request_num_vectors(1)
         km.allocate_memory()
 
         #can't create bear KonaVectors because the memory manager doesn't
@@ -104,21 +105,41 @@ class PrimalVectorTestCase(unittest.TestCase):
 
     def test_init_design(self):
         self.pv.equals_init_design()
-        self.assertEqual(self.pv.inner(self.pv), 160)
+        self.assertEqual(self.pv.inner(self.pv), 1000)
 
-    def test_equals_objective_gradient(self):
+    def test_equals_objective_partial(self):
         at_design = self.km.primal_factory.generate()
         at_design.equals(1)
         at_state = self.sv
         at_state.equals(2)
         self.pv.equals_objective_partial(at_design, at_state)
-        self.assertEqual(self.pv.inner(self.pv), 4000)
+        self.assertEqual(self.pv.inner(self.pv), 9000)
 
     def test_equals_total_gradient(self):
-        self.fail('Untested')
+        at_design = self.km.primal_factory.generate()
+        at_design.equals(1)
+        at_state = self.km.state_factory.generate()
+        at_state.equals(2)
+        primal_work = self.km.primal_factory.generate()
+        at_adjoint = self.km.state_factory.generate()
+        at_adjoint.equals(3)
+        self.pv.equals_total_gradient(
+            at_design, at_state, at_adjoint, primal_work)
+        self.assertEqual(self.pv.inner(self.pv), 81000)
 
-    def test_equals_lagrangian_reduced_gradient(self):
-        self.fail('Untested')
+    def test_equals_lagrangian_total_gradient(self):
+        at_design = self.km.primal_factory.generate()
+        at_design.equals(1)
+        at_state = self.km.state_factory.generate()
+        at_state.equals(2)
+        primal_work = self.km.primal_factory.generate()
+        at_adjoint = self.km.state_factory.generate()
+        at_adjoint.equals(3)
+        at_dual = self.km.dual_factory.generate()
+        at_dual.equals(4)
+        self.pv.equals_lagrangian_total_gradient(
+            at_design, at_state, at_adjoint, at_dual, primal_work)
+        self.assertEqual(self.pv.inner(self.pv), 256000)
 
 class TestCasePrimalVectorIDF(unittest.TestCase):
 
@@ -152,7 +173,7 @@ class TestCasePrimalVectorIDF(unittest.TestCase):
         self.dv.equals(2)
         self.pv.convert(self.dv)
         inner_prod = self.pv.inner(self.pv)
-        expected_prod = (1.*1.*5) + (2.*2.*10)
+        expected_prod = 2.*2.*10
         self.assertEqual(inner_prod, expected_prod)
 
 if __name__ == "__main__":
