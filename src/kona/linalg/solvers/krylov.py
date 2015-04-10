@@ -23,6 +23,7 @@ class STCG(object):
         self.vec_factory = vector_factory
         vec_factory.request_num_vectors(4)
         self.max_iter = optns['max_iter']
+        self.stcg_tol = optns['stcg_tol']
 
     def solve(b, x, mat_vec, precond, optns):
         try:
@@ -40,12 +41,37 @@ class STCG(object):
         # define initial residual and other scalars
         r.equals(b)
         x.equals(0.0)
-        alpha = 0.0
-        x_norm2 = 0.0
-        norm0 = r.norm2
-        res_norm2 = norm0
-
         precond.product(r, z)
+        p.equals(-z)
+
+        norm0 = r.norm2
         r_dot_z = r.inner(z)
+        
         if (optns['proj_cg']):
             norm0 = r_dot_z
+
+            for i in xrange(self.max_iter):
+                norm_k = r.norm2
+                eps = min(0.1, norm_k/norm0)
+                if norm_k <= eps:
+                    break
+
+                mat_vec(p, Ap)
+                alpha =  r_dot_z/p.inner(Ap)   
+                x += alpha*p
+                r += alpha*Ap
+
+                precond.product(r, z)
+                r_dot_z_new = r.inner(z)
+        
+                beta = r_dot_z_new/r_dot_z
+                p = -z + beta*p
+
+                r_dot_z = r_dot_z_new
+
+
+
+
+
+
+
