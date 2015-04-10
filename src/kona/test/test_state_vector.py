@@ -1,5 +1,5 @@
 import unittest
-import numpy as np
+import numpy
 
 from kona.linalg.memory import KonaMemory
 
@@ -12,24 +12,43 @@ class StateVectorTestCase(unittest.TestCase):
         self.km = km = KonaMemory(solver)
 
         km.primal_factory.request_num_vectors(1)
-        km.state_factory.request_num_vectors(2)
+        km.state_factory.request_num_vectors(3)
         km.allocate_memory()
 
-        #can't create bear KonaVectors because the memory manager doesn't
-        # like them, so I'll just use the PrimalVector to test the
-        # KonaVectorMethods
         self.pv = km.primal_factory.generate()
         self.sv = km.state_factory.generate()
         self.sv_work = km.state_factory.generate()
 
     def test_equals_objective_partial(self):
-        self.fail('Untested')
+        at_design = self.pv
+        at_design.equals(1)
+        at_state = self.sv_work
+        at_state.equals(2)
+        self.sv.equals_objective_partial(at_design, at_state)
+        self.assertEqual(self.sv.inner(self.sv), 9000)
 
     def test_equals_residual(self):
-        self.fail('Untested')
+        at_design = self.pv
+        at_design.equals(1)
+        at_state = self.sv_work
+        at_state.equals(2)
+        self.sv.equals_residual(at_design, at_state)
+        self.assertEqual(self.sv.inner(self.sv), 9000)
 
     def test_equals_primal_solution(self):
-        self.fail('Untested')
+        at_design = self.pv
+        at_design.equals(2)
+        self.sv.equals_primal_solution(at_design)
+        self.assertEqual(self.sv.inner(self.sv), 4000)
 
-    def equals_adjoint_solution(self):
-        self.fail('Untested')
+    def test_equals_adjoint_solution(self):
+        at_design = self.pv
+        at_design.equals(1)
+        at_state = self.sv_work
+        at_state.equals(2)
+        state_work = self.km.state_factory.generate()
+        self.sv.equals_adjoint_solution(at_design, at_state, state_work)
+        self.assertEqual(self.sv.inner(self.sv), 729000)
+
+if __name__ == "__main__":
+    unittest.main()

@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 
 from kona.linalg.memory import KonaMemory
-
+from kona.user import UserSolverIDF
 from dummy_solver import DummySolver
 
 class PrimalVectorTestCase(unittest.TestCase):
@@ -120,19 +120,40 @@ class PrimalVectorTestCase(unittest.TestCase):
     def test_equals_lagrangian_reduced_gradient(self):
         self.fail('Untested')
 
-
 class TestCasePrimalVectorIDF(unittest.TestCase):
 
+    def setUp(self):
+        solver = UserSolverIDF(5, 10, 0)
+        self.km = km = KonaMemory(solver)
+
+        km.primal_factory.request_num_vectors(1)
+        km.dual_factory.request_num_vectors(1)
+        km.allocate_memory()
+
+        self.pv = km.primal_factory.generate()
+        self.dv = km.dual_factory.generate()
+
     def test_restrict_target_state(self):
-        self.fail('Untested')
+        self.pv.equals(5)
+        self.pv.restrict_target_state()
+        inner_prod = self.pv.inner(self.pv)
+        expected_prod = 5.*5.*5
+        self.assertEqual(inner_prod, expected_prod)
 
     def test_restrict_real_design(self):
-        self.fail('Untested')
+        self.pv.equals(5)
+        self.pv.restrict_real_design()
+        inner_prod = self.pv.inner(self.pv)
+        expected_prod = 5.*5.*10
+        self.assertEqual(inner_prod, expected_prod)
 
     def test_convert(self):
-        self.fail('Untested')
-
-
+        self.pv.equals(1)
+        self.dv.equals(2)
+        self.pv.convert(self.dv)
+        inner_prod = self.pv.inner(self.pv)
+        expected_prod = (1.*1.*5) + (2.*2.*10)
+        self.assertEqual(inner_prod, expected_prod)
 
 if __name__ == "__main__":
     unittest.main()
