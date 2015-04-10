@@ -28,8 +28,8 @@ class LineSearch(object):
 
 class StrongWolfe(LineSearch):
 
-    def __init__(self, optns={}):
-        super(BackTracking, self).__init__(optns)
+    def __init__(self, optns={}, out=sys.stdout):
+        super(BackTracking, self).__init__(optns, out)
         self.alpha_max = get_opt(optns, 1.0, 'alpha_max')
         self.curv_cond = get_opt(optns, 0.7, 'curv_cond')
 
@@ -91,16 +91,23 @@ class StrongWolfe(LineSearch):
             dphi_new = merit.eval_grad(alpha_new)
             # check curvature condition
             if abs(dphi_new) <= -curv_cond*dphi_init:
+                # if curvature condition is satisfied, return alpha_new
                 if curv_cond > 1.e-6:
                     return alpha_new
+                # a very small curvature is supicious, check for local minimum
+                perturb = merit.eval_func(alpha_new - alpha_max*1.e-6)
+                if perturn < phi_new:
+                    phi_new = perturb
+                    dphi_new = merit.eval_func(alpha_new - alpha_max*1.e-6)
+
 
 
 
 
 class BackTracking(LineSearch):
 
-    def __init__(self, optns={}):
-        super(BackTracking, self).__init__(optns)
+    def __init__(self, optns={}, out=sys.stdout):
+        super(BackTracking, self).__init__(optns, out=sys.stdout)
         self.alpha_min = get_opt(optns, 1e-4, 'alpha_min')
         self.rdtn_factor = get_opt(optns, .3, 'rdtn_factor')
         self.p_dot_dfdx = 0.0
