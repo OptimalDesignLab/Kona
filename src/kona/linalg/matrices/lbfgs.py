@@ -91,7 +91,7 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
             scale = 1.0 / (rho[k] * yTy)
             v_vec.times(scale)
         else:
-            v_vec.divide(self.norm_init)
+            v_vec.divide_by(self.norm_init)
 
         for k in xrange(num_stored):
             beta = rho[k] * y_list[k].inner(v_vec)

@@ -23,10 +23,11 @@ class ReducedSpaceQuasiNewton(object):
         state_factory.request_num_vectors(3)
 
         self.info_file = get_opt(optns, sys.stdout, 'info_file')
-        if isinstance(self.info_file, str): 
+        if isinstance(self.info_file, str):
             self.info_file = open(self.info_file,'w')
 
         self.max_iter = get_opt(optns, 100, 'max_iter')
+        self.primal_tol = get_opt(optns, 1e-6,'primal_tol')
 
         # set the type of quasi-Newton method
         try:
@@ -47,7 +48,7 @@ class ReducedSpaceQuasiNewton(object):
         # define the merit function (which is always the objective itself here)
         merit_optns = get_opt(optns,{},'merit')
         self.merit = ObjectiveMerit(primal_factory, state_factory, merit_optns, out_file)
-        self.line_search.merit_function = self.merit
+        self.line_search.merit = self.merit
 
     def solve(self):
         # need some way of choosing file to output to
@@ -82,7 +83,7 @@ class ReducedSpaceQuasiNewton(object):
                 grad_norm = grad_norm0
                 self.quasi_newton.norm_init = grad_norm0
                 info.write('grad_norm0 = %f\n'%grad_norm0)
-                grad_tol = optns['primal_tol'] * grad_norm0
+                grad_tol = self.primal_tol * grad_norm0
                 # save gradient for quasi-Newton
                 dfdx_old.equals(dfdx)
             else:
@@ -102,8 +103,9 @@ class ReducedSpaceQuasiNewton(object):
             p.times(-1.0)
 
             # set-up merit function and perform line search
-            self.merit.reset(p, x, p_dot_grad, state, adjoint)
-            self.line_search.set_search_dot_grad(p_dot_grad)
+            p_dot_dfdx = p.inner(dfdx)
+            self.merit.reset(p, x, p_dot_dfdx, state, adjoint)
+            self.line_search.p_dot_dfdx = p_dot_dfdx
             alpha = self.line_search.find_step_length()
             x.equals_ax_plus_by(1.0, x, alpha, p)
 

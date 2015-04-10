@@ -8,7 +8,7 @@ class Rosenbrock(UserSolver):
     def __init__(self):
         super(Rosenbrock, self).__init__(2,0,0)
 
-    def eval_obj(self, at_design, at_state): 
+    def eval_obj(self, at_design, at_state):
         x = at_design.data[0]
         y = at_design.data[1]
         obj = (1.0 - x)*(1.0 - x) + 100.0*(y - x*x)*(y - x*x)
@@ -24,18 +24,3 @@ class Rosenbrock(UserSolver):
 
     def init_design(self, store_here):
         store_here.data = numpy.array([5., 5.])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
