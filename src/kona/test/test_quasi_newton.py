@@ -54,8 +54,8 @@ class QuasiNewtonTestCase(unittest.TestCase):
         optns = {'quasi_newton': {'type': BackTracking}}
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
-        except BadKonaOption as err:
-            self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = None")
+        except:
+            self.fail('No Error Expected')
 
 
     def test_no_line_search(self):

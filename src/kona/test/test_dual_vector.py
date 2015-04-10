@@ -2,6 +2,7 @@ import unittest
 import numpy
 
 from kona.linalg.memory import KonaMemory
+from kona.user import UserSolverIDF
 
 from dummy_solver import DummySolver
 
@@ -30,8 +31,23 @@ class DualVectorTestCase(unittest.TestCase):
 
 class TestCaseDualVectorIDF(unittest.TestCase):
 
+    def setUp(self):
+        solver = UserSolverIDF(5, 10, 0)
+        self.km = km = KonaMemory(solver)
+
+        km.primal_factory.request_num_vectors(1)
+        km.state_factory.request_num_vectors(1)
+        km.dual_factory.request_num_vectors(1)
+        km.allocate_memory()
+
+        self.pv = km.primal_factory.generate()
+        self.sv = km.state_factory.generate()
+        self.dv = km.dual_factory.generate()
+
     def test_convert(self):
-        self.fail('Untested')
+        self.pv.equals(5)
+        self.dv.equals(1)
+        self.dv.convert(self.pv)
 
 if __name__ == "__main__":
     unittest.main()
