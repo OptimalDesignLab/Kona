@@ -6,7 +6,7 @@ from kona.linalg.memory import KonaMemory
 from kona.user.user_solver import UserSolver
 from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
 from kona.algorithms.reduced_space_quasi_newton import ReducedSpaceQuasiNewton
-from kona.errors import BadKonaOption
+from kona.options import BadKonaOption
 
 class QuasiNewtonTestCase(unittest.TestCase):
 
@@ -50,6 +50,9 @@ class QuasiNewtonTestCase(unittest.TestCase):
         except BadKonaOption as err:
             self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = 25")
 
+    def test_no_line_search(self):
+
+        pass
 
 class HessianApproxTestCase(unittest.TestCase):
     '''Test case for quasi-Newton classes'''

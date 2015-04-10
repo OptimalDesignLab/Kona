@@ -4,7 +4,7 @@ from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
 from kona.linalg.matrices.lsr1 import LimitedMemorySR1
 from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
 from kona.algorithms.util.merit import ObjectiveMerit
-from kona.errors import BadKonaOption
+from kona.options import BadKonaOption, get_opt
 from kona.linalg.matrices.common import dRdU
 
 class ReducedSpaceQuasiNewton(object):
@@ -23,28 +23,23 @@ class ReducedSpaceQuasiNewton(object):
 
         # set the type of quasi-Newton method
         try:
-            try:
-                quasi_newton = optns['quasi_newton']['type']
-            except:
-                raise KeyError
+            quasi_newton = get_opt(optns, 'quasi_newton', 'type')
             if quasi_newton is None:
-                raise KeyError
-            try:
-                self.quasi_newton = quasi_newton(primal_factory, optns['quasi_newton'],
-                                                  out_file)
-            except:
-                raise KeyError
-        except KeyError:
-            raise BadKonaOption(optns, ('quasi_newton','type'))
-
+                raise KeyError()
+            self.quasi_newton = quasi_newton(primal_factory, optns['quasi_newton'],
+                                              out_file)
+        except:
+            raise BadKonaOption(optns, 'quasi_newton','type')
 
         # set the type of line-search algorithm
+        try:
+            get_opt
         if optns['line_search']['type'] == 'wolfe':
             self.line_search = StrongWolfe(optns['line_search'], out_file)
         elif optns['line_search']['type'] == 'back_track':
             self.line_search = BackTracking(optns['line_search'], out_file)
         else:
-            raise BadKonaOption(optns, ('line_search', 'type'))
+            raise BadKonaOption(optns, 'line_search', 'type')
 
         # define the merit function (which is always the objective itself here)
         self.merit = ObjectiveMerit(optns['merit'], primal_factory, out_file)
