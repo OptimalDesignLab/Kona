@@ -20,7 +20,7 @@ class LineSearch(object):
         if not (0 < self.decr_cond < 1):
             raise ValueError('suff_cond must be 0 < suff_cond < 1')
 
-        if not self.merit_function:
+        if self.merit_function is None:
             raise ValueError('merit_function can not be None')
 
     def find_step_length(self):
@@ -42,11 +42,8 @@ class StrongWolfe(LineSearch):
         if not (self.decr_cond < self.curv_cond < 1):
             raise ValueError('curv_cond must be suff_cond < curv_cond < 1')
 
-    def zoom(self):
-        self.max_iter = get_opt(optns, 10, 'max_iter')
-        self.p_dot_dfdx = get_opt(optns, 0.0, 'p_dot_dfdx')
-
-        self.merit_function = None
+    def zoom(self, self.alpha_new, self.alpha_old, self.phi_new, phi_old, ):
+        pass
 
     def find_step_length(self):
         self._validate_options()
@@ -55,50 +52,67 @@ class StrongWolfe(LineSearch):
         phi_init = merit.eval_func(0.0)
         dphi_init = merit.eval_grad(0.0)
 
-        alpha_old = 0.0
+        self.alpha_old = 0.0
         phi_old = phi_init
-        dphi_old = dphi_init
+        self.dphi_old = dphi_init
 
-        if dphi_old > 0.0:
+        if self.dphi_old > 0.0:
             raise ValueError('search direction is not a descent direction')
 
-        alpha_new = 0.0
-        phi_new = 0.0
-        dphi_new = 0.0
+        self.alpha_new = 0.0
+        self.phi_new = 0.0
+        self.phi_new = 0.0
         quad_coeff = 0.0
-        deriv_hi = False
+        self.deriv_hi = False
 
         for i in xrange(self.max_iter):
             # get new step
             if i == 0:
-                alpha_new = self.alpha_init
+                self.alpha_new = self.alpha_init
             else:
                 if quad_coeff > 0:
-                    alpha_new = alpha_old - 0.5*dphi_old/quad_coeff
-                    if (alpha_new < alpha_old) or (alpha_new > self.alpha_max):
-                        alpha_new = min(2*alpha_old, alpha_max)
+                    self.alpha_new = self.alpha_old - 0.5*self.dphi_old/quad_coeff
+                    if (self.alpha_new < self.alpha_old) or (self.alpha_new > self.alpha_max):
+                        self.alpha_new = min(2*self.alpha_old, self.alpha_max)
                 else:
-                    alpha_new = min(2*alpha_old, alpha_max)
+                    self.alpha_new = min(2*self.alpha_old, self.alpha_max)
             # get new function value
-            phi_new = merit.eval_func(alpha_new)
+            self.phi_new = merit.eval_func(self.alpha_new)
             # if new step violates sufficient decrease, call zoom
-            if (phi_new > phi_init + decr_cond*alpha_new*dphi_init) or \
-                ( (i > 0) and (phi_new >= phi_old) ):
-                dphi_new = 0.0
-                deriv_hi = False
+            if (self.phi_new > phi_init + decr_cond*self.alpha_new*dphi_init) or \
+                ( (i > 0) and (self.phi_new >= phi_old) ):
+                self.phi_new = 0.0
+                self.deriv_hi = False
                 return self.zoom()
             # otherwise, get new gradient
-            dphi_new = merit.eval_grad(alpha_new)
+            self.phi_new = merit.eval_grad(self.alpha_new)
             # check curvature condition
-            if abs(dphi_new) <= -curv_cond*dphi_init:
-                # if curvature condition is satisfied, return alpha_new
+            if abs(self.phi_new) <= -curv_cond*dphi_init:
+                # if curvature condition is satisfied, return self.alpha_new
                 if curv_cond > 1.e-6:
-                    return alpha_new
+                    return self.alpha_new
                 # a very small curvature is supicious, check for local minimum
-                perturb = merit.eval_func(alpha_new - alpha_max*1.e-6)
-                if perturn < phi_new:
-                    phi_new = perturb
-                    dphi_new = merit.eval_func(alpha_new - alpha_max*1.e-6)
+                # perturb in one direction first
+                perturb = merit.eval_func(self.alpha_new - self.alpha_max*1.e-6)
+                # if the perturbation yielded a smaller function, update
+                if perturb < self.phi_new:
+                    self.phi_new = perturb
+                    self.phi_new = merit.eval_func(self.alpha_new - self.alpha_max*1.e-6)
+                else:
+                    # otherwise perturb in the other direction
+                    perturb = merit.eval_func(self.alpha_new + self.alpha_max*1.e-6)
+                    # if the perturbation yielded a smaller function, update
+                    if perturb < self.phi_new:
+                        self.phi_new = perturb
+                        self.phi_new = merit.eval_func(self.alpha_new + self.alpha_max*1.e-6)
+                    else:
+                        # if neither perturbation worked, we have a true minimum
+                        return self.alpha_new
+            # check if new gradient is positive
+            if self.phi_new >= 0:
+                # if we get this far, the curvature condition is not satisfied
+                self.deriv_hi = True
+                return self.zoom
 
 
 

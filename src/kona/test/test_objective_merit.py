@@ -53,6 +53,9 @@ class ObjectiveMeritTestCase(unittest.TestCase):
 
         self.assertEqual(merit, expected_value)
 
+    def test_eval_grad(self):
+        self.failUnless('Untested')
+
 if __name__ == "__main__":
 
     unittest.main()
