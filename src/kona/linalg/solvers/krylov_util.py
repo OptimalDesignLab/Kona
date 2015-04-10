@@ -47,9 +47,9 @@ def CalcEpsilon(eval_at_norm, mult_by_norm):
     else:
         # multiplying vector dominates, so treat eval_at vector like zero
         if (eval_at_norm < kEpsilon*mult_by_norm):
-            return sqrt(kEpsilon)/mult_by_norm
+            return np.sqrt(kEpsilon)/mult_by_norm
         else:
-            return sqrt(kEpsilon)*eval_at_norm/mult_by_norm
+            return np.sqrt(kEpsilon)*eval_at_norm/mult_by_norm
 
 
 def eigenvalues(A):
@@ -62,9 +62,13 @@ def eigenvalues(A):
 
 def applyGivens(s, c, h1, h2):
 
+    # clockwise rotation? 
+
     temp = c*h1 + s*h2
     h2 = c*h2 - s*h1
     h1 = temp
+
+    return h1,h2
 
 
 
@@ -75,12 +79,12 @@ def generateGivens(dx, dy, s, c):
         s = 0.0
     elif abs(dy) > abs(dx):
         tmp = dx/dy
-        dx = sqrt(1.0 + tmp*tmp)
+        dx = np.sqrt(1.0 + tmp*tmp)
         s = sign(1.0/dx, dy)
         c = tmp*s
-    elif fabs(dy) <= fabs(dx):
+    elif abs(dy) <= abs(dx):
         tmp = dy/dx
-        dy = sqrt(1.0 + tmp*tmp)
+        dy = np.sqrt(1.0 + tmp*tmp)
         c = sign(1.0/dy, dx)
         s = tmp*c
 
@@ -92,8 +96,9 @@ def generateGivens(dx, dy, s, c):
 
     dx = abs(dx*dy)
     dy = 0.0
-
-def solveTrustReduced(n, H, g, radius):
+    return dx, dy
+    
+def solve_trust_reduced(n, H, g, radius):
     """
     Solves the reduced-space trust-region subproblem
 
@@ -142,7 +147,7 @@ def solveTrustReduced(n, H, g, radius):
 
     # find upper bound for bracket, lam < lam_h
     max_brk = 20
-    dlam = 0.1*max(-eigmin, spacing(1.0))
+    dlam = 0.1*max(-eigmin, kEpsilon)
     lam_h = max(-eigmin, 0.0) + dlam
     y, fnc_h, dfnc = trust_function(n, H, g, lam_h, radius)
     for k in range(max_brk):
@@ -153,7 +158,7 @@ def solveTrustReduced(n, H, g, radius):
         y, fnc_h, dfnc = trust_function(n, H, g, lam_h, radius)
 
     # find lower bound for bracket, lam_l < lam
-    dlam = sqrt(spacing(1.0))
+    dlam = sqrt(kEpsilon)
     lam_l = max(-eigmin, 0.0) + dlam
     y, fnc_l, dfnc = trust_function(n, H, g, lam_l, radius)
     for k in range(max_brk):
@@ -168,7 +173,7 @@ def solveTrustReduced(n, H, g, radius):
     lam = 0.5*(lam_l + lam_h)
     dlam_old = abs(lam_h - lam_l)
     dlam = dlam_old
-    tol = sqrt(spacing(1.0))
+    tol = sqrt(kEpsilon)
     lam_tol = tol*dlam
     y, fnc, dfnc = trust_function(n, H, g, lam, radius)
     res0 = abs(fnc)
