@@ -54,7 +54,7 @@ class ObjectiveMerit(object):
 
     def eval_func(self, alpha):
         # do calculations only if alpha changed significantly
-        if abs(alpha - self.last_func_alpha) > EPS
+        if abs(alpha - self.last_func_alpha) > EPS:
             # calculate the trial primal and state vectors
             self.x_trial.equals_ax_p_by(1.0, self.x_start, alpha, self.search_dir)
             self.u_trial.equals_primal_solution(self.x_trial)

@@ -113,6 +113,8 @@ class StrongWolfe(LineSearch):
                 # if we get this far, the curvature condition is not satisfied
                 self.deriv_hi = True
                 return self.zoom
+            # update old variables
+            quad_coeff =
 
 
 
