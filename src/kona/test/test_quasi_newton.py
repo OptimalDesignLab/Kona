@@ -63,7 +63,7 @@ class QuasiNewtonTestCase(unittest.TestCase):
             self.fail('No Error Expected')
 
 
-    def _test_no_line_search(self):
+    def test_no_line_search(self):
 
         optns = {'quasi_newton': {'type': LimitedMemoryBFGS}}
         try:
