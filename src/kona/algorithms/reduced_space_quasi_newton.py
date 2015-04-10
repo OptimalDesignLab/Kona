@@ -22,18 +22,21 @@ class ReducedSpaceQuasiNewton(object):
         state_factory.request_num_vectors(3)
 
         # set the type of quasi-Newton method
-        if optns['quasi_newton']['type'] == 'lbfgs':
-            self.quasi_newton = LimitedMemoryBFGS(primal_factory, optns['quasi_newton'],
+        try:
+            try:
+                quasi_newton = optns['quasi_newton']['type']
+            except:
+                raise KeyError
+            if quasi_newton is None:
+                raise KeyError
+            try:
+                self.quasi_newton = quasi_newton(primal_factory, optns['quasi_newton'],
                                                   out_file)
-        elif optns['quasi_newton']['type'] == 'sr1':
-            self.quasi_newton = LimitedMemorySR1(primal_factory, optns['quasi_newton'],
-                                                 out_file)
+            except:
+                raise KeyError
+        except KeyError:
+            raise BadKonaOption(optns, ('quasi_newton','type'))
 
-        # qn = optns['quasi_newton']['type']
-        # if qn:
-        #     self.quasi_newton = qn(primal_factory, optns['quasi_newton'],out_file)
-        # else:
-        #     raise BadKonaOption(optns, ('quasi_newton', 'type'))
 
         # set the type of line-search algorithm
         if optns['line_search']['type'] == 'wolfe':

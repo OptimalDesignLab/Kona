@@ -5,7 +5,7 @@ def make_optn_key_str(keys):
 
 def nested_dict_get(dictionary, keys):
     k = keys.pop(0)
-    val = dictionary[k]
+    val = dictionary.get(k, None)
     if isinstance(val, dict):
         return nested_dict_get(val, keys)
     return val
