@@ -1,22 +1,30 @@
 
+from kona.options import BadKonaOption
+
 class IKrylov(object):
-
-
+    pass
 
 class STCG(object)
     """
     Steihaug-Toint Conjugate Gradient (STCG) Krylov iterative method
 
+    Attributes
+    ----------
+    vec_factory : VectorFactory
+    max_iter : int
 
+    Parameters
+    ----------
+    vector_factory : VectorFactory
+    optns : dict
     """
-
     def __init__(self, vector_factory, optns):
         # set factory and request vectors needed in solve() method
         self.vec_factory = vector_factory
         vec_factory.request_num_vectors(4)
-        max_iter = optns['max_iter']
+        self.max_iter = optns['max_iter']
 
-    def solve(b, x, mat_vec, precond, optns)
+    def solve(b, x, mat_vec, precond, optns):
         try:
             radius = optns['radius']
             if raidus < 0:
@@ -41,4 +49,3 @@ class STCG(object)
         r_dot_z = r.inner(z)
         if (optns['proj_cg'):
             norm0 = r_dot_z
-
