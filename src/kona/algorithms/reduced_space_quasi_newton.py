@@ -48,7 +48,7 @@ class ReducedSpaceQuasiNewton(object):
         # define the merit function (which is always the objective itself here)
         merit_optns = get_opt(optns,{},'merit')
         self.merit = ObjectiveMerit(primal_factory, state_factory, merit_optns, out_file)
-        self.line_search.merit_function = self.merit.eval_func
+        self.line_search.merit = self.merit
 
     def solve(self):
         # need some way of choosing file to output to

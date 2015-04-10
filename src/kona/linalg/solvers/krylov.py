@@ -4,7 +4,7 @@ from kona.options import BadKonaOption
 class IKrylov(object):
     pass
 
-class STCG(object)
+class STCG(object):
     """
     Steihaug-Toint Conjugate Gradient (STCG) Krylov iterative method
 
@@ -47,5 +47,5 @@ class STCG(object)
 
         precond.product(r, z)
         r_dot_z = r.inner(z)
-        if (optns['proj_cg'):
+        if (optns['proj_cg']):
             norm0 = r_dot_z
