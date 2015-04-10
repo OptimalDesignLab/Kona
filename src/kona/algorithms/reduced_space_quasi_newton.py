@@ -4,7 +4,7 @@ from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
 from kona.linalg.matrices.lsr1 import LimitedMemorySR1
 from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
 from kona.algorithms.util.merit import ObjectiveMerit
-from kona.errors import BadKonaOption
+from kona.options import BadKonaOption, get_opt
 from kona.linalg.matrices.common import dRdU
 
 class ReducedSpaceQuasiNewton(object):
@@ -22,26 +22,19 @@ class ReducedSpaceQuasiNewton(object):
         state_factory.request_num_vectors(3)
 
         # set the type of quasi-Newton method
-        if optns['quasi_newton']['type'] == 'lbfgs':
-            self.quasi_newton = LimitedMemoryBFGS(primal_factory, optns['quasi_newton'],
-                                                  out_file)
-        elif optns['quasi_newton']['type'] == 'sr1':
-            self.quasi_newton = LimitedMemorySR1(primal_factory, optns['quasi_newton'],
-                                                 out_file)
-
-        # qn = optns['quasi_newton']['type']
-        # if qn:
-        #     self.quasi_newton = qn(primal_factory, optns['quasi_newton'],out_file)
-        # else:
-        #     raise BadKonaOption(optns, ('quasi_newton', 'type'))
+        try:
+            quasi_newton = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
+            self.quasi_newton = quasi_newton(primal_factory, optns['quasi_newton'],
+                                              out_file)
+        except:
+            raise BadKonaOption(optns, 'quasi_newton','type')
 
         # set the type of line-search algorithm
-        if optns['line_search']['type'] == 'wolfe':
-            self.line_search = StrongWolfe(optns['line_search'], out_file)
-        elif optns['line_search']['type'] == 'back_track':
-            self.line_search = BackTracking(optns['line_search'], out_file)
-        else:
-            raise BadKonaOption(optns, ('line_search', 'type'))
+        try:
+            line_search = get_opt(optsn, None, 'line_search', 'type')
+            self.line_search = line_search(optns['line_search'], out_file)
+        except:
+            raise BadKonaOption(optns, 'line_search', 'type')
 
         # define the merit function (which is always the objective itself here)
         self.merit = ObjectiveMerit(optns['merit'], primal_factory, out_file)

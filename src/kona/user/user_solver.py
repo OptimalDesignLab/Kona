@@ -581,7 +581,7 @@ class UserSolverIDF(UserSolver):
     def __init__(self, num_design, num_state, num_ceq, allocator=None):
         self.num_real_design = num_design
         self.num_real_ceq = num_ceq
-        super(BaseAllocatorIDF, self).__init__(
+        super(UserSolverIDF, self).__init__(
             self.num_real_design + num_state,
             num_state,
             self.num_real_ceq + num_state,
@@ -603,9 +603,9 @@ class UserSolverIDF(UserSolver):
             Design vector to be operated on.
         """
         if opType == 0:
-            vec[self.num_real_design:] = 0.
+            target.data[self.num_real_design:] = 0.
         elif opType == 1:
-            vec[:self.num_real_design] = 0.
+            target.data[:self.num_real_design] = 0.
         else:
             raise ValueError('Unexpected type in restrict_design()!')
 
@@ -621,8 +621,8 @@ class UserSolverIDF(UserSolver):
         copy_to : numpy.ndarray
             Vector to which target state variables should be copied.
         """
-        copy_to[:self.num_real_design] = 0.
-        copy_to[self.num_real_design:] = take_from[self.num_real_ceq:]
+        copy_to.data[:self.num_real_design] = 0.
+        copy_to.data[self.num_real_design:] = take_from.data[self.num_real_ceq:]
 
     def copy_targstate_to_dual(self, take_from, copy_to):
         """
@@ -636,4 +636,4 @@ class UserSolverIDF(UserSolver):
         copy_to : numpy.ndarray
             Vector to which target state variables should be copied.
         """
-        copy_to[self.num_real_ceq:] = take_from[self.num_real_design:]
+        copy_to.data[self.num_real_ceq:] = take_from.data[self.num_real_design:]
