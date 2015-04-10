@@ -42,7 +42,7 @@ class StrongWolfe(LineSearch):
         if not (self.decr_cond < self.curv_cond < 1):
             raise ValueError('curv_cond must be suff_cond < curv_cond < 1')
 
-    def zoom(self, self.alpha_new, self.alpha_old, self.phi_new, phi_old, ):
+    def zoom(self):
         pass
 
     def find_step_length(self):
