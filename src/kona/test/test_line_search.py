@@ -17,6 +17,7 @@ class BackTrackingTestCase(unittest.TestCase):
 
         pf.request_num_vectors(10)
         sf.request_num_vectors(10)
+
         self.merit = ObjectiveMerit(pf, sf)
 
         km.allocate_memory()
@@ -53,7 +54,7 @@ class BackTrackingTestCase(unittest.TestCase):
         at_design = self.pf.generate()
         at_design.equals(1)
 
-        self.merit.reset(search_dir, at_design)
+        self.merit.reset(search_dir, at_design, )
 
         self.bt.merit_function = self.merit.eval_func
         self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
@@ -72,7 +73,17 @@ class BackTrackingTestCase(unittest.TestCase):
         at_design = self.pf.generate()
         at_design.equals(1)
 
-        self.merit.reset(search_dir, at_design)
+        at_state = self.sf.generate()
+        at_state.equals_primal_solution(at_design)
+
+        grad = self.pf.generate()
+        at_adjoint = self.sf.generate()
+        primal_work = self.pf.generate()
+        grad.equals_total_gradient(at_design, at_state, at_adjoint, primal_work)
+
+        p_dot_grad = search_dir.inner(grad)
+
+        self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
         self.bt.merit_function = self.merit.eval_func
         self.bt.alpha_init = 1
