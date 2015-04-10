@@ -69,7 +69,7 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.merit_function = self.merit.eval_func
+        self.bt.merit_function = self.merit
         self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
         alpha, n_iter = self.bt.find_step_length()
 
@@ -101,7 +101,7 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.merit_function = self.merit.eval_func
+        self.bt.merit_function = self.merit
         self.bt.alpha_init = 1
         # have to raise this to get it to take multiple steps
         self.bt.rdtn_factor = .95
@@ -135,7 +135,7 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, self.bt.p_dot_dfdx)
 
-        self.bt.merit_function = self.merit.eval_func
+        self.bt.merit_function = self.merit
         self.bt.alpha_init = 1 #should evaluate 2.5, 2.5
         alpha, n_iter = self.bt.find_step_length()
 
@@ -165,7 +165,7 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.merit_function = self.merit.eval_func
+        self.bt.merit_function = self.merit
         self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
 
         self.bt.p_dot_dfdx *= -1
