@@ -47,9 +47,9 @@ def CalcEpsilon(eval_at_norm, mult_by_norm):
     else:
         # multiplying vector dominates, so treat eval_at vector like zero
         if (eval_at_norm < kEpsilon*mult_by_norm):
-            return sqrt(kEpsilon)/mult_by_norm
+            return np.sqrt(kEpsilon)/mult_by_norm
         else:
-            return sqrt(kEpsilon)*eval_at_norm/mult_by_norm
+            return np.sqrt(kEpsilon)*eval_at_norm/mult_by_norm
 
 
 def eigenvalues(A):
@@ -62,9 +62,13 @@ def eigenvalues(A):
 
 def applyGivens(s, c, h1, h2):
 
+    # clockwise rotation? 
+
     temp = c*h1 + s*h2
     h2 = c*h2 - s*h1
     h1 = temp
+
+    return h1,h2
 
 
 
@@ -75,12 +79,12 @@ def generateGivens(dx, dy, s, c):
         s = 0.0
     elif abs(dy) > abs(dx): 
         tmp = dx/dy
-        dx = sqrt(1.0 + tmp*tmp)
+        dx = np.sqrt(1.0 + tmp*tmp)
         s = sign(1.0/dx, dy)
         c = tmp*s
-    elif fabs(dy) <= fabs(dx):
+    elif abs(dy) <= abs(dx):
         tmp = dy/dx
-        dy = sqrt(1.0 + tmp*tmp)
+        dy = np.sqrt(1.0 + tmp*tmp)
         c = sign(1.0/dy, dx)
         s = tmp*c
 
@@ -92,6 +96,8 @@ def generateGivens(dx, dy, s, c):
 
     dx = abs(dx*dy)
     dy = 0.0
+
+    return dx, dy
 
 
 
