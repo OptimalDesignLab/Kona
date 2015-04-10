@@ -133,7 +133,7 @@ class BackTrackingTestCase(unittest.TestCase):
         dfdx.equals_total_gradient(at_design, at_state, adjoint, primal_work)
         self.bt.p_dot_dfdx = dfdx.inner(search_dir)
 
-        self.merit.reset(search_dir, at_design)
+        self.merit.reset(search_dir, at_design, at_state, self.bt.p_dot_dfdx)
 
         self.bt.merit_function = self.merit.eval_func
         self.bt.alpha_init = 1 #should evaluate 2.5, 2.5
