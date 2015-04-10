@@ -9,19 +9,17 @@ class StrongWolfe(object):
 class BackTracking(object):
 
     def __init__(self, optns={}):
-        opt_alpha_init = get_opt(optns, 'alpha_init')
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
 
-        opt_alpha_min = get_opt(optns, 'alpha_min')
-        self.alpha_min = opt_alpha_min if opt_alpha_min else 1e-4
+        self.alpha_min = get_opt(optns, 1e-4, 'alpha_min')
 
-        opt_rdtn_factor = get_opt(optns, 'rdtn_factor')
-        self.rdtn_factor = opt_rdtn_factor if opt_rdtn_factor else 0.3
+        self.rdtn_factor = get_opt(optns, .3, 'rdtn_factor')
 
-        opt_decr_cond = get_opt(optns, 'decr_cond')
-        self.decr_cond = opt_decr_cond if opt_decr_cond else 5e-1
-        self.max_iter = 10
-        self.p_dot_dfdx = 0.0
+        self.decr_cond = get_opt(optns, 5e-1, 'decr_cond')
+
+        self.max_iter = get_opt(optns, 10, 'max_iter')
+        self.p_dot_dfdx = get_opt(optns, 0.0, 'p_dot_dfdx')
+        
         self.merit_function = None
 
     def find_step_length(self):
