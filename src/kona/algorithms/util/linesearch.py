@@ -114,7 +114,6 @@ class StrongWolfe(LineSearch):
                 self.deriv_hi = True
                 return self.zoom
             # update old variables
-            quad_coeff =
 
 
 
