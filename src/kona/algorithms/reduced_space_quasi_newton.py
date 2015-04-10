@@ -23,7 +23,7 @@ class ReducedSpaceQuasiNewton(object):
 
         # set the type of quasi-Newton method
         try:
-            quasi_newton = get_opt(optns, 'quasi_newton', 'type')
+            quasi_newton = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
             self.quasi_newton = quasi_newton(primal_factory, optns['quasi_newton'],
                                               out_file)
         except:
@@ -31,7 +31,7 @@ class ReducedSpaceQuasiNewton(object):
 
         # set the type of line-search algorithm
         try:
-            line_search = get_opt(optsn, 'line_search', 'type')
+            line_search = get_opt(optsn, None, 'line_search', 'type')
             self.line_search = line_search(optns['line_search'], out_file)
         except:
             raise BadKonaOption(optns, 'line_search', 'type')

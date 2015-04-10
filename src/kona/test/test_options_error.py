@@ -10,7 +10,7 @@ class KonaOptionTestCase(unittest.TestCase):
             'quasi_newton': {'type': 2}
         }
         try:
-            raise BadKonaOption(optns, ('quasi_newton', 'type'))
+            raise BadKonaOption(optns, 'quasi_newton', 'type')
         except BadKonaOption as err:
             self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = 2")
         else:

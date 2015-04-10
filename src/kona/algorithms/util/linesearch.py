@@ -1,3 +1,5 @@
+from kona.options import get_opt
+
 class ILineSearch(object):
     pass
 
@@ -6,11 +8,18 @@ class StrongWolfe(object):
 
 class BackTracking(object):
 
-    def __init__(self):
-        self.alpha_init = 1.0
-        self.alpha_min = 1e-4
-        self.rdtn_factor = 0.3
-        self.decr_cond = 5e-1
+    def __init__(self, optns):
+        opt_alpha_init = get_opt(optns, 'alpha_init')
+        self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
+
+        opt_alpha_min = get_opt(optns, 'alpha_min')
+        self.alpha_min = opt_alpha_min if opt_alpha_min else 1e-4
+
+        opt_rdtn_factor = get_opt(optns, 'rdtn_factor')
+        self.rdtn_factor = opt_rdtn_factor if opt_rdtn_factor else 0.3
+
+        opt_decr_cond = get_opt(optns, 'decr_cond')
+        self.decr_cond = opt_decr_cond if opt_decr_cond else 5e-1
         self.max_iter = 10
         self.p_dot_dfdx = 0.0
         self.merit_function = None

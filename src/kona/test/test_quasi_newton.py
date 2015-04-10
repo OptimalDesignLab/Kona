@@ -5,6 +5,7 @@ import numpy as np
 from kona.linalg.memory import KonaMemory
 from kona.user.user_solver import UserSolver
 from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
+from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
 from kona.algorithms.reduced_space_quasi_newton import ReducedSpaceQuasiNewton
 from kona.options import BadKonaOption
 
@@ -50,9 +51,22 @@ class QuasiNewtonTestCase(unittest.TestCase):
         except BadKonaOption as err:
             self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = 25")
 
+        optns = {'quasi_newton': {'type': BackTracking}}
+        try:
+            ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
+        except BadKonaOption as err:
+            self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = None")
+
+
     def test_no_line_search(self):
 
-        pass
+        optns = {'quasi_newton': {'type': BackTracking}}
+        try:
+            ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
+        except BadKonaOption as err:
+            self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = None")
+
+
 
 class HessianApproxTestCase(unittest.TestCase):
     '''Test case for quasi-Newton classes'''
