@@ -1,11 +1,13 @@
-from quasi_newton import QuasiNewtonApprox
-import numpy
 import sys
+import numpy
+
+from quasi_newton import QuasiNewtonApprox
+from kona.options import get_opt
 
 
 class LimitedMemoryBFGS(QuasiNewtonApprox):
     """ Limited-memory BFGS
-    
+
     Attributes
     ----------
     lambda0 : float
@@ -23,7 +25,9 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         self.s_dot_s_list = []
         self.s_dot_y_list = []
 
-        vector_factory.request_num_vectors(2*optns['max_stored'])
+        self.max_stored = get_opt(optns, 10, 'max_stored')
+
+        vector_factory.request_num_vectors(2*self.max_stored)
 
     def add_correction(self, s_in, y_in):
         """

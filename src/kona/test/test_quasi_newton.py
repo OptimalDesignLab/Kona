@@ -24,8 +24,8 @@ class QuasiNewtonTestCase(unittest.TestCase):
 
     def test_no_quasi_newton(self):
 
-        # primal = self.pf.generate()
-        # state = self.sf.generate()
+        primal = self.pf.generate()
+        state = self.sf.generate()
 
         optns = {'quasi_newton': {'type': None}}
         try:
@@ -51,16 +51,21 @@ class QuasiNewtonTestCase(unittest.TestCase):
         except BadKonaOption as err:
             self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = 25")
 
-        optns = {'quasi_newton': {'type': BackTracking}}
+        optns = {'quasi_newton': {'type': LimitedMemoryBFGS}}
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
+        except:
+            self.fail('No Error Expected')
+
+        try:
+            ReducedSpaceQuasiNewton(self.pf, self.sf)
         except:
             self.fail('No Error Expected')
 
 
     def test_no_line_search(self):
 
-        optns = {'quasi_newton': {'type': BackTracking}}
+        optns = {'quasi_newton': {'type': LimitedMemoryBFGS}}
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
         except BadKonaOption as err:

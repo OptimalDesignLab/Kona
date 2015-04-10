@@ -1,3 +1,5 @@
+import sys
+
 from kona.options import get_opt
 
 class ILineSearch(object):
@@ -8,7 +10,7 @@ class StrongWolfe(object):
 
 class BackTracking(object):
 
-    def __init__(self, optns={}):
+    def __init__(self, optns={}, out_file=sys.stdout):
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
 
         self.alpha_min = get_opt(optns, 1e-4, 'alpha_min')
@@ -19,7 +21,7 @@ class BackTracking(object):
 
         self.max_iter = get_opt(optns, 10, 'max_iter')
         self.p_dot_dfdx = get_opt(optns, 0.0, 'p_dot_dfdx')
-        
+
         self.merit_function = None
 
     def find_step_length(self):

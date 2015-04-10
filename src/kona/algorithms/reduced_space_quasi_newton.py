@@ -24,22 +24,24 @@ class ReducedSpaceQuasiNewton(object):
 
         # set the type of quasi-Newton method
         try:
-            quasi_newton = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
-            self.quasi_newton = quasi_newton(primal_factory, optns['quasi_newton'],
-                                              out_file)
-        except:
+            quasi_newton_mat = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
+            quas_newton_opts = get_opt(optns, {}, 'quasi_newton')
+            self.quasi_newton = quasi_newton_mat(primal_factory, quas_newton_opts, out_file)
+        except Exception as err:
             raise BadKonaOption(optns, 'quasi_newton','type')
 
         # set the type of line-search algorithm
         try:
-            line_search = get_opt(optsn, None, 'line_search', 'type')
-            self.line_search = line_search(optns['line_search'], out_file)
+            line_search_alg = get_opt(optns, BackTracking, 'line_search', 'type')
+            line_search_opt = get_opt(optns, {}, 'line_search')
+            self.line_search = line_search_alg(line_search_opt, out_file)
         except:
             raise BadKonaOption(optns, 'line_search', 'type')
 
         # define the merit function (which is always the objective itself here)
-        self.merit = ObjectiveMerit(optns['merit'], primal_factory, out_file)
-        self.line_search.set_merit_function(self.merit)
+        merit_optns = get_opt(optns,{},'merit')
+        self.merit = ObjectiveMerit(primal_factory, state_factory, merit_optns, out_file)
+        self.line_search.merit_function = self.merit
 
     def solve():
         # need some way of choosing file to output to
