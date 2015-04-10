@@ -8,7 +8,7 @@ class StrongWolfe(object):
 
 class BackTracking(object):
 
-    def __init__(self, optns):
+    def __init__(self, optns={}):
         opt_alpha_init = get_opt(optns, 'alpha_init')
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
 
