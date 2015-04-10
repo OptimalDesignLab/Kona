@@ -59,13 +59,15 @@ class StrongWolfe(LineSearch):
         if self.dphi_old > 0.0:
             raise ValueError('search direction is not a descent direction')
 
-        self.alpha_new = 0.0
+        self.alpha_new = self.alpha_init
         self.phi_new = 0.0
         self.phi_new = 0.0
         quad_coeff = 0.0
         self.deriv_hi = False
 
+        # START OF BIG FOR-LOOP
         for i in xrange(self.max_iter):
+
             # get new step
             if i == 0:
                 self.alpha_new = self.alpha_init
@@ -76,49 +78,68 @@ class StrongWolfe(LineSearch):
                         self.alpha_new = min(2*self.alpha_old, self.alpha_max)
                 else:
                     self.alpha_new = min(2*self.alpha_old, self.alpha_max)
+
             # get new function value
             self.phi_new = merit.eval_func(self.alpha_new)
+
             # if new step violates sufficient decrease, call zoom
-            if (self.phi_new > phi_init + decr_cond*self.alpha_new*dphi_init) or \
-                ( (i > 0) and (self.phi_new >= phi_old) ):
+            phi_sufficient = phi_init + decr_cond*self.alpha_new*dphi_init
+            if (self.phi_new > phi_sufficient) or \
+            ((i > 0) and (self.phi_new >= phi_old)):
                 self.phi_new = 0.0
                 self.deriv_hi = False
                 return self.zoom()
+
             # otherwise, get new gradient
             self.phi_new = merit.eval_grad(self.alpha_new)
+
             # check curvature condition
             if abs(self.phi_new) <= -curv_cond*dphi_init:
+
                 # if curvature condition is satisfied, return self.alpha_new
                 if curv_cond > 1.e-6:
                     return self.alpha_new
+
                 # a very small curvature is supicious, check for local minimum
                 # perturb in one direction first
                 perturb = merit.eval_func(self.alpha_new - self.alpha_max*1.e-6)
+
                 # if the perturbation yielded a smaller function, update
                 if perturb < self.phi_new:
                     self.phi_new = perturb
-                    self.phi_new = merit.eval_func(self.alpha_new - self.alpha_max*1.e-6)
+                    self.phi_new = merit.eval_func(
+                        self.alpha_new - self.alpha_max*1.e-6)
                 else:
                     # otherwise perturb in the other direction
-                    perturb = merit.eval_func(self.alpha_new + self.alpha_max*1.e-6)
+                    perturb = merit.eval_func(
+                        self.alpha_new + self.alpha_max*1.e-6)
                     # if the perturbation yielded a smaller function, update
                     if perturb < self.phi_new:
                         self.phi_new = perturb
-                        self.phi_new = merit.eval_func(self.alpha_new + self.alpha_max*1.e-6)
+                        self.phi_new = merit.eval_func(
+                            self.alpha_new + self.alpha_max*1.e-6)
                     else:
                         # if neither perturbation worked, we have a true minimum
                         return self.alpha_new
+
             # check if new gradient is positive
             if self.phi_new >= 0:
                 # if we get this far, the curvature condition is not satisfied
                 self.deriv_hi = True
                 return self.zoom
+
             # update old variables
-            quad_coeff =
+            quad_coeff = self.alpha_new - self.alpha_old
+            quad_coeff = ((self.phi_new - self.phi_old) -
+                self.dphi_new*quad_coeff) / (quad_coeff**2)
+            self.alpha_old = self.alpha_new
+            self.phi_old = self.phi_new
+            self.dphi_old = self.dphi_new
 
+        # END OF BIG FOR-LOOP
 
-
-
+        # if we got here then we didn't find a step
+        raise Exception('LineSearch(run): failed to find a step length')
 
 class BackTracking(LineSearch):
 
@@ -154,4 +175,5 @@ class BackTracking(LineSearch):
             n_iter += 1
             f = merit.eval_func(alpha)
 
+        # if we get here, we didn't find a step
         raise Exception('LineSearch(run): failed to find a step length')
