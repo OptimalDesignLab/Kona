@@ -8,6 +8,8 @@ def get_opt(optns, default, *keys):
     utility function to make it easier to work with
     nested options dictionaries
 
+    Parameters
+    ------------------
     optns: nested dict
     default: value to return if no option found
 
