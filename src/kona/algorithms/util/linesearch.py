@@ -38,7 +38,7 @@ class BackTracking(object):
         merit = self.merit_function
 
         alpha = self.alpha_init
-        f_init = merit(alpha)
+        f_init = merit(alpha)[0]
         f = f_init
 
         n_iter = 0
@@ -47,6 +47,6 @@ class BackTracking(object):
                 return alpha, n_iter
             alpha *= self.rdtn_factor
             n_iter += 1
-            f = merit(alpha)
+            f = merit(alpha)[0]
 
         raise Exception('LineSearch(run): failed to find a step length')
