@@ -518,7 +518,7 @@ class UserSolver(object):
         """
         return 0
 
-    def user_info(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
+    def current_solution(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
         """
         Kona will evaluate this method at every outer optimization iteration.
         It can be used to print out useful information to monitor the process,
@@ -540,7 +540,21 @@ class UserSolver(object):
         num_iter : int
             Current outer iteration number.
         """
-        pass
+
+        self.current_design = curr_design.data
+
+        if curr_state is not None: 
+            self.curr_state = curr_state._data
+
+        if curr_adj is not None: 
+            self.curr_adj = curr_adj._data
+
+        if curr_dual is not None: 
+            self.curr_dual = curr_dual._data
+
+        self.num_iter = num_iter
+        
+        return self.curr_design, self.curr_state, self.curr_adj, self.curr_dual, self.num_iter
 
 class UserSolverIDF(UserSolver):
     """

@@ -1,5 +1,6 @@
 import sys
 
+from kona.linalg.vectors.common import current_solution
 from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
 from kona.linalg.matrices.lsr1 import LimitedMemorySR1
 from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
@@ -104,6 +105,8 @@ class ReducedSpaceQuasiNewton(object):
             p.times(alpha)
 
             nonlinear_sum += 1
+
+        current_solution(x, num_iter=nonlinear_sum)
 
         info.write('Total number of nonlinear iterations:',
                    nonlinear_sum, '\n')

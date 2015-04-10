@@ -6,7 +6,7 @@ from kona.user import BaseVector
 class Rosenbrock(UserSolver):
 
     def __init__(self):
-        super(rosenbrock, self).__init__(2,0,0)
+        super(Rosenbrock, self).__init__(2,0,0)
 
     def eval_obj(self, at_design, at_state): 
         x = at_design.data[0]
@@ -24,6 +24,8 @@ class Rosenbrock(UserSolver):
 
     def init_design(self, store_here):
         store_here.data = numpy.array([5., 5.])
+
+
 
 
 
