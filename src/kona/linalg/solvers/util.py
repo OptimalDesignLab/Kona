@@ -251,7 +251,7 @@ def solve_trust_reduced(H, g, radius):
     pred = -y.dot(0.5*H.dot(y) + g)
     return y, lam, pred
 
-def secular_function(H, g, lam, radius)
+def secular_function(H, g, lam, radius):
     """
     Computes the secular-equation residual and its derivative for
     solve_trust_reduced.
@@ -310,5 +310,3 @@ def secular_function(H, g, lam, radius)
     dfnc = -(dfnc*dfnc)/norm_y
 
     return y, fnc, dfnc
-
-

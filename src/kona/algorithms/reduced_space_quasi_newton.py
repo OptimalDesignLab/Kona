@@ -48,7 +48,7 @@ class ReducedSpaceQuasiNewton(object):
         # define the merit function (which is always the objective itself here)
         merit_optns = get_opt(optns,{},'merit')
         self.merit = ObjectiveMerit(primal_factory, state_factory, merit_optns, out_file)
-        self.line_search.merit = self.merit
+        self.line_search.merit_function = self.merit
 
     def solve(self):
         # need some way of choosing file to output to
@@ -104,7 +104,7 @@ class ReducedSpaceQuasiNewton(object):
 
             # set-up merit function and perform line search
             p_dot_dfdx = p.inner(dfdx)
-            self.merit.reset(p, x, p_dot_dfdx, state, adjoint)
+            self.merit.reset(p, x, state, p_dot_dfdx)
             self.line_search.p_dot_dfdx = p_dot_dfdx
             alpha = self.line_search.find_step_length()
             x.equals_ax_plus_by(1.0, x, alpha, p)

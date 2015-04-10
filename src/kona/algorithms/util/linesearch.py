@@ -141,7 +141,7 @@ class BackTracking(LineSearch):
         merit = self.merit_function
         alpha = self.alpha_init
 
-        f_init = merit.eval_func(alpha)
+        f_init = merit(alpha)
         f = f_init
 
         n_iter = 0

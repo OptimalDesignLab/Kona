@@ -39,12 +39,6 @@ class QuasiNewtonTestCase(unittest.TestCase):
         except BadKonaOption as err:
             self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = None")
 
-        optns = {}
-        try:
-            ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
-        except BadKonaOption as err:
-            self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = None")
-
         optns = {'quasi_newton': {'type': 25}}
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
@@ -52,10 +46,10 @@ class QuasiNewtonTestCase(unittest.TestCase):
             self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = 25")
 
         optns = {'quasi_newton': {'type': LimitedMemoryBFGS}}
-        try:
-            ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
-        except:
-            self.fail('No Error Expected')
+        # try:
+        ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
+        # except:
+            # self.fail('No Error Expected')
 
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf)
@@ -69,7 +63,7 @@ class QuasiNewtonTestCase(unittest.TestCase):
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
         except BadKonaOption as err:
-            self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = None")
+            self.assertEqual(str(err), "Invalid Kona option: optns['line_search']['type'] = None")
 
 
 
