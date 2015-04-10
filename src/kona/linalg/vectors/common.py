@@ -1,6 +1,6 @@
 import numpy as np
 
-from kona.linalg.matrices.common import dRdX, dRdU
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX
 
 
 def objective_value(at_design, at_state):
@@ -192,7 +192,7 @@ class PrimalVector(KonaVector):
 
         Used only for IDF problems.
         """
-        self._memory.solver.allocator.restrict_design(0, self._data)
+        self._memory.solver.restrict_design(0, self._data)
 
     def restrict_real_design(self):
         """
@@ -200,7 +200,7 @@ class PrimalVector(KonaVector):
 
         Used only for IDF problems.
         """
-        self._memory.solver.allocator.restrict_design(1, self._data)
+        self._memory.solver.restrict_design(1, self._data)
 
     def convert(self, dual_vector):
         """
@@ -213,8 +213,8 @@ class PrimalVector(KonaVector):
         dual_vector : DualVector
             Source vector for target state variable data.
         """
-        self._memory.solver.allocator.copy_dual_to_targstate(dual_vector._data,
-                                                     self._data)
+        self._memory.solver.copy_dual_to_targstate(dual_vector._data,
+                                                   self._data)
 
     def equals_init_design(self):
         """
@@ -262,7 +262,7 @@ class PrimalVector(KonaVector):
         # add it to the objective partial
         self.plus(primal_work)
 
-    def equals_lagrangian_reduced_gradient(self, at_primal, at_state, at_dual,
+    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
                                            at_adjoint, primal_work):
         """
         Computes in-place the total derivative of the Lagrangian.
