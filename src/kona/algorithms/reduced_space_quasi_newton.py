@@ -24,8 +24,6 @@ class ReducedSpaceQuasiNewton(object):
         # set the type of quasi-Newton method
         try:
             quasi_newton = get_opt(optns, 'quasi_newton', 'type')
-            if quasi_newton is None:
-                raise KeyError()
             self.quasi_newton = quasi_newton(primal_factory, optns['quasi_newton'],
                                               out_file)
         except:
@@ -33,12 +31,9 @@ class ReducedSpaceQuasiNewton(object):
 
         # set the type of line-search algorithm
         try:
-            get_opt
-        if optns['line_search']['type'] == 'wolfe':
-            self.line_search = StrongWolfe(optns['line_search'], out_file)
-        elif optns['line_search']['type'] == 'back_track':
-            self.line_search = BackTracking(optns['line_search'], out_file)
-        else:
+            line_search = get_opt(optsn, 'line_search', 'type')
+            self.line_search = line_search(optns['line_search'], out_file)
+        except:
             raise BadKonaOption(optns, 'line_search', 'type')
 
         # define the merit function (which is always the objective itself here)
