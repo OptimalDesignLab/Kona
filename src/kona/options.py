@@ -16,10 +16,12 @@ def get_opt(optns, default, *keys):
     *keys: string keys for the nested dictionary
     '''
 
+
     keys = list(keys)
+
     k = keys.pop(0)
     val = optns.get(k, default)
-    if isinstance(val, dict):
+    if isinstance(val, dict) and bool(val) and bool(keys):
         return get_opt(val, default, *keys)
     return val
 

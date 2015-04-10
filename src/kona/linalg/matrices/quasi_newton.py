@@ -1,5 +1,8 @@
-from composite import Hessian
 import sys
+
+from composite import Hessian
+
+from kona.options import get_opt
 
 class QuasiNewtonApprox(Hessian):
     """ Base class for quasi-Newton methods
@@ -23,7 +26,7 @@ class QuasiNewtonApprox(Hessian):
     """
 
     def __init__(self, vector_factory, optns, out_file=sys.stdout):
-        self.max_stored = optns['max_stored']
+        self.max_stored = get_opt(optns, 10, 'max_stored')
         self.vec_fac = vector_factory
         self.out_file = out_file
 

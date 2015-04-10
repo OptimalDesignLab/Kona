@@ -4,7 +4,7 @@ from kona.options import get_opt
 
 class LineSearch(object):
 
-    def __init__(self, optns={}, out=sys.out):
+    def __init__(self, optns={}, out=sys.stdout):
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
         self.decr_cond = get_opt(optns, 5e-1, 'decr_cond')
         self.max_iter = get_opt(optns, 10, 'max_iter')
@@ -43,7 +43,10 @@ class StrongWolfe(LineSearch):
             raise ValueError('curv_cond must be suff_cond < curv_cond < 1')
 
     def zoom(self):
-        pass
+        self.max_iter = get_opt(optns, 10, 'max_iter')
+        self.p_dot_dfdx = get_opt(optns, 0.0, 'p_dot_dfdx')
+
+        self.merit_function = None
 
     def find_step_length(self):
         self._validate_options()

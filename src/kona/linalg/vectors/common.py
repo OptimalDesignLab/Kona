@@ -2,29 +2,47 @@ import numpy as np
 
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX
 
+def current_solution(curr_design, curr_state=None, curr_adj=None, curr_dual=None, num_iter=None): 
+    """ 
+    Notify the solver of the current solution point 
+    """ 
+
+    solver = curr_design._memory.solver
+    curr_design = curr_design._data
+    
+    if curr_state is not None: 
+        curr_state = curr_state._data
+
+    if curr_adj is not None: 
+        curr_adj = curr_adj._data
+
+    if curr_dual is not None: 
+        curr_dual = curr_dual._data
+
+    solver.current_solution(curr_design, curr_state, curr_adj, curr_dual, num_iter)
 
 def objective_value(at_design, at_state):
-        """
-        Evaluate the objective value the given Primal and State point.
+    """
+    Evaluate the objective value the given Primal and State point.
 
-        Parameters
-        ----------
-        at_design : PrimalVector
-            Current primal point.
-        at_state : StateVector
-            Current state point.
+    Parameters
+    ----------
+    at_design : PrimalVector
+        Current primal point.
+    at_state : StateVector
+        Current state point.
 
-        Returns
-        -------
-        float : Objective function value.
-        """
-        solver = at_design._memory.solver
+    Returns
+    -------
+    float : Objective function value.
+    """
+    solver = at_design._memory.solver
 
-        if solver != at_state._memory.solver:
-            raise MemoryError('objective_value() >> Primal and State ' + \
-                              'vectors are not on the same memory manager!')
+    if solver != at_state._memory.solver:
+        raise MemoryError('objective_value() >> Primal and State ' + \
+                          'vectors are not on the same memory manager!')
 
-        return solver.eval_obj(at_design._data, at_state._data)
+    return solver.eval_obj(at_design._data, at_state._data)
 
 
 class KonaVector(object):
