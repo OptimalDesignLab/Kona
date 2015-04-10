@@ -12,8 +12,7 @@ class Rosenbrock(UserSolver):
         x = at_design.data[0]
         y = at_design.data[1]
         obj = (1.0 - x)*(1.0 - x) + 100.0*(y - x*x)*(y - x*x)
-        precond_calls = 0
-        return (obj, precond_calls)
+        return obj
 
     def eval_dFdX(self, at_design, at_state, store_here):
         x = at_design.data[0]
