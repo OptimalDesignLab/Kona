@@ -12,7 +12,7 @@ class ReducedSpaceQuasiNewton(object):
     Unconstrained optimization using quasi-Newton in the reduced space.
     """
 
-    def __init__(self, primal_factory, state_factory, optns,
+    def __init__(self, primal_factory, state_factory, optns={},
                  out_file=sys.stdout):
         self.primal_factory = primal_factory
         self.state_factory = state_factory

@@ -3,7 +3,7 @@ import numpy
 from kona.user import UserSolver
 from kona.user import BaseVector
 
-class rosenbrock(UserSolver):
+class Rosenbrock(UserSolver):
 
     def __init__(self):
         super(rosenbrock, self).__init__(2,0,0)
@@ -25,7 +25,7 @@ class rosenbrock(UserSolver):
     def init_design(self, store_here):
         store_here.data = numpy.array([5., 5.])
 
-    
+
 
 
 
