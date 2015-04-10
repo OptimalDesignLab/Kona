@@ -16,8 +16,8 @@ class ObjectiveMeritTestCase(unittest.TestCase):
         pf = km.primal_factory
         sf = km.state_factory
 
-        pf.request_num_vectors(3)
-        sf.request_num_vectors(1)
+        pf.request_num_vectors(10)
+        sf.request_num_vectors(10)
         om = ObjectiveMerit(pf, sf)
 
         km.allocate_memory()
@@ -28,9 +28,20 @@ class ObjectiveMeritTestCase(unittest.TestCase):
         x_start = pf.generate()
         x_start.equals(2)
 
-        #make up a a direction
+        u_start = sf.generate()
+        u_start.equals_primal_solution(x_start)
 
-        om.reset(p, x_start)
+        grad = pf.generate()
+        adjoint = sf.generate()
+        state_work = sf.generate()
+        adjoint.equals_adjoint_solution(x_start, u_start, state_work)
+
+        primal_work = pf.generate()
+        grad.equals_total_gradient(x_start, u_start, adjoint, primal_work)
+
+        p_dot_grad = p.inner(grad)
+
+        om.reset(p, x_start, u_start, p_dot_grad)
 
         merit = om.eval_func(1)
 
