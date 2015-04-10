@@ -22,6 +22,12 @@ class ReducedSpaceQuasiNewton(object):
         primal_factory.request_num_vectors(6)
         state_factory.request_num_vectors(3)
 
+        self.info_file = get_opt(optns, sys.stdout, 'info_file')
+        if isinstance(self.info_file, str): 
+            self.info_file = open(self.info_file,'w')
+
+        self.max_iter = get_opt(optns, 100, 'max_iter')
+
         # set the type of quasi-Newton method
         try:
             quasi_newton_mat = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
@@ -43,9 +49,9 @@ class ReducedSpaceQuasiNewton(object):
         self.merit = ObjectiveMerit(primal_factory, state_factory, merit_optns, out_file)
         self.line_search.merit_function = self.merit
 
-    def solve():
+    def solve(self):
         # need some way of choosing file to output to
-        info = open(optns['info_file'], 'w')
+        info = self.info_file
         # need to open the history file
 
         # get memory
@@ -60,13 +66,13 @@ class ReducedSpaceQuasiNewton(object):
         initial_design = self.primal_factory.generate()
         design_work = self.primal_factory.generate()
 
-        x.equals_initial_design()
+        x.equals_init_design()
         initial_design.equals(x)
         # call current_solution
 
         nonlinear_sum = 0
         converged = False
-        for i in xrange(optns['max_iter']):
+        for i in xrange(self.max_iter):
             state.equals_primal_solution(x)
             adjoint.equals_adjoint_solution(x, state, state_work)
             dfdx.equals_total_gradient(x, state, adjoint, design_work)
@@ -75,7 +81,7 @@ class ReducedSpaceQuasiNewton(object):
                 grad_norm0 = dfdx.norm2
                 grad_norm = grad_norm0
                 self.quasi_newton.norm_init = grad_norm0
-                info.write('grad_norm0 = ', grad_norm0, '\n')
+                info.write('grad_norm0 = %f\n'%grad_norm0)
                 grad_tol = optns['primal_tol'] * grad_norm0
                 # save gradient for quasi-Newton
                 dfdx_old.equals(dfdx)

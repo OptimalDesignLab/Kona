@@ -177,7 +177,7 @@ class UserSolver(object):
         out_vec : BaseVector-like
             Location where user should store the result.
         """
-        result.data[:] = 0.0
+        out_vec.data[:] = 0.0
 
     def multiply_dRdU_T(self, at_design, at_state, in_vec, out_vec):
         """
