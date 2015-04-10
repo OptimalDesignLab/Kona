@@ -73,7 +73,7 @@ class ReducedSpaceQuasiNewton(object):
         for i in xrange(optns['max_iter']):
             state.equals_primal_solution(x)
             adjoint.equals_adjoint_solution(x, state, state_work)
-            dfdx.equals_reduced_gradient(x, state, adjoint, design_work)
+            dfdx.equals_total_gradient(x, state, adjoint, design_work)
             # check for convergence
             if i == 0:
                 grad_norm0 = dfdx.norm2
