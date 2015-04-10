@@ -3,111 +3,144 @@ import numpy as np
 EPS = np.finfo(float).eps
 
 def abs_sign(x, y):
-    """x = abs(x)*sign(y) """
+    """
+    Returns the value :math:`|x|\mathsf{sign}(y)`; used in GMRES, for example.
+
+    Parameters
+    ----------
+    x : float
+    y : float
+    """
     return abs(x)*np.sign(y)
 
-    if y == 0.0:
-        return 0.0
-    else:
-        if y < 0:
-            return -abs(x)
-        else:
-            return abs(x)
-
-
 def CalcEpsilon(eval_at_norm, mult_by_norm):
-    """ Type:
-    eval_at_norm : double
-    mult_by_norm : double   """
+    """
+    Determines the perturbation parameter for forward-difference based
+    matrix-vector products
 
-    if (mult_by_norm < EPS*eval_at_norm) or (mult_by_norm < EPS):
-        # multiplying vector is zero or essentially zero
+    Parameters
+    ----------
+    eval_at_norm : float
+        the norm of the vector at which the Jacobian-like matrix is evaluated
+    mult_by_norm : float
+        the norm of the vector that is being multiplied
+    """
+    if mult_by_norm < EPS*eval_at_norm or mult_by_norm < EPS:
+        # multiplying vector is zero in a relative or absolute sense
         return 1.0
     else:
-        # multiplying vector dominates, so treat eval_at vector like zero
-        if (eval_at_norm < EPS*mult_by_norm):
+        if eval_at_norm < EPS*mult_by_norm:
+            # multiplying vector dominates, so treat eval_at vector like zero
             return np.sqrt(EPS)/mult_by_norm
         else:
             return np.sqrt(EPS)*eval_at_norm/mult_by_norm
 
+def eigen_decomp(A):
+    """
+    Returns the (sorted) eigenvalues and eigenvectors of the symmetric part of a
+    square matrix.
 
-def eigenvalues(A):
-    eig_vals, eig_vec = np.linalg.eig(A)
-    idx = eig_vals.argsort() # eig doesn't sort, so we have to
-    eig_vals = eig_vals[idx]
-    eig_vec = eig_vec[idx]
+    The matrix A is stored in dense format and is not assumed to be exactly
+    symmetric.  The eigenvalues are found by calling np.linalg.eig, which is
+    given 0.5*(A^T + A) as the input matrix, not A itself.
 
-    return eig_vals, eig_vec
+    Parameters
+    ----------
+    A : numpy 2d array
+        matrix stored in dense format; not necessarily symmetric
+
+    Returns
+    -------
+    eig_vals : numpy array
+        the eigenvalues in ascending order
+    eig_vecs : numpy 2d array
+        the eigenvectors sorted appropriated
+    """
+    eig_vals, eig_vec = np.linalg.eig(0.5*(A + A.T))
+    idx = eig_vals.real.argsort() # eig doesn't sort, so we have to
+    inv_idx = np.empty(idx.shape[0], dtype=int)
+    inv_idx[idx] = np.arange(idx.shape[0])
+    return eig_vals[idx].real, eig_vec[:,inv_idx].real
 
 def applyGivens(s, c, h1, h2):
+    """
+    Applies a Givens rotation to a 2-vector
 
-    # clockwise rotation?
-
+    Parameters
+    ----------
+    s : float
+        sine of the Givens rotation angle
+    c : float
+        cosine of the Givens rotation angle
+    h1 : float
+        first element of 2x1 vector being transformed
+    h2 : float
+        second element of 2x1 vector being transformed
+    """
     temp = c*h1 + s*h2
     h2 = c*h2 - s*h1
     h1 = temp
 
-    return h1,h2
-
-
-
 def generateGivens(dx, dy, s, c):
+    """
+    Generates the Givens rotation matrix for a given 2-vector
 
-    if (dx == 0.0) and (dy == 0.0):
+    Based on givens() of SPARSKIT, which is based on p.202 of "Matrix
+    Computations" by Golub and van Loan.
+
+    Parameters
+    ----------
+    dx : float
+        element of 2x1 vector being transformed
+    dy : float
+        element of 2x1 vector being set to zero
+    s : float
+        sine of the Givens rotation angle
+    c : float
+        cosine of the Givens rotation angle
+    """
+    if dx == 0.0 and dy == 0.0:
         c = 1.0
         s = 0.0
     elif abs(dy) > abs(dx):
         tmp = dx/dy
         dx = np.sqrt(1.0 + tmp*tmp)
-        s = sign(1.0/dx, dy)
+        s = abs_sign(1.0/dx, dy)
         c = tmp*s
     elif abs(dy) <= abs(dx):
         tmp = dy/dx
         dy = np.sqrt(1.0 + tmp*tmp)
-        c = sign(1.0/dy, dx)
+        c = abs_sign(1.0/dy, dx)
         s = tmp*c
-
     else:   # dx and/or dy must be invalid
         dx = 0.0
         dy = 0.0
         c = 1.0
         s = 0.0
-
     dx = abs(dx*dy)
     dy = 0.0
-    return dx, dy
 
-def solve_lowertri(L, b, x)
+def solve_tri(A, b, x, lower=False):
     """
-    Solve a lower-triangular system :math:`Lx = b`
+    Solve an upper-triangular system :math:`Ux = b` (lower=False) or
+    lower-triangular system :math:`Lx = b` (lower=True)
 
     Parameters
     ----------
-    L : numpy 2d array
-        a lower triangular matrix
+    A : numpy 2d array
+        a triangular matrix
     b : numpy array
         the right-hand side of the system
     x : numpy array
         on exit, the solution
-    """
-
-def solve_uppertri(U, b, x)
-    """
-    Solve an upper-triangular system :math:`Ux = b`
-    
-    Parameters
-    ----------
-    U : numpy 2d array
-        an upper triangular matrix
-    b : numpy array
-        the right-hand side of the system
-    x : numpy array
-        on exit, the solution
+    lower : boolean
+        if True, A stores an lower-triangular matrix; stores an upper-triangular
+        matrix otherwise
     """
 
 def solve_trust_reduced(H, g, radius):
     """
-    Solves the reduced-space trust-region subproblem
+    Solves the reduced-space trust-region subproblem (the secular equation)
 
     This assumes the reduced space objective is in the form :math:`g^Tx +
     \frac{1}{2}x^T H x`.  Furthermore, the case :math:`g = 0` is not handled
@@ -263,15 +296,15 @@ def secular_function(H, g, lam, radius)
 
     work = np.empty(g.shape)
     y = -g.copy() # minus sign to move to rhs
-    solve_lowertri(L, y, work)
-    solve_uppertri(L.T, work, y)
+    solve_tri(L, y, work, lower=True)
+    solve_tri(L.T, work, y, lower=False)
 
     # compute the secular function
     norm_y = np.linalg.norm(y)
     fnc = 1.0/radius - 1.0/norm_y
 
     # compute its derivative
-    solve_lowertri(L, y, work)
+    solve_tri(L, y, work, lower=True)
     norm_work = np.linalg.norm(work)
     dfnc = norm_work/norm_y
     dfnc = -(dfnc*dfnc)/norm_y
