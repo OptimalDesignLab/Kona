@@ -38,12 +38,12 @@ class ReducedSpaceQuasiNewton(object):
             raise BadKonaOption(optns, 'quasi_newton','type')
 
         # set the type of line-search algorithm
-        try:
-            line_search_alg = get_opt(optns, BackTracking, 'line_search', 'type')
-            line_search_opt = get_opt(optns, {}, 'line_search')
-            self.line_search = line_search_alg(line_search_opt, out_file)
-        except:
-            raise BadKonaOption(optns, 'line_search', 'type')
+        #try:
+        line_search_alg = get_opt(optns, StrongWolfe, 'line_search', 'type')
+        line_search_opt = get_opt(optns, {}, 'line_search')
+        self.line_search = line_search_alg(line_search_opt, out_file)
+        #except:
+        #    raise BadKonaOption(optns, 'line_search', 'type')
 
         # define the merit function (which is always the objective itself here)
         merit_optns = get_opt(optns,{},'merit')
@@ -82,13 +82,13 @@ class ReducedSpaceQuasiNewton(object):
                 grad_norm0 = dfdx.norm2
                 grad_norm = grad_norm0
                 self.quasi_newton.norm_init = grad_norm0
-                info.write('grad_norm0 = %f\n'%grad_norm0)
                 grad_tol = self.primal_tol * grad_norm0
+                info.write('grad_norm = %e : grad_tol = %e\n'%(grad_norm0, grad_tol))
                 # save gradient for quasi-Newton
                 dfdx_old.equals(dfdx)
             else:
                 grad_norm = dfdx.norm2
-                info.write('grad_norm/grad_norm0 = ',grad_norm/grad_norm0,'\n')
+                info.write('grad_norm = %e : grad_tol = %e\n'%(grad_norm, grad_tol))
                 if grad_norm < grad_tol:
                     converged = True
                     break
@@ -105,11 +105,10 @@ class ReducedSpaceQuasiNewton(object):
             # set-up merit function and perform line search
             p_dot_dfdx = p.inner(dfdx)
             self.merit.reset(p, x, state, p_dot_dfdx)
+            self.line_search.merit_function = self.merit
             self.line_search.p_dot_dfdx = p_dot_dfdx
-            alpha = self.line_search.find_step_length()
-            x.equals_ax_plus_by(1.0, x, alpha, p)
-
-            adjoint.equals_adjoint_solution(x, state)
+            alpha, _ = self.line_search.find_step_length()
+            x.equals_ax_p_by(1.0, x, alpha, p)
 
             # s = delta x = alpha * p is needed later by quasi-Newton method
             p.times(alpha)
@@ -118,5 +117,4 @@ class ReducedSpaceQuasiNewton(object):
 
         current_solution(x, num_iter=nonlinear_sum)
 
-        info.write('Total number of nonlinear iterations:',
-                   nonlinear_sum, '\n')
+        info.write('Total number of nonlinear iterations: %i\n'%nonlinear_sum)

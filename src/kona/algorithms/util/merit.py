@@ -6,7 +6,9 @@ from kona.linalg.matrices.common import dRdX
 
 class ObjectiveMerit(object):
     """
-    Merit function for line searches applied to the raw objective
+    Merit function for line searches applied to the raw objective.
+
+    Other, more complicated merit functions can be derived from this.
 
     Attributes
     ----------
@@ -32,7 +34,7 @@ class ObjectiveMerit(object):
         self.primal_factory = primal_factory
         self.primal_factory.request_num_vectors(2)
         self.state_factory = state_factory
-        self.state_factory.request_num_vectors(1)
+        self.state_factory.request_num_vectors(2)
         self.out_file = out_file
         self._allocated = False
 
@@ -41,6 +43,7 @@ class ObjectiveMerit(object):
         if not self._allocated:
             self.x_trial = self.primal_factory.generate()
             self.primal_work = self.primal_factory.generate()
+            self.state_work = self.state_factory.generate()
             self.adjoint_work = self.state_factory.generate()
             self._allocated = True
         # store information for the new point the merit function is reset at
@@ -76,7 +79,7 @@ class ObjectiveMerit(object):
             # add contribution from objective partial
             self.p_dot_grad = self.search_dir.inner(self.primal_work)
             # calculate adjoint
-            self.adjoint_work.equals_adjoint_solution(self.x_trial, self.u_trial)
+            self.adjoint_work.equals_adjoint_solution(self.x_trial, self.u_trial, self.state_work)
             # create dR/dX jacobian wrapper
             jacobian = dRdX(self.x_trial, self.u_trial)
             # multiply the adjoint by dR/dX^T and store into primal work
