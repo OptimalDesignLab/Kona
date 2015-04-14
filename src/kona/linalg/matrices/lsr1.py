@@ -13,7 +13,7 @@ class LimitedMemorySR1(QuasiNewtonApprox):
     """
 
     def __init__(self, vector_factory, optns, out_file=sys.stdout):
-        super(GlobSR1, self).__init__(vector_factory, optns, out_file)
+        super(LimitedMemorySR1, self).__init__(vector_factory, optns, out_file)
 
         self.lambda0 = 0
 
@@ -28,16 +28,16 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         y_copy = self.vec_fac.generate()
         tmp = self.vec_fac.generate()
         y_copy.equals(y_in)
-        self.apply_inv_Hessian_approx(y_copy, tmp)
+        self.solve(y_copy, tmp)
         tmp.minus(s_in)
 
         norm_resid = tmp.norm2
-        norm_y_new = y_new.norm2
-        prod = abs(y_new.inner(tmp))
+        norm_y_new = y_in.norm2
+        prod = abs(y_in.inner(tmp))
 
         if prod < threshold * norm_resid * norm_y_new or \
                 prod < numpy.finfo(float).eps:
-            self.out_file.write('GloblizedSR1::AddCorrection():' +
+            self.out_file.write('LimitedMemorySR1::AddCorrection():' +
                                'correction skipped due to threshold condition.')
             return
 
@@ -132,4 +132,4 @@ class LimitedMemorySR1(QuasiNewtonApprox):
                 fac = (y_list[i].inner(s_list[j]) - Bs[i].inner(s_list[j])) * denom
                 Bs[j].equals_ax_p_by(1.0, Bs[j], fac, y_list[i])
                 Bs[j].equals_ax_p_by(1.0, Bs[j], -fac, Bs[i])
-            
+

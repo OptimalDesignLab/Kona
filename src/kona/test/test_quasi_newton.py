@@ -5,6 +5,7 @@ import numpy as np
 from kona.linalg.memory import KonaMemory
 from kona.user.user_solver import UserSolver
 from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
+from kona.linalg.matrices.lsr1 import LimitedMemorySR1
 from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
 from kona.algorithms.reduced_space_quasi_newton import ReducedSpaceQuasiNewton
 from kona.options import BadKonaOption
@@ -119,10 +120,63 @@ class HessianApproxTestCase(unittest.TestCase):
         lbfgs.solve(s_new, y_new)
         self.assertRelError(y_new._data.data,
                             np.array([0.,1.,0.]), atol=1e-15)
-        # testing second column of H*H^{-1}
+        # testing third column of H*H^{-1}
         s_new._data.data[:] = 0.0
         s_new._data.data[2] = 10.0
         lbfgs.solve(s_new, y_new)
+        self.assertRelError(y_new._data.data,
+                            np.array([0.,0.,1.]), atol=1e-15)
+
+    def test_LimitedMemorySR1(self):
+        # Hessian matrix is [1 0 0; 0 100 0; 0 0 -10]
+        # initial iterate is [1 1 1] and exact line searches are used
+        max_stored = 3
+        solver = UserSolver(num_primal=3)
+        km = KonaMemory(solver)
+        vf = km.primal_factory
+        optns = {'max_stored': max_stored}
+        lsr1 = LimitedMemorySR1(vf, optns)
+        vf.request_num_vectors(2)
+        km.allocate_memory()
+
+        s_new = vf.generate()
+        y_new = vf.generate()
+        # first "iteration"
+        s_new._data.data[:] = 0.0
+        y_new._data.data[:] = 0.0
+        s_new._data.data[0] = -1.0
+        y_new._data.data[0] = -1.0
+        lsr1.add_correction(s_new, y_new)
+        # second "iteration"
+        s_new._data.data[:] = 0.0
+        y_new._data.data[:] = 0.0
+        s_new._data.data[1] = -1.0
+        y_new._data.data[1] = -100.0
+        lsr1.add_correction(s_new, y_new)
+        # third "iteration"
+        s_new._data.data[:] = 0.0
+        y_new._data.data[:] = 0.0
+        s_new._data.data[2] = -1.0
+        y_new._data.data[2] = 10.0
+        lsr1.add_correction(s_new, y_new)
+
+        # testing first column of H*H^{-1}
+        s_new._data.data[:] = 0.0
+        y_new._data.data[:] = 0.0
+        s_new._data.data[0] = 1.0
+        lsr1.solve(s_new, y_new)
+        self.assertRelError(y_new._data.data,
+                            np.array([1.,0.,0.]), atol=1e-15)
+        # testing second column of H*H^{-1}
+        s_new._data.data[:] = 0.0
+        s_new._data.data[1] = 100.0
+        lsr1.solve(s_new, y_new)
+        self.assertRelError(y_new._data.data,
+                            np.array([0.,1.,0.]), atol=1e-15)
+        # testing third column of H*H^{-1}
+        s_new._data.data[:] = 0.0
+        s_new._data.data[2] = -10.0
+        lsr1.solve(s_new, y_new)
         self.assertRelError(y_new._data.data,
                             np.array([0.,0.,1.]), atol=1e-15)
 
