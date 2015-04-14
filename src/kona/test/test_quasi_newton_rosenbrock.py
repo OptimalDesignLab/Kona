@@ -10,15 +10,18 @@ class SolveRosenbrockTestCase(unittest.TestCase):
 
     def test_rosenbrock_opt(self):
 
-        solver = Rosenbrock()
+        num_design = 2
+        solver = Rosenbrock(num_design)
         km = KonaMemory(solver)
 
-        rsqn = ReducedSpaceQuasiNewton(km.primal_factory, km.state_factory)
+        optns = {'max_iter' : 10000}
+        rsqn = ReducedSpaceQuasiNewton(km.primal_factory, km.state_factory, optns)
         km.allocate_memory()
         rsqn.solve()
 
-        print solver.curr_design
-        self.fail()
+        expected = numpy.ones(num_design)
+        diff = max(abs(solver.curr_design - expected))
+        self.assertTrue(diff < 1.e-2)
 
 if __name__ == "__main__":
     unittest.main()

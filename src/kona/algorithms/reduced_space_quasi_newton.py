@@ -27,7 +27,7 @@ class ReducedSpaceQuasiNewton(object):
             self.info_file = open(self.info_file,'w')
 
         self.max_iter = get_opt(optns, 100, 'max_iter')
-        self.primal_tol = get_opt(optns, 1e-6,'primal_tol')
+        self.primal_tol = get_opt(optns, 1e-8,'primal_tol')
 
         # set the type of quasi-Newton method
         try:
@@ -74,6 +74,7 @@ class ReducedSpaceQuasiNewton(object):
         nonlinear_sum = 0
         converged = False
         for i in xrange(self.max_iter):
+            info.write('========== Outer Iteration %i ==========\n'%(i+1))
             state.equals_primal_solution(x)
             adjoint.equals_adjoint_solution(x, state, state_work)
             dfdx.equals_total_gradient(x, state, adjoint, design_work)
@@ -115,6 +116,6 @@ class ReducedSpaceQuasiNewton(object):
 
             nonlinear_sum += 1
 
-        current_solution(x, num_iter=nonlinear_sum)
+            current_solution(x, num_iter=nonlinear_sum)
 
         info.write('Total number of nonlinear iterations: %i\n'%nonlinear_sum)

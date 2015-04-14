@@ -540,21 +540,17 @@ class UserSolver(object):
         num_iter : int
             Current outer iteration number.
         """
-
-        self.current_design = curr_design.data
-
-        if curr_state is not None: 
-            self.curr_state = curr_state._data
-
-        if curr_adj is not None: 
-            self.curr_adj = curr_adj._data
-
-        if curr_dual is not None: 
-            self.curr_dual = curr_dual._data
-
+        self.curr_design = curr_design.data
         self.num_iter = num_iter
-        
-        return self.curr_design, self.curr_state, self.curr_adj, self.curr_dual, self.num_iter
+
+        if curr_state is not None:
+            self.curr_state = curr_state.data
+
+        if curr_adj is not None:
+            self.curr_adj = curr_adj.data
+
+        if curr_dual is not None:
+            self.curr_dual = curr_dual.data
 
 class UserSolverIDF(UserSolver):
     """

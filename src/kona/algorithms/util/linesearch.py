@@ -70,7 +70,6 @@ class LineSearch(object):
     """
 
     def __init__(self, optns={}, out_file=sys.stdout):
-        self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
         self.decr_cond = get_opt(optns, 5e-1, 'decr_cond')
         self.max_iter = get_opt(optns, 50, 'max_iter')
         self.merit_function = None
@@ -79,9 +78,6 @@ class LineSearch(object):
     def _validate_options(self):
         if not (self.max_iter >= 1):
             raise ValueError('max_iter must be a positive integer')
-
-        if not (0 < self.alpha_init <= 1):
-            raise ValueError('alpha_init must be 0 < alpha_init <=1')
 
         if not (0 < self.decr_cond < 1):
             raise ValueError('suff_cond must be 0 < suff_cond < 1')
@@ -100,18 +96,22 @@ class BackTracking(LineSearch):
 
     def __init__(self, optns={}, out_file=None):
         super(BackTracking, self).__init__(optns, out_file)
+        self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
         self.alpha_min = get_opt(optns, 1e-4, 'alpha_min')
         self.rdtn_factor = get_opt(optns, .3, 'rdtn_factor')
         self.p_dot_dfdx = 0.0
 
     def _validate_options(self):
-        super(BackTracking, self)._validate_options()
+        if not (0 < self.alpha_init <= 1):
+            raise ValueError('alpha_init must be 0 < alpha_init <=1')
 
         if self.p_dot_dfdx > 0.0:
             raise ValueError('search direction is not a descent direction')
 
         if not (0 <= self.rdtn_factor <= 1):
             raise ValueError('reduction factor must be 0 <= rdtn_factor <= 1')
+
+        super(BackTracking, self)._validate_options()
 
     def find_step_length(self):
         self._validate_options()
@@ -142,17 +142,21 @@ class StrongWolfe(LineSearch):
 
     def __init__(self, optns={}, out_file=sys.stdout):
         super(StrongWolfe, self).__init__(optns, out_file)
+        self.alpha_init = get_opt(optns, 0.1, 'alpha_init')
         self.alpha_max = get_opt(optns, 1.0, 'alpha_max')
         self.curv_cond = get_opt(optns, 0.7, 'curv_cond')
 
     def _validate_options(self):
-        super(StrongWolfe, self)._validate_options()
+        if not (self.alpha_init > 0):
+            raise ValueError('alpha_init must be greater than zero (0)')
 
-        if not (self.alpha_max > 0.) and not (self.alpha_max > self.alpha_init):
-            raise ValueError('alpha_max must be > 0 and > alpha_init')
+        if not (self.alpha_max <= 0.) and (self.alpha_max <= self.alpha_init):
+            raise ValueError('alpha_max must be positive and > alpha_init')
 
         if not (self.decr_cond < self.curv_cond < 1):
             raise ValueError('curv_cond must be suff_cond < curv_cond < 1')
+
+        super(StrongWolfe, self)._validate_options()
 
     def _zoom(self, alpha_low, alpha_hi, phi_low, phi_hi, dphi_low, dphi_hi):
         merit = self.merit_function
@@ -215,9 +219,6 @@ class StrongWolfe(LineSearch):
         if dphi_old > 0.0:
             raise ValueError('search direction is not a descent direction')
 
-        alpha_new = 0.0
-        phi_new = 0.0
-        dphi_new = 0.0
         quad_coeff = 0.0
         self.deriv_hi = False
 
@@ -226,14 +227,18 @@ class StrongWolfe(LineSearch):
 
             # get new step
             if i == 0:
+                # set alpha to alpha_init if we're at the first step
                 alpha_new = self.alpha_init
             else:
+                # if it's not the first step, check quad_coeff
                 if quad_coeff > 0:
+                    # if quad_coeff is positive, then step alpha forward
                     alpha_new = alpha_old - 0.5*dphi_old/quad_coeff
                     if (alpha_new < alpha_old) or (alpha_new > self.alpha_max):
                         alpha_new = min(2*alpha_old, self.alpha_max)
                 else:
-                    alpha_new = min(2*alpha_old, self.alpha_max)
+                    # if quad_coeff is negative, take some minimum between
+                    alpha_new = max(2*alpha_old, self.alpha_max)
 
             # get new function value
             phi_new = merit.eval_func(alpha_new)
