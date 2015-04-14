@@ -13,7 +13,7 @@ def abs_sign(x, y):
     """
     return abs(x)*np.sign(y)
 
-def CalcEpsilon(eval_at_norm, mult_by_norm):
+def calc_epsilon(eval_at_norm, mult_by_norm):
     """
     Determines the perturbation parameter for forward-difference based
     matrix-vector products
@@ -62,7 +62,7 @@ def eigen_decomp(A):
     inv_idx[idx] = np.arange(idx.shape[0])
     return eig_vals[idx].real, eig_vec[:,inv_idx].real
 
-def applyGivens(s, c, h1, h2):
+def apply_givens(s, c, h1, h2):
     """
     Applies a Givens rotation to a 2-vector
 
@@ -80,8 +80,9 @@ def applyGivens(s, c, h1, h2):
     temp = c*h1 + s*h2
     h2 = c*h2 - s*h1
     h1 = temp
+    return h1, h2
 
-def generateGivens(dx, dy, s, c):
+def generate_givens(dx, dy, s, c):
     """
     Generates the Givens rotation matrix for a given 2-vector
 
