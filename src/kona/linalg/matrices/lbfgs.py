@@ -40,6 +40,8 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         if curvature < numpy.finfo(float).eps:
             self.out_file.write('LimitedMemoryBFGS.add_correction():' +
                                 'correction skipped due to curvature condition.\n')
+            print 'curvature = %e'%curvature
+            
             return
 
         s_new = self.vec_fac.generate()

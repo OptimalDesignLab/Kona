@@ -96,7 +96,7 @@ class ReducedSpaceQuasiNewton(object):
                 # update the quasi-Newton method
                 dfdx_old.minus(dfdx)
                 dfdx_old.times(-1.0)
-                self.quasi_newton.add_correction(p, dfdx)
+                self.quasi_newton.add_correction(p, dfdx_old)
                 dfdx_old.equals(dfdx)
 
             # write convergence history here

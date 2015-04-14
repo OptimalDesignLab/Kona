@@ -14,7 +14,7 @@ class SolveRosenbrockTestCase(unittest.TestCase):
         solver = Rosenbrock(num_design)
         km = KonaMemory(solver)
 
-        optns = {'max_iter' : 10000}
+        optns = {'max_iter' : 200}
         rsqn = ReducedSpaceQuasiNewton(km.primal_factory, km.state_factory, optns)
         km.allocate_memory()
         rsqn.solve()

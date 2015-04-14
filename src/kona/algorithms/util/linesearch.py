@@ -70,7 +70,7 @@ class LineSearch(object):
     """
 
     def __init__(self, optns={}, out_file=sys.stdout):
-        self.decr_cond = get_opt(optns, 5e-1, 'decr_cond')
+        self.decr_cond = get_opt(optns, 1e-4, 'decr_cond')
         self.max_iter = get_opt(optns, 50, 'max_iter')
         self.merit_function = None
         self.out_file = out_file
@@ -142,9 +142,9 @@ class StrongWolfe(LineSearch):
 
     def __init__(self, optns={}, out_file=sys.stdout):
         super(StrongWolfe, self).__init__(optns, out_file)
-        self.alpha_init = get_opt(optns, 0.1, 'alpha_init')
-        self.alpha_max = get_opt(optns, 1.0, 'alpha_max')
-        self.curv_cond = get_opt(optns, 0.7, 'curv_cond')
+        self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
+        self.alpha_max = get_opt(optns, 2.0, 'alpha_max')
+        self.curv_cond = get_opt(optns, 0.9, 'curv_cond')
 
     def _validate_options(self):
         if not (self.alpha_init > 0):
