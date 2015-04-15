@@ -26,8 +26,8 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
 
         self.pv2 = km.primal_factory.generate()
         self.dv2 = km.dual_factory.generate()
-        self.pv2._data.data = 1*np.ones(10)
-        self.dv2._data.data = 1*np.ones(5)
+        self.pv2._data.data = 2*np.ones(10)
+        self.dv2._data.data = 2*np.ones(5)
 
         self.rkkt_vec1 = ReducedKKTVector(km, self.pv1, self.dv1)
         self.rkkt_vec2 = ReducedKKTVector(km, self.pv2, self.dv2)
@@ -69,10 +69,10 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
     def test_plus(self):
         self.rkkt_vec2.plus(self.rkkt_vec1)
 
-        err = self.pv2._data.data - 3*np.ones(10)
+        err = self.pv2._data.data - 4*np.ones(10)
         self.assertEquals(np.linalg.norm(err), 0)
 
-        err = self.dv2._data.data - 4*np.ones(5)
+        err = self.dv2._data.data - 5*np.ones(5)
         self.assertEquals(np.linalg.norm(err), 0)
 
     def test_minus(self):
