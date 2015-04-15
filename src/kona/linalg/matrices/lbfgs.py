@@ -1,4 +1,4 @@
-import sys
+import sys, gc
 import numpy
 
 from quasi_newton import QuasiNewtonApprox
@@ -37,25 +37,26 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         two_norm = s_in.inner(s_in)
         curvature = s_in.inner(y_in)
 
+        # if curvature is too small, skip correction
         if curvature < numpy.finfo(float).eps:
             self.out_file.write('LimitedMemoryBFGS.add_correction():' +
                                 'correction skipped due to curvature condition.\n')
-            print 'curvature = %e'%curvature
-            
             return
 
+        # otherwise we must first free up space for the correction, if needed
+        if (len(self.s_list) == self.max_stored):
+            del self.s_list[0], self.y_list[0]
+            del self.s_dot_s_list[0], self.s_dot_y_list[0]
+
+        # get new vectors to store the correction
         s_new = self.vec_fac.generate()
         y_new = self.vec_fac.generate()
 
+        # set the new vectors to correction values
         s_new.equals(s_in)
         y_new.equals(y_in)
 
-        if len(self.s_list) == self.max_stored:
-            del self.s_list[0]
-            del self.y_list[0]
-            del self.s_dot_s_list[0]
-            del self.s_dot_y_list[0]
-
+        # append the list
         self.s_list.append(s_new)
         self.y_list.append(y_new)
         self.s_dot_s_list.append(two_norm)

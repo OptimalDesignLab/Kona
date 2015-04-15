@@ -161,6 +161,11 @@ class StrongWolfe(LineSearch):
     def _zoom(self, alpha_low, alpha_hi, phi_low, phi_hi, dphi_low, dphi_hi):
         merit = self.merit_function
 
+        # if the lower and upper bounds are equal, this means we just hit
+        # alpha_max, so we will return alpha_max
+        if (alpha_low == alpha_hi) and (alpha_low == self.alpha_max):
+            return self.alpha_max, 0
+
         # START OF BIG FOR-LOOP
         for i in xrange(self.max_iter):
 
