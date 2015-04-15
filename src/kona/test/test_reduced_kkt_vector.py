@@ -21,9 +21,13 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         # KonaVectorMethods
         self.pv1 = km.primal_factory.generate()
         self.dv1 = km.dual_factory.generate()
+        self.pv1._data.data = 2*np.ones(10)
+        self.dv1._data.data = 3*np.ones(5)
 
         self.pv2 = km.primal_factory.generate()
         self.dv2 = km.dual_factory.generate()
+        self.pv2._data.data = 1*np.ones(10)
+        self.dv2._data.data = 1*np.ones(5)
 
         self.rkkt_vec1 = ReducedKKTVector(km, self.pv1, self.dv1)
         self.rkkt_vec2 = ReducedKKTVector(km, self.pv2, self.dv2)
@@ -54,9 +58,6 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
             self.fail('TypeError expected')
 
     def test_equals(self):
-        self.pv1._data.data = 2*np.ones(10)
-        self.dv1._data.data = 3*np.ones(5)
-
         self.rkkt_vec2.equals(self.rkkt_vec1)
 
         err = self.dv2._data.data - self.dv1._data.data
