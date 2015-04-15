@@ -27,13 +27,13 @@ class ReducedKKTVector(object):
         else:
             raise TypeError('ReducedKKTVector() >> ' + \
                             'Unidentified design vector.')
-        if isinstance(dualVec, DualVector):
+        if isinstance(dual_vec, DualVector):
             self._dual = dual_vec
         else:
             raise TypeError('ReducedKKTVector() >> ' + \
                             'Unidentified dual vector.')
 
-    def _checkType(self, vec):
+    def _check_type(self, vec):
         if not isinstance(vec, type(self)):
             raise TypeError('ReducedKKTVector() >> ' + \
                             'Wrong vector type. Must be %s' % type(self))
