@@ -38,12 +38,12 @@ class ReducedSpaceQuasiNewton(object):
             raise BadKonaOption(optns, 'quasi_newton','type')
 
         # set the type of line-search algorithm
-        #try:
-        line_search_alg = get_opt(optns, StrongWolfe, 'line_search', 'type')
-        line_search_opt = get_opt(optns, {}, 'line_search')
-        self.line_search = line_search_alg(line_search_opt, out_file)
-        #except:
-        #    raise BadKonaOption(optns, 'line_search', 'type')
+        try:
+            line_search_alg = get_opt(optns, StrongWolfe, 'line_search', 'type')
+            line_search_opt = get_opt(optns, {}, 'line_search')
+            self.line_search = line_search_alg(line_search_opt, out_file)
+        except:
+            raise BadKonaOption(optns, 'line_search', 'type')
 
         # define the merit function (which is always the objective itself here)
         merit_optns = get_opt(optns,{},'merit')
@@ -107,7 +107,6 @@ class ReducedSpaceQuasiNewton(object):
             p_dot_dfdx = p.inner(dfdx)
             self.merit.reset(p, x, state, p_dot_dfdx)
             self.line_search.merit_function = self.merit
-            self.line_search.p_dot_dfdx = p_dot_dfdx
             alpha, _ = self.line_search.find_step_length()
             x.equals_ax_p_by(1.0, x, alpha, p)
 

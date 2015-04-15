@@ -1,10 +1,12 @@
 import unittest
 import numpy
 
-from kona.algorithms.util.linesearch import StrongWolfe
+from kona.linalg.memory import KonaMemory
+from kona.algorithms.util.linesearch import BackTracking, StrongWolfe
+from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
+from kona.linalg.matrices.lsr1 import LimitedMemorySR1
 from kona.examples.rosenbrock import Rosenbrock
 from kona.algorithms.reduced_space_quasi_newton import ReducedSpaceQuasiNewton
-from kona.linalg.memory import KonaMemory
 
 class SolveRosenbrockTestCase(unittest.TestCase):
 
@@ -14,7 +16,16 @@ class SolveRosenbrockTestCase(unittest.TestCase):
         solver = Rosenbrock(num_design)
         km = KonaMemory(solver)
 
-        optns = {'max_iter' : 200}
+        optns = {
+            'max_iter' : 200,
+            'primal_tol' : 1e-12,
+            'line_search' : {
+                'type' : StrongWolfe,
+            },
+            'quasi_newton' : {
+                'type' : LimitedMemoryBFGS
+            },
+        }
         rsqn = ReducedSpaceQuasiNewton(km.primal_factory, km.state_factory, optns)
         km.allocate_memory()
         rsqn.solve()

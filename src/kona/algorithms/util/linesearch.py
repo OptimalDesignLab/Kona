@@ -70,8 +70,8 @@ class LineSearch(object):
     """
 
     def __init__(self, optns={}, out_file=sys.stdout):
-        self.decr_cond = get_opt(optns, 1e-4, 'decr_cond')
         self.max_iter = get_opt(optns, 50, 'max_iter')
+        self.decr_cond = get_opt(optns, 1e-4, 'decr_cond')
         self.merit_function = None
         self.out_file = out_file
 
@@ -105,9 +105,6 @@ class BackTracking(LineSearch):
         if not (0 < self.alpha_init <= 1):
             raise ValueError('alpha_init must be 0 < alpha_init <=1')
 
-        if self.p_dot_dfdx > 0.0:
-            raise ValueError('search direction is not a descent direction')
-
         if not (0 <= self.rdtn_factor <= 1):
             raise ValueError('reduction factor must be 0 <= rdtn_factor <= 1')
 
@@ -117,14 +114,19 @@ class BackTracking(LineSearch):
         self._validate_options()
 
         merit = self.merit_function
-        alpha = self.alpha_init
+        self.p_dot_dfdx = merit.p_dot_grad
 
+        if (self.p_dot_dfdx >= 0):
+            raise ValueError('search direction is not a descent direction')
+
+        alpha = self.alpha_init
         f_init = merit.eval_func(alpha)
         f = f_init
 
         n_iter = 0
-        while (alpha > self.alpha_min) and (n_iter < self.max_iter):
-            if f <= f_init + self.decr_cond*alpha*self.p_dot_dfdx:
+        while (alpha > self.alpha_min):
+            f_sufficient = f_init + self.decr_cond*alpha*self.p_dot_dfdx
+            if f <= f_sufficient:
                 return alpha, n_iter
             alpha *= self.rdtn_factor
             f = merit.eval_func(alpha)

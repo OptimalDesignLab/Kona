@@ -170,7 +170,7 @@ class BackTrackingTestCase(unittest.TestCase):
         self.bt.merit_function = self.merit
         self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
 
-        self.bt.p_dot_dfdx *= -1
+        self.merit.p_dot_grad *= -1
         try:
             alpha, n_iter = self.bt.find_step_length()
         except ValueError as err:

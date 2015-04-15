@@ -1,6 +1,7 @@
-from quasi_newton import QuasiNewtonApprox
+from kona.linalg.matrices.quasi_newton import QuasiNewtonApprox
+from kona.options import get_opt
 import numpy
-import sys
+import sys, gc
 
 
 class LimitedMemorySR1(QuasiNewtonApprox):
@@ -17,7 +18,31 @@ class LimitedMemorySR1(QuasiNewtonApprox):
 
         self.lambda0 = 0
 
-        vector_factory.request_num_vectors(3*optns['max_stored'] + 4)
+        self.max_stored = get_opt(optns, 10, 'max_stored')
+
+        vector_factory.request_num_vectors(3*self.max_stored + 4)
+
+    def _hessian_product(self, u_vec, v_vec):
+        s_list = self.s_list
+        y_list = self.y_list
+        num_stored = len(s_list)
+
+        Bs = []
+        for k in xrange(num_stored):
+            Bs.append(self.vec_fac.generate())
+            Bs[k].equals(s_list[k])
+
+        v_vec.equals(u_vec)
+
+        for i in xrange(num_stored):
+            denom = 1.0 / (y_list[i].inner(s_list[i]) - Bs[i].inner(s_list[i]))
+            fac = (y_list[i].inner(u_vec) - Bs[i].inner(u_vec)) * denom
+            v_vec.equals_ax_p_by(1.0, v_vec, fac, y_list[i])
+            v_vec.equals_ax_p_by(1.0, v_vec, -fac, Bs[i])
+            for j in xrange(i+1, num_stored):
+                fac = (y_list[i].inner(s_list[j]) - Bs[i].inner(s_list[j])) * denom
+                Bs[j].equals_ax_p_by(1.0, Bs[j], fac, y_list[i])
+                Bs[j].equals_ax_p_by(1.0, Bs[j], -fac, Bs[i])
 
     def add_correction(self, s_in, y_in):
         """
@@ -28,7 +53,7 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         y_copy = self.vec_fac.generate()
         tmp = self.vec_fac.generate()
         y_copy.equals(y_in)
-        self.solve(y_copy, tmp)
+        self._hessian_product(y_copy, tmp)
         tmp.minus(s_in)
 
         norm_resid = tmp.norm2
@@ -41,18 +66,21 @@ class LimitedMemorySR1(QuasiNewtonApprox):
                                'correction skipped due to threshold condition.')
             return
 
+        if len(self.s_list) == self.max_stored:
+            del self.s_list[0]
+            del self.y_list[0]
+
         s_new = self.vec_fac.generate()
         y_new = self.vec_fac.generate()
 
         s_new.equals(s_in)
         y_new.equals(y_in)
 
-        if len(self.s_list) == self.max_stored:
-            del self.s_list[0]
-            del self.y_list[0]
-
         self.s_list.append(s_new)
         self.y_list.append(y_new)
+
+        del s_new, y_new
+        gc.collect()
 
     def solve(self, u_vec, v_vec, rel_tol=1e-15):
         lambda0 = self.lambda0
@@ -110,26 +138,3 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         for k in xrange(num_stored):
             v_vec.equals_ax_p_by(1.0, v_vec,
                                  alpha[k] * z_list[k].inner(u_vec), z_list[k])
-
-    def apply(u_vec, v_vec):
-        s_list = self.s_list
-        y_list = self.y_list
-        num_stored = len(s_list)
-
-        Bs = []
-        for k in xrange(num_stored):
-            Bs.append(self.vec_fac.generate())
-            Bs[k].equals(s_list[k])
-
-        v_vec.equals(u_vec)
-
-        for i in xrange(num_stored):
-            denom = 1.0 / (y_list[i].inner(s_list[i]) - Bs[i].inner(s_list[i]))
-            fac = (y_list[i].inner(u_vec) - Bs[i].inner(u_vec)) * denom
-            v_vec.equals_ax_p_by(1.0, v_vec, fac, y_list[i])
-            v_vec.equals_ax_p_by(1.0, v_vec, -fac, Bs[i])
-            for j in xrange(i+1, num_stored):
-                fac = (y_list[i].inner(s_list[j]) - Bs[i].inner(s_list[j])) * denom
-                Bs[j].equals_ax_p_by(1.0, Bs[j], fac, y_list[i])
-                Bs[j].equals_ax_p_by(1.0, Bs[j], -fac, Bs[i])
-

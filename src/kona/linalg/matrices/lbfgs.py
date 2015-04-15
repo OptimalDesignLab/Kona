@@ -1,7 +1,7 @@
 import sys, gc
 import numpy
 
-from quasi_newton import QuasiNewtonApprox
+from kona.linalg.matrices.quasi_newton import QuasiNewtonApprox
 from kona.options import get_opt
 
 
