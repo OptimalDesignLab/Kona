@@ -67,7 +67,13 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.assertEquals(np.linalg.norm(err), 0)
 
     def test_plus(self):
-        pass
+        self.rkkt_vec2.plus(self.rkkt_vec1)
+
+        err = self.pv2._data.data - 3*np.ones(10)
+        self.assertEquals(np.linalg.norm(err), 0)
+
+        err = self.dv2._data.data - 4*np.ones(5)
+        self.assertEquals(np.linalg.norm(err), 0)
 
     def test_minus(self):
         pass
