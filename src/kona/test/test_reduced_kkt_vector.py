@@ -78,14 +78,20 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
     def test_minus(self):
         self.rkkt_vec2.minus(self.rkkt_vec1)
 
-        err = self.pv2._data.data - 0*np.ones(10)
+        err = self.pv2._data.data - 4*np.ones(10)
         self.assertEquals(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - -1*np.ones(5)
         self.assertEquals(np.linalg.norm(err), 0)
 
     def test_times(self):
-        pass
+        self.rkkt_vec2.times(self.rkkt_vec1)
+
+        err = self.pv2._data.data - 0*np.ones(10)
+        self.assertEquals(np.linalg.norm(err), 0)
+
+        err = self.dv2._data.data - 6*np.ones(5)
+        self.assertEquals(np.linalg.norm(err), 0)
 
     def test_divide_by(self):
         pass
