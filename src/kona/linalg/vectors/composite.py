@@ -67,8 +67,8 @@ class ReducedKKTVector(object):
     def equals_ax_p_by(self, a, x, b, y):
         self._check_type(x)
         self._check_type(y)
-        self._primal.equals_ax_p_by(a, x._primal, b, y_design)
-        self._dual.equals_ax_p_by(a, x._dual, b, y_dual)
+        self._primal.equals_ax_p_by(a, x._primal, b, y._primal)
+        self._dual.equals_ax_p_by(a, x._dual, b, y._dual)
 
     def inner(self, vector):
         self._check_type(vector)
@@ -85,6 +85,6 @@ class ReducedKKTVector(object):
         else:
             return np.sqrt(prod)
 
-    def equals_initial_guess(self):
-        self._primal.equals_initial_design()
+    def equals_init_guess(self):
+        self._primal.equals_init_design()
         self._dual.equals(0.0)

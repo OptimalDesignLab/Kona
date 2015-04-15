@@ -105,19 +105,41 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.assertEquals(np.linalg.norm(err), 0)
 
     def test_divide_by(self):
-        pass
+
+        self.rkkt_vec2.divide_by(2)
+        err = self.pv2._data.data - 1*np.ones(10)
+        self.assertEquals(np.linalg.norm(err), 0)
+
+        err = self.dv2._data.data - 1*np.ones(5)
+        self.assertEquals(np.linalg.norm(err), 0)
+
 
     def test_equals_ax_p_by(self):
-        pass
+        self.rkkt_vec2.equals_ax_p_by(2, self.rkkt_vec1, 2, self.rkkt_vec2)
+
+        err = self.pv2._data.data - 8*np.ones(10)
+        self.assertEquals(np.linalg.norm(err), 0)
+
+        err = self.dv2._data.data - 10*np.ones(5)
+        self.assertEquals(np.linalg.norm(err), 0)
 
     def test_inner(self):
-        pass
+        ip = self.rkkt_vec2.inner(self.rkkt_vec1)
+        self.assertEquals(ip, 70)
+
 
     def test_norm2(self):
-        pass
+        ip = self.rkkt_vec2.norm2
+        self.assertEquals(ip, 60**.5)
 
     def test_equals_initial_guess(self):
-        pass
+        self.rkkt_vec2.equals_init_guess()
+
+        err = self.pv2._data.data - 10*np.ones(10)
+        self.assertEquals(np.linalg.norm(err), 0)
+
+        err = self.dv2._data.data - 0*np.ones(5)
+        self.assertEquals(np.linalg.norm(err), 0)
 
 
 if __name__ == "__main__":
