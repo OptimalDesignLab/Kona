@@ -1,4 +1,4 @@
-from numpy import sqrt
+import numpy as np
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 
 class ReducedKKTVector(object):
@@ -54,7 +54,7 @@ class ReducedKKTVector(object):
         self._dual.minus(vector._dual)
 
     def times(self, value):
-        if isinstance(value, float):
+        if isinstance(value, (float, int, np.float64, np.int64, np.float32, np.int32)):
             self._primal.times(value)
             self._dual.times(value)
         else:
@@ -83,7 +83,7 @@ class ReducedKKTVector(object):
             raise ValueError('ReducedKKTVector.norm2 >> ' + \
                              'Inner product is negative!')
         else:
-            return sqrt(prod)
+            return np.sqrt(prod)
 
     def equals_initial_guess(self):
         self._primal.equals_initial_design()

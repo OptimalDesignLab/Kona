@@ -78,19 +78,30 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
     def test_minus(self):
         self.rkkt_vec2.minus(self.rkkt_vec1)
 
-        err = self.pv2._data.data - 4*np.ones(10)
+        err = self.pv2._data.data - 0*np.ones(10)
         self.assertEquals(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - -1*np.ones(5)
         self.assertEquals(np.linalg.norm(err), 0)
 
     def test_times(self):
-        self.rkkt_vec2.times(self.rkkt_vec1)
+        try:
+            self.rkkt_vec2.times(self.rkkt_vec1)
+        except TypeError as err:
+            self.assertEquals(str(err), 'ReducedKKTVector.times() >> Wrong argument type. Must be FLOAT.')
 
-        err = self.pv2._data.data - 0*np.ones(10)
+        self.rkkt_vec2.times(3)
+        err = self.pv2._data.data - 6*np.ones(10)
         self.assertEquals(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - 6*np.ones(5)
+        self.assertEquals(np.linalg.norm(err), 0)
+
+        self.rkkt_vec1.times(3.0)
+        err = self.pv1._data.data - 6*np.ones(10)
+        self.assertEquals(np.linalg.norm(err), 0)
+
+        err = self.dv1._data.data - 9*np.ones(5)
         self.assertEquals(np.linalg.norm(err), 0)
 
     def test_divide_by(self):
