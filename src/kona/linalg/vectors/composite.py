@@ -1,4 +1,4 @@
-from numpy import sqrt
+import numpy as np
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 
 class ReducedKKTVector(object):
@@ -27,13 +27,13 @@ class ReducedKKTVector(object):
         else:
             raise TypeError('ReducedKKTVector() >> ' + \
                             'Unidentified design vector.')
-        if isinstance(dualVec, DualVector):
+        if isinstance(dual_vec, DualVector):
             self._dual = dual_vec
         else:
             raise TypeError('ReducedKKTVector() >> ' + \
                             'Unidentified dual vector.')
 
-    def _checkType(self, vec):
+    def _check_type(self, vec):
         if not isinstance(vec, type(self)):
             raise TypeError('ReducedKKTVector() >> ' + \
                             'Wrong vector type. Must be %s' % type(self))
@@ -54,7 +54,7 @@ class ReducedKKTVector(object):
         self._dual.minus(vector._dual)
 
     def times(self, value):
-        if isinstance(value, float):
+        if isinstance(value, (float, int, np.float64, np.int64, np.float32, np.int32)):
             self._primal.times(value)
             self._dual.times(value)
         else:
@@ -67,8 +67,8 @@ class ReducedKKTVector(object):
     def equals_ax_p_by(self, a, x, b, y):
         self._check_type(x)
         self._check_type(y)
-        self._primal.equals_ax_p_by(a, x._primal, b, y_design)
-        self._dual.equals_ax_p_by(a, x._dual, b, y_dual)
+        self._primal.equals_ax_p_by(a, x._primal, b, y._primal)
+        self._dual.equals_ax_p_by(a, x._dual, b, y._dual)
 
     def inner(self, vector):
         self._check_type(vector)
@@ -83,8 +83,8 @@ class ReducedKKTVector(object):
             raise ValueError('ReducedKKTVector.norm2 >> ' + \
                              'Inner product is negative!')
         else:
-            return sqrt(prod)
+            return np.sqrt(prod)
 
-    def equals_initial_guess(self):
-        self._primal.equals_initial_design()
+    def equals_init_guess(self):
+        self._primal.equals_init_design()
         self._dual.equals(0.0)

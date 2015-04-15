@@ -2,21 +2,21 @@ import numpy as np
 
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX
 
-def current_solution(curr_design, curr_state=None, curr_adj=None, curr_dual=None, num_iter=None): 
-    """ 
-    Notify the solver of the current solution point 
-    """ 
+def current_solution(curr_design, curr_state=None, curr_adj=None, curr_dual=None, num_iter=None):
+    """
+    Notify the solver of the current solution point
+    """
 
     solver = curr_design._memory.solver
     curr_design = curr_design._data
-    
-    if curr_state is not None: 
+
+    if curr_state is not None:
         curr_state = curr_state._data
 
-    if curr_adj is not None: 
+    if curr_adj is not None:
         curr_adj = curr_adj._data
 
-    if curr_dual is not None: 
+    if curr_dual is not None:
         curr_dual = curr_dual._data
 
     solver.current_solution(curr_design, curr_state, curr_adj, curr_dual, num_iter)
@@ -72,7 +72,6 @@ class KonaVector(object):
 
     def __del__(self):
         self._memory.push_vector(type(self), self._data)
-
 
     def _check_type(self, vector):
         if not isinstance(vector, type(self)):

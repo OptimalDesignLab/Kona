@@ -67,7 +67,6 @@ class PrimalVectorTestCase(unittest.TestCase):
         pv2.minus(self.pv)
         self.assertEqual(pv2.inner(self.pv), 40)
 
-
     def test_times(self):
         self.pv.equals(2)
         self.pv.times(5)

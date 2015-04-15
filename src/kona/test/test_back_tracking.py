@@ -71,6 +71,8 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.bt.merit_function = self.merit
         self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
+        self.bt.rdtn_factor = .3
+        self.bt.decr_cond = 1e-4
         alpha, n_iter = self.bt.find_step_length()
 
         self.assertEqual(n_iter, 1)
@@ -103,8 +105,8 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.bt.merit_function = self.merit
         self.bt.alpha_init = 1
-        # have to raise this to get it to take multiple steps
         self.bt.rdtn_factor = .95
+        self.bt.decr_cond = 0.5
         alpha, n_iter = self.bt.find_step_length()
 
         self.assertEqual(n_iter, 3)
