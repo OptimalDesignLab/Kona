@@ -32,7 +32,7 @@ class SolveRosenbrockTestCase(unittest.TestCase):
 
         expected = numpy.ones(num_design)
         diff = max(abs(solver.curr_design - expected))
-        self.assertTrue(diff < 1.e-2)
+        self.assertTrue(diff < 1.e-5)
 
 if __name__ == "__main__":
     unittest.main()

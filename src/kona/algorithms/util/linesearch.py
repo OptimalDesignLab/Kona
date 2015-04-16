@@ -70,7 +70,7 @@ class LineSearch(object):
     """
 
     def __init__(self, optns={}, out_file=sys.stdout):
-        self.max_iter = get_opt(optns, 50, 'max_iter')
+        self.max_iter = get_opt(optns, 100, 'max_iter')
         self.decr_cond = get_opt(optns, 1e-4, 'decr_cond')
         self.merit_function = None
         self.out_file = out_file
@@ -121,7 +121,7 @@ class BackTracking(LineSearch):
 
         alpha = self.alpha_init
         f_init = merit.eval_func(alpha)
-        f = f_init
+        f = merit.eval_func(alpha)
 
         n_iter = 0
         while (alpha > self.alpha_min):
@@ -133,8 +133,8 @@ class BackTracking(LineSearch):
             n_iter += 1
 
         # if we get here, we didn't find a step
-        raise Exception('BackTracking.find_step_lenght(): ' + \
-                        'Failed to find a step length!')
+        # return alpha_init
+        return self.alpha_init, n_iter
 
 ################################################################################
 #                           Strong Wolfe Line-Search                           #
