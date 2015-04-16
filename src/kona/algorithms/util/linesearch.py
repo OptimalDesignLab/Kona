@@ -152,7 +152,7 @@ class StrongWolfe(LineSearch):
         if not (self.alpha_init > 0):
             raise ValueError('alpha_init must be greater than zero (0)')
 
-        if not (self.alpha_max <= 0.) and (self.alpha_max <= self.alpha_init):
+        if (self.alpha_max <= 0.) or (self.alpha_max <= self.alpha_init):
             raise ValueError('alpha_max must be positive and > alpha_init')
 
         if not (self.decr_cond < self.curv_cond < 1):

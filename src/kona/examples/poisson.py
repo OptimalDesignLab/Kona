@@ -6,7 +6,7 @@ from kona.user import BaseVector
 class inversePoisson(UserSolver):
 
     def setup(self, nx, ny, x_control, T_control, init_array, rel_tol):
-        num_design = nx - 2 
+        num_design = nx - 2
         num_state = (nx-2)*(ny-2)
 
         super(inversePoisson, self).__init__(num_design, num_state, 0)
@@ -21,7 +21,7 @@ class inversePoisson(UserSolver):
         self.solve_info = True
         self.solve_calls = 0
         self.precond_calls = 0
-        self.Kvcount = 0    
+        self.Kvcount = 0
         self.precond_calls_total = 0
 
         self.x_control = x_control
@@ -32,7 +32,7 @@ class inversePoisson(UserSolver):
 
         if converged:
             self.T_target = T
-        else: 
+        else:
             print "solve state not converged! setup"
 
     def add_solves(self):
@@ -41,16 +41,16 @@ class inversePoisson(UserSolver):
     def reset_solves(self):
         self.solve_calls = 0
 
-    def eval_obj(self, at_design, at_state):        
+    def eval_obj(self, at_design, at_state):
         if at_state == -1:
             x = at_design.data
             T, converged = self.solve_state(x, self.rel_tol)
             if not converged:
                 precond = -self.precond_calls
-            else: 
+            else:
                 precond = self.precond_calls
         else:
-            T = at_state.data 
+            T = at_state.data
             precond = 0
 
         diff_T = (T - self.T_target)
@@ -62,22 +62,22 @@ class inversePoisson(UserSolver):
         x = at_design.data
         T = at_state.data
         b_res = np.zeros(self.Ny * self.Nx)
-        b_res[:self.Nx] =  (1./(self.hy)**2) * x 
+        b_res[:self.Nx] =  (1./(self.hy)**2) * x
         store_here.data = self.apply_Kv(T) - b_res
 
     def multiply_dRdX(self, at_design, at_state, in_vec, out_vec):
         z = in_vec.data
         temp = np.zeros(self.Ny*self.Nx)
         temp[:self.Nx] = (-1.)/((self.hy)**2) * z
-        out_vec.data = temp 
+        out_vec.data = temp
 
     def multiply_dRdU(self, at_design, at_state, in_vec, out_vec):
         z = in_vec.data
         out_vec.data = self.apply_Kv(z)
 
-    def multiply_dRdX_T(self, at_design, at_state, in_vec, out_vec):       
+    def multiply_dRdX_T(self, at_design, at_state, in_vec, out_vec):
         z = in_vec.data
-        out_vec.data = (-1.)/((self.hy)**2) * z[:self.Nx]       
+        out_vec.data = (-1.)/((self.hy)**2) * z[:self.Nx]
 
     def multiply_dRdU_T(self, at_design, at_state, in_vec, out_vec):
         z = in_vec.data
@@ -96,15 +96,15 @@ class inversePoisson(UserSolver):
 
     def solve_nonlinear(self, at_design, store_here):
         x = at_design.data
-        T, converged = self.solve_state(x, self.rel_tol)  
-        store_here.data = T 
-        if converged:           
+        T, converged = self.solve_state(x, self.rel_tol)
+        store_here.data = T
+        if converged:
             if self.solve_info:
                 print "System solve CONVERGED!"
             return self.precond_calls
         else:
             print "System solve FAILED!"
-            return -self.precond_calls          
+            return -self.precond_calls
 
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
         b_rhs = rhs_vec.data
@@ -121,7 +121,7 @@ class inversePoisson(UserSolver):
         T, converged = self.solve_state(b_rhs, tol)
         result.data = T
         if converged:
-            return self.precond_calls           
+            return self.precond_calls
         else:
             return -self.precond_calls
 
@@ -130,20 +130,17 @@ class inversePoisson(UserSolver):
         self.curr_design = curr_design.data
         self.num_iter = num_iter
 
-
-
-
     def plot_field(self, nx, ny, T_control, T_field):
 
         Ny = ny - 2
-        Nx = nx - 2 
+        Nx = nx - 2
 
         T = np.zeros((ny,nx))
         T[0, 1:-1] = T_control
         T[1:-1, 1:-1] = T_field.reshape((Ny, Nx))
 
         X = np.linspace(0.0, 1.0, num=nx)
-        Y = np.linspace(0.0, 1.0, num=ny)  
+        Y = np.linspace(0.0, 1.0, num=ny)
         X, Y = np.meshgrid(X, Y)
 
         fig = plt.figure()
@@ -159,21 +156,21 @@ class inversePoisson(UserSolver):
         plt.savefig('temp.png')
 
 
-    def solve_state(self, design, rel_tol): 
+    def solve_state(self, design, rel_tol):
         """
-        parameters for CG the KrylovSolver: 
+        parameters for CG the KrylovSolver:
 
         maxiter   : maximum number of allowed iterations
         tol       : relative convergence tolerance, i.e. tol is scaled by ||b||
         residuals : list - residuals has the residual norm history, including the initial residual, appended to it
         """
-        
+
         if len(design) == (self.Nx*self.Ny):
             # when the input vector is of the same length as the state vector
-            # it can be used as the RHS of the system eqaution Kv = b 
+            # it can be used as the RHS of the system eqaution Kv = b
             # granted that the input vector is a valid and correct RHS, b.c. included
             b = design
-        else: 
+        else:
             # when the input vector is of design vector's length
             # assemble it to the RHS vector
 
@@ -182,13 +179,13 @@ class inversePoisson(UserSolver):
 
         self.reset_precond()
 
-        Kv = LinearOperator((self.Nx*self.Ny, self.Nx*self.Ny), 
+        Kv = LinearOperator((self.Nx*self.Ny, self.Nx*self.Ny),
             matvec = lambda v: self.apply_Kv(v), dtype='float64')
 
         max_iter = 2*self.Nx*self.Ny
         converged = False
-        
-        (T, info) = cg(Kv, b, maxiter=max_iter, tol = rel_tol, residuals = None)     
+
+        (T, info) = cg(Kv, b, maxiter=max_iter, tol = rel_tol, residuals = None)
         #    0 : successful exit
         #    >0: convergence to tolerance not achieved, return iteration count instead
 
@@ -203,12 +200,12 @@ class inversePoisson(UserSolver):
 
 
     def apply_Kv(self, v):
-        """ 
-        Matrix free method for calculating the 2D poisson stiffness matrix's 
-        product with a vector 
+        """
+        Matrix free method for calculating the 2D poisson stiffness matrix's
+        product with a vector
 
         """
-        self.Kvcount += 1   
+        self.Kvcount += 1
 
         v_mat = v.reshape((self.Ny, self.Nx))
         Dh1v = np.zeros((self.Ny, self.Nx))
@@ -216,10 +213,10 @@ class inversePoisson(UserSolver):
         for k in np.arange(self.Ny):
             Dh1v[k,] = self.apply_Dh1_v(v_mat[k,])
 
-        Dh1v = Dh1v.flatten() 
+        Dh1v = Dh1v.flatten()
 
         Dh2v = np.zeros((self.Ny, self.Nx))
-        Dh2v[0,] = 2*v_mat[0,] - v_mat[1,]  
+        Dh2v[0,] = 2*v_mat[0,] - v_mat[1,]
         Dh2v[-1,] = -v_mat[-2,] + 2*v_mat[-1,]
         Dh2v[1:-1,] = -v_mat[:-2, ] + 2*v_mat[1:-1,] - v_mat[2:,]
         Dh2v = Dh2v.flatten()
@@ -243,13 +240,3 @@ class inversePoisson(UserSolver):
     def apply_KTv(self, v):
 
         self.apply_Kv(v)    # because K is symmetrical in this case
-
-
-
-
-
-
-
-
-
-
