@@ -18,6 +18,8 @@ class LimitedMemorySR1(QuasiNewtonApprox):
 
         self.lambda0 = 0
 
+        self.threshold = 1.e-8
+
         self.max_stored = get_opt(optns, 10, 'max_stored')
 
         vector_factory.request_num_vectors(3*self.max_stored + 4)
@@ -36,19 +38,42 @@ class LimitedMemorySR1(QuasiNewtonApprox):
 
         for i in xrange(num_stored):
             denom = 1.0 / (y_list[i].inner(s_list[i]) - Bs[i].inner(s_list[i]))
-            fac = (y_list[i].inner(u_vec) - Bs[i].inner(u_vec)) * denom
+            fac = (y_list[i].inner(u_vec) - Bs[i].inner(u_vec))*denom
             v_vec.equals_ax_p_by(1.0, v_vec, fac, y_list[i])
             v_vec.equals_ax_p_by(1.0, v_vec, -fac, Bs[i])
             for j in xrange(i+1, num_stored):
-                fac = (y_list[i].inner(s_list[j]) - Bs[i].inner(s_list[j])) * denom
+                fac = (y_list[i].inner(s_list[j]) - Bs[i].inner(s_list[j]))*denom
                 Bs[j].equals_ax_p_by(1.0, Bs[j], fac, y_list[i])
                 Bs[j].equals_ax_p_by(1.0, Bs[j], -fac, Bs[i])
+
+    def _check_threshold(self, z_list, k, alpha):
+        # alias some variables
+        lambda0 = self.lambda0
+        norm_init = self.norm_init
+        s_list = self.s_list
+        y_list = self.y_list
+        threshold = self.threshold
+
+        alpha[k] = (1.0 - lambda0) * z_list[k].inner(y_list[k]) + \
+            lambda0 * norm_init * z_list[k].inner(s_list[k])
+        norm_grad = (1.0 - lambda0) ** 2 * y_list[k].inner(y_list[k]) + \
+            lambda0 ** 2 * norm_init ** 2 * s_list[k].inner(s_list[k]) + \
+            2.0 * lambda0 * norm_init * (1.0 - lambda0) * y_list[k].inner(s_list[k])
+        norm_grad = numpy.sqrt(norm_grad)
+
+        if abs(alpha[k]) < threshold * norm_grad * z_list[k].norm2 or \
+                abs(alpha[k]) < numpy.finfo(float).eps:
+            alpha[k] = 0.0
+        else:
+            alpha[k] = 1.0 / alpha[k]
+
+        return alpha
 
     def add_correction(self, s_in, y_in):
         """
         Add the step and change in gradient to the lists storing the history.
         """
-        threshold = 1.e-8
+        threshold = self.threshold
 
         y_copy = self.vec_fac.generate()
         tmp = self.vec_fac.generate()
@@ -60,34 +85,39 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         norm_y_new = y_in.norm2
         prod = abs(y_in.inner(tmp))
 
-        if prod < threshold * norm_resid * norm_y_new or \
+        if prod < threshold*norm_resid*norm_y_new or \
                 prod < numpy.finfo(float).eps:
             self.out_file.write('LimitedMemorySR1::AddCorrection():' +
                                'correction skipped due to threshold condition.')
             return
 
+        # if maximum is reached, remove old elements
         if len(self.s_list) == self.max_stored:
             del self.s_list[0]
             del self.y_list[0]
 
+        # generate two new vectors
         s_new = self.vec_fac.generate()
         y_new = self.vec_fac.generate()
 
+        # set them equal to the new correction
         s_new.equals(s_in)
         y_new.equals(y_in)
 
+        # add the corrections to the list
         self.s_list.append(s_new)
         self.y_list.append(y_new)
 
+        # force garbage collection
         del s_new, y_new
         gc.collect()
 
     def solve(self, u_vec, v_vec, rel_tol=1e-15):
+        # alias some variables
         lambda0 = self.lambda0
         norm_init = self.norm_init
         s_list = self.s_list
         y_list = self.y_list
-
         num_stored = len(s_list)
 
         if num_stored == 0:
@@ -95,7 +125,6 @@ class LimitedMemorySR1(QuasiNewtonApprox):
             v_vec.divide_by(norm_init)
             return
 
-        threshold = 1.e-8
         alpha = numpy.zeros(num_stored)
 
         z_list = []
@@ -105,25 +134,7 @@ class LimitedMemorySR1(QuasiNewtonApprox):
                                      (lambda0 - 1.0)/norm_init,
                                      y_list[k])
 
-        def check_threshold(self, k, alpha):
-            lambda0 = self.lambda0
-            norm_init = self.norm_init
-            s_list = self.s_list
-            y_list = self.y_list
-
-            alpha[k] = (1.0 - lambda0) * z_list[k].inner(y_list[k]) + \
-                lambda0 * norm_init * z_list[k].inner(s_list[k])
-            norm_grad = (1.0 - lambda0) ** 2 * y_list[k].inner(y_list[k]) + \
-                lambda0 ** 2 * norm_init ** 2 * s_list[k].inner(s_list[k]) + \
-                2.0 * lambda0 * norm_init * (1.0 - lambda0) * y_list[k].inner(s_list[k])
-            norm_grad = numpy.sqrt(norm_grad)
-            if abs(alpha[k]) < threshold * norm_grad * z_list[k].norm2 or \
-                    abs(alpha[k]) < numpy.finfo(float).eps:
-                alpha[k] = 0.0
-            else:
-                alpha[k] = 1.0 / alpha[k]
-
-        check_threshold(self, 0, alpha)
+        alpha = self._check_threshold(z_list, 0, alpha)
 
         for i in xrange(1, num_stored):
             for j in xrange(1, num_stored):
@@ -132,7 +143,7 @@ class LimitedMemorySR1(QuasiNewtonApprox):
                 z_list[j].equals_ax_p_by(1.0, z_list[j],
                                          -alpha[i-1] * prod, z_list[i-1])
 
-            check_threshold(self, i, alpha)
+            alpha = self._check_threshold(z_list, i, alpha)
 
         v_vec.equals(u_vec)
         for k in xrange(num_stored):

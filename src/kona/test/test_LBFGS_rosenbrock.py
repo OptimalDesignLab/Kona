@@ -8,9 +8,9 @@ from kona.linalg.matrices.lsr1 import LimitedMemorySR1
 from kona.examples.rosenbrock import Rosenbrock
 from kona.algorithms.reduced_space_quasi_newton import ReducedSpaceQuasiNewton
 
-class SolveRosenbrockTestCase(unittest.TestCase):
+class RosenbrockLBFGSTestCase(unittest.TestCase):
 
-    def test_rosenbrock_opt(self):
+    def test_LBFGS_with_StrongWolfe(self):
 
         num_design = 2
         solver = Rosenbrock(num_design)
@@ -21,6 +21,29 @@ class SolveRosenbrockTestCase(unittest.TestCase):
             'primal_tol' : 1e-12,
             'line_search' : {
                 'type' : StrongWolfe,
+            },
+            'quasi_newton' : {
+                'type' : LimitedMemoryBFGS
+            },
+        }
+        rsqn = ReducedSpaceQuasiNewton(km.primal_factory, km.state_factory, optns)
+        km.allocate_memory()
+        rsqn.solve()
+
+        expected = numpy.ones(num_design)
+        diff = max(abs(solver.curr_design - expected))
+        self.assertTrue(diff < 1.e-5)
+
+    def test_LBFGS_with_BackTracking(self):
+        num_design = 2
+        solver = Rosenbrock(num_design)
+        km = KonaMemory(solver)
+
+        optns = {
+            'max_iter' : 200,
+            'primal_tol' : 1e-12,
+            'line_search' : {
+                'type' : BackTracking,
             },
             'quasi_newton' : {
                 'type' : LimitedMemoryBFGS
