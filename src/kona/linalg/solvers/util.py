@@ -1,10 +1,17 @@
 import numpy as np
 
+try:
+    from scipy.linalg import solve_triangular
+    scipy_exists = True
+except:
+    scipy_exists = False
+
+
 EPS = np.finfo(float).eps
 
 def abs_sign(x, y):
     """
-    Returns the value :math:`|x|\mathsf{sign}(y)`; used in GMRES, for example.
+    Returns the value :math:`|x|\\mathsf{sign}(y)`; used in GMRES, for example.
 
     Parameters
     ----------
@@ -82,7 +89,7 @@ def apply_givens(s, c, h1, h2):
     h1 = temp
     return h1, h2
 
-def generate_givens(dx, dy, s, c):
+def generate_givens(dx, dy):
     """
     Generates the Givens rotation matrix for a given 2-vector
 
@@ -91,6 +98,13 @@ def generate_givens(dx, dy, s, c):
 
     Parameters
     ----------
+    dx : float
+        element of 2x1 vector being transformed
+    dy : float
+        element of 2x1 vector being set to zero
+
+    Returns
+    -------
     dx : float
         element of 2x1 vector being transformed
     dy : float
@@ -118,10 +132,13 @@ def generate_givens(dx, dy, s, c):
         dy = 0.0
         c = 1.0
         s = 0.0
+
     dx = abs(dx*dy)
     dy = 0.0
 
-def solve_tri(A, b, x, lower=False):
+    return dx, dy, s, c
+
+def solve_tri(A, b, lower=False):
     """
     Solve an upper-triangular system :math:`Ux = b` (lower=False) or
     lower-triangular system :math:`Lx = b` (lower=True)
@@ -138,13 +155,19 @@ def solve_tri(A, b, x, lower=False):
         if True, A stores an lower-triangular matrix; stores an upper-triangular
         matrix otherwise
     """
+    if scipy_exists:
+        x = solve_triangular(A, b, lower=lower)
+    else:
+        x = np.linalg.solve(A, b)
+
+    return x
 
 def solve_trust_reduced(H, g, radius):
     """
     Solves the reduced-space trust-region subproblem (the secular equation)
 
     This assumes the reduced space objective is in the form :math:`g^Tx +
-    \frac{1}{2}x^T H x`.  Furthermore, the case :math:`g = 0` is not handled
+    \\frac{1}{2}x^T H x`. Furthermore, the case :math:`g = 0` is not handled
     presently.
 
     Parameters
@@ -295,17 +318,16 @@ def secular_function(H, g, lam, radius):
     if reg_iter+1 == max_iter:
         raise Exception('Regularization of Cholesky factorization failed')
 
-    work = np.empty(g.shape)
     y = -g.copy() # minus sign to move to rhs
-    solve_tri(L, y, work, lower=True)
-    solve_tri(L.T, work, y, lower=False)
+    work = solve_tri(L, y, lower=True)
+    y = solve_tri(L.T, work, lower=False)
 
     # compute the secular function
     norm_y = np.linalg.norm(y)
     fnc = 1.0/radius - 1.0/norm_y
 
     # compute its derivative
-    solve_tri(L, y, work, lower=True)
+    work = solve_tri(L, y, lower=True)
     norm_work = np.linalg.norm(work)
     dfnc = norm_work/norm_y
     dfnc = -(dfnc*dfnc)/norm_y

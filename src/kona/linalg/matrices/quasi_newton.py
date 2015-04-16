@@ -5,7 +5,7 @@ from composite import Hessian
 from kona.options import get_opt
 
 class QuasiNewtonApprox(Hessian):
-    """ Base class for quasi-Newton methods
+    """ Base class for quasi-Newton approximations of the Hessian
 
     Attributes
     ----------
@@ -26,22 +26,12 @@ class QuasiNewtonApprox(Hessian):
     """
 
     def __init__(self, vector_factory, optns, out_file=sys.stdout):
+        super(QuasiNewtonApprox, self).__init__(vector_factory, optns, out_file)
         self.max_stored = get_opt(optns, 10, 'max_stored')
-        self.vec_fac = vector_factory
-        self.out_file = out_file
 
         self.norm_init = 1.0
         self.s_list = []
         self.y_list = []
 
-    def add_correction(self, s_new, y_new):
-        """
-        Add the step and change in gradient to the list,
-        popping the first entry if it is full.
-        """
-        if len(self.s_list) == self.max_stored:
-            del self.s_list[0]
-            del self.y_list[0]
-
-        self.s_list.append(s_new)
-        self.y_list.append(y_new)
+    def add_correction(self, s_new, y_new): # pragma: no cover
+        raise NotImplementedError # pragma: no cover
