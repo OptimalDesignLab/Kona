@@ -333,3 +333,16 @@ def secular_function(H, g, lam, radius):
     dfnc = -(dfnc*dfnc)/norm_y
 
     return y, fnc, dfnc
+
+def write_header(out_file, solver_name, res_tol, res_init):
+    out_file.write(
+        '# %s residual history\n'%solver_name + \
+        '# residual tolerance target = %e\n'%res_tol + \
+        '# initial residual norm     = %e\n'%res_init + \
+        '# iters' + ' '*12 + 'rel. res.\n'
+    )
+
+def write_history(out_file, num_iter, res, res_init):
+    out_file.write(
+        '# %5i'%num_iter + ' '*12 + '%e\n'%(res/res_init)
+    )
