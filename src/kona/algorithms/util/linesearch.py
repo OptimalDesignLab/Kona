@@ -70,7 +70,7 @@ class LineSearch(object):
     """
 
     def __init__(self, optns={}, out_file=sys.stdout):
-        self.max_iter = get_opt(optns, 100, 'max_iter')
+        self.max_iter = get_opt(optns, 50, 'max_iter')
         self.decr_cond = get_opt(optns, 1e-4, 'decr_cond')
         self.merit_function = None
         self.out_file = out_file
@@ -124,7 +124,7 @@ class BackTracking(LineSearch):
         f = merit.eval_func(alpha)
 
         n_iter = 0
-        while (alpha > self.alpha_min):
+        while (alpha > self.alpha_min) and (n_iter < self.max_iter):
             f_sufficient = f_init + self.decr_cond*alpha*self.p_dot_dfdx
             if f <= f_sufficient:
                 return alpha, n_iter
