@@ -9,6 +9,7 @@ omit =
     */site-packages/nose/*
     */unittest2/*
     */src/kona/test/*
+    */src/kona/examples/*
     */setup.py
 
 [report]
