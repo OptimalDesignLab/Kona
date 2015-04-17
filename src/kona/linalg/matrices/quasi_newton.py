@@ -10,19 +10,15 @@ class QuasiNewtonApprox(Hessian):
     Attributes
     ----------
     max_stored : int
-        maximum number of corrections stored
-    vec_fac: VectoryFactory
-        used to declare the number of requested vectors and generate vectors
-    out_file : file handle
-        output file for diagnostics
+        Maximum number of corrections stored.
     norm_init : float
-        initial norm of design component of gradient
+        Initial norm of design component of gradient.
     init_hessian : KonaVector
-        initial (diagonal) Hessian approximation (stored as a vector)
+        Initial (diagonal) Hessian approximation (stored as a vector).
     s_list : list of KonaVectors
-        difference between subsequent solutions: .. math:: s_k = x_{k+1} - x_k
+        Difference between subsequent solutions: :math:`s_k = x_{k+1} - x_k`
     y_list : list of KonaVectors
-        difference between subsequent gradients: .. math:: y_k = g_{k+1} - g_k
+        Difference between subsequent gradients: :math:`y_k = g_{k+1} - g_k`
     """
 
     def __init__(self, vector_factory, optns, out_file=sys.stdout):
@@ -33,5 +29,15 @@ class QuasiNewtonApprox(Hessian):
         self.s_list = []
         self.y_list = []
 
-    def add_correction(self, s_new, y_new): # pragma: no cover
+    def add_correction(self, s_new, y_new):
+        """
+        Adds a new correction to the Hessian approximation.
+
+        Parameters
+        ----------
+        s_new : KonaVector-like
+            Difference between subsequent solutions.
+        y_new : KonaVector-like
+            Difference between subsequent gradients.
+        """
         raise NotImplementedError # pragma: no cover

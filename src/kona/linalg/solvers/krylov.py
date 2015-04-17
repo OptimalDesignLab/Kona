@@ -7,7 +7,55 @@ from kona.options import BadKonaOption, get_opt
 from kona.linalg.solvers.util import EPS, write_header, write_history
 
 class KrylovSolver(object):
-    pass
+    """
+    Base class for all Krylov solvers.
+
+    Attributes
+    ----------
+    vec_factory : VectorFactory
+        Used to generate abstracted KonaVector objects.
+    max_iter : int
+        Maximum iterations for the CG solve.
+    rel_tol : float
+        Relative residual tolerance for the solution.
+    check_res : boolean
+        Flag for checking the residual after solution is found
+
+    Parameters
+    ----------
+    vector_factory : VectorFactory
+    optns : dict
+    out_file : file
+    """
+    def __init__(self, vector_factory, optns={}, out_file=sys.stdout):
+        self.vec_fac = vector_factory
+        self.out_file = out_file
+        self.max_iter = get_opt(optns, 5000, 'max_iter')
+        self.rel_tol = get_opt(optns, 1e-8, 'rel_tol')
+        self.check_res = get_opt(optns, True, 'check_res')
+
+    def _validate_options(self):
+        if self.max_iter <= 0:
+            raise ValueError('max_iter must be greater than zero')
+        if self.rel_tol <= 0:
+            raise ValueError('max_iter must be greater than zero')
+
+    def solve(self, mat_vec, b, x, precond):
+        """
+        Solves the Ax=b linear system iteratively.
+
+        Parameters:
+        -----------
+        mat_vec : function
+            Matrix-vector product for left-hand side matrix A.
+        b : KonaVector-like
+            Right-hand side vector.
+        x : KonaVector-like
+            Solution vector
+        precond : function
+            Matrix-vector product for approximate inv(A).
+        """
+        raise NotImplementedError
 
 class STCG(KrylovSolver):
     """
@@ -16,33 +64,52 @@ class STCG(KrylovSolver):
     Attributes
     ----------
     vec_factory : VectorFactory
+        Used to generate abstracted KonaVector objects.
     max_iter : int
+        Maximum iterations for the CG solve.
+    rel_tol : float
+        Relative residual tolerance for the solution.
+    radius : float
+        Trust region radius.
+    proj_cg : boolean
+    check_res : boolean
+        Flag for checking the residual after solution is found.
+    out_file : file
+        File stream for writing convergence data.
 
     Parameters
     ----------
     vector_factory : VectorFactory
     optns : dict
+    out_file : file
     """
     def __init__(self, vector_factory, optns={}, out_file=sys.stdout):
-        # set factory and request vectors needed in solve() method
-        self.out_file = out_file
-        self.vec_fac = vector_factory
-        self.vec_fac.request_num_vectors(5)
-        self.max_iter = get_opt(optns, 5000, 'max_iter')
-        self.rel_tol = get_opt(optns, 1e-8, 'rel_tol')
+        super(STCG, self).__init__(vector_factory, optns, out_file)
         self.radius = get_opt(optns, 1.0, 'radius')
         self.proj_cg = get_opt(optns, False, 'proj_cg')
-        self.check_res = get_opt(optns, True, 'check_res')
+        # set factory and request vectors needed in solve() method
+        self.vec_fac.request_num_vectors(5)
 
     def _validate_options(self):
-        if self.max_iter <= 0:
-            raise ValueError('max_iter must be greater than zero')
-        if self.rel_tol <= 0:
-            raise ValueError('max_iter must be greater than zero')
+        super(STCG, self)._validate_options()
         if self.radius < 0:
             raise ValueError('radius must be postive')
 
     def solve(self, mat_vec, b, x, precond):
+        """
+        Solves an Ax=b system iteratively.
+
+        Parameters:
+        -----------
+        mat_vec : function
+            Matrix-vector product for left-hand side matrix A.
+        b : KonaVector-like
+            Right-hand side vector.
+        x : KonaVector-like
+            Solution vector
+        precond : function
+            Matrix-vector product for approximate inv(A).
+        """
         self._validate_options()
         # grab some vectors from memory stack
         r = self.vec_fac.generate()

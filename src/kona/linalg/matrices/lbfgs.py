@@ -6,16 +6,16 @@ from kona.options import get_opt
 
 
 class LimitedMemoryBFGS(QuasiNewtonApprox):
-    """ Limited-memory BFGS
+    """ Limited-memory BFGS approximation for the Hessian.
 
     Attributes
     ----------
     lambda0 : float
         ?
     s_dot_s_list : list of floats
-        the two-norm of the step vector
+        The L2 norm of the step vector.
     s_dot_y_list : list of floats
-        curvature
+        Curvature.
     """
 
     def __init__(self, vector_factory, optns, out_file=sys.stdout):
@@ -30,10 +30,6 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         vector_factory.request_num_vectors(2*self.max_stored)
 
     def add_correction(self, s_in, y_in):
-        """
-        Add the step, change in gradient, curvature, and two-norm
-        to the lists storing the history.
-        """
         two_norm = s_in.inner(s_in)
         curvature = s_in.inner(y_in)
 

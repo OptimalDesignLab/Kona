@@ -69,11 +69,10 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.merit_function = self.merit
         self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
         self.bt.rdtn_factor = .3
         self.bt.decr_cond = 1e-4
-        alpha, n_iter = self.bt.find_step_length()
+        alpha, n_iter = self.bt.find_step_length(self.merit)
 
         self.assertEqual(n_iter, 1)
         self.assertEqual(alpha, .09)
@@ -103,11 +102,10 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.merit_function = self.merit
         self.bt.alpha_init = 1
         self.bt.rdtn_factor = .95
         self.bt.decr_cond = 0.5
-        alpha, n_iter = self.bt.find_step_length()
+        alpha, n_iter = self.bt.find_step_length(self.merit)
 
         self.assertEqual(n_iter, 3)
 
@@ -137,9 +135,8 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, self.bt.p_dot_dfdx)
 
-        self.bt.merit_function = self.merit
         self.bt.alpha_init = 1 #should evaluate 2.5, 2.5
-        alpha, n_iter = self.bt.find_step_length()
+        alpha, n_iter = self.bt.find_step_length(self.merit)
 
         self.assertEqual(n_iter, 1)
         self.assertEqual(alpha, .3)
@@ -167,30 +164,28 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.merit_function = self.merit
         self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
 
         self.merit.p_dot_grad *= -1
         try:
-            alpha, n_iter = self.bt.find_step_length()
+            alpha, n_iter = self.bt.find_step_length(self.merit)
         except ValueError as err:
             self.assertEqual(str(err), 'search direction is not a descent direction')
         else:
             self.fail('ValueError expected')
 
     def test_no_merit_function(self):
-        self.bt.merit_function = None
         try:
-            alpha, n_iter = self.bt.find_step_length()
+            alpha, n_iter = self.bt.find_step_length(None)
         except ValueError as err:
-            self.assertEqual(str(err), 'merit_function can not be None')
+            self.assertEqual(str(err), 'unknown merit_function type')
         else:
             self.fail('ValueError expected')
 
     def test_bad_alpha_init(self):
         self.bt.alpha_init = 1e6
         try:
-            alpha, n_iter = self.bt.find_step_length()
+            alpha, n_iter = self.bt.find_step_length(None)
         except ValueError as err:
             self.assertEqual(str(err), 'alpha_init must be 0 < alpha_init <=1')
         else:

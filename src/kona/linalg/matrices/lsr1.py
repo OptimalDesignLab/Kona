@@ -11,6 +11,8 @@ class LimitedMemorySR1(QuasiNewtonApprox):
     ----------
     lambda0 : float
         ?
+    threshold : float
+        ?
     """
 
     def __init__(self, vector_factory, optns, out_file=sys.stdout):

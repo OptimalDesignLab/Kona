@@ -1,60 +1,51 @@
 import sys
 
 from kona.linalg.vectors.common import current_solution
-from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
-from kona.linalg.matrices.lsr1 import LimitedMemorySR1
-from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
-from kona.algorithms.util.merit import ObjectiveMerit
-from kona.options import BadKonaOption, get_opt
 from kona.linalg.matrices.common import dRdU
+from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
 
-class ReducedSpaceQuasiNewton(object):
+from kona.algorithms.base_algorithm import OptimizationAlgorithm
+from kona.algorithms.util.linesearch import StrongWolfe
+
+from kona.options import BadKonaOption, get_opt
+
+class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     """
     Unconstrained optimization using quasi-Newton in the reduced space.
+
+    Attributes
+    ----------
+    approx_hessian : QuasiNewtonApprox-like
+        Abstract matrix object that defines the QN approximation of the Hessian.
+    line_search : LineSearch-like
+        Line search object for globalization.
     """
-
-    def __init__(self, primal_factory, state_factory, optns={},
-                 out_file=sys.stdout):
-        self.primal_factory = primal_factory
-        self.state_factory = state_factory
-
+    def __init__(self, primal_factory, state_factory, optns={}):
+        # trigger base class initialization
+        super(ReducedSpaceQuasiNewton, self).__init__(
+            primal_factory, state_factory, None, optns
+        )
         # number of vectors required in solve() method
-        primal_factory.request_num_vectors(6)
-        state_factory.request_num_vectors(3)
-
-        self.info_file = get_opt(optns, sys.stdout, 'info_file')
-        if isinstance(self.info_file, str):
-            self.info_file = open(self.info_file,'w')
-
-        self.max_iter = get_opt(optns, 100, 'max_iter')
-        self.primal_tol = get_opt(optns, 1e-8,'primal_tol')
-
+        self.primal_factory.request_num_vectors(6)
+        self.state_factory.request_num_vectors(3)
         # set the type of quasi-Newton method
         try:
-            quasi_newton_mat = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
-            quas_newton_opts = get_opt(optns, {}, 'quasi_newton')
-            self.quasi_newton = quasi_newton_mat(primal_factory, quas_newton_opts, out_file)
+            approx_hessian = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
+            hessian_optns = get_opt(optns, {}, 'quasi_newton')
+            self.approx_hessian = approx_hessian(self.primal_factory, hessian_optns)
         except Exception as err:
             raise BadKonaOption(optns, 'quasi_newton','type')
-
         # set the type of line-search algorithm
         try:
             line_search_alg = get_opt(optns, StrongWolfe, 'line_search', 'type')
             line_search_opt = get_opt(optns, {}, 'line_search')
-            self.line_search = line_search_alg(line_search_opt, out_file)
+            self.line_search = line_search_alg(line_search_opt)
         except:
             raise BadKonaOption(optns, 'line_search', 'type')
-
-        # define the merit function (which is always the objective itself here)
-        merit_optns = get_opt(optns,{},'merit')
-        self.merit = ObjectiveMerit(primal_factory, state_factory, merit_optns, out_file)
-        self.line_search.merit_function = self.merit
 
     def solve(self):
         # need some way of choosing file to output to
         info = self.info_file
-        # need to open the history file
-
         # get memory
         x = self.primal_factory.generate()
         p = self.primal_factory.generate()
@@ -63,14 +54,12 @@ class ReducedSpaceQuasiNewton(object):
         state = self.state_factory.generate()
         adjoint = self.state_factory.generate()
         state_work = self.state_factory.generate()
-
         initial_design = self.primal_factory.generate()
         design_work = self.primal_factory.generate()
-
+        # initialize values into some vectors
         x.equals_init_design()
         initial_design.equals(x)
-        # call current_solution
-
+        # start optimization outer iterations
         nonlinear_sum = 0
         converged = False
         for i in xrange(self.max_iter):
@@ -82,7 +71,7 @@ class ReducedSpaceQuasiNewton(object):
             if i == 0:
                 grad_norm0 = dfdx.norm2
                 grad_norm = grad_norm0
-                self.quasi_newton.norm_init = grad_norm0
+                self.approx_hessian.norm_init = grad_norm0
                 grad_tol = self.primal_tol * grad_norm0
                 info.write('grad_norm = %e : grad_tol = %e\n'%(grad_norm0, grad_tol))
                 # save gradient for quasi-Newton
@@ -96,25 +85,22 @@ class ReducedSpaceQuasiNewton(object):
                 # update the quasi-Newton method
                 dfdx_old.minus(dfdx)
                 dfdx_old.times(-1.0)
-                self.quasi_newton.add_correction(p, dfdx_old)
+                self.approx_hessian.add_correction(p, dfdx_old)
                 dfdx_old.equals(dfdx)
-
             # write convergence history here
-            self.quasi_newton.solve(dfdx, p)
+            current_solution(x, num_iter=nonlinear_sum)
+            info.write('\n')
+            # solve for search direction
+            self.approx_hessian.solve(dfdx, p)
             p.times(-1.0)
-
-            # set-up merit function and perform line search
+            # perform line search along the new direction
             p_dot_dfdx = p.inner(dfdx)
             self.merit.reset(p, x, state, p_dot_dfdx)
-            self.line_search.merit_function = self.merit
-            alpha, _ = self.line_search.find_step_length()
+            alpha, _ = self.line_search.find_step_length(self.merit)
+            # apply the step onto the primal space
             x.equals_ax_p_by(1.0, x, alpha, p)
-
             # s = delta x = alpha * p is needed later by quasi-Newton method
             p.times(alpha)
-
             nonlinear_sum += 1
-
-            current_solution(x, num_iter=nonlinear_sum)
-
+        # optimization is finished, so print total number of iterations
         info.write('Total number of nonlinear iterations: %i\n'%nonlinear_sum)

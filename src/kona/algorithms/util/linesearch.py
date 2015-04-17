@@ -2,6 +2,7 @@ import sys, warnings
 from numpy import sqrt
 
 from kona.options import get_opt
+from kona.algorithms.util.merit import MeritFunction
 
 ################################################################################
 #                        Step Interpolation Functions                          #
@@ -62,17 +63,22 @@ class LineSearch(object):
 
     Attributes
     ----------
-    alpha_init : float
     decr_cond : float
+        Sufficient decrease condition.
     max_iter : int
-    merit_function : ObjectiveMerit-like
+        Maximum iterations for the line search.
+    out_file : file
+        File stream for writing data.
 
+    Parameters
+    ----------
+    optns : dict
+    out_file : file
     """
 
     def __init__(self, optns={}, out_file=sys.stdout):
         self.max_iter = get_opt(optns, 50, 'max_iter')
         self.decr_cond = get_opt(optns, 1e-4, 'decr_cond')
-        self.merit_function = None
         self.out_file = out_file
 
     def _validate_options(self):
@@ -82,18 +88,42 @@ class LineSearch(object):
         if not (0 < self.decr_cond < 1):
             raise ValueError('suff_cond must be 0 < suff_cond < 1')
 
-        if self.merit_function is None:
-            raise ValueError('merit_function can not be None')
-
     def find_step_length(self):
-        pass
+        """
+        Find an appropriate step size for the given merit function that leads
+        to the minimum in the search direction.
+
+        Parameters
+        ----------
+        merit : MeritFunc-like
+            Merit function object derived from the base MeritFunc class.
+
+        Returns
+        -------
+        float : Step size.
+        int : Number of iterations taken for the search.
+        """
+        raise NotImplementedError # pragma: no cover
 
 ################################################################################
 #                          Back Tracking Line-Search                           #
 ################################################################################
 
 class BackTracking(LineSearch):
+    """
+    Back-tracking line search.
 
+    Attributes
+    ----------
+    alpha_init : float
+        Initial step size.
+    alpha_min : float
+        Minimum step size.
+    rdtn_factor : float
+        Reduction factor for the step size at each iteration.
+    p_dot_dfdx : float
+        Value of :math:`\\langle p, \\nabla f \\rangle` at current step.
+    """
     def __init__(self, optns={}, out_file=None):
         super(BackTracking, self).__init__(optns, out_file)
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
@@ -110,10 +140,12 @@ class BackTracking(LineSearch):
 
         super(BackTracking, self)._validate_options()
 
-    def find_step_length(self):
+    def find_step_length(self, merit):
         self._validate_options()
 
-        merit = self.merit_function
+        if not isinstance(merit, MeritFunction):
+            raise ValueError('unknown merit_function type')
+
         self.p_dot_dfdx = merit.p_dot_grad
 
         if (self.p_dot_dfdx >= 0):
@@ -141,7 +173,18 @@ class BackTracking(LineSearch):
 ################################################################################
 
 class StrongWolfe(LineSearch):
+    """
+    Strong Wolfe line search.
 
+    Attributes
+    ----------
+    alpha_init : float
+        Initial step size.
+    alpha_max : float
+        Maximum step size.
+    curv_cond : float
+        Curvature condition to be satisfied.
+    """
     def __init__(self, optns={}, out_file=sys.stdout):
         super(StrongWolfe, self).__init__(optns, out_file)
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
@@ -212,10 +255,13 @@ class StrongWolfe(LineSearch):
         # if we got here then we didn't find a step
         raise Exception('StrongWolfe._zoom(): Failed to find a step length!')
 
-    def find_step_length(self):
+    def find_step_length(self, merit):
         self._validate_options()
 
-        merit = self.merit_function
+        if not isinstance(merit, MeritFunction):
+            raise ValueError('unknown merit_function type')
+
+        self.merit_function = merit
         self.phi_init = merit.eval_func(0.0)
         self.dphi_init = merit.eval_grad(0.0)
 

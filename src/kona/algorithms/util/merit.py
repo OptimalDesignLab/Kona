@@ -4,7 +4,89 @@ from kona.linalg.vectors.common import objective_value
 from kona.linalg.solvers.util import EPS
 from kona.linalg.matrices.common import dRdX
 
-class ObjectiveMerit(object):
+class MeritFunction(object):
+    """
+    Base class for all merit functions.
+
+    Attributes
+    ----------
+    primal_factory : VectorFactory
+        Generator for new primal vectors.
+    state_factory : VectorFactory
+        Generator for new state vectors.
+    out_file : file
+        File stream for writing data.
+    _allocated : boolean
+        Flag to track whether merit function memory has been allocated.
+
+    Parameters
+    ----------
+    primal_factory : VectorFactory
+    state_factory : VectorFactory
+    optns : dict
+    out_file : file
+    """
+    def __init__(self, primal_factory, state_factory,
+                 optns={}, out_file=sys.stdout):
+        self.primal_factory = primal_factory
+        self.state_factory = state_factory
+        self.out_file = out_file
+        self._allocated = False
+
+    def reset(self, search_dir, x_start, u_start, p_dot_grad=None):
+        """
+        Reset the merit function at a new design and state point.
+
+        If merit memory is not yet allocated, this function should also do that.
+
+        Parameters
+        ----------
+        search_dir : PrimalVector
+            Search direction vector in the primal space.
+        x_start : PrimalVector
+            Initial primal vector.
+        u_start : StateVector
+            State vector corresponding to ``x_start``.
+        p_dot_grad : float (optional)
+            Value of :math:`\\langle p, \\nabla f \\rangle` at ``x_start``.
+        """
+        raise NotImplementedError # pragma: no cover
+
+    def eval_func(self, alpha):
+        """
+        Evaluate merit function value at ``alpha``
+
+        Parameters
+        ----------
+        alpha : float
+
+        Returns
+        -------
+        float : Value of merit function ``alpha``.
+        """
+        raise NotImplementedError # pragma: no cover
+
+    def eval_grad(self, alpha):
+        """
+        Evaluate merit function gradient :math:`\\langle p, \\nabla f \\rangle`
+        at the given ``alpha``
+
+        .. note::
+
+            This method can either ``pass`` or ``return 0`` for gradient-free
+            merit functions.
+
+        Parameters
+        ----------
+        alpha : float
+
+        Returns
+        -------
+        float : Value of :math:`\\langle p, \\nabla f \\rangle` at ``alpha``.
+        """
+        return 0 # pragma: no cover
+
+class ObjectiveMerit(MeritFunction):
     """
     Merit function for line searches applied to the raw objective.
 
@@ -12,31 +94,36 @@ class ObjectiveMerit(object):
 
     Attributes
     ----------
-    alpha_prev : float
-        The value of the step size on the previous iteration
-    obj_start : float
-        The value of the objective at the beginning of the line search
+    last_func_alpha : float
+        Last value of alpha for which objective value is evaluated.
+    last_grad_alpha : float
+        Last value of alpha for which objective grad is evaluated.
+    func_val : float
+        Value of the objective at ``last_func_alpha``.
     p_dot_grad : float
-        The product :math:`\langle p, \nabla f \rangle` at the beginning
+        Value of :math:`\\langle p, \\nabla f \\rangle` at ``last_grad_alpha``.
     x_start : PrimalVector
-        Initial position of the variable, where :math:`\alpha = 0`
+        Initial position of the primal variables, where :math:`\\alpha = 0`.
+    x_trial : PrimalVector
+        Trial position of the primal variables at a new alpha.
+    u_trial : StateVector
+        Trial position of the state variables at a new alpha.
     search_dir : PrimalVector
-        The search direction adopted
+        The search direction vector.
     state_work : StateVector
-        Work vector for state
+        Work vector for state operations.
     adjoint_work : StateVector
-        Work vector for adjoint
+        Work vector for adjoint operations.
     design_work : PrimalVector
-        Work vector for primal
+        Work vector for primal operations.
     """
 
-    def __init__(self, primal_factory, state_factory, optns=None, out_file=sys.stdout):
-        self.primal_factory = primal_factory
+    def __init__(self, primal_factory, state_factory,
+                 optns={}, out_file=sys.stdout):
+        super(ObjectiveMerit, self).__init__(primal_factory, state_factory,
+                                             optns, out_file)
         self.primal_factory.request_num_vectors(2)
-        self.state_factory = state_factory
         self.state_factory.request_num_vectors(2)
-        self.out_file = out_file
-        self._allocated = False
 
     def reset(self, search_dir, x_start, u_start, p_dot_grad):
         # if the internal vectors are not allocated, do it now

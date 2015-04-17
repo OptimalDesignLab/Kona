@@ -1,8 +1,5 @@
 import numpy
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
-from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
-from kona.linalg.matrices.composite import Hessian, ReducedKKTMatrix
 
 class VectorFactory(object):
     """
@@ -13,8 +10,8 @@ class VectorFactory(object):
 
     Attributes
     ----------
-    _count : int
-        Number of vectors required by optimization functions.
+    num_vecs : int
+        Number of vectors requested from this factory.
     _memory : KonaMemory
         All-knowing Kona memory manager.
     _vec_type : PrimalVector, StateVector, DualVector

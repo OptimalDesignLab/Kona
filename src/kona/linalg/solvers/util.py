@@ -17,6 +17,10 @@ def abs_sign(x, y):
     ----------
     x : float
     y : float
+
+    Returns
+    -------
+    float : :math:`|x|\\mathsf{sign}(y)`
     """
     return abs(x)*np.sign(y)
 
@@ -31,6 +35,10 @@ def calc_epsilon(eval_at_norm, mult_by_norm):
         the norm of the vector at which the Jacobian-like matrix is evaluated
     mult_by_norm : float
         the norm of the vector that is being multiplied
+
+    Returns
+    -------
+    
     """
     if mult_by_norm < EPS*eval_at_norm or mult_by_norm < EPS:
         # multiplying vector is zero in a relative or absolute sense

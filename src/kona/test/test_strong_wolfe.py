@@ -69,8 +69,7 @@ class StrongWolfeTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, self.sw.p_dot_dfdx)
 
-        self.sw.merit_function = self.merit
-        alpha, n_iter = self.sw.find_step_length()
+        alpha, n_iter = self.sw.find_step_length(self.merit)
 
         self.assertEqual(n_iter, 2)
         self.assertTrue(abs(alpha - 0.4) < 1.e-1)
@@ -98,28 +97,26 @@ class StrongWolfeTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.sw.merit_function = self.merit
         self.merit.p_dot_grad *= -1
         try:
-            alpha, n_iter = self.sw.find_step_length()
+            alpha, n_iter = self.sw.find_step_length(self.merit)
         except ValueError as err:
             self.assertEqual(str(err), 'search direction is not a descent direction')
         else:
             self.fail('ValueError expected')
 
     def test_no_merit_function(self):
-        self.sw.merit_function = None
         try:
-            alpha, n_iter = self.sw.find_step_length()
+            alpha, n_iter = self.sw.find_step_length(None)
         except ValueError as err:
-            self.assertEqual(str(err), 'merit_function can not be None')
+            self.assertEqual(str(err), 'unknown merit_function type')
         else:
             self.fail('ValueError expected')
 
     def test_bad_alpha_init(self):
         self.sw.alpha_init = -2.
         try:
-            alpha, n_iter = self.sw.find_step_length()
+            alpha, n_iter = self.sw.find_step_length(None)
         except ValueError as err:
             self.assertEqual(str(err), 'alpha_init must be greater than zero (0)')
         else:
@@ -128,7 +125,7 @@ class StrongWolfeTestCase(unittest.TestCase):
     def test_bad_alpha_max(self):
         self.sw.alpha_max = 0.5
         try:
-            alpha, n_iter = self.sw.find_step_length()
+            alpha, n_iter = self.sw.find_step_length(None)
         except ValueError as err:
             self.assertEqual(str(err), 'alpha_max must be positive and > alpha_init')
         else:
@@ -137,7 +134,7 @@ class StrongWolfeTestCase(unittest.TestCase):
     def test_bad_curv_cond(self):
         self.sw.curv_cond = 1e-10
         try:
-            alpha, n_iter = self.sw.find_step_length()
+            alpha, n_iter = self.sw.find_step_length(None)
         except ValueError as err:
             self.assertEqual(str(err), 'curv_cond must be suff_cond < curv_cond < 1')
         else:

@@ -73,7 +73,7 @@ class KonaMatrix(object):
         -------
         out_vec : KonaVector-like
         """
-        pass
+        raise NotImplementedError
 
     @property
     def T(self):

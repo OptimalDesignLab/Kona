@@ -4,7 +4,20 @@ from kona.linalg.matrices.common import dRdX, dRdU, dCdX
 
 def current_solution(curr_design, curr_state=None, curr_adj=None, curr_dual=None, num_iter=None):
     """
-    Notify the solver of the current solution point
+    Notify the solver of the current solution point.
+
+    Parameters
+    ----------
+    curr_design : PrimalVector
+        Current design variables.
+    curr_state : StateVector (optional)
+        Current state variables.
+    curr_adj : StateVector (optional)
+        Current adjoint variables.
+    curr_dual : DualVector (optional)
+        Current constraint residual.
+    num_iter : int
+        Current iteration of the optimization.
     """
 
     solver = curr_design._memory.solver
@@ -60,10 +73,10 @@ class KonaVector(object):
 
     Parameters
     ----------
-    user_vector : BaseVector or derivative
-        User defined vector object that contains data and operations on data.
-    memory_obj : UserMemory (singleton)
+    memory_obj : KonaMemory
         Pointer to the Kona user memory.
+    user_vector : BaseVector-like
+        User defined vector object that contains data and operations on data.
     """
 
     def __init__(self, memory_obj, user_vector=None):
@@ -87,7 +100,7 @@ class KonaVector(object):
 
         Parameters
         ----------
-        val : float or KonaVector derivative
+        val : float or KonaVector-like
             Right hand side term for assignment.
         """
         if isinstance(val, (float, np.float32, np.float64, int, np.int32, np.int64)):
@@ -104,7 +117,7 @@ class KonaVector(object):
 
         Parameters
         ----------
-        vector : KonaVector derivative
+        vector : KonaVector-like
             Vector to be added.
         """
         self._check_type(vector)
@@ -118,7 +131,7 @@ class KonaVector(object):
 
         Parameters
         ----------
-        vector : KonaVector derivative
+        vector : KonaVector-like
             Vector to be subtracted.
         """
         if vector == self: # special case...
@@ -147,9 +160,9 @@ class KonaVector(object):
 
     def divide_by(self, val):
         """
-        Used as the multiplication operator.
+        Used as the division operator.
 
-        Multiplies the vector by the given scalar value.
+        Divides the vector by the given scalar value.
 
         Parameters
         ----------
@@ -167,7 +180,7 @@ class KonaVector(object):
         ----------
         a, b : float
             Coefficients for the operation.
-        x, y : KonaVector or derivative
+        x, y : KonaVector-like
             Vectors for the operation
         """
         self._check_type(X)

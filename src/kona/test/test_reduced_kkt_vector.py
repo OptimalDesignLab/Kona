@@ -37,7 +37,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         try:
             self.rkkt_vec1._check_type(self.pv1)
         except TypeError as err:
-            self.assertEquals(str(err), "ReducedKKTVector() >> Wrong vector type. Must be <class 'kona.linalg.vectors.composite.ReducedKKTVector'>")
+            self.assertEquals(str(err), "CompositeVector() >> Wrong vector type. Must be <class 'kona.linalg.vectors.composite.ReducedKKTVector'>")
         else:
             self.fail('TypeError expected')
 
@@ -46,14 +46,14 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         try:
             ReducedKKTVector(self.km, self.dv1, self.dv1)
         except TypeError as err:
-            self.assertEqual(str(err), 'ReducedKKTVector() >> Unidentified design vector.' )
+            self.assertEqual(str(err), 'CompositeVector() >> Unidentified design vector.' )
         else:
             self.fail('TypeError expected')
 
         try:
             ReducedKKTVector(self.km, self.pv1, self.pv1)
         except TypeError as err:
-            self.assertEqual(str(err), 'ReducedKKTVector() >> Unidentified dual vector.' )
+            self.assertEqual(str(err), 'CompositeVector() >> Unidentified dual vector.' )
         else:
             self.fail('TypeError expected')
 
@@ -88,7 +88,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         try:
             self.rkkt_vec2.times(self.rkkt_vec1)
         except TypeError as err:
-            self.assertEquals(str(err), 'ReducedKKTVector.times() >> Wrong argument type. Must be FLOAT.')
+            self.assertEquals(str(err), 'CompositeVector.times() >> Wrong argument type. Must be FLOAT.')
 
         self.rkkt_vec2.times(3)
         err = self.pv2._data.data - 6*np.ones(10)
