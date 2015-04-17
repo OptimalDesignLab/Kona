@@ -38,7 +38,7 @@ def calc_epsilon(eval_at_norm, mult_by_norm):
 
     Returns
     -------
-    
+
     """
     if mult_by_norm < EPS*eval_at_norm or mult_by_norm < EPS:
         # multiplying vector is zero in a relative or absolute sense
@@ -201,8 +201,8 @@ def solve_trust_reduced(H, g, radius):
     if H.shape[0] != H.shape[1] != g.shape[0]:
         raise ValueError('reduced Hessian or gradient shape inconsistency')
 
-    eig_vals, eig = eigenvalues(H)
-    eigmin = eig[0]
+    eig_vals, eig = eigen_decomp(H)
+    eigmin = eig_vals[0]
     lam = 0.0
     if eigmin > 1e-12:
         # Hessian is semi-definite on span(Z), so solve for y and check if ||y||
@@ -210,7 +210,7 @@ def solve_trust_reduced(H, g, radius):
         y, fnc, dfnc = secular_function(H, g, lam, radius)
         if (fnc < 0.0): # i.e. norm_2(y) < raidus
             # compute predicted decrease in objective and return
-            pred = -y.dot(0.5*H.dot(y) + g)
+            pred = -y.dot(0.5*np.array(H.dot(y))[0] + g)
             return y, lam, pred
 
     # if we get here, either the Hessian is semi-definite or ||y|| > radius
@@ -280,7 +280,7 @@ def solve_trust_reduced(H, g, radius):
         raise Exception("Newton's method failed to converge to a valid lambda")
 
     # compute predicted decrease in objective
-    pred = -y.dot(0.5*H.dot(y) + g)
+    pred = -y.dot(0.5*np.array(H.dot(y))[0] + g)
     return y, lam, pred
 
 def secular_function(H, g, lam, radius):
@@ -319,9 +319,9 @@ def secular_function(H, g, lam, radius):
     for reg_iter in xrange(max_iter):
         H_hat = H + np.eye(H.shape[0])*diag
         try:
-            L = np.linalg.cholesky(Hhat)
+            L = np.linalg.cholesky(H_hat)
             break
-        except LinAlgError:
+        except np.linalg.LinAlgError:
             diag *= 100.0
     if reg_iter+1 == max_iter:
         raise Exception('Regularization of Cholesky factorization failed')

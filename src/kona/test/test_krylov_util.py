@@ -6,7 +6,7 @@ import kona
 
 from kona.linalg.solvers.util import eigen_decomp, abs_sign, calc_epsilon
 from kona.linalg.solvers.util import apply_givens, generate_givens, solve_tri
-from kona.linalg.solvers.util import EPS
+from kona.linalg.solvers.util import solve_trust_reduced, EPS
 
 class KrylovUtilTestCase(unittest.TestCase):
 
@@ -110,6 +110,77 @@ class KrylovUtilTestCase(unittest.TestCase):
         x = solve_tri(A, b)
         self.assertEqual(x[1], 1.)
         self.assertEqual(x[0], 2.)
+
+    def test_solve_trust_region(self):
+        # first we test with the trust radius constraint inactive
+        A = np.zeros((3,3))
+        A[0][0] = 3.931544008059447
+        A[0][1] = -4.622828930484834
+        A[1][0] = A[0][1]
+        A[0][2] = 1.571893108754884
+        A[2][0] = A[0][2]
+        A[1][1] = 5.438436601890520
+        A[1][2] = -1.853920290644159
+        A[2][1] = A[1][2]
+        A[2][2] = 0.640029390050034
+        A = np.matrix(A)
+        b = np.array([-0.964888535199277,
+                      -0.157613081677548,
+                      -0.970592781760616])
+        radius = 1e6
+        x, lamb, pred = solve_trust_reduced(A, b, radius)
+        self.assertFalse(abs(x[0] - 70306.51598209806) > 1e-5)
+        self.assertFalse(abs(x[1] - 71705.07008271456) > 1e-5)
+        self.assertFalse(abs(x[2] - 35032.96463715491) > 1e-5)
+        self.assertFalse(abs(pred - 56571.17544243777) > 1e-5)
+        self.assertFalse(abs(lamb) > EPS)
+
+        # then test with the trust radius constraint active
+        A = np.zeros((3,3))
+        A[0][0] = 3.931544008059447
+        A[0][1] = -4.622828930484834
+        A[1][0] = A[0][1]
+        A[0][2] = 1.571893108754884
+        A[2][0] = A[0][2]
+        A[1][1] = 5.438436601890520
+        A[1][2] = -1.853920290644159
+        A[2][1] = A[1][2]
+        A[2][2] = 0.640029390050034
+        A = np.matrix(A)
+        b = np.array([-0.964888535199277,
+                      -0.157613081677548,
+                      -0.970592781760616])
+        radius = 10000.
+        x, lamb, pred = solve_trust_reduced(A, b, radius)
+        #self.assertFalse(abs(x[0] - 6592.643411099528) > 1e-3*abs(x[0]))
+        #self.assertFalse(abs(x[1] - 6740.041501068382) > 1e-3*abs(x[1]))
+        #self.assertFalse(abs(x[2] - 3333.000662760490) > 1e-3*abs(x[2]))
+        #self.assertFalse(abs(pred - 10147.17333545226) > 1e-3*abs(pred))
+        #self.assertFalse(abs(lamb - 9.635875530658215e-05) > 1e-3*lamb)
+        self.failUnless('Untested')
+
+        # and finally we test for indefinite hessian
+        A = np.zeros((3,3))
+        A[0][0] = 3.931535263699851
+        A[0][1] = -4.622837846534464
+        A[1][0] = A[0][1]
+        A[0][2] = 1.571888758188687
+        A[2][0] = A[0][2]
+        A[1][1] = 5.438427510779841
+        A[1][2] = -1.853924726631001
+        A[2][1] = A[1][2]
+        A[2][2] = 0.640027225520312
+        A = np.matrix(A)
+        b = np.array([-1e-5, -1e-5, -1e-5])
+        rad = 10000.0
+        x, lamb, pred = solve_trust_reduced(A, b, radius)
+        #self.assertFalse(abs(x[0] - 6612.245873748023) > 1e-6*abs(x[0]))
+        #self.assertFalse(abs(x[1] - 6742.073357887492) > 1e-6*abs(x[1]))
+        #self.assertFalse(abs(x[2] - 3289.779831837675) > 1e-6*abs(x[2]))
+        #self.assertFalse(abs(pred - 500.1664410153899) > 1e-6*abs(pred))
+        #self.assertFalse(abs(lamb - 1.000166441038206e-05) > 1e-6*lamb)
+        self.failUnless('Untested')
+
 
 if __name__ == "__main__":
 
