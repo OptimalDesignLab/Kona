@@ -46,6 +46,6 @@ setup(name = 'kona',
       install_requires=[
         'sphinx>=1.3.1',
         'numpydoc>=0.5',
-        'numpy>1.9', 
-      ],
+        'numpy>1.9',
+        ],
       )
