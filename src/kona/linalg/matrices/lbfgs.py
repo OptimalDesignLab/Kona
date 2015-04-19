@@ -1,9 +1,9 @@
 import sys, gc
 import numpy
 
-from kona.linalg.matrices.quasi_newton import QuasiNewtonApprox
 from kona.options import get_opt
 
+from kona.linalg.matrices.quasi_newton import QuasiNewtonApprox
 
 class LimitedMemoryBFGS(QuasiNewtonApprox):
     """ Limited-memory BFGS approximation for the Hessian.

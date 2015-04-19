@@ -1,6 +1,7 @@
 import sys
 
 from kona.options import BadKonaOption, get_opt
+
 from kona.algorithms.util.merit import ObjectiveMerit
 
 class OptimizationAlgorithm(object):

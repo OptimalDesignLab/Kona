@@ -4,6 +4,7 @@ import sys
 from numpy import sqrt
 
 from kona.options import BadKonaOption, get_opt
+
 from kona.linalg.solvers.util import EPS, write_header, write_history
 
 class KrylovSolver(object):

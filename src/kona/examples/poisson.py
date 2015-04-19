@@ -3,7 +3,7 @@ import numpy as np
 from kona.user import UserSolver
 from kona.user import BaseVector
 
-class inversePoisson(UserSolver):
+class InversePoisson(UserSolver):
 
     def setup(self, nx, ny, x_control, T_control, init_array, rel_tol):
         num_design = nx - 2

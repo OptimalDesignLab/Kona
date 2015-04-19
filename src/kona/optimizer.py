@@ -1,4 +1,7 @@
 import os.path
+
+from kona.options import defaults
+
 from kona.user import UserSolver
 from kona.algorithms import OptimizationAlgorithm
 from kona.linalg.memory import KonaMemory
@@ -21,7 +24,7 @@ class Optimizer(object):
     algorithm : OptimizationAlgorithm-like
     optns : dict (optional)
     """
-    def __init__(self, solver, algorithm, optns=None):
+    def __init__(self, solver, algorithm, optns=defaults):
         # complain if solver or algorithm types are wrong
         if not isinstance(solver, UserSolver):
             raise TypeError('Kona.Optimizer() >> ' + \

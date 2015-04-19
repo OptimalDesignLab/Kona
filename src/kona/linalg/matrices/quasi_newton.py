@@ -1,8 +1,8 @@
 import sys
 
-from composite import Hessian
-
 from kona.options import get_opt
+
+from kona.linalg.matrices.composite import Hessian
 
 class QuasiNewtonApprox(Hessian):
     """ Base class for quasi-Newton approximations of the Hessian

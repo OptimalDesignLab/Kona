@@ -1,7 +1,9 @@
-from kona.linalg.matrices.quasi_newton import QuasiNewtonApprox
-from kona.options import get_opt
-import numpy
 import sys, gc
+import numpy
+
+from kona.options import get_opt
+
+from kona.linalg.matrices.quasi_newton import QuasiNewtonApprox
 
 
 class LimitedMemorySR1(QuasiNewtonApprox):

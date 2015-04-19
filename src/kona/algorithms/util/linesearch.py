@@ -2,6 +2,7 @@ import sys, warnings
 from numpy import sqrt
 
 from kona.options import get_opt
+
 from kona.algorithms.util.merit import MeritFunction
 
 ################################################################################
