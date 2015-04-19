@@ -81,7 +81,7 @@ release = '0.1'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', 'scipy-sphinx-theme']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -112,10 +112,11 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#html_theme = 'sphinx_rtd_theme'
-#html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-html_theme = 'scipy'
-html_theme_path = [os.path.join('scipy-sphinx-theme','_theme')]
+if on_rtd:
+    html_theme = 'default'
+else:
+    html_theme = 'scipy'
+    html_theme_path = [os.path.join('scipy-sphinx-theme','_theme')]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
