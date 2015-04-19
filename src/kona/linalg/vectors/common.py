@@ -10,11 +10,11 @@ def current_solution(curr_design, curr_state=None, curr_adj=None, curr_dual=None
     ----------
     curr_design : PrimalVector
         Current design variables.
-    curr_state : StateVector (optional)
+    curr_state : StateVector, optional
         Current state variables.
-    curr_adj : StateVector (optional)
+    curr_adj : StateVector, optional
         Current adjoint variables.
-    curr_dual : DualVector (optional)
+    curr_dual : DualVector, optional
         Current constraint residual.
     num_iter : int
         Current iteration of the optimization.
@@ -47,7 +47,8 @@ def objective_value(at_design, at_state):
 
     Returns
     -------
-    float : Objective function value.
+    float
+        Objective function value.
     """
     solver = at_design._memory.solver
 
@@ -64,18 +65,18 @@ class KonaVector(object):
     common set of algebraic member functions. Allows Kona to operate on
     data spaces allocated by the user.
 
-    Attributes
-    ----------
-    _memory : UserMemory (singleton)
-        Pointer to the Kona user memory.
-    _data : BaseVector or derivative
-        User defined vector object that contains data and operations on data.
-
     Parameters
     ----------
     memory_obj : KonaMemory
         Pointer to the Kona user memory.
-    user_vector : BaseVector-like
+    user_vector : BaseVector
+        User defined vector object that contains data and operations on data.
+
+    Attributes
+    ----------
+    _memory : UserMemory
+        Pointer to the Kona user memory.
+    _data : BaseVector
         User defined vector object that contains data and operations on data.
     """
 
@@ -100,7 +101,7 @@ class KonaVector(object):
 
         Parameters
         ----------
-        val : float or KonaVector-like
+        val : float or KonaVector
             Right hand side term for assignment.
         """
         if isinstance(val, (float, np.float32, np.float64, int, np.int32, np.int64)):
@@ -117,7 +118,7 @@ class KonaVector(object):
 
         Parameters
         ----------
-        vector : KonaVector-like
+        vector : KonaVector
             Vector to be added.
         """
         self._check_type(vector)
@@ -131,7 +132,7 @@ class KonaVector(object):
 
         Parameters
         ----------
-        vector : KonaVector-like
+        vector : KonaVector
             Vector to be subtracted.
         """
         if vector == self: # special case...
@@ -173,15 +174,19 @@ class KonaVector(object):
 
     def equals_ax_p_by(self, a, X, b, Y):
         """
-        Performs a full a*X + b*Y operation between two vectors, and stores
-        the result in place.
+        Performs the scaled summation operation, ``a*X + b*Y``, between two
+        vectors, and stores the result in place.
 
         Parameters
         ----------
-        a, b : float
-            Coefficients for the operation.
-        x, y : KonaVector-like
-            Vectors for the operation
+        a : float
+            Scalar coefficient for ``X``.
+        X : KonaVector
+            Vector for the operation.
+        b : float
+            Scalar coefficient for ``Y``.
+        Y : KonaVector
+            Vector for the operation.
         """
         self._check_type(X)
         self._check_type(Y)
@@ -193,7 +198,8 @@ class KonaVector(object):
 
         Returns
         -------
-        float : Inner product.
+        float
+            Inner product.
         """
         self._check_type(vector)
         return self._data.inner(vector._data)
@@ -205,7 +211,8 @@ class KonaVector(object):
 
         Returns
         -------
-        float : L2 norm.
+        float
+            L2 norm.
         """
         prod = self.inner(self)
         return np.sqrt(prod)

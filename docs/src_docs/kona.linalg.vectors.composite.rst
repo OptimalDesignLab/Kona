@@ -1,5 +1,5 @@
-kona.linalg.vectors.composite module
-====================================
+kona.linalg.vectors.composite
+=============================
 
 .. automodule:: kona.linalg.vectors.composite
     :members:

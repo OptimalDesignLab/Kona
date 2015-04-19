@@ -9,15 +9,26 @@ class UserSolver(object):
     different data types. In these cases, the user must redefine the
     mathematical operation methods for these non-standard data types.
 
+    Parameters
+    ----------
+    num_primal : int, optional
+        Primal space size.
+    num_state : int, optional
+        State space size.
+    num_ceq : int, optional
+        Dual space size.
+    allocator : BaseAllocator, optional
+        Allocator object that produces the abstracted vector data containers.
+
     Attributes
     ----------
     num_design : int
         Size of the design space
-    num_state : int (optional)
+    num_state : int, optional
         Number of state variables
-    num_ceq : int (optional)
+    num_ceq : int, optional
         Size of the equality constraint residual
-    allocator : BaseAllocator-like
+    allocator : BaseAllocator
         Object that allocates BaseVector instances when Kona asks for it.
     """
 
@@ -52,16 +63,16 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
 
         Returns
         -------
-        tuple : Result of the operation. Contains the objective value as the
-        first element, and the number of preconditioner calls used as the
-        second.
+        tuple
+            Result of the operation. Contains the objective value as the first
+            element, and the number of preconditioner calls used as the second.
         """
         raise NotImplementedError
 
@@ -73,11 +84,11 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        result : BaseVector-like
+        result : BaseVector
             Location where user should store the result.
         """
         pass
@@ -90,11 +101,11 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        result : BaseVector-like
+        result : BaseVector
             Location where user should store the result.
         """
         pass
@@ -113,13 +124,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
         """
         pass
@@ -138,13 +149,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
         """
         pass
@@ -168,13 +179,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
         """
         out_vec.data[:] = 0.0
@@ -193,13 +204,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
         """
         pass
@@ -219,18 +230,19 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
 
         Returns
         -------
-        int : Number of preconditioner calls required for the operation.
+        int
+            Number of preconditioner calls required for the operation.
         """
         return 0
 
@@ -243,18 +255,19 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
 
         Returns
         -------
-        int : Number of preconditioner calls required for the operation.
+        int
+            Number of preconditioner calls required for the operation.
         """
         return 0
 
@@ -272,13 +285,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
         """
         pass
@@ -297,13 +310,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
         """
         pass
@@ -327,13 +340,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
         """
         out_vec.data[:] = 0.
@@ -352,13 +365,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        in_vec : BaseVector-like
+        in_vec : BaseVector
             Vector to be operated on.
-        out_vec : BaseVector-like
+        out_vec : BaseVector
             Location where user should store the result.
         """
         pass
@@ -375,11 +388,11 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        store_here : BaseVector-like
+        store_here : BaseVector
             Location where user should store the result.
         """
         raise NotImplementedError
@@ -392,11 +405,11 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        at_state : BaseVector-like
+        at_state : BaseVector
             Current state vector.
-        store_here : BaseVector-like
+        store_here : BaseVector
             Location where user should store the result.
         """
         pass
@@ -434,14 +447,15 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
-        result : BaseVector-like
+        result : BaseVector
             Location where user should store the result.
 
         Returns
         -------
-        int : Number of preconditioner calls required for the solution.
+        int
+            Number of preconditioner calls required for the solution.
         """
         converged = True
         cost = 0
@@ -469,20 +483,21 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
         at_state : BaseVector-line
             Current state vector.
-        rhs_vec : BaseVector-like
+        rhs_vec : BaseVector
             Right hand side vector.
         rel_tol : float
             Tolerance that the linear system should be solved to.
-        result : BaseVector-like
+        result : BaseVector
             Location where user should store the result.
 
         Returns
         -------
-        int : Number of preconditioner calls required for the solution.
+        int
+            Number of preconditioner calls required for the solution.
         """
         return 0
 
@@ -501,20 +516,21 @@ class UserSolver(object):
 
         Parameters
         ----------
-        at_design : BaseVector-like
+        at_design : BaseVector
             Current design vector.
         at_state : BaseVector-line
             Current state vector.
-        rhs_vec : BaseVector-like
+        rhs_vec : BaseVector
             Right hand side vector.
         rel_tol : float
             Tolerance that the linear system should be solved to.
-        result : BaseVector-like
+        result : BaseVector
             Location where user should store the result.
 
         Returns
         -------
-        int : Number of preconditioner calls required for the solution.
+        int
+            Number of preconditioner calls required for the solution.
         """
         return 0
 
@@ -529,13 +545,13 @@ class UserSolver(object):
 
         Parameters
         ----------
-        curr_design : BaseVector-like
+        curr_design : BaseVector
             Current design point.
-        curr_state : BaseVector-like
+        curr_state : BaseVector
             Current state variables.
-        curr_adj : BaseVector-like
+        curr_adj : BaseVector
             Currently adjoint variables for the objective.
-        curr_dual : BaseVector-like
+        curr_dual : BaseVector
             Current dual vector in storage. (This might be unnecessary!)
         num_iter : int
             Current outer iteration number.
@@ -558,6 +574,15 @@ class UserSolverIDF(UserSolver):
     IDF (individual discipline feasible) formulation for disciplinary
     coupling.
 
+    Parameters
+    ----------
+    num_real_design : int
+        Size of the design space, NOT including target state variables
+    num_state : int
+        Number of state variables
+    num_real_ceq : int (optional)
+        Number of equality constraints, NOT including IDF constraints
+
     Attributes
     ----------
     num_real_design : int
@@ -570,21 +595,6 @@ class UserSolverIDF(UserSolver):
         Number of equality constraints, NOT including IDF constraints
     num_ceq : int
         Number of TOTAL equality constraints, including IDF constraints
-    kona_design : numpy.array
-        Kona storage array for vectors of size ``self.num_design``
-    kona_state : numpy.array
-        Kona storage array for vectors of size ``self.num_state``
-    kona_dual : numpy.array
-        Kona storage array for vectors of size ``self.num_ceq``
-
-    Parameters
-    ----------
-    num_real_design : int
-        Size of the design space, NOT including target state variables
-    num_state : int
-        Number of state variables
-    num_real_ceq : int (optional)
-        Number of equality constraints, NOT including IDF constraints
     """
 
 

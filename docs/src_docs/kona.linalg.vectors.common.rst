@@ -1,5 +1,5 @@
-kona.linalg.vectors.common module
-=================================
+kona.linalg.vectors.common
+==========================
 
 .. automodule:: kona.linalg.vectors.common
     :members:

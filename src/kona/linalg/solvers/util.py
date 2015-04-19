@@ -38,7 +38,7 @@ def calc_epsilon(eval_at_norm, mult_by_norm):
 
     Returns
     -------
-
+    float : perturbation parameter
     """
     if mult_by_norm < EPS*eval_at_norm or mult_by_norm < EPS:
         # multiplying vector is zero in a relative or absolute sense
@@ -61,14 +61,14 @@ def eigen_decomp(A):
 
     Parameters
     ----------
-    A : numpy 2d array
+    A : 2-D numpy.ndarray
         matrix stored in dense format; not necessarily symmetric
 
     Returns
     -------
-    eig_vals : numpy array
+    eig_vals : 1-D numpy.ndarray
         the eigenvalues in ascending order
-    eig_vecs : numpy 2d array
+    eig_vecs : 2-D numpy.ndarray
         the eigenvectors sorted appropriated
     """
     eig_vals, eig_vec = np.linalg.eig(0.5*(A + A.T))
@@ -153,11 +153,11 @@ def solve_tri(A, b, lower=False):
 
     Parameters
     ----------
-    A : numpy 2d array
+    A : 2-D numpy.matrix
         a triangular matrix
-    b : numpy array
+    b : 1-D numpy.ndarray
         the right-hand side of the system
-    x : numpy array
+    x : 1-D numpy.ndarray
         on exit, the solution
     lower : boolean
         if True, A stores an lower-triangular matrix; stores an upper-triangular
@@ -180,16 +180,16 @@ def solve_trust_reduced(H, g, radius):
 
     Parameters
     ----------
-    H : numpy 2d array
+    H : 2-D numpy.matrix
         reduced-space Hessian
-    g : numpy array
+    g : 1-D numpy.ndarray
         gradient in the reduced space
     radius : float
         trust-region radius
 
     Returns
     -------
-    y : numpy array
+    y : 1-D numpy.ndarray
         solution to reduced-space trust-region problem
     lam : float
         Lagrange multiplier value
@@ -290,9 +290,9 @@ def secular_function(H, g, lam, radius):
 
     Parameters
     ----------
-    H : numpy 2d array
+    H : 2-D numpy.ndarray
         reduced-space Hessian
-    g : numpy array
+    g : 1-D numpy.ndarray
         gradient in the reduced space
     lam : float
         Lagrange multiplier value
@@ -301,7 +301,7 @@ def secular_function(H, g, lam, radius):
 
     Returns
     -------
-    y : numpy array
+    y : 1-D numpy.ndarray
         the step
     fnc : float
         the value of the secular equation
@@ -343,6 +343,20 @@ def secular_function(H, g, lam, radius):
     return y, fnc, dfnc
 
 def write_header(out_file, solver_name, res_tol, res_init):
+    """
+    Writes krylov solver data file header text.
+
+    Parameters
+    ----------
+    out_file : file
+        File handle for write destination
+    solver_name : string
+        Name of Krylov solver type.
+    res_tol : float
+        Residual tolerance for convergence.
+    res_init : float
+        Initial residual norm.
+    """
     out_file.write(
         '# %s residual history\n'%solver_name + \
         '# residual tolerance target = %e\n'%res_tol + \
@@ -351,6 +365,20 @@ def write_header(out_file, solver_name, res_tol, res_init):
     )
 
 def write_history(out_file, num_iter, res, res_init):
+    """
+    Writes krylov solver data file iteration history.
+
+    Parameters
+    ----------
+    out_file : file
+        File handle for write destination
+    num_iter : int
+        Current iteration count.
+    res : float
+        Current residual norm.
+    res_init : float
+        Initial residual norm.
+    """
     out_file.write(
         '# %5i'%num_iter + ' '*12 + '%e\n'%(res/res_init)
     )

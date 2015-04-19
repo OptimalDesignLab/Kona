@@ -8,19 +8,19 @@ class VectorFactory(object):
     This object also tallies up how many vectors of which kind needs to be
     allocated, based on the memory requirements of each optimization function.
 
+    Parameters
+    ----------
+    memory : KonaMemory
+    vec_type : PrimalVector or StateVector or DualVector
+
     Attributes
     ----------
     num_vecs : int
         Number of vectors requested from this factory.
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    _vec_type : PrimalVector, StateVector, DualVector
+    _vec_type : PrimalVector or StateVector or DualVector
         Kona abstracted vector type associated with this factory
-
-    Parameters
-    ----------
-    memory : KonaMemory
-    vec_type : PrimalVector, StateVector, DualVector
     """
 
     def __init__(self, memory, vec_type=None):
@@ -32,12 +32,28 @@ class VectorFactory(object):
             self._vec_type = vec_type
 
     def request_num_vectors(self, count):
+        """
+        Put in a request for the factory's vector type, to be used later.
+
+        Parameters
+        ----------
+        count : int
+            Number of vectors requested.
+        """
         if count < 1:
             raise ValueError('VectorFactory() >> ' + \
                              'Cannot request less than 1 vector.')
         self.num_vecs += count
 
     def generate(self):
+        """
+        Generate one abstract KonaVector of this vector factory's defined type.
+
+        Returns
+        -------
+        KonaVector
+            Abstracted vector type linked to user generated memory.
+        """
         if self._memory.is_allocated:
             try:
                 data = self._memory.pop_vector(self._vec_type)
@@ -52,26 +68,30 @@ class KonaMemory(object):
     """
     All-knowing Big Brother abstraction layer for Kona.
 
+    Parameters
+    ----------
+    solver : UserSolver
+        A user-defined solver object that implements specific elementary tasks.
+
     Attributes
     ----------
-    solver : UserSolver or derivative
+    solver : UserSolver
         A user-defined solver object that implements specific elementary tasks.
-    design_factory, state_factory, dual_factory: VectorFactory
-        Factory objects for generating Kona's abstracted vector classes.
+    primal_factory : VectorFactory
+        Vector generator for primal space.
+    state_factory : VectorFactory
+        Vector generator for state space.
+    dual_factory : VectorFactory
+        Vector generatorfor dual space.
     precond_count : int
         Counter for tracking optimization cost.
     vector_stack : dict
         Memory stack for unused vector data.
     rank : int
         Processor rank.
-
-    Parameters
-    ----------
-    solver : UserSolver or derivative
-        A user-defined solver object that implements specific elementary tasks.
     """
 
-    def __init__(self, solver=None):
+    def __init__(self, solver):
         # assign user object
         self.solver = solver
         self.rank = self.solver.get_rank()
@@ -101,9 +121,9 @@ class KonaMemory(object):
 
         Parameters
         ----------
-        vec_type : PrimalVector, StateVector, DualVector
+        vec_type : KonaVector
             Vector type of the memory stack.
-        user_data : BaseVector or derivative
+        user_data : BaseVector
             Unused user vector data container.
         """
         if user_data not in self.vector_stack[vec_type]:
@@ -116,12 +136,13 @@ class KonaMemory(object):
 
         Parameters
         ----------
-        vec_type : PrimalVector, StateVector, DualVector
+        vec_type : KonaVector
             Vector type to be popped from the stack.
 
         Returns
         -------
-        BaseVector or derivative : user-defined vector data structure
+        BaseVector
+            User-defined vector data structure.
         """
         if vec_type not in self.vector_stack.keys():
             raise TypeError('KonaMemory.pop_vector() >> ' + \

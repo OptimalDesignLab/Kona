@@ -8,29 +8,35 @@ class OptimizationAlgorithm(object):
     """
     Base class for all optimization algorithms.
 
+    Parameters
+    ----------
+    primal_factory : VectorFactory
+        PrimalVector factory.
+    state_factory : VectorFactory
+        StateVector factory.
+    dual_factory : VectorFactory
+        DualVector factory.
+    optns : dict
+        Options dictionary.
+
     Attributes
     ----------
     primal_factory : VectorFactory
-        Vector generator for primal space.
+        Generates primal vectors.
     state_factory : VectorFactory
-        Vector generator for state space.
-    dual_factory : VectorFactory (optional)
-        Vector generator for dual space.
+        Generates state vectors.
+    dual_factory : VectorFactory
+        Generates dual vectors.
     max_iter : int
         Maximum nonlinear iterations for the optimization.
     primal_tol : float
         Relative convergence tolerance for the primal variables.
-    constraint_tol : float (optional)
+    constraint_tol : float, optional
         Relative convergence tolerance for the constraints.
     info_file : file
         File stream for data output.
-    merit : MeritFunction-like
+    merit_func : MeritFunction
         Merit function for the optimization
-
-    Parameters
-    ----------
-    primal_factory, state_factory, dual_factory : VectorFactory
-    optns : dict
     """
     def __init__(self, primal_factory, state_factory, dual_factory=None, optns={}):
         # set up vector factories
@@ -50,7 +56,7 @@ class OptimizationAlgorithm(object):
         merit_optns = get_opt(optns,{},'merit_function')
         merit_type = get_opt(merit_optns, ObjectiveMerit, 'type')
         try:
-            self.merit = merit_type(
+            self.merit_func = merit_type(
                 primal_factory, state_factory, merit_optns)
         except:
             raise BadKonaOption(optns, 'merit_function', 'type')

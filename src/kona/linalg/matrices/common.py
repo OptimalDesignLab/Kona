@@ -6,6 +6,12 @@ class KonaMatrix(object):
     define a variety of jacobian matrices and other composite objects
     containing matrix-related methods used in optimization tasks.
 
+    Parameters
+    ----------
+    primal : PrimalVector
+    state : StateVector
+    transposed : boolean, optional
+
     Attributes
     ----------
     _primal : PrimalVector
@@ -14,12 +20,6 @@ class KonaMatrix(object):
         State vector point for linearization
     _transposed : boolean
         Flag to determine if the matrix is transposed
-
-    Parameters
-    ----------
-    primal : PrimalVector
-    state : StateVector
-    transposed : boolean (optional)
     """
     def __init__(self, primal=None, state=None, transposed=False):
         self._memory = None
@@ -66,12 +66,12 @@ class KonaMatrix(object):
 
         Parameters
         ----------
-        in_vec : KonaVector-like
-        out_vec : KonaVector-like
+        in_vec : KonaVector
+        out_vec : KonaVector
 
         Returns
         -------
-        out_vec : KonaVector-like
+        out_vec : KonaVector
         """
         raise NotImplementedError
 

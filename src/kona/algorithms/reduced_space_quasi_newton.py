@@ -15,9 +15,9 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
 
     Attributes
     ----------
-    approx_hessian : QuasiNewtonApprox-like
+    approx_hessian : QuasiNewtonApprox
         Abstract matrix object that defines the QN approximation of the Hessian.
-    line_search : LineSearch-like
+    line_search : LineSearch
         Line search object for globalization.
     """
     def __init__(self, primal_factory, state_factory, optns={}):
@@ -95,8 +95,8 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             p.times(-1.0)
             # perform line search along the new direction
             p_dot_dfdx = p.inner(dfdx)
-            self.merit.reset(p, x, state, p_dot_dfdx)
-            alpha, _ = self.line_search.find_step_length(self.merit)
+            self.merit_func.reset(p, x, state, p_dot_dfdx)
+            alpha, _ = self.line_search.find_step_length(self.merit_func)
             # apply the step onto the primal space
             x.equals_ax_p_by(1.0, x, alpha, p)
             # s = delta x = alpha * p is needed later by quasi-Newton method

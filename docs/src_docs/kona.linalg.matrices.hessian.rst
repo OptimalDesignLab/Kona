@@ -1,17 +1,22 @@
-kona.linalg.matrices.hessian module
-=====================================
+kona.linalg.matrices.hessian
+============================
 
-.. automodule:: kona.linalg.matrices.hessian.basic
+.. autoclass:: kona.linalg.matrices.hessian.basic.Hessian
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: kona.linalg.matrices.hessian.lbfgs
+.. autoclass:: kona.linalg.matrices.hessian.basic.QuasiNewtonApprox
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. automodule:: kona.linalg.matrices.hessian.lsr1
+.. autoclass:: kona.linalg.matrices.hessian.lbfgs.LimitedMemoryBFGS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: kona.linalg.matrices.hessian.lsr1.LimitedMemorySR1
     :members:
     :undoc-members:
     :show-inheritance:

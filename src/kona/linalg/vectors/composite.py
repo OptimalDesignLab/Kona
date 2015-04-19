@@ -5,6 +5,13 @@ class CompositeVector(object):
     """
     Base class for all composite vectors.
 
+    Parameters
+    ----------
+    memory : KonaMemory
+    primal_vec : PrimalVector, optional
+    state_vec : StateVector, optional
+    dual_vec : DualVector, optional
+
     Attributes
     ----------
     _memory : KonaMemory
@@ -15,13 +22,6 @@ class CompositeVector(object):
         State component of the composite vector.
     _dual_vec : DualVector or None
         Dual component of the composite vector.
-
-    Parameters
-    ----------
-    memory : KonaMemory
-    primal_vec : PrimalVector (optional)
-    state_vec : StateVector (optional)
-    dual_vec : DualVector (optional)
     """
     def __init__(self, memory, primal_vec=None, state_vec=None, dual_vec=None):
         self._memory = memory
@@ -59,7 +59,7 @@ class CompositeVector(object):
 
         Parameters
         ----------
-        rhs : float or CompositeVector-like
+        rhs : float or CompositeVector
             Right hand side term for assignment.
         """
         if isinstance(rhs, (float, int, np.float64, np.int64, np.float32, np.int32)):
@@ -86,7 +86,7 @@ class CompositeVector(object):
 
         Parameters
         ----------
-        vector : CompositeVector-like
+        vector : CompositeVector
             Vector to be added.
         """
         self._check_type(vector)
@@ -105,7 +105,7 @@ class CompositeVector(object):
 
         Parameters
         ----------
-        vector : CompositeVector-like
+        vector : CompositeVector
             Vector to be subtracted.
         """
         self._check_type(vector)
@@ -160,7 +160,7 @@ class CompositeVector(object):
         ----------
         a, b : float
             Coefficients for the operation.
-        x, y : CompositeVector-like
+        x, y : CompositeVector
             Vectors for the operation
         """
         self._check_type(x)

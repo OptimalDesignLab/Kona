@@ -1,10 +1,11 @@
-kona package
-============
+kona
+====
 
 Subpackages
 -----------
 
 .. toctree::
+    :titlesonly:
 
     kona.linalg
     kona.algorithms
@@ -13,13 +14,14 @@ Submodules
 ----------
 
 .. toctree::
+    :titlesonly:
 
-   kona.examples
-   kona.user
-   kona.options
+    kona.examples
+    kona.user
+    kona.options
 
 Package contents
----------------
+----------------
 
 .. automodule:: kona
     :members:

@@ -8,23 +8,23 @@ from kona.linalg.memory import KonaMemory
 
 class Optimizer(object):
     """
-    This is a top-level wrapper for all optimization algorithms contained in
-    the Kona library, and also the only class exposed to the outside user.
+    This is a top-level optimization controller. It is intended to be the
+    primary means by which a user interacts with Kona.
 
     Attributes
     ----------
     _memory : KonaMemory
         All-knowing Kona memory controller.
-    _algorithm : OptimizationAlgorithm-like
+    _algorithm : OptimizationAlgorithm
         Optimization algorithm object.
 
     Parameters
     ----------
-    solver : UserSolver-like
-    algorithm : OptimizationAlgorithm-like
-    optns : dict (optional)
+    solver : UserSolver
+    algorithm : OptimizationAlgorithm
+    optns : dict, optional
     """
-    def __init__(self, solver, algorithm, optns=defaults):
+    def __init__(self, solver, algorithm, optns=None):
         # complain if solver or algorithm types are wrong
         if not isinstance(solver, UserSolver):
             raise TypeError('Kona.Optimizer() >> ' + \
@@ -57,7 +57,7 @@ class Optimizer(object):
             if os.path.isfile('kona.cfg'):
                 raise NotImplementedError
             else:
-                self._optns = {}
+                self._optns = defaults
         else:
             self._optns = optns
 

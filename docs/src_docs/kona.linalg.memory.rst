@@ -1,5 +1,5 @@
-kona.linalg.memory module
-=========================
+kona.linalg.memory
+==================
 
 .. automodule:: kona.linalg.memory
     :members:

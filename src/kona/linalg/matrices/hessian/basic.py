@@ -7,6 +7,12 @@ class Hessian(object):
     """
     Abstract matrix object that defines the Hessian of an optimization problem.
 
+    Parameters
+    ----------
+    vector_factory : VectorFactory
+    optns : dict, optional
+    out_file : file, optional
+
     Attributes
     ----------
     vec_fac : VectorFactory
@@ -24,11 +30,11 @@ class Hessian(object):
 
         Parameters
         ----------
-        in_vec : KonaVector-like
+        in_vec : KonaVector
             Vector that gets multiplied with the inverse Hessian.
-        out_vec : KonaVector-like
+        out_vec : KonaVector
             Vector that stores the result of the operation.
-        rel_tol : float (optional)
+        rel_tol : float, optional
             Convergence tolerance for the operation.
         """
         raise NotImplementedError # pragma: no cover
@@ -44,9 +50,9 @@ class QuasiNewtonApprox(Hessian):
         Initial norm of design component of gradient.
     init_hessian : KonaVector
         Initial (diagonal) Hessian approximation (stored as a vector).
-    s_list : list of KonaVectors
+    s_list : list of KonaVector
         Difference between subsequent solutions: :math:`s_k = x_{k+1} - x_k`
-    y_list : list of KonaVectors
+    y_list : list of KonaVector
         Difference between subsequent gradients: :math:`y_k = g_{k+1} - g_k`
     """
 
@@ -64,9 +70,9 @@ class QuasiNewtonApprox(Hessian):
 
         Parameters
         ----------
-        s_new : KonaVector-like
+        s_new : KonaVector
             Difference between subsequent solutions.
-        y_new : KonaVector-like
+        y_new : KonaVector
             Difference between subsequent gradients.
         """
         raise NotImplementedError # pragma: no cover

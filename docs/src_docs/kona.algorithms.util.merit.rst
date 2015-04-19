@@ -1,5 +1,5 @@
-kona.algorithms.util.merit module
-=================================
+kona.algorithms.util.merit
+==========================
 
 .. automodule:: kona.algorithms.util.merit
     :members:

@@ -12,9 +12,9 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
     ----------
     lambda0 : float
         ?
-    s_dot_s_list : list of floats
+    s_dot_s_list : list of float
         The L2 norm of the step vector.
-    s_dot_y_list : list of floats
+    s_dot_y_list : list of float
         Curvature.
     """
 

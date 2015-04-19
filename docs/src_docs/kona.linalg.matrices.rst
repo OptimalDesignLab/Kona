@@ -1,16 +1,17 @@
-kona.linalg.matrices package
-============================
+kona.linalg.matrices
+====================
 
 Submodules
 ----------
 
 .. toctree::
+    :titlesonly:
 
-   kona.linalg.matrices.common
-   kona.linalg.matrices.hessian
+    kona.linalg.matrices.common
+    kona.linalg.matrices.hessian
 
 Package contents
----------------
+----------------
 
 .. automodule:: kona.linalg.matrices
     :members:

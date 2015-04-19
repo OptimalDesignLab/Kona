@@ -1,5 +1,5 @@
-kona.algorithms.util.linesearch module
-======================================
+kona.algorithms.util.linesearch
+===============================
 
 .. automodule:: kona.algorithms.util.linesearch
     :members:

@@ -11,12 +11,12 @@ def get_opt(optns, default, *keys):
         Nested dictionary.
     default : Unknown
         Value to return of the dictionary is empty.
-    *keys : string
+    \*keys : string
         Keys from which value will be pulled
 
     Returns
     -------
-    val : Unknown
+    Unknown
         Dictionary value corresponding to given hierarchy of keys.
     """
     keys = list(keys)
@@ -35,7 +35,7 @@ class BadKonaOption(Exception):
     ----------
     optns : dict
         Options dictionary containing the bad configuration.
-    *keys : string
+    \*keys : string
         Hierarchy of dictionary keys identifying the bad configuration.
     """
     def __init__(self, optns, *keys):

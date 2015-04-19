@@ -1,5 +1,5 @@
-kona.linalg.matrices.common module
-==================================
+kona.linalg.matrices.common
+===========================
 
 .. automodule:: kona.linalg.matrices.common
     :members:

@@ -9,6 +9,6 @@ Welcome to KONA's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+    :titlesonly:
 
-   src_docs/kona
+    src_docs/kona

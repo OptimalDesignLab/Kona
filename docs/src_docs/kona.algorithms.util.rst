@@ -1,16 +1,17 @@
-kona.algorithms.util package
-============================
+kona.algorithms.util
+====================
 
 Submodules
 ----------
 
 .. toctree::
+    :titlesonly:
 
-   kona.algorithms.util.linesearch
-   kona.algorithms.util.merit
+    kona.algorithms.util.linesearch
+    kona.algorithms.util.merit
 
 Package contents
----------------
+----------------
 
 .. automodule:: kona.algorithms.util
     :members:
