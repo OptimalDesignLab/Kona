@@ -3,7 +3,7 @@ import numpy
 
 from kona.options import get_opt
 
-from kona.linalg.matrices.quasi_newton import QuasiNewtonApprox
+from kona.linalg.matrices.hessian.basic import QuasiNewtonApprox
 
 class LimitedMemoryBFGS(QuasiNewtonApprox):
     """ Limited-memory BFGS approximation for the Hessian.

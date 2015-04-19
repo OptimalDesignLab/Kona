@@ -1,17 +1,17 @@
-kona.examples package
+kona.examples module
 =====================
 
-Submodules
-----------
+.. automodule:: kona.examples.rosenbrock
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-.. toctree::
+.. automodule:: kona.examples.simple_2by2
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-   kona.examples.simple_2by2
-
-Module contents
----------------
-
-.. automodule:: kona.examples
+.. automodule:: kona.examples.poisson
     :members:
     :undoc-members:
     :show-inheritance:

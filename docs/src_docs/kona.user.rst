@@ -1,18 +1,12 @@
-kona.user package
+kona.user module
 =================
 
-Submodules
-----------
+.. automodule:: kona.user.base_vectors
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-.. toctree::
-
-   kona.user.base_vectors
-   kona.user.user_solver
-
-Module contents
----------------
-
-.. automodule:: kona.user
+.. automodule:: kona.user.user_solver
     :members:
     :undoc-members:
     :show-inheritance:

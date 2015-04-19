@@ -6,11 +6,10 @@ Submodules
 
 .. toctree::
 
-   kona.algorithms.util.exceptions
    kona.algorithms.util.linesearch
    kona.algorithms.util.merit
 
-Module contents
+Package contents
 ---------------
 
 .. automodule:: kona.algorithms.util

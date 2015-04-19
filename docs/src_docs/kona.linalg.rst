@@ -6,8 +6,8 @@ Subpackages
 
 .. toctree::
 
-    kona.linalg.matrices
     kona.linalg.vectors
+    kona.linalg.matrices
 
 Submodules
 ----------
@@ -16,7 +16,7 @@ Submodules
 
    kona.linalg.memory
 
-Module contents
+Package contents
 ---------------
 
 .. automodule:: kona.linalg

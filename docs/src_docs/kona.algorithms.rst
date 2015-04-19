@@ -8,17 +8,15 @@ Subpackages
 
     kona.algorithms.util
 
-Submodules
-----------
-
-.. toctree::
-
-   kona.algorithms.reduced_space_quasi_newton
-
-Module contents
+Package contents
 ---------------
 
-.. automodule:: kona.algorithms
+.. automodule:: kona.algorithms.base_algorithm
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: kona.algorithms.reduced_space_quasi_newton
     :members:
     :undoc-members:
     :show-inheritance:

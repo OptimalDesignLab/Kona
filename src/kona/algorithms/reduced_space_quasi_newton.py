@@ -4,7 +4,7 @@ from kona.options import BadKonaOption, get_opt
 
 from kona.linalg.vectors.common import current_solution
 from kona.linalg.matrices.common import dRdU
-from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
+from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 from kona.algorithms.util.linesearch import StrongWolfe

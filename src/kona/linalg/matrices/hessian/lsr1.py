@@ -3,8 +3,7 @@ import numpy
 
 from kona.options import get_opt
 
-from kona.linalg.matrices.quasi_newton import QuasiNewtonApprox
-
+from kona.linalg.matrices.hessian.basic import QuasiNewtonApprox
 
 class LimitedMemorySR1(QuasiNewtonApprox):
     """ Limited memory symmetric rank-one update

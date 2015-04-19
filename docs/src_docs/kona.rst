@@ -6,23 +6,27 @@ Subpackages
 
 .. toctree::
 
-    kona.algorithms
-    kona.examples
     kona.linalg
-    kona.user
+    kona.algorithms
 
 Submodules
 ----------
 
 .. toctree::
 
-   kona.errors
-   kona.optimizer
+   kona.examples
+   kona.user
+   kona.options
 
-Module contents
+Package contents
 ---------------
 
 .. automodule:: kona
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: kona.optimizer
     :members:
     :undoc-members:
     :show-inheritance:

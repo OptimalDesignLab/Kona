@@ -3,11 +3,11 @@ import unittest
 import numpy as np
 
 from kona.linalg.memory import KonaMemory
-from kona.user.user_solver import UserSolver
-from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
-from kona.linalg.matrices.lsr1 import LimitedMemorySR1
+from kona.user import UserSolver
+from kona.linalg.matrices.hessian import LimitedMemoryBFGS
+from kona.linalg.matrices.hessian import LimitedMemorySR1
 from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
-from kona.algorithms.reduced_space_quasi_newton import ReducedSpaceQuasiNewton
+from kona.algorithms import ReducedSpaceQuasiNewton
 from kona.options import BadKonaOption
 
 class QuasiNewtonTestCase(unittest.TestCase):

@@ -9,7 +9,7 @@ Submodules
    kona.linalg.vectors.common
    kona.linalg.vectors.composite
 
-Module contents
+Package contents
 ---------------
 
 .. automodule:: kona.linalg.vectors

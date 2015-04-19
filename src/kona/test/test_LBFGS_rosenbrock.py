@@ -3,10 +3,10 @@ import numpy
 
 from kona.linalg.memory import KonaMemory
 from kona.algorithms.util.linesearch import BackTracking, StrongWolfe
-from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
-from kona.linalg.matrices.lsr1 import LimitedMemorySR1
+from kona.linalg.matrices.hessian import LimitedMemoryBFGS
+from kona.linalg.matrices.hessian import LimitedMemorySR1
 from kona.examples.rosenbrock import Rosenbrock
-from kona.algorithms.reduced_space_quasi_newton import ReducedSpaceQuasiNewton
+from kona.algorithms import ReducedSpaceQuasiNewton
 
 class RosenbrockLBFGSTestCase(unittest.TestCase):
 

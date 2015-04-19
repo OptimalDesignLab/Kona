@@ -53,7 +53,7 @@ class BadKonaOption(Exception):
 # IMPORTANT
 
 from kona.algorithms.util.merit import ObjectiveMerit
-from kona.linalg.matrices.lbfgs import LimitedMemoryBFGS
+from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 from kona.algorithms.util.linesearch import StrongWolfe
 from kona.linalg.solvers.krylov import STCG
 
