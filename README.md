@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master)](https://travis-ci.org/OptimalDesignLab/Kona)
 [![Coverage Status](https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master)](https://coveralls.io/r/OptimalDesignLab/Kona?branch=master)
+[![Documentation Status](https://readthedocs.org/projects/kona/badge/?version=latest)](http://kona.readthedocs.org/en/latest/)
 
 # Kona
 
@@ -31,16 +32,16 @@ linear algebra operations for the vector spaces.  This model allows Kona to be
 used in a variety of parallel environments, because it remains agnostic to how
 the user defines, stores, and manipulates the vectors.
 
-Additionally, Kona separates optimization algorithms from the underlying PDE 
-solver such that any new optimization algorithm can be implemented in Kona 
-using Kona's own abstracted vector classes. This allows for rapid development 
-and testing of new algorithms independently from the PDE solver, and 
-guarantees that any solver that has already been integrated with Kona will 
+Additionally, Kona separates optimization algorithms from the underlying PDE
+solver such that any new optimization algorithm can be implemented in Kona
+using Kona's own abstracted vector classes. This allows for rapid development
+and testing of new algorithms independently from the PDE solver, and
+guarantees that any solver that has already been integrated with Kona will
 work correctly underneath any new algorithm that may be added in the future.
 
 ## History and References
 
-An older version of Kona written in C++ can be found 
+An older version of Kona written in C++ can be found
 [here](https://bitbucket.org/odl/kona).
 
 Insert AIAA paper references here.
