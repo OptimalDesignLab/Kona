@@ -23,8 +23,8 @@ import sphinx_rtd_theme
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# path = os.path.join('..','src','kona')
-# sys.path.insert(0,os.path.abspath(path))
+path = os.path.join('..','src')
+sys.path.insert(0,os.path.abspath(path))
 
 # -- General configuration ------------------------------------------------
 

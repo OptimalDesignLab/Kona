@@ -16,7 +16,7 @@ Submodules
 .. toctree::
     :titlesonly:
 
-   kona.linalg.memory
+    kona.linalg.memory
 
 Package contents
 ----------------
