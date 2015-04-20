@@ -1,5 +1,5 @@
-Rosenbrock Function
-===================
+Rosenbrock (multidimensional)
+=============================
 
 .. autoclass:: kona.examples.Rosenbrock
     :members:

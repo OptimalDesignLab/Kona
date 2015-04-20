@@ -1,5 +1,5 @@
-2-by-2 System with State Variables
-==================================
+Simple2x2 (with state variables)
+================================
 
 .. autoclass:: kona.examples.Simple2x2
     :members:

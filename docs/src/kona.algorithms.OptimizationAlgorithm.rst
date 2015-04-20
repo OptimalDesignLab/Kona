@@ -1,5 +1,5 @@
-General Optimization Algorithm (base class)
-===========================================
+OptimizationAlgorithm (base class)
+==================================
 
 .. autoclass:: kona.algorithms.OptimizationAlgorithm
     :members:
