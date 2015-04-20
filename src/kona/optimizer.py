@@ -29,11 +29,8 @@ class Optimizer(object):
         if not isinstance(solver, UserSolver):
             raise TypeError('Kona.Optimizer() >> ' + \
                             'Unknown solver type!')
-        if not isinstance(algorithm, OptimizationAlgorithm):
-            raise TypeError('Kona.Optimizer() >> ' + \
-                            'Unknown optimization algorithm!')
         # initialize optimization memory
-        self._memory = KonaMemory(user_solver)
+        self._memory = KonaMemory(solver)
         # modify defaults either from config file or from given dictionary
         self._read_options(optns)
         # get two mandatory vector factories
@@ -45,21 +42,20 @@ class Optimizer(object):
             dual_factory = self._memory.dual_factory
             # initialize constrained algorithm
             self._algorithm = algorithm(
-                primal_factory, state_factory, dual_factory, self.optns)
+                primal_factory, state_factory, dual_factory, self._optns)
         else:
             # otherwise initialize unconstrained algorithm
-            self._algorithm = algorithm(primal_factory, state_factory, self.optns)
+            self._algorithm = algorithm(primal_factory, state_factory, self._optns)
         # finally, when all the initialization is done, allocate memory
         self._memory.allocate_memory()
 
     def _read_options(self, optns):
-        if optns is None:
+        self._optns = defaults.copy()
+        if isinstance(optns, dict):
+            self._optns.update(optns)
+        else:
             if os.path.isfile('kona.cfg'):
                 raise NotImplementedError
-            else:
-                self._optns = defaults
-        else:
-            self._optns = optns
 
-    def solve():
+    def solve(self):
         self._algorithm.solve()
