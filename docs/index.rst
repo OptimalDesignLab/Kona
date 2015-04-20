@@ -6,9 +6,16 @@
 Welcome to KONA's documentation!
 ================================
 
-Package Hierarchy:
+Contents:
 
 .. toctree::
     :titlesonly:
 
     src/kona
+
+Indices and Tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

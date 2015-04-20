@@ -1,5 +1,5 @@
-Kona API Reference
-==================
+API Reference
+=============
 
 .. toctree::
     :titlesonly:
