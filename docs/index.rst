@@ -6,9 +6,9 @@
 Welcome to KONA's documentation!
 ================================
 
-Contents:
+Package Hierarchy:
 
 .. toctree::
     :titlesonly:
 
-    src_docs/kona
+    src/kona
