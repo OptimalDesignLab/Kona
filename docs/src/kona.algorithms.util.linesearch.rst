@@ -1,7 +1,11 @@
 kona.algorithms.util.linesearch
 ===============================
 
-.. automodule:: kona.algorithms.util.linesearch
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Subclasses
+----------
+
+.. toctree::
+
+    kona.algorithms.util.linesearch.LineSearch
+    kona.algorithms.util.linesearch.BackTracking
+    kona.algorithms.util.linesearch.StrongWolfe

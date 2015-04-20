@@ -1,5 +1,5 @@
 PrimalVector, StateVector and DualVector
-=====================================
+========================================
 
 .. autoclass:: kona.linalg.vectors.common.PrimalVector
     :members:

@@ -3,7 +3,7 @@ import numpy
 
 from kona.options import get_opt
 
-class Hessian(object):
+class BaseHessian(object):
     """
     Abstract matrix object that defines the Hessian of an optimization problem.
 
@@ -39,7 +39,7 @@ class Hessian(object):
         """
         raise NotImplementedError # pragma: no cover
 
-class QuasiNewtonApprox(Hessian):
+class QuasiNewtonApprox(BaseHessian):
     """ Base class for quasi-Newton approximations of the Hessian
 
     Attributes

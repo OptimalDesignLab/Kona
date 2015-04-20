@@ -1,7 +1,10 @@
 kona.linalg.memory
 ==================
 
-.. automodule:: kona.linalg.memory
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Subclasses
+----------
+
+.. toctree::
+
+    kona.linalg.memory.KonaMemory
+    kona.linalg.memory.VectorFactory

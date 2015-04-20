@@ -1,7 +1,7 @@
-KonaVector (base class)
+LineSearch (base class)
 =======================
 
-.. autoclass:: kona.linalg.vectors.common.KonaVector
+.. autoclass:: kona.algorithms.util.linesearch.LineSearch
     :members:
     :undoc-members:
     :show-inheritance:

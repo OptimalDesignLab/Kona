@@ -18,10 +18,9 @@ Submodules
 
     kona.linalg.memory
 
-Package contents
-----------------
+Functions
+---------
 
-.. automodule:: kona.linalg
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autofunction:: kona.linalg.objective_value
+
+.. autofunction:: kona.linalg.current_solution

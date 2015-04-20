@@ -1,7 +1,10 @@
 kona.algorithms.util.merit
 ==========================
 
-.. automodule:: kona.algorithms.util.merit
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Subclasses
+----------
+
+.. toctree::
+
+    kona.algorithms.util.merit.MeritFunction
+    kona.algorithms.util.merit.ObjectiveMerit

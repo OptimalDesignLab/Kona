@@ -12,12 +12,7 @@ Subpackages
 Package contents
 ----------------
 
-.. autoclass:: kona.algorithms.base_algorithm.OptimizationAlgorithm
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. toctree::
 
-.. autoclass:: kona.algorithms.reduced_space_quasi_newton.ReducedSpaceQuasiNewton
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    kona.algorithms.OptimizationAlgorithm
+    kona.algorithms.ReducedSpaceQuasiNewton

@@ -47,7 +47,6 @@ class KrylovUtilTestCase(unittest.TestCase):
 
         self.assertTrue(np.all(eig_vec == np.eye(4)))
 
-
     def test_apply_givens(self):
 
         # theta = 90
@@ -111,7 +110,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertEqual(x[1], 1.)
         self.assertEqual(x[0], 2.)
 
-    def test_solve_trust_region(self):
+    def test_solve_trust_reduced(self):
         # first we test with the trust radius constraint inactive
         A = np.zeros((3,3))
         A[0][0] = 3.931544008059447

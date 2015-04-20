@@ -1,7 +1,10 @@
 kona.linalg.matrices.common
 ===========================
 
-.. automodule:: kona.linalg.matrices.common
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Subclasses
+----------
+
+.. toctree::
+
+    kona.linalg.matrices.common.KonaMatrix
+    kona.linalg.matrices.common.derived

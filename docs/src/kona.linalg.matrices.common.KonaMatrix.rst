@@ -1,7 +1,7 @@
-KonaVector (base class)
+KonaMatrix (base class)
 =======================
 
-.. autoclass:: kona.linalg.vectors.common.KonaVector
+.. autoclass:: kona.linalg.matrices.common.KonaMatrix
     :members:
     :undoc-members:
     :show-inheritance:

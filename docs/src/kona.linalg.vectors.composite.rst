@@ -1,7 +1,10 @@
 kona.linalg.vectors.composite
 =============================
 
-.. automodule:: kona.linalg.vectors.composite
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Subclasses
+----------
+
+.. toctree::
+
+    kona.linalg.vectors.composite.CompositeVector
+    kona.linalg.vectors.composite.derived

@@ -1,17 +1,11 @@
 kona.user
 =========
 
-.. autoclass:: kona.user.BaseVector
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Subclasses
+----------
 
-.. autoclass:: kona.user.BaseAllocator
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. toctree::
 
-.. autoclass:: kona.user.UserSolver
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    kona.user.BaseVector
+    kona.user.BaseAllocator
+    kona.user.UserSolver
