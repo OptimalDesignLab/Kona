@@ -26,7 +26,7 @@ import sphinx_rtd_theme
 path = os.path.join('.','api')
 sys.path.insert(0,os.path.abspath(path))
 
-path = os.path.join('..','..','src')
+path = os.path.join('..','src')
 sys.path.insert(0,os.path.abspath(path))
 
 # -- General configuration ------------------------------------------------
