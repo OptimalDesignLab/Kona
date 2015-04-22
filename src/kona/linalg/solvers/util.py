@@ -313,11 +313,11 @@ def secular_function(H, g, lam, radius):
     if H.shape[0] != H.shape[1] != g.shape[0]:
         raise ValueError('reduced Hessian or gradient shape inconsistency')
 
-    # perform Cholesky factorization, with regularization is necessary
+    # perform Cholesky factorization, with regularization if necessary
     diag = max(1.0, lam)*0.01*EPS
     max_iter = 20
     for reg_iter in xrange(max_iter):
-        H_hat = H + np.eye(H.shape[0])*diag
+        H_hat = H + np.eye(H.shape[0])*(lam + diag)
         try:
             L = np.linalg.cholesky(H_hat)
             break

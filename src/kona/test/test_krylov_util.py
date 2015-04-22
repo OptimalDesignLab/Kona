@@ -6,7 +6,7 @@ import kona
 
 from kona.linalg.solvers.util import eigen_decomp, abs_sign, calc_epsilon
 from kona.linalg.solvers.util import apply_givens, generate_givens, solve_tri
-from kona.linalg.solvers.util import solve_trust_reduced, EPS
+from kona.linalg.solvers.util import secular_function, solve_trust_reduced, EPS
 
 class KrylovUtilTestCase(unittest.TestCase):
 
@@ -110,8 +110,48 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertEqual(x[1], 1.)
         self.assertEqual(x[0], 2.)
 
+    def test_secular_function(self):
+
+        # The eigenvalues of the following matrix are (1e-5, 0.01, 1)
+        A = np.zeros((3,3))
+        A[0][0] = 3.931544008059447
+        A[0][1] = -4.622828930484834
+        A[1][0] = A[0][1]
+        A[0][2] = 1.571893108754884
+        A[2][0] = A[0][2]
+        A[1][1] = 5.438436601890520
+        A[1][2] = -1.853920290644159
+        A[2][1] = A[1][2]
+        A[2][2] = 0.640029390050034
+        A = np.matrix(A)
+        b = np.array([-0.964888535199277,
+                      -0.157613081677548,
+                      -0.970592781760616])
+
+        # test secular function with lambda = 0.0 and delta = ||A\b||; the
+        # secular function should vanish, and the step y should be -A\b
+        radius = 106357.56613920075
+        y, fnc, dfnc = secular_function(A, b, 0.0, radius)
+        self.assertFalse(abs(y[0] - 70306.51598209806) > 1e-5)
+        self.assertFalse(abs(y[1] - 71705.07008271456) > 1e-5)
+        self.assertFalse(abs(y[2] - 35032.96463715491) > 1e-5)
+        self.assertFalse(abs(fnc) > 1e-12)
+        self.assertFalse(abs(dfnc + 0.9402244082089186) > 1e-12)
+
+        # test secular function with lambda = 0.1 and delta = 10
+        lamb = 0.1
+        radius = 10.0
+        y, fnc, dfnc = secular_function(A, b, lamb, radius)
+        self.assertFalse(abs(y[0] - 5.280791785178089) > 1e-5)
+        self.assertFalse(abs(y[1] - 6.941941330303563) > 1e-5)
+        self.assertFalse(abs(y[2] - 7.485592503571139) > 1e-5)
+        self.assertFalse(abs(fnc - 0.01299787866032312) > 1e-12)
+        self.assertFalse(abs(dfnc + 0.8585317920163272) > 1e-12)
+
     def test_solve_trust_reduced(self):
         # first we test with the trust radius constraint inactive
+
+        # The eigenvalues of the following matrix are (1e-5, 0.01, 1)
         A = np.zeros((3,3))
         A[0][0] = 3.931544008059447
         A[0][1] = -4.622828930484834
@@ -135,30 +175,17 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertFalse(abs(lamb) > EPS)
 
         # then test with the trust radius constraint active
-        A = np.zeros((3,3))
-        A[0][0] = 3.931544008059447
-        A[0][1] = -4.622828930484834
-        A[1][0] = A[0][1]
-        A[0][2] = 1.571893108754884
-        A[2][0] = A[0][2]
-        A[1][1] = 5.438436601890520
-        A[1][2] = -1.853920290644159
-        A[2][1] = A[1][2]
-        A[2][2] = 0.640029390050034
-        A = np.matrix(A)
-        b = np.array([-0.964888535199277,
-                      -0.157613081677548,
-                      -0.970592781760616])
         radius = 10000.
         x, lamb, pred = solve_trust_reduced(A, b, radius)
-        #self.assertFalse(abs(x[0] - 6592.643411099528) > 1e-3*abs(x[0]))
-        #self.assertFalse(abs(x[1] - 6740.041501068382) > 1e-3*abs(x[1]))
-        #self.assertFalse(abs(x[2] - 3333.000662760490) > 1e-3*abs(x[2]))
-        #self.assertFalse(abs(pred - 10147.17333545226) > 1e-3*abs(pred))
-        #self.assertFalse(abs(lamb - 9.635875530658215e-05) > 1e-3*lamb)
-        self.failUnless('Untested')
+        self.assertFalse(abs(x[0] - 6592.643411099528) > 1e-3*abs(x[0]))
+        self.assertFalse(abs(x[1] - 6740.041501068382) > 1e-3*abs(x[1]))
+        self.assertFalse(abs(x[2] - 3333.000662760490) > 1e-3*abs(x[2]))
+        self.assertFalse(abs(pred - 10147.17333545226) > 1e-3*abs(pred))
+        self.assertFalse(abs(lamb - 9.635875530658215e-05) > 1e-3*lamb)
 
-        # and finally we test for indefinite hessian
+        # And finally we test for indefinite hessian; the matrix A below has the
+        # same eigenvalue magnitudes as those above, but the smallest eigenvalue
+        # is negative.
         A = np.zeros((3,3))
         A[0][0] = 3.931535263699851
         A[0][1] = -4.622837846534464
@@ -173,13 +200,11 @@ class KrylovUtilTestCase(unittest.TestCase):
         b = np.array([-1e-5, -1e-5, -1e-5])
         rad = 10000.0
         x, lamb, pred = solve_trust_reduced(A, b, radius)
-        #self.assertFalse(abs(x[0] - 6612.245873748023) > 1e-6*abs(x[0]))
-        #self.assertFalse(abs(x[1] - 6742.073357887492) > 1e-6*abs(x[1]))
-        #self.assertFalse(abs(x[2] - 3289.779831837675) > 1e-6*abs(x[2]))
-        #self.assertFalse(abs(pred - 500.1664410153899) > 1e-6*abs(pred))
-        #self.assertFalse(abs(lamb - 1.000166441038206e-05) > 1e-6*lamb)
-        self.failUnless('Untested')
-
+        self.assertFalse(abs(x[0] - 6612.245873748023) > 1e-6*abs(x[0]))
+        self.assertFalse(abs(x[1] - 6742.073357887492) > 1e-6*abs(x[1]))
+        self.assertFalse(abs(x[2] - 3289.779831837675) > 1e-6*abs(x[2]))
+        self.assertFalse(abs(pred - 500.1664410153899) > 1e-6*abs(pred))
+        self.assertFalse(abs(lamb - 1.000166441038206e-05) > 1e-6*lamb)
 
 if __name__ == "__main__":
 
