@@ -29,6 +29,7 @@ Contents:
 .. toctree::
     :titlesonly:
 
+    installation
     implementation
     references
     api/kona
