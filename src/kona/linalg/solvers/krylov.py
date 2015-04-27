@@ -1,5 +1,6 @@
 
-import sys
+import sys 
+import pdb
 
 from numpy import sqrt
 
@@ -77,7 +78,7 @@ class STCG(KrylovSolver):
         self.radius = get_opt(optns, 1.0, 'radius')
         self.proj_cg = get_opt(optns, False, 'proj_cg')
         # set factory and request vectors needed in solve() method
-        self.vec_fac.request_num_vectors(5)
+        self.vec_fac.request_num_vectors(7)
 
     def _validate_options(self):
         super(STCG, self)._validate_options()
@@ -91,21 +92,21 @@ class STCG(KrylovSolver):
         z = self.vec_fac.generate()
         p = self.vec_fac.generate()
         Ap = self.vec_fac.generate()
-        work = self.vec_fac.generate()
+        work = self.vec_fac.generate()  
         # define initial residual and other scalars
         r.equals(b)
         x.equals(0.0)
         x_norm2 = x.norm2
-        alpha = 0.0
-
+    
         norm0 = r.norm2
         res_norm2 = norm0
         precond(r, z)
         r_dot_z = r.inner(z)
         if self.proj_cg:
             norm0 = r_dot_z
+
         p.equals(z)
-        Ap.equals(p)
+        # Ap.equals(p)
         active = False
 
         write_header(self.out_file, 'STCG', self.rel_tol, norm0)
@@ -114,14 +115,20 @@ class STCG(KrylovSolver):
         # START OF BIG FOR LOOP
         #######################
         for i in xrange(self.max_iter):
+
+            # to be included from c++ 
+            # if (ptin.get<bool>("dynamic",false))
+            #     mat_vec.set_product_tol(ptin.get<double>("tol")*norm0/
+            #                   (res_norm2*static_cast<double>(maxiter_)))
+
             # calculate alpha
             mat_vec(p, Ap)
             alpha = p.inner(Ap)
             # check alpha for non-positive curvature
-            if alpha <= 1e-8:
+            if alpha <= -1e-8:
                 # direction of non-positive curvature detected
                 xp = p.inner(x)
-                x2 = x_norm2**2
+                x2 = x.norm2**2
                 p2 = p.inner(p)
                 # check if ||p||^2 is significant
                 if p2 > EPS:
@@ -146,7 +153,9 @@ class STCG(KrylovSolver):
                     write_history(self.out_file, i+1, r_dot_z, norm0)
                 else:
                     write_history(self.out_file, i+1, res_norm2, norm0)
-                # mark trust-region boundary as active and finish solution
+                # mark trust-region boundary as active and finish solution               
+                print "# direction of nonpositive curvature detected: "; 
+                print "alpha = " + str(alpha)
                 active = True
                 break
             # otherwise we have positive curvature, so let's update alpha
@@ -155,20 +164,23 @@ class STCG(KrylovSolver):
             work.equals(p)
             work.times(alpha)
             x.plus(work)
-            # check to see if we hit the trust-region boundary
             x_norm2 = x.norm2
+
+            # check to see if we hit the trust-region boundary          
             if x_norm2 > self.radius:
                 # we exceeded the trust-region radius, so let's undo the step
                 x.minus(work)
+                x_norm2 = x.norm2
                 # calculate new step within trust region
                 xp = p.inner(x)
-                x2 = x_norm2**2
+                x2 = x.inner(x)
                 p2 = p.inner(p)
                 tau = (-xp + sqrt(xp**2 - p2*(x2 - self.radius**2)))/p2
                 # perform x = x + tau*p
                 work.equals(p)
                 work.times(tau)
                 x.plus(work)
+                x_norm2 = x.norm2
                 # perform r = r - tau*Ap
                 work.equals(Ap)
                 work.times(-tau)
@@ -182,12 +194,13 @@ class STCG(KrylovSolver):
                 else:
                     write_history(self.out_file, i+1, res_norm2, norm0)
                 # mark the trust-region as active and finish solution
+                print "# trust-region boundary encountered"
                 active = True
                 break
             # if we got here, we're still inside the trust region
             # compute residual here: r = r + alpha*Ap
             work.equals(Ap)
-            work.times(alpha)
+            work.times(-alpha)
             r.plus(work)
             res_norm2 = r.norm2
             # preconditioning
