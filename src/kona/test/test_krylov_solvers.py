@@ -17,7 +17,6 @@ class KrylovSolverTestCase(unittest.TestCase):
         self.pf = self.km.primal_factory
         self.pf.request_num_vectors(2)
         optns = {
-            'max_iter' : 10,
             'rel_tol' : 1e-6,
             'radius' : 1.0,
         }

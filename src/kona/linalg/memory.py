@@ -63,7 +63,7 @@ class VectorFactory(object):
         else:
             raise RuntimeError('VectorFactory() >> ' + \
                                'Must allocate memory before generating vector.')
-
+                               
 class KonaMemory(object):
     """
     All-knowing Big Brother abstraction layer for Kona.

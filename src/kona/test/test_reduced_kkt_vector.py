@@ -29,8 +29,8 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.pv2._data.data = 2*np.ones(10)
         self.dv2._data.data = 2*np.ones(5)
 
-        self.rkkt_vec1 = ReducedKKTVector(km, self.pv1, self.dv1)
-        self.rkkt_vec2 = ReducedKKTVector(km, self.pv2, self.dv2)
+        self.rkkt_vec1 = ReducedKKTVector(self.pv1, self.dv1)
+        self.rkkt_vec2 = ReducedKKTVector(self.pv2, self.dv2)
 
     def test_check_type(self):
 
@@ -44,14 +44,14 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
     def test_bad_init_args(self):
 
         try:
-            ReducedKKTVector(self.km, self.dv1, self.dv1)
+            ReducedKKTVector(self.dv1, self.dv1)
         except TypeError as err:
             self.assertEqual(str(err), 'CompositeVector() >> Unidentified design vector.' )
         else:
             self.fail('TypeError expected')
 
         try:
-            ReducedKKTVector(self.km, self.pv1, self.pv1)
+            ReducedKKTVector(self.pv1, self.pv1)
         except TypeError as err:
             self.assertEqual(str(err), 'CompositeVector() >> Unidentified dual vector.' )
         else:

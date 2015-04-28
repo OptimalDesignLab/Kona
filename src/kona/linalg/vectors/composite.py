@@ -23,11 +23,11 @@ class CompositeVector(object):
     _dual_vec : DualVector or None
         Dual component of the composite vector.
     """
-    def __init__(self, memory, primal_vec=None, state_vec=None, dual_vec=None):
-        self._memory = memory
+    def __init__(self, primal_vec, state_vec=None, dual_vec):
 
-        if isinstance(primal_vec, PrimalVector) or primal_vec is None:
+        if isinstance(primal_vec, PrimalVector):
             self._primal = primal_vec
+            self._memory = self._primal._memory
         else:
             raise TypeError('CompositeVector() >> ' + \
                             'Unidentified design vector.')
@@ -38,7 +38,7 @@ class CompositeVector(object):
             raise TypeError('CompositeVector() >> ' + \
                             'Unidentified state vector.')
 
-        if isinstance(dual_vec, DualVector) or dual_vec is None:
+        if isinstance(dual_vec, DualVector):
             self._dual = dual_vec
         else:
             raise TypeError('CompositeVector() >> ' + \
@@ -219,8 +219,8 @@ class ReducedKKTVector(CompositeVector):
     _dual : DualVector
         Dual components of the composite vector.
     """
-    def __init__(self, memory, primal_vec, dual_vec):
-        super(ReducedKKTVector, self).__init__(memory, primal_vec, None, dual_vec)
+    def __init__(self, primal_vec, dual_vec):
+        super(ReducedKKTVector, self).__init__(primal_vec, None, dual_vec)
 
     def equals_init_guess(self):
         self._primal.equals_init_design()
