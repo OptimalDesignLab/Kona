@@ -91,12 +91,16 @@ defaults = {
 
     'krylov_solver' : {
         'type'          : STCG,
-        'max_iter'      : 5000,
+        'max_iter'      : 10,
         'rel_tol'       : 1e-8,
         'check_res'     : True,
         'out_file'      : 'kona_krylov.dat',
         # STCG options
         'radius'        : 1.0,
         'proj_cg'       : False,
+        # FLECS options
+        'mu_init'       : 0.0,
+        'grad_scale'    : 1.0,
+        'feas_scale'    : 1.0,
     }
 }

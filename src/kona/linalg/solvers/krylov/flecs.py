@@ -15,14 +15,22 @@ class FLECS(KrylovSolver):
 
     Attributes
     ----------
-    vec_factory : tuple of VectorFactory
-        A pair of vector factories, one for Primal and one for Dual type.
     primal_factory : VectorFactory
         Factory for PrimalVector objects.
     dual_factory : VectorFactory
         Factory for DualVector objects.
     mu : float
         Quadratic subproblem constraint penalty factor.
+    grad_scale : float
+        Scaling coefficient for the primal space.
+    feas_scale : float
+        Scaling coefficient for the dual space.
+    lin_depend : boolean
+        Flag for Hessian linear dependence.
+    neg_curv : boolean
+        Flag for negative curvature in the search direction.
+    trust_active : boolean
+        Flag for trust-region detection.
 
     Parameters
     ----------
@@ -57,9 +65,10 @@ class FLECS(KrylovSolver):
                 self.dual_factory = factory
 
         # put in memory request
-        self.vec_fac.request_num_vectors(2*self.max_iter + 2)
+        self.primal_factory.request_num_vectors(2*self.max_iter + 2)
+        self.dual_factory.request_num_vectors(2*self.max_iter + 2)
 
-    def _generate_composite(self):
+    def _generate_vector(self):
         primal = self.primal_factory.generate()
         dual = self.dual_factory.generate()
         return ReducedKKTVector(primal, dual)
@@ -100,6 +109,11 @@ class FLECS(KrylovSolver):
             '%10e'%mu + '\n
         )
 
+    def solve_subspace_problems(self, iters, H, g, ZtZ_prim,
+        VtZ, VtZ_prim, VtZ_dual, VtV_dual, y, y_aug, y_mult):
+        raise NotImplementedError
+        return beta, gamma, omega, beta_aug, gamma_aug, pred, pred_aug
+
     def solve(self, mat_vec, b, x, precond):
         # validate solver options
         self._validate_options()
@@ -119,7 +133,7 @@ class FLECS(KrylovSolver):
         iters = 0
 
         # generate residual vector
-        res = self._generate_composite()
+        res = self._generate_vector()
         res.equals(b)
 
         # calculate norm of rhs vector
@@ -128,7 +142,7 @@ class FLECS(KrylovSolver):
         norm0 = b.norm2
 
         # calculate initial (negative) residual and compute its norm
-        V.append(self._generate_composite())
+        V.append(self._generate_vector())
         V[0].equals(b)
         V[0]._primal.times(self.grad_scale)
         V[0]._dual.times(self.feas_scale)
@@ -164,7 +178,7 @@ class FLECS(KrylovSolver):
             iters += 1
 
             # precondition V[i] and store results in Z[i]
-            Z.append(self._generate_composite())
+            Z.append(self._generate_vector())
             precond(V[i], Z[i])
 
             # add to Krylov subspace

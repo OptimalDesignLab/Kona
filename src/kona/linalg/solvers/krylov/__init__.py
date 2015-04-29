@@ -1,2 +1,2 @@
-from flecs import FLECS
+#from flecs import FLECS
 from stcg import STCG
