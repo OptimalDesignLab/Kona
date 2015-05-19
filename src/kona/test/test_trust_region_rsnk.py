@@ -7,7 +7,7 @@ from kona.algorithms import ReducedSpaceNewtonKrylov
 
 class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
 
-    def test_RSNK_with_Simple2x2(self):
+    def test_RSNK_with_Rosenbrock(self):
 
         num_design = 2
         solver = Rosenbrock(num_design)
