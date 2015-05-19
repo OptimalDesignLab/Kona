@@ -2,6 +2,7 @@ import numpy
 from numpy import sqrt
 
 from kona.options import BadKonaOption, get_opt
+from kona.linalg.vectors.common import PrimalVector, DualVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import EPS, write_header, write_history
 

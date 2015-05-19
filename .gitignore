@@ -57,7 +57,7 @@ docs/_build/
 target/
 
 # text and latex files
-*.aux 
+*.aux
 *.dvi
 *.toc
 *.log
@@ -76,3 +76,6 @@ target/
 # ignore temporary files created by emacs, etc.
 *~
 \#*
+
+# ignore Kona data files
+*.dat

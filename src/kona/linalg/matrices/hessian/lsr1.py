@@ -16,8 +16,8 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         ?
     """
 
-    def __init__(self, vector_factory, optns, out_file=sys.stdout):
-        super(LimitedMemorySR1, self).__init__(vector_factory, optns, out_file)
+    def __init__(self, vector_factory, optns={}):
+        super(LimitedMemorySR1, self).__init__(vector_factory, optns)
 
         self.lambda0 = 0
 

@@ -61,10 +61,26 @@ defaults = {
     'max_iter'          : 100,
     'primal_tol'        : 1e-8,
     'constraint_tol'    : 1e-8,
-    'info_file'         : 'kona_hist.dat',
+    'info_file'         : 'kona_info.dat',
+    'hist_file'         : 'kona_hist.dat',
 
     'merit_function' : {
         'type'          : ObjectiveMerit,
+    },
+
+    'trust' : {
+        'init_radius'   : 0.1,
+        'max_radius'    : 1.0,
+        'tol'           : 0.1,
+    },
+
+    'reduced' : {
+        'out_file'      : 'kona_reduced.dat',
+        'product_fac'   : 0.001,
+        'lambda'        : 0.0,
+        'scale'         : 0.0,
+        'nu'            : 0.95,
+        'dynamic_tol'   : False,
     },
 
     'quasi_newton' : {
@@ -90,11 +106,11 @@ defaults = {
     },
 
     'krylov_solver' : {
+        'out_file'      : 'kona_krylov.dat',
         'type'          : STCG,
         'max_iter'      : 10,
         'rel_tol'       : 1e-8,
         'check_res'     : True,
-        'out_file'      : 'kona_krylov.dat',
         # STCG options
         'radius'        : 1.0,
         'proj_cg'       : False,
@@ -102,5 +118,5 @@ defaults = {
         'mu_init'       : 0.0,
         'grad_scale'    : 1.0,
         'feas_scale'    : 1.0,
-    }
+    },
 }

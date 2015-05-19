@@ -23,7 +23,7 @@ class CompositeVector(object):
     _dual_vec : DualVector or None
         Dual component of the composite vector.
     """
-    def __init__(self, primal_vec, state_vec=None, dual_vec):
+    def __init__(self, primal_vec, dual_vec, state_vec=None):
 
         if isinstance(primal_vec, PrimalVector):
             self._primal = primal_vec
@@ -220,7 +220,7 @@ class ReducedKKTVector(CompositeVector):
         Dual components of the composite vector.
     """
     def __init__(self, primal_vec, dual_vec):
-        super(ReducedKKTVector, self).__init__(primal_vec, None, dual_vec)
+        super(ReducedKKTVector, self).__init__(primal_vec, dual_vec)
 
     def equals_init_guess(self):
         self._primal.equals_init_design()

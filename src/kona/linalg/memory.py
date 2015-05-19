@@ -63,7 +63,7 @@ class VectorFactory(object):
         else:
             raise RuntimeError('VectorFactory() >> ' + \
                                'Must allocate memory before generating vector.')
-                               
+
 class KonaMemory(object):
     """
     All-knowing Big Brother abstraction layer for Kona.
@@ -109,7 +109,7 @@ class KonaMemory(object):
         self.dual_factory = VectorFactory(self, DualVector)
 
         # cost tracking
-        self.precond_count = 0
+        self.cost = 0
 
         self.is_allocated = False
 

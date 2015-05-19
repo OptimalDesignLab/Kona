@@ -52,6 +52,10 @@ class OptimizationAlgorithm(object):
         self.info_file = get_opt(optns, sys.stdout, 'info_file')
         if isinstance(self.info_file, str):
             self.info_file = open(self.info_file,'w')
+        # set up the hist file
+        self.hist_file = get_opt(optns, 'kona_hist.dat', 'hist_file')
+        if isinstance(self.hist_file, str):
+            self.hist_file = open(self.hist_file, 'w')
         # set up the merit function
         merit_optns = get_opt(optns,{},'merit_function')
         merit_type = get_opt(merit_optns, ObjectiveMerit, 'type')

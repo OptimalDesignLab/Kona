@@ -99,8 +99,10 @@ class STCG(KrylovSolver):
                 else:
                     write_history(self.out_file, i+1, res_norm2, norm0)
                 # mark trust-region boundary as active and finish solution
-                print "# direction of nonpositive curvature detected: ";
-                print "alpha = " + str(alpha)
+                self.out_file.write(
+                    '# direction of nonpositive curvature detected: ' + \
+                    'alpha = %f\n'%alpha
+                    )
                 active = True
                 break
             # otherwise we have positive curvature, so let's update alpha
@@ -139,7 +141,7 @@ class STCG(KrylovSolver):
                 else:
                     write_history(self.out_file, i+1, res_norm2, norm0)
                 # mark the trust-region as active and finish solution
-                print "# trust-region boundary encountered"
+                self.out_file.write('# trust-region boundary encountered\n')
                 active = True
                 break
             # if we got here, we're still inside the trust region
@@ -168,6 +170,11 @@ class STCG(KrylovSolver):
             p.plus(z)
         #####################
         # END OF BIG FOR LOOP
+
+        # compute the predicted decrease in objective
+        r.plus(b)
+        pred = 0.5*x.inner(r)
+        r.minus(b)
 
         # if flagged, perform the residual check
         output_string = ''
@@ -202,3 +209,6 @@ class STCG(KrylovSolver):
         x_norm2 = x.norm2
         if (x_norm2 - self.radius) > 1e-6:
             raise ValueError('STCG.solve() : solution outside of trust-region')
+
+        # return some useful stuff
+        return pred, active

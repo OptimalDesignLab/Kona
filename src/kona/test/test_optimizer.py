@@ -1,10 +1,6 @@
 import unittest
 import numpy
 
-#from kona import Optimizer
-#from kona.examples import Rosenbrock
-#from kona.algorithms import ReducedSpaceQuasiNewton
-
 import kona
 
 class OptimizerTestCase(unittest.TestCase):

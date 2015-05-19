@@ -2,12 +2,15 @@ import sys
 
 from kona.options import BadKonaOption, get_opt
 
-from kona.linalg.vectors.common import current_solution
+from kona.linalg import current_solution
 from kona.linalg.matrices.common import dRdU
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 from kona.algorithms.util.linesearch import StrongWolfe
+
+# NOTE:
+# FIX EPSILON PERTURBATIONS!!!!!
 
 class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     """
@@ -20,7 +23,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     line_search : LineSearch
         Line search object for globalization.
     """
-    def __init__(self, primal_factory, state_factory, optns={}):
+    def __init__(self, primal_factory, state_factory=None, optns={}):
         # trigger base class initialization
         super(ReducedSpaceQuasiNewton, self).__init__(
             primal_factory, state_factory, None, optns
@@ -43,8 +46,22 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         except:
             raise BadKonaOption(optns, 'line_search', 'type')
 
+    def _write_header(self):
+        self.hist_file.write(
+            '# Kona reduced-space quasi-Newton convergence history file\n' + \
+            '# iters' + ' '*5 + \
+            '      cost' + ' '*5 + \
+            ' grad norm' + '\n'
+        )
+
+    def _write_history(self, num_iter, norm):
+        self.hist_file.write(
+            '# %5i'%num_iter + ' '*5 + \
+            '%10e'%self.primal_factory._memory.cost + ' '*5 + \
+            '%10e'%norm + '\n'
+        )
+
     def solve(self):
-        # need some way of choosing file to output to
         info = self.info_file
         # get memory
         x = self.primal_factory.generate()
@@ -62,9 +79,11 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         # start optimization outer iterations
         nonlinear_sum = 0
         converged = False
+        self._write_header()
         for i in xrange(self.max_iter):
             info.write('========== Outer Iteration %i ==========\n'%(i+1))
-            state.equals_primal_solution(x)
+            if not state.equals_primal_solution(x):
+                info.write('WARNING: Nonlinear solution failed to converge!\n')
             adjoint.equals_adjoint_solution(x, state, state_work)
             dfdx.equals_total_gradient(x, state, adjoint, design_work)
             # check for convergence
@@ -90,6 +109,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             # write convergence history here
             current_solution(x, num_iter=nonlinear_sum)
             info.write('\n')
+            self._write_history(nonlinear_sum, grad_norm)
             # solve for search direction
             self.approx_hessian.solve(dfdx, p)
             p.times(-1.0)

@@ -18,8 +18,8 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         Curvature.
     """
 
-    def __init__(self, vector_factory, optns, out_file=sys.stdout):
-        super(LimitedMemoryBFGS, self).__init__(vector_factory, optns, out_file)
+    def __init__(self, vector_factory, optns={}):
+        super(LimitedMemoryBFGS, self).__init__(vector_factory, optns)
 
         self.lambda0 = 0
         self.s_dot_s_list = []
@@ -57,6 +57,9 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         self.y_list.append(y_new)
         self.s_dot_s_list.append(two_norm)
         self.s_dot_y_list.append(curvature)
+
+    def product(self, in_vec, out_vec):
+        pass
 
     def solve(self, u_vec, v_vec, rel_tol=1e-15):
         lambda0 = self.lambda0

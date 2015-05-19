@@ -45,13 +45,16 @@ class Simple2x2(UserSolver):
 
     def solve_nonlinear(self, at_design, result):
         result.data = numpy.linalg.solve(self.dRdU, at_design.data)
+        return 0
 
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
         X = at_design.data
         result.data = numpy.linalg.solve(dRdU, rhs_vec.data)
+        return 0
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, rel_tol, result):
         result.data = numpy.linalg.solve(self.dRdU.T, rhs_vec.data)
+        return 0
 
     # def user_info(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
     #     pass

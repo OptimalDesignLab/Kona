@@ -20,13 +20,28 @@ class BaseHessian(object):
     out_file : file
         File stream for data output.
     """
-    def __init__(self, vector_factory, optns=None, out_file=sys.stdout):
+    def __init__(self, vector_factory, optns={}):
         self.vec_fac = vector_factory
-        self.out_file = out_file
+        self.out_file = get_opt(optns, sys.stdout, 'out_file')
+        if isinstance(self.out_file, str):
+            self.out_file = open(self.out_file, 'w')
+
+    def product(self, in_vec, out_vec):
+        """
+        Applies the Hessian itself to the input vector.
+
+        Parameters
+        ----------
+        in_vec : KonaVector
+            Vector that gets multiplied with the inverse Hessian.
+        out_vec : KonaVector
+            Vector that stores the result of the operation.
+        """
+        raise NotImplementedError
 
     def solve(self, in_vec, out_vec, rel_tol=1e-15):
         """
-        Applies the inverse of the approximate Hessian.
+        Applies the inverse of the approximate Hessian to the input vector.
 
         Parameters
         ----------
@@ -56,8 +71,8 @@ class QuasiNewtonApprox(BaseHessian):
         Difference between subsequent gradients: :math:`y_k = g_{k+1} - g_k`
     """
 
-    def __init__(self, vector_factory, optns, out_file=sys.stdout):
-        super(QuasiNewtonApprox, self).__init__(vector_factory, optns, out_file)
+    def __init__(self, vector_factory, optns={}):
+        super(QuasiNewtonApprox, self).__init__(vector_factory, optns)
         self.max_stored = get_opt(optns, 10, 'max_stored')
 
         self.norm_init = 1.0

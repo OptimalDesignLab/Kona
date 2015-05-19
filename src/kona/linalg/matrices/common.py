@@ -142,12 +142,15 @@ class dRdU(KonaMatrix):
         # self._check_type(solution, StateVector)
         # self._check_type(rhs_vec, StateVector)
         if not self._transposed:
-            self._solver.solve_linear(self._primal._data, self._state.data,
-                                      rhs_vec._data, rel_tol, solution._data)
+            cost = self._solver.solve_linear(
+                self._primal._data, self._state.data,
+                rhs_vec._data, rel_tol, solution._data)
         else:
-            self._solver.solve_adjoint(self._primal._data, self._state._data,
-                                       rhs_vec._data, rel_tol, solution._data)
+            cost = self._solver.solve_adjoint(
+                self._primal._data, self._state._data,
+                rhs_vec._data, rel_tol, solution._data)
 
+        self._memory.cost += cost
 
 class dCdX(KonaMatrix):
     """
