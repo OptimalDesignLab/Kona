@@ -12,7 +12,7 @@ class Simple2x2(UserSolver):
         self.dRdX = -1*numpy.eye(2)
         self.dRdU = numpy.array([[1,1],[0,1]])
 
-    def eval_obj(self, at_design, at_state, ):
+    def eval_obj(self, at_design, at_state):
         return numpy.sum(at_state.data**2) + (at_design.data[0]-3)**2
 
     def eval_residual(self, at_design, at_state, store_here):
@@ -49,7 +49,7 @@ class Simple2x2(UserSolver):
 
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
         X = at_design.data
-        result.data = numpy.linalg.solve(dRdU, rhs_vec.data)
+        result.data = numpy.linalg.solve(self.dRdU, rhs_vec.data)
         return 0
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, rel_tol, result):

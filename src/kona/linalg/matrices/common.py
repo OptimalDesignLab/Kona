@@ -143,7 +143,7 @@ class dRdU(KonaMatrix):
         # self._check_type(rhs_vec, StateVector)
         if not self._transposed:
             cost = self._solver.solve_linear(
-                self._primal._data, self._state.data,
+                self._primal._data, self._state._data,
                 rhs_vec._data, rel_tol, solution._data)
         else:
             cost = self._solver.solve_adjoint(

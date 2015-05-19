@@ -48,7 +48,7 @@ class ReducedHessian(BaseHessian):
         # get references to individual factories
         self.primal_factory = None
         self.state_factory = None
-        for factory in vec_factory:
+        for factory in self.vec_fac:
             if factory._vec_type is PrimalVector:
                 self.primal_factory = factory
             elif factory._vec_type is StateVector:
@@ -73,7 +73,7 @@ class ReducedHessian(BaseHessian):
     def linearize(self, at_design, at_state, at_adjoint):
 
         # store the linearization point
-        self.at_design = at_primal
+        self.at_design = at_design
         self.primal_norm = self.at_design.norm2
         self.at_state = at_state
         self.state_norm = self.at_state.norm2
@@ -105,7 +105,7 @@ class ReducedHessian(BaseHessian):
         self.adjoint_res.plus(self.state_work[0])
 
         # compute reduced gradient at the linearization
-        self.reduced_grad.equals_objective_partial(self.at_design, self._at_state)
+        self.reduced_grad.equals_objective_partial(self.at_design, self.at_state)
         self.dRdX.linearize(self.at_design, self.at_state)
         self.dRdX.T.product(self.at_adjoint, self.primal_work[0])
         self.reduced_grad.plus(self.primal_work[0])
@@ -115,7 +115,6 @@ class ReducedHessian(BaseHessian):
         # perturb the design vector
         epsilon_fd = 0.1*max(self.primal_norm, in_vec.norm2)
         eps_r = 1./epsilon_fd
-        self.out_file.write()
         self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec)
 
         # compute total gradient at the perturbed design
@@ -145,7 +144,7 @@ class ReducedHessian(BaseHessian):
         #####################################
 
         # calculate 1st order adjoint residual at perturbed design
-        self.state_work[0].equals_objective_gradient(self.pert_design, self.at_state)
+        self.state_work[0].equals_objective_partial(self.pert_design, self.at_state)
         self.dRdU.linearize(self.pert_design, self.at_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[1])
         self.state_work[0].plus(self.state_work[1])
@@ -196,7 +195,7 @@ class ReducedHessian(BaseHessian):
         out_vec.plus(self.primal_work[0])
 
         # update quasi-Newton method if necessary
-        if not self.quasi_newton:
+        if self.quasi_newton is not None:
             self.quasi_newton.add_correction(in_vec, out_vec)
 
         # add globalization if necessary
