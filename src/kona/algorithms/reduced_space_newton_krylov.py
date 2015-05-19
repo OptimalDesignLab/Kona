@@ -19,7 +19,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
     """
     def __init__(self, primal_factory, state_factory, optns={}):
         # trigger base class initialization
-        super(ReducedSpaceQuasiNewton, self).__init__(
+        super(ReducedSpaceNewtonKrylov, self).__init__(
             primal_factory, state_factory, None, optns
         )
 
@@ -70,13 +70,13 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
             '    radius' + '\n'
         )
 
-    def _write_history(self, num_iter, norm, rho, radius):
+    def _write_history(self, num_iter, norm, rho):
         self.hist_file.write(
             '# %5i'%num_iter + ' '*5 + \
             '%10e'%self.primal_factory._memory.cost + ' '*5 + \
             '%10e'%norm + ' '*5 + \
             '%10e'%rho + ' '*5 + \
-            '%10e'%radius + '\n'
+            '%10e'%self.radius + '\n'
         )
 
     def solve(self):
@@ -92,7 +92,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         state_work = self.state_factory.generate()
 
         # set initial design and solve for state
-        x.equals_initial_design()
+        x.equals_init_design()
         state.equals_primal_solution(x)
         # initialize design and state jacobians
         design_jac = dRdX(x, state)
@@ -126,11 +126,11 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
                 self.info_file.write('grad norm : grad_tol = %e : %e\n'%(grad_norm, grad_tol))
                 dJdX_old.minus(dJdX)
                 dJdX_old.times(-1.0)
-                self.quasi_newton.add_correction(P, dJdX_old)
+                self.quasi_newton.add_correction(p, dJdX_old)
                 dJdX_old.equals(dJdX)
             # write history
             current_solution(x, state, adjoint, num_iter=nonlinear_sum)
-            self._write_history(nonlinear_sum, grad_norm, rho, radius)
+            self._write_history(nonlinear_sum, grad_norm, rho)
             # check convergence
             if grad_norm < grad_tol:
                 converged = True
@@ -148,7 +148,8 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
             p.equals(0.0)
             dJdX.times(-1.0)
             self.krylov.rel_tol = krylov_tol
-            self.krylov.radius = radius
+            self.krylov.radius = self.radius
+            self.hessian.linearize(x, state, adjoint)
             pred, active = self.hessian.solve(dJdX, p) # Krylov loops in here
             dJdX.times(-1.0)
             x.plus(p)
@@ -164,10 +165,10 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
 
             # update radius if necessary
             if rho < 0.25:
-                radius *= 0.25
+                self.radius *= 0.25
             else:
                 if active and (rho > 0.75):
-                    radius = min(2*radius, self.max_radius)
+                    self.radius = min(2*self.radius, self.max_radius)
 
             # revert the solution if necessary
             if rho < self.trust_tol:

@@ -372,7 +372,12 @@ class StateVector(KonaVector):
         at_primal : PrimalVector
             Current primal point.
         """
-        self._memory.solver.solve_nonlinear(at_primal._data, self._data)
+        cost = self._memory.solver.solve_nonlinear(at_primal._data, self._data)
+        self._memory.cost += cost
+        if cost < 0:
+            return False
+        else:
+            return True
 
     def equals_adjoint_solution(self, at_primal, at_state, state_work):
         """
