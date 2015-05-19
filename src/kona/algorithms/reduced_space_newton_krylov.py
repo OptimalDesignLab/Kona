@@ -48,6 +48,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
             krylov = get_opt(optns, STCG, 'krylov', 'solver')
             krylov_optns = get_opt(optns, {}, 'krylov')
             self.krylov = krylov(self.primal_factory, krylov_optns)
+            self.krylov.radius = self.radius
         except:
             raise BadKonaOption(optns, 'krylov', 'solver')
 
@@ -72,7 +73,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
 
     def _write_history(self, num_iter, norm, rho):
         self.hist_file.write(
-            '# %5i'%num_iter + ' '*5 + \
+            ' %6i'%num_iter + ' '*5 + \
             '%10e'%self.primal_factory._memory.cost + ' '*5 + \
             '%10e'%norm + ' '*5 + \
             '%10e'%rho + ' '*5 + \
@@ -150,7 +151,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
             self.krylov.rel_tol = krylov_tol
             self.krylov.radius = self.radius
             self.hessian.linearize(x, state, adjoint)
-            pred, active = self.hessian.solve(dJdX, p) # Krylov loops in here
+            pred, active = self.krylov.solve(self.hessian.product, dJdX, p, self.quasi_newton.solve)
             dJdX.times(-1.0)
             x.plus(p)
 

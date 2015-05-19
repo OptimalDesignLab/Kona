@@ -6,6 +6,7 @@ from kona.linalg.vectors.common import PrimalVector, StateVector
 from kona.linalg.matrices.common import dRdX, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian, QuasiNewtonApprox
 from kona.linalg.solvers.krylov.basic import KrylovSolver
+from kona.linalg.solvers.util import calc_epsilon
 
 class ReducedHessian(BaseHessian):
     """
@@ -113,8 +114,7 @@ class ReducedHessian(BaseHessian):
     def product(self, in_vec, out_vec):
 
         # perturb the design vector
-        epsilon_fd = 0.1*max(self.primal_norm, in_vec.norm2)
-        eps_r = 1./epsilon_fd
+        epsilon_fd = calc_epsilon(self.primal_norm, in_vec.norm2)
         self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec)
 
         # compute total gradient at the perturbed design
@@ -159,7 +159,7 @@ class ReducedHessian(BaseHessian):
         self.state_work[0].times(-1.0)
 
         # perform state perturbation
-        epsilon_fd = 0.0001*max(self.state_norm, self.w_adj.norm2)
+        epsilon_fd = calc_epsilon(self.state_norm, self.w_adj.norm2)
         eps_r = 1./epsilon_fd
         self.state_work[1].equals_ax_p_by(1.0, self.at_state, epsilon_fd, self.w_adj)
 

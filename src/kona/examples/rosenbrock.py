@@ -24,4 +24,4 @@ class Rosenbrock(UserSolver):
         store_here.data[:] = der[:]
 
     def init_design(self, store_here):
-        store_here.data[:] = 5.
+        store_here.data[:] = -1.

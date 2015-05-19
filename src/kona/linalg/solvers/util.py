@@ -380,5 +380,5 @@ def write_history(out_file, num_iter, res, res_init):
         Initial residual norm.
     """
     out_file.write(
-        '# %5i'%num_iter + ' '*12 + '%e\n'%(res/res_init)
+        ' %6i'%num_iter + ' '*12 + '%e\n'%(res/res_init)
     )

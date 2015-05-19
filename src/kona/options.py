@@ -69,8 +69,8 @@ defaults = {
     },
 
     'trust' : {
-        'init_radius'   : 0.1,
-        'max_radius'    : 1.0,
+        'init_radius'   : 1.0,
+        'max_radius'    : 100.0,
         'tol'           : 0.1,
     },
 
@@ -105,7 +105,7 @@ defaults = {
         'alpha_max'     : 2.0,
     },
 
-    'krylov_solver' : {
+    'krylov' : {
         'out_file'      : 'kona_krylov.dat',
         'type'          : STCG,
         'max_iter'      : 10,

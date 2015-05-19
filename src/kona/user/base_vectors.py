@@ -109,7 +109,10 @@ class BaseVector(object):
         float
             Result of the operation.
         """
-        return np.inner(self.data, vector.data)
+        if len(self.data) == 0:
+            return 0
+        else:
+            return np.inner(self.data, vector.data)
 
 class BaseAllocator(object):
     """
