@@ -4,10 +4,12 @@
 \usepackage[simplified]{pgf-umlcd}
 
 \usepackage[landscape]{geometry}
-\geometry{left=.25in, right=.25in}
+\geometry{left=.5in, right=.5in, top=1.3in, bottom=1.3in}
 
 \begin{document}
-\begin{tikzpicture}[ show background grid ]
+\begin{tikzpicture}[]%[ show background grid ]
+
+	\pagenumbering{gobble}
 
 	% General optimization controller
 
@@ -92,7 +94,7 @@
     
     % User solver interface
     
-    \begin{interface}[text width = 4cm]{ISolver}{12, 10}
+    \begin{interface}[text width = 4cm]{ISolver}{11.5, 10}
     	\operation{get\_rank()}
     	\operation{eval\_obj(...)}
     	\operation{eval\_residual(...)}
@@ -115,10 +117,21 @@
     	\operation{current\_solution(...)}
     \end{interface}
     
-    \begin{class}[text width = 4cm]{UserSolver}{17.5, 10}
+    \begin{class}[text width = 3cm]{UserSolver}{17.5, 7}
     	\implement{ISolver}	
     \end{class}
-
+    
+    \begin{class}[text width = 3cm]{Rosenbrock}{16.5, 8}
+    	\inherit{UserSolver}	
+    \end{class}
+	
+	\begin{class}[text width = 3cm]{Spiral}{18, 9}
+    	\inherit{UserSolver}	
+    \end{class}
+    
+    \begin{class}[text width = 3cm]{Simple2x2}{16.5, 10}
+    	\inherit{UserSolver}	
+    \end{class}
     
     % User vector interface
 
@@ -137,7 +150,7 @@
     
     % User vector allocator interface
 
-    \begin{interface}[text width = 4cm]{IAllocator}{17.5,7}
+    \begin{interface}[text width = 4cm]{IAllocator}{17.5,6}
         \operation{alloc\_design(num\_vec)}
         \operation{alloc\_state(num\_vec)}
         \operation{alloc\_dual(num\_vec)}
