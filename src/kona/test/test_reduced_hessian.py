@@ -57,7 +57,6 @@ class ReducedHessianTestCase(unittest.TestCase):
         # this is the FD approximation of the Hessian-vector product
         dJdX_pert.minus(dJdX)
         dJdX_pert.divide_by(epsilon_fd)
-        print dJdX_pert._data.data
 
         # reset the design point and linearize the Hessian
         x.equals(init_design)
@@ -67,12 +66,11 @@ class ReducedHessianTestCase(unittest.TestCase):
 
         # perform the hessian-vector product
         self.hessian.product(v, dJdX)
-        print dJdX._data.data
 
         primal_work.equals_ax_p_by(1.0, dJdX, -1.0, dJdX_pert)
         diff_norm = primal_work.norm2
 
-        self.assertTrue(diff_norm <= 1e-5)
+        self.assertTrue(diff_norm <= 1e-5*dJdX.norm2)
 
 
 if __name__ == "__main__":

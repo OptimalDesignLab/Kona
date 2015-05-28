@@ -164,16 +164,15 @@ class ReducedHessian(BaseHessian):
 
         # perform state perturbation
         epsilon_fd = calc_epsilon(self.state_norm, self.w_adj.norm2)
-        eps_r = 1./epsilon_fd
         self.state_work[1].equals_ax_p_by(1.0, self.at_state, epsilon_fd, self.w_adj)
 
         # calculate 1st order adjoint residual at perturbed state,
         # take difference and divide by perturbation
         self.state_work[2].equals_objective_partial(self.at_design, self.state_work[1])
-        self.state_work[3].equals_ax_p_by(-eps_r, self.state_work[2], eps_r, self.adjoint_res)
+        self.state_work[3].equals_ax_p_by(-1./epsilon_fd, self.state_work[2], 1./epsilon_fd, self.adjoint_res)
         self.dRdU.linearize(self.at_design, self.state_work[1])
         self.dRdU.T.product(self.at_adjoint, self.state_work[2])
-        self.state_work[3].equals_ax_p_by(1.0, self.state_work[3], -eps_r, self.state_work[2])
+        self.state_work[3].equals_ax_p_by(1., self.state_work[3], -1./epsilon_fd, self.state_work[2])
 
         # assemble the second adjoint RHS
         self.state_work[0].plus(self.state_work[3])
@@ -191,11 +190,11 @@ class ReducedHessian(BaseHessian):
         out_vec.plus(self.primal_work[0])
 
         # apply w_adj to the cross-derivative part of the jacobian
-        self.primal_work[0].equals_objective_partial(self.at_design, self.state_work[0])
-        self.dRdX.linearize(self.at_design, self.state_work[0])
+        self.primal_work[0].equals_objective_partial(self.at_design, self.state_work[1])
+        self.dRdX.linearize(self.at_design, self.state_work[1])
         self.dRdX.T.product(self.at_adjoint, self.primal_work[1])
         self.primal_work[0].plus(self.primal_work[1])
-        self.primal_work[0].equals_ax_p_by(eps_r, self.primal_work[0], -eps_r, self.reduced_grad)
+        self.primal_work[0].equals_ax_p_by(1./epsilon_fd, self.primal_work[0], -1./epsilon_fd, self.reduced_grad)
         out_vec.plus(self.primal_work[0])
 
         # update quasi-Newton method if necessary
