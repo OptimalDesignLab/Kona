@@ -66,10 +66,14 @@ class ReducedHessian(BaseHessian):
     def set_krylov_solver(self, krylov_solver):
         if isinstance(krylov_solver, KrylovSolver):
             self.krylov = krylov_solver
+        else:
+            raise TypeError('Solver is not a valid KrylovSolver')
 
     def set_quasi_newton(self, quasi_newton):
         if isinstance(quasi_newton, QuasiNewtonApprox):
             self.quasi_newton = quasi_newton
+        else:
+            raise TypeError('Object is not a valid QuasiNewtonApprox')
 
     def linearize(self, at_design, at_state, at_adjoint):
 

@@ -26,10 +26,13 @@ class BaseVector(object):
                 self.data = np.ones(size, dtype=float)*val
         elif isinstance(val, (np.ndarray, list, tuple)):
             if size != len(val):
-                raise ValueError('size given as %d, but length of value %d' % (size, len(val)))
+                raise ValueError(
+                    'size given as %d, but length of value %d'%(size, len(val)))
             self.data = np.array(val)
         else:
-            raise ValueError('val must be a scalar or array like, but was given as type %s' % (type(val)))
+            raise ValueError(
+                'val must be a scalar or array like, ' + \
+                'but was given as type %s'%(type(val)))
 
     def plus(self, vector):
         """

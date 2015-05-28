@@ -27,21 +27,10 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         self.primal_factory.request_num_vectors(7)
         self.state_factory.request_num_vectors(8)
 
-        # set the type of merit function
-        self.merit_func = ObjectiveMerit(self.primal_factory, self.state_factory)
-
         # get other options
         self.radius = get_opt(optns, 0.1, 'trust', 'init_radius')
         self.max_radius = get_opt(optns, 1.0, 'trust', 'max_radius')
         self.trust_tol = get_opt(optns, 0.1, 'trust', 'tol')
-
-        # set the type of quasi-Newton method
-        try:
-            quasi_newton = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
-            qn_optns = get_opt(optns, {}, 'quasi_newton')
-            self.quasi_newton = quasi_newton(self.primal_factory, qn_optns)
-        except Exception as err:
-            raise BadKonaOption(optns, 'quasi_newton','type')
 
         # set the krylov solver
         try:
@@ -56,9 +45,20 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         reduced_optns = get_opt(optns, {}, 'reduced')
         self.hessian = ReducedHessian(
             [self.primal_factory, self.state_factory], reduced_optns)
-        reduced_precond = get_opt(optns, None, 'reduced', 'precond')
-        if reduced_precond is 'quasi_newton':
+        self.precond = get_opt(optns, None, 'reduced', 'precond')
+        if self.precond == 'quasi_newton':
+            # set the type of quasi-Newton method
+            try:
+                quasi_newton = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
+                qn_optns = get_opt(optns, {}, 'quasi_newton')
+                self.quasi_newton = quasi_newton(self.primal_factory, qn_optns)
+            except Exception as err:
+                raise BadKonaOption(optns, 'quasi_newton','type')
+            self.precond = self.quasi_newton.solve
             self.hessian.quasi_newton = self.quasi_newton
+        else:
+            self.eye = IdentityMatrix()
+            self.precond = self.eye.product
         self.hessian.set_krylov_solver(self.krylov)
 
     def _write_header(self):
@@ -95,9 +95,6 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         # set initial design and solve for state
         x.equals_init_design()
         state.equals_primal_solution(x)
-        # initialize design and state jacobians
-        design_jac = dRdX(x, state)
-        state_jac = dRdU(x, state)
         # solve for adjoint
         adjoint.equals_adjoint_solution(x, state, state_work)
         # get objective value
@@ -111,7 +108,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         for i in xrange(self.max_iter):
 
             self.info_file.write('==================================================\n')
-            self.info_file.write('Beginning Trust-Region iteration\n')
+            self.info_file.write('Beginning Trust-Region iteration %i\n'%(i+1))
             self.info_file.write('\n')
 
             # update quasi-newton
@@ -127,7 +124,8 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
                 self.info_file.write('grad norm : grad_tol = %e : %e\n'%(grad_norm, grad_tol))
                 dJdX_old.minus(dJdX)
                 dJdX_old.times(-1.0)
-                self.quasi_newton.add_correction(p, dJdX_old)
+                if self.precond == 'quasi_newton':
+                    self.quasi_newton.add_correction(p, dJdX_old)
                 dJdX_old.equals(dJdX)
             # write history
             current_solution(x, state, adjoint, num_iter=nonlinear_sum)
@@ -137,6 +135,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
                 converged = True
                 break
 
+            # define adaptive Krylov tolerance for superlinear convergence
             krylov_tol = self.krylov.rel_tol*min(1.0, sqrt(grad_norm/grad_norm0))
             krylov_tol = max(krylov_tol, grad_tol/grad_norm)
             krylov_tol *= self.hessian.nu
@@ -151,7 +150,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
             self.krylov.rel_tol = krylov_tol
             self.krylov.radius = self.radius
             self.hessian.linearize(x, state, adjoint)
-            pred, active = self.krylov.solve(self.hessian.product, dJdX, p, self.quasi_newton.solve)
+            pred, active = self.krylov.solve(self.hessian.product, dJdX, p, self.precond)
             dJdX.times(-1.0)
             x.plus(p)
 

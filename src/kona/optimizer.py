@@ -6,6 +6,8 @@ from kona.user import UserSolver
 from kona.algorithms import OptimizationAlgorithm
 from kona.linalg.memory import KonaMemory
 
+#from kona.linalg.vectors import objective_value
+
 class Optimizer(object):
     """
     This is a top-level optimization controller. It is intended to be the
@@ -46,8 +48,6 @@ class Optimizer(object):
         else:
             # otherwise initialize unconstrained algorithm
             self._algorithm = algorithm(primal_factory, state_factory, self._optns)
-        # finally, when all the initialization is done, allocate memory
-        self._memory.allocate_memory()
 
     def _read_options(self, optns):
         self._optns = defaults.copy()
@@ -58,4 +58,46 @@ class Optimizer(object):
                 raise NotImplementedError
 
     def solve(self):
+        self._memory.allocate_memory()
         self._algorithm.solve()
+
+    # def verify(self):
+    #
+    #     # get references to vector factories
+    #     pf = self._memory.primal_factory
+    #     sf = self._memory.state_factory
+    #     constrained = False
+    #     if self._memory.solver.num_dual > 0:
+    #         constrained = True
+    #         df = self._memory.dual_factory
+    #
+    #     # request vectors
+    #     pf.request_num_vectors(5)
+    #     sf.request_num_vectors(5)
+    #     if constrained:
+    #         df.request_num_vectors(5)
+    #
+    #     # allocate memory
+    #     self._memory.allocate_memory()
+    #
+    #     # generate vectors
+    #     X = pf.generate()
+    #     primal_work = pf.generate()
+    #     state = sf.generate()
+    #     adjoint = sf.generate()
+    #     state_work = sf.generate()
+    #
+    #     # start testing objective partials
+    #     print 'Objective Partials:'
+    #     print '=============================================================='
+    #
+    #     # calculate [1]^T*dF/dX*[1] partial
+    #     epsilon_fd = 1e-5
+    #     X.equals_init_design()
+    #     state.equals_primal_solution(X)
+    #     obj_val = objective_value(X, state)
+    #     primal_work.equals(1.0)
+    #     X.equals_ax_p_by(1.0, x, epsilon_fd, primal_work)
+    #     state.equals_primal_solution(X)
+    #     obj_val_pert = objective_value(X, state)
+    #     dFdX_pert = (obj_val_pert - obj)/epsilon_fd

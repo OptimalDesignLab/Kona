@@ -107,7 +107,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
                 self.approx_hessian.add_correction(p, dfdx_old)
                 dfdx_old.equals(dfdx)
             # write convergence history here
-            current_solution(x, num_iter=nonlinear_sum)
+            current_solution(x, state, num_iter=nonlinear_sum)
             info.write('\n')
             self._write_history(nonlinear_sum, grad_norm)
             # solve for search direction

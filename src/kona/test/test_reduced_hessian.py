@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 from kona.linalg.memory import KonaMemory
-from kona.examples import Simple2x2
+from kona.examples import Spiral, Simple2x2
 from kona.linalg.matrices.hessian import ReducedHessian
 from kona.options import BadKonaOption
 
@@ -12,7 +12,8 @@ class ReducedHessianTestCase(unittest.TestCase):
     '''Test case for the Reduced Hessian approximation matrix.'''
 
     def setUp(self):
-        solver = Simple2x2()
+        #solver = Simple2x2()
+        solver = Spiral()
         km = KonaMemory(solver)
         self.pf = km.primal_factory
         self.sf = km.state_factory
@@ -39,7 +40,9 @@ class ReducedHessianTestCase(unittest.TestCase):
         state_work = self.sf.generate()
 
         # calculate total derivative at current design
-        x.equals(1.0)
+        init_design = 3*np.pi
+        #init_design = 1.0
+        x.equals(init_design)
         state.equals_primal_solution(x)
         adjoint.equals_adjoint_solution(x, state, state_work)
         dJdX.equals_total_gradient(x, state, adjoint, primal_work)
@@ -54,15 +57,17 @@ class ReducedHessianTestCase(unittest.TestCase):
         # this is the FD approximation of the Hessian-vector product
         dJdX_pert.minus(dJdX)
         dJdX_pert.divide_by(epsilon_fd)
+        print dJdX_pert._data.data
 
         # reset the design point and linearize the Hessian
-        x.equals(1.0)
+        x.equals(init_design)
         state.equals_primal_solution(x)
         adjoint.equals_adjoint_solution(x, state, state_work)
         self.hessian.linearize(x, state, adjoint)
 
         # perform the hessian-vector product
         self.hessian.product(v, dJdX)
+        print dJdX._data.data
 
         primal_work.equals_ax_p_by(1.0, dJdX, -1.0, dJdX_pert)
         diff_norm = primal_work.norm2
