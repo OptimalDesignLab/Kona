@@ -133,9 +133,10 @@ class ReducedHessian(BaseHessian):
         # divide it by the perturbation
         out_vec.divide_by(epsilon_fd)
 
-        # build RHS for first adjoint system
+        # first adjoint system
         ####################################
 
+        # build RHS
         self.dRdX.linearize(self.at_design, self.at_state)
         self.dRdX.product(in_vec, self.state_work[0])
         self.state_work[0].times(-1.0)
@@ -144,19 +145,15 @@ class ReducedHessian(BaseHessian):
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.solve(self.state_work[0], self.product_fac, self.w_adj)
 
-        # build RHS for second adjoint system
+        # second adjoint system
         #####################################
 
-        # calculate 1st order adjoint residual at perturbed design
+        # calculate total (dg/dx)^T*w using FD
         self.state_work[0].equals_objective_partial(self.pert_design, self.at_state)
         self.dRdU.linearize(self.pert_design, self.at_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[1])
         self.state_work[0].plus(self.state_work[1])
-
-        # take the difference between perturbed and unperturbed residuals
         self.state_work[0].minus(self.adjoint_res)
-
-        # divide it by the perturbation
         self.state_work[0].divide_by(epsilon_fd)
 
         # multiply by -1 to use it as RHS
@@ -166,15 +163,14 @@ class ReducedHessian(BaseHessian):
         epsilon_fd = calc_epsilon(self.state_norm, self.w_adj.norm2)
         self.state_work[1].equals_ax_p_by(1.0, self.at_state, epsilon_fd, self.w_adj)
 
-        # calculate 1st order adjoint residual at perturbed state,
-        # take difference and divide by perturbation
+        # calculate total (dS/du)^T*z using FD
         self.state_work[2].equals_objective_partial(self.at_design, self.state_work[1])
         self.state_work[3].equals_ax_p_by(-1./epsilon_fd, self.state_work[2], 1./epsilon_fd, self.adjoint_res)
         self.dRdU.linearize(self.at_design, self.state_work[1])
         self.dRdU.T.product(self.at_adjoint, self.state_work[2])
         self.state_work[3].equals_ax_p_by(1., self.state_work[3], -1./epsilon_fd, self.state_work[2])
 
-        # assemble the second adjoint RHS
+        # assemble RHS
         self.state_work[0].plus(self.state_work[3])
 
         # solve the second 2nd order adjoint

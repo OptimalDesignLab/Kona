@@ -52,6 +52,8 @@ class BadKonaOption(Exception):
 #############
 # IMPORTANT
 
+import sys
+
 from kona.algorithms.util.merit import ObjectiveMerit
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 from kona.algorithms.util.linesearch import StrongWolfe
@@ -61,7 +63,7 @@ defaults = {
     'max_iter'          : 100,
     'primal_tol'        : 1e-8,
     'constraint_tol'    : 1e-8,
-    'info_file'         : 'kona_info.dat',
+    'info_file'         : sys.stdout,
     'hist_file'         : 'kona_hist.dat',
 
     'merit_function' : {

@@ -59,6 +59,11 @@ class Spiral(UserSolver):
     def __init__(self):
         super(Spiral, self).__init__(1,2,0)
         self.PDE = SpiralSolver()
+        self.x_hist = []
+        self.u1_hist = []
+        self.u2_hist = []
+        self.obj_hist = []
+        self.grad_hist = []
 
     def eval_obj(self, at_design, at_state):
         self.PDE.linearize(at_design, at_state)
@@ -137,3 +142,10 @@ class Spiral(UserSolver):
         print self.curr_design
         print 'Current State: '
         print self.curr_state
+
+        self.PDE.linearize(curr_design, curr_state)
+        self.x_hist.append(curr_design.data[0])
+        self.u1_hist.append(curr_state.data[0])
+        self.u2_hist.append(curr_state.data[1])
+        self.obj_hist.append(self.PDE.F)
+        self.grad_hist.append(self.PDE.dFdX + self.PDE.dRdX.T.dot(curr_adj.data))
