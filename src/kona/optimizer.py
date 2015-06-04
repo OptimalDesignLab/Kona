@@ -57,8 +57,6 @@ class Optimizer(object):
                 self._memory.open_file(self._optns['info_file'])
             self._optns['hist_file'] = \
                 self._memory.open_file(self._optns['hist_file'])
-            self._optns['reduced']['out_file'] = \
-                self._memory.open_file(self._optns['reduced']['out_file'])
             self._optns['krylov']['out_file'] = \
                 self._memory.open_file(self._optns['krylov']['out_file'])
         else:

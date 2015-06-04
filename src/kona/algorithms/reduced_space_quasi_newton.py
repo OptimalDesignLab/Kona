@@ -7,6 +7,7 @@ from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 from kona.algorithms.util.linesearch import StrongWolfe
+from kona.algorithms.util.merit import ObjectiveMerit
 
 class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     """
