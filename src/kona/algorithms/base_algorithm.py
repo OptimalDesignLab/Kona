@@ -45,25 +45,20 @@ class OptimizationAlgorithm(object):
         if dual_factory is not None:
             self.dual_factory = dual_factory
             self.constraint_tol = get_opt(optns, 1e-8, 'constraint_tol')
+
         # set up max iterations and primal tolerance for convergence
         self.max_iter = get_opt(optns, 100, 'max_iter')
         self.primal_tol = get_opt(optns, 1e-8,'primal_tol')
+
         # set up the info file
         self.info_file = get_opt(optns, sys.stdout, 'info_file')
         if isinstance(self.info_file, str):
             self.info_file = open(self.info_file,'w')
+
         # set up the hist file
         self.hist_file = get_opt(optns, 'kona_hist.dat', 'hist_file')
         if isinstance(self.hist_file, str):
             self.hist_file = open(self.hist_file, 'w')
-        # set up the merit function
-        merit_optns = get_opt(optns,{},'merit_function')
-        merit_type = get_opt(merit_optns, ObjectiveMerit, 'type')
-        try:
-            self.merit_func = merit_type(
-                primal_factory, state_factory, merit_optns)
-        except:
-            raise BadKonaOption(optns, 'merit_function', 'type')
 
     def solve(self):
         """

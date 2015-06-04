@@ -97,23 +97,20 @@ class FLECS(KrylovSolver):
             '        mu' + '\n'
         )
 
-    def _write_history(self, num_iter, res, grad, feas,
-                       feas_aug, pred, pred_aug, mu):
+    def _write_history(self, res, grad, feas, feas_aug):
         self.out_file.write(
-            '# %5i'%num_iter + ' '*5 + \
+            '# %5i'%self.iters + ' '*5 + \
             '%10e'%res + ' '*5 + \
             '%10e'%grad + ' '*5 + \
             '%10e'%feas + ' '*5 + \
             '%10e'%feas_aug + ' '*5 + \
-            '%10e'%pred + ' '*5 + \
-            '%10e'%pred_aug + ' '*5 + \
-            '%10e'%mu + '\n
+            '%10e'%self.pred + ' '*5 + \
+            '%10e'%self.pred_aug + ' '*5 + \
+            '%10e'%self.mu + '\n
         )
 
-    def solve_subspace_problems(self, iters, H, g, ZtZ_prim,
-        VtZ, VtZ_prim, VtZ_dual, VtV_dual, y, y_aug, y_mult):
+    def solve_subspace_problems(self):
         raise NotImplementedError
-        return beta, gamma, omega, beta_aug, gamma_aug, pred, pred_aug
 
     def solve(self, mat_vec, b, x, precond):
         # validate solver options
@@ -122,16 +119,16 @@ class FLECS(KrylovSolver):
         # initialize some work data
         V = []
         Z = []
-        g = numpy.zeros(self.max_iter + 1)
-        y = numpy.zeros(self.max_iter)
-        H = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
-        VtZ = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
-        ZtZ_prim = numpy.matrix(numpy.zeros((self.max_iter, self.max_iter)))
-        VtZ_prim = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
-        VtZ_dual = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
-        VtV_dual = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter + 1)))
-        y_aug, y_mult = numpy.ndarray([])
-        iters = 0
+        self.g = numpy.zeros(self.max_iter + 1)
+        self.y = numpy.zeros(self.max_iter)
+        self.H = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
+        self.VtZ = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
+        self.ZtZ_prim = numpy.matrix(numpy.zeros((self.max_iter, self.max_iter)))
+        self.VtZ_prim = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
+        self.VtZ_dual = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
+        self.VtV_dual = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter + 1)))
+        self.y_aug, self.y_mult = numpy.ndarray([])
+        self.iters = 0
 
         # generate residual vector
         res = self._generate_vector()
@@ -149,25 +146,24 @@ class FLECS(KrylovSolver):
         V[0]._dual.times(self.feas_scale)
 
         # normalize the residual
-        beta = V[0].norm2
-        V[0].divide_by(beta)
-        VtV_dual[0, 0] = V[0]._dual.inner(V[0]._dual)
-        gamma = beta*sqrt(max(VtV_dual[0, 0], 0.0))
-        omega = sqrt(max(beta**2 - gamma**2, 0.0))
+        self.beta = V[0].norm2
+        V[0].divide_by(self.beta)
+        self.VtV_dual[0, 0] = V[0]._dual.inner(V[0]._dual)
+        self.gamma = self.beta*sqrt(max(self.VtV_dual[0, 0], 0.0))
+        self.omega = sqrt(max(self.beta**2 - self.gamma**2, 0.0))
 
         # initialize RHS of the reduced system
-        g[0] = beta
+        g[0] = self.beta
 
         # output header information
         self._write_header(norm0, grad0, feas0)
-        beta_aug = beta
-        gamma_aug = gamma
+        self.beta_aug = self.beta
+        self.gamma_aug = self.gamma
         res_norm = norm0
-        pred = 0.0
-        pred_aug = 0.0
-        self._write_history(iters, res_norm/norm0, omega/(self.grad_scale*grad0),
-            gamma/(self.feas_scale*feas0), gamma_aug/(self.feas_scale*feas0),
-            pred, pred_aug)
+        self.pred = 0.0
+        self.pred_aug = 0.0
+        self._write_history(res_norm/norm0, self.omega/(self.grad_scale*grad0),
+            self.gamma/(self.feas_scale*feas0), self.gamma_aug/(self.feas_scale*feas0))
 
         # loop over all search directions
         #################################
@@ -176,7 +172,7 @@ class FLECS(KrylovSolver):
         self.trust_active = False
         for i in xrange(self.max_iter):
             # advance iteration counter
-            iters += 1
+            self.iters += 1
 
             # precondition V[i] and store results in Z[i]
             Z.append(self._generate_vector())
@@ -195,47 +191,44 @@ class FLECS(KrylovSolver):
             # modified Gram-Schmidt orthonogalization
             try:
                 raise NotImplementedError
-                mod_gram_schmidt(i, H, V)
+                mod_gram_schmidt(i, self.H, V)
             except numpy.linalg.LinAlgError:
                 self.lin_depend = True
 
             # compute new row and column of the VtZ matrix
             for k in xrange(i+1):
-                VtZ_prim[k, i] = V[k]._primal.inner(Z[i]._primal)
-                VtZ_prim[i+1, k] = V[i+1]._primal.inner(Z[k]._primal)
+                self.VtZ_prim[k, i] = V[k]._primal.inner(Z[i]._primal)
+                self.VtZ_prim[i+1, k] = V[i+1]._primal.inner(Z[k]._primal)
 
-                VtZ_dual[k, i] = V[k]._dual.inner(Z[i]._dual)
-                VtZ_dual[i+1, k] = V[i+1]._dual.inner(Z[k]._dual)
+                self.VtZ_dual[k, i] = V[k]._dual.inner(Z[i]._dual)
+                self.VtZ_dual[i+1, k] = V[i+1]._dual.inner(Z[k]._dual)
 
-                VtZ[k, i] = VtZ_prim[k, i] + VtZ_dual[k, i]
-                VtZ[i+1, k] = VtZ_prim[i+1, k] + VtZ_dual[i+1, k]
+                self.VtZ[k, i] = self.VtZ_prim[k, i] + self.VtZ_dual[k, i]
+                self.VtZ[i+1, k] = self.VtZ_prim[i+1, k] + self.VtZ_dual[i+1, k]
 
-                ZtZ_prim[k, i] = Z[k]._primal.inner(Z[i]._primal)
-                ZtZ_prim[i+1, k] = Z[i+1]._primal.inner(Z[k]._primal)
+                self.ZtZ_prim[k, i] = Z[k]._primal.inner(Z[i]._primal)
+                self.ZtZ_prim[i+1, k] = Z[i+1]._primal.inner(Z[k]._primal)
 
-                VtV_dual[k, i] = V[k]._dual.inner(V[i]._dual)
-                VtV_dual[i+1, k] = V[i+1]._dual.inner(V[k]._dual)
+                self.VtV_dual[k, i] = V[k]._dual.inner(V[i]._dual)
+                self.VtV_dual[i+1, k] = V[i+1]._dual.inner(V[k]._dual)
 
-            VtV_dual[i+1, i+1] = V[i+1]._dual.inner(V[i+1]._dual)
+            self.VtV_dual[i+1, i+1] = V[i+1]._dual.inner(V[i+1]._dual)
 
             # solve the reduced problems and compute the residual
-            beta, gamma, omega, beta_aug, gamma_aug, pred, pred_aug = \
-                self.solve_subspace_problems(i+1, H, g, ZtZ_prim, VtZ,
-                    VtZ_prim, VtZ_dual, VtV_dual, y, y_aug, y_mult)
+            self.solve_subspace_problems()
 
             # calculate the new residual norm
-            res_norm = (gamma/self.feas_scale)**2 + \
-                (beta**2 - gamma**2)/(self.grad_scale**2)
+            res_norm = (self.gamma/self.feas_scale)**2 + \
+                (self.beta**2 - self.gamma**2)/(self.grad_scale**2)
             res_norm = sqrt(max(res_norm, 0.0))
 
             # write convergence history
-            self._write_history(iters, res_norm/norm0, omega/(self.grad_scale*grad0),
-                gamma/(self.feas_scale*feas0), gamma_aug/(self.feas_scale*feas0),
-                pred, pred_aug)
+            self._write_history(res_norm/norm0, self.omega/(self.grad_scale*grad0),
+                self.gamma/(self.feas_scale*feas0), self.gamma_aug/(self.feas_scale*feas0))
 
             # check for convergence
-            if (gamma < self.rel_tol*self.feas_scale*feas0) and \
-            (omega < self.rel_tol*self.grad_scale*grad0):
+            if (self.gamma < self.rel_tol*self.feas_scale*feas0) and \
+            (self.omega < self.rel_tol*self.grad_scale*grad0):
                 break
 
         #########################################
@@ -248,8 +241,8 @@ class FLECS(KrylovSolver):
         # compute solution: augmented-Lagrangian step for primal, FGMRES for dual
         x.equals(0.0)
         for k in xrange(iters):
-            x._primal.equals_ax_p_by(1.0, x._primal, y_aug[k], Z[k]._primal)
-            x._dual.equals_ax_p_by(1.0, x._dual, y_mult[k], Z[k]._dual)
+            x._primal.equals_ax_p_by(1.0, x._primal, self.y_aug[k], Z[k]._primal)
+            x._dual.equals_ax_p_by(1.0, x._dual, self.y_mult[k], Z[k]._dual)
 
         # scale the solution
         x._primal.times(self.grad_scale)

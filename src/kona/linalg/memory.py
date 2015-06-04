@@ -64,6 +64,23 @@ class VectorFactory(object):
             raise RuntimeError('VectorFactory() >> ' + \
                                'Must allocate memory before generating vector.')
 
+class KonaFile(object):
+
+    def __init__(self, filename, rank):
+        # only produce a file handle for the root processor
+        if rank == 0:
+            if isinstance(filename, str):
+                self.file = open(filename, 'w')
+            else:
+                self.file = filename
+        else:
+            self.file = None
+
+    def write(self, string):
+        if self.file is not None:
+            self.file.write(string)
+
+
 class KonaMemory(object):
     """
     All-knowing Big Brother abstraction layer for Kona.
@@ -169,3 +186,6 @@ class KonaMemory(object):
         self.vector_stack[DualVector] = allocator.alloc_dual(self.dual_factory.num_vecs)
 
         self.is_allocated = True
+
+    def open_file(self, filename):
+        return KonaFile(filename, self.rank)

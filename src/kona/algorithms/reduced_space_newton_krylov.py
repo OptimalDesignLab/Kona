@@ -43,14 +43,21 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
 
         # initialize the ReducedHessian approximation
         reduced_optns = get_opt(optns, {}, 'reduced')
+        reduced_optns['out_file'] = self.info_file
         self.hessian = ReducedHessian(
             [self.primal_factory, self.state_factory], reduced_optns)
+
+        # set the Krylov solver into the Hessian object
+        self.hessian.set_krylov_solver(self.krylov)
+
+        # initialize the preconditioner to the ReducedHessian
         self.precond = get_opt(optns, None, 'reduced', 'precond')
         if self.precond == 'quasi_newton':
             # set the type of quasi-Newton method
             try:
                 quasi_newton = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
                 qn_optns = get_opt(optns, {}, 'quasi_newton')
+                qn_optns['out_file'] = self.info_file
                 self.quasi_newton = quasi_newton(self.primal_factory, qn_optns)
             except Exception as err:
                 raise BadKonaOption(optns, 'quasi_newton','type')
@@ -59,7 +66,6 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         else:
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
-        self.hessian.set_krylov_solver(self.krylov)
 
     def _write_header(self):
         self.hist_file.write(

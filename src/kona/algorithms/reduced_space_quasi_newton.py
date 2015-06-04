@@ -3,14 +3,10 @@ import sys
 from kona.options import BadKonaOption, get_opt
 
 from kona.linalg import current_solution
-from kona.linalg.matrices.common import dRdU
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 from kona.algorithms.util.linesearch import StrongWolfe
-
-# NOTE:
-# FIX EPSILON PERTURBATIONS!!!!!
 
 class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     """
@@ -31,18 +27,30 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         # number of vectors required in solve() method
         self.primal_factory.request_num_vectors(6)
         self.state_factory.request_num_vectors(3)
+
         # set the type of quasi-Newton method
         try:
             approx_hessian = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
             hessian_optns = get_opt(optns, {}, 'quasi_newton')
+            hessian_optns['out_file'] = self.info_file
             self.approx_hessian = approx_hessian(self.primal_factory, hessian_optns)
         except Exception as err:
             raise BadKonaOption(optns, 'quasi_newton','type')
+
+        # set up the merit function
+        merit_optns = get_opt(optns,{},'merit_function')
+        merit_type = get_opt(merit_optns, ObjectiveMerit, 'type')
+        try:
+            self.merit_func = merit_type(
+                primal_factory, state_factory, merit_optns, self.info_file)
+        except:
+            raise BadKonaOption(optns, 'merit_function', 'type')
+
         # set the type of line-search algorithm
         try:
             line_search_alg = get_opt(optns, StrongWolfe, 'line_search', 'type')
             line_search_opt = get_opt(optns, {}, 'line_search')
-            self.line_search = line_search_alg(line_search_opt)
+            self.line_search = line_search_alg(line_search_opt, self.info_file)
         except:
             raise BadKonaOption(optns, 'line_search', 'type')
 
