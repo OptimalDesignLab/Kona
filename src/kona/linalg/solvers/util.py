@@ -342,6 +342,59 @@ def secular_function(H, g, lam, radius):
 
     return y, fnc, dfnc
 
+def mod_gram_schmidt(i, Hsbg, w):
+
+    reorth = 0.98
+
+    # get the norm of the vector being orthogonalized, and find the
+    # threshold for re-orthogonalization
+    nrm = w[i+1].inner(w[i+1])
+    thr = nrm*reorth
+    if abs(nrm) <= EPS:
+        # norm of w[i+1] is effectively zero; it is linearly dependent
+        # raise a LinAlgError to catch later
+        raise numpy.linalg.LinAlgError
+    elif nrm < -EPS:
+        # the norm of w[i+1] < 0.0
+        raise ValueError('mod_gram_schmidt failed : w[i+1].inner(w[i+1]) < 0.0')
+    elif numpy.isnan(nrm):
+        raise ValueError('mod_gram_schmidt failed : w[i+1] = NaN')
+
+    if i < 0:
+        # just normalize and exit
+        w[i+1].divide_by(sqrt(nrm))
+        return
+
+    # begin main Gram-Schmidt loop
+    for k in xrange(i+1):
+        prod = w[i+1].inner(w[k])
+        Hsbg[k, i] = prod
+        w[i+1].equals_ax_p_by(1.0, w[i+1], -prod, w[k])
+
+        # check if reorthogonalization is necessary
+        if (prod**2 > thr):
+            prod = w[i+1].inner(w[k])
+            Hsbg[k, i] += prod
+            w[i+1].equals_ax_p_by(1.0, w[i+1], -prod, w[k])
+
+        # update norm and check size
+        nrm -= Hsbg[k, i]**2
+        if (nrm < 0.0):
+            nrm = 0.0
+            thr = nrm*reorth
+
+    # test the resulting vector
+    nrm = w[i+1].norm2
+    Hsbg[i+1, i] = nrm
+    if (nrm <= 0.0):
+        # norm of w[i+1] is effectively zero; it is linearly dependent
+        # raise a LinAlgError to catch later
+        raise numpy.linalg.LinAlgError
+    else:
+        # scale the resulting vector and exit
+        w[i+1].divide_by(nrm)
+        return
+
 def write_header(out_file, solver_name, res_tol, res_init):
     """
     Writes krylov solver data file header text.

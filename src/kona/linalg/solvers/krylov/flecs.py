@@ -4,7 +4,8 @@ from numpy import sqrt
 from kona.options import BadKonaOption, get_opt
 from kona.linalg.vectors.common import PrimalVector, DualVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import EPS, write_header, write_history
+from kona.linalg.solvers.util import EPS, write_header, write_history, \
+                                     solve_tri, solve_trust_reduced
 
 class FLECS(KrylovSolver):
     """
@@ -86,7 +87,7 @@ class FLECS(KrylovSolver):
             '# residual tolerance target = %e\n'%self.rel_tol + \
             '# initial residual norm     = %e\n'%res0 + \
             '# initial gradient norm     = %e\n'%grad0 + \
-            '# initial constraint norm   = %e\n'%feas0
+            '# initial constraint norm   = %e\n'%feas0 + \
             '# iters' + ' '*5 + \
             ' rel. res.' + ' '*5 + \
             'rel. grad.' + ' '*5 + \
@@ -106,11 +107,101 @@ class FLECS(KrylovSolver):
             '%10e'%feas_aug + ' '*5 + \
             '%10e'%self.pred + ' '*5 + \
             '%10e'%self.pred_aug + ' '*5 + \
-            '%10e'%self.mu + '\n
+            '%10e'%self.mu + '\n'
         )
 
     def solve_subspace_problems(self):
-        raise NotImplementedError
+
+
+        # perform some vector/matrix deep copies to preserve previous data
+        y_r = numpy.copy( self.y[ 0:self.iters ] )
+        g_r = numpy.copy( self.g[ 0:self.iters+1 ] )
+        H_r = numpy.copy( self.H[ 0:self.iters+1, 0:self.iters ])
+        VtZ_r = numpy.copy( self.VtZ[ 0:self.iters+1, 0:self.iters ])
+        VtZ_prim_r = numpy.copy( self.VtZ_prim[ 0:self.iters+1, 0:self.iters ] )
+        VtZ_dual_r = numpy.copy( self.VtZ_dual[ 0:self.iters+1, 0:self.iters ] )
+        VtV_dual_r = numpy.copy( self.VtV_dual[ 0:self.iters+1, 0:self.iters+1 ] )
+        ZtZ_prim_r = numpy.copy( self.ZtZ_prim[ 0:self.iters, 0:self.iters ] )
+
+        # solve the reduced (primal-dual) problem (i.e.: FGMRES solution)
+        y_r, _, _, _ = numpy.linalg.lstsq(H_r, g_r)
+
+        # compute residuals
+        res_red = H_r.dot(y_r) - g_r
+        self.beta = numpy.linalg.norm2(res_red)
+        self.gamma = numpy.inner(res_red, VtV_dual_r.dot(res_red))
+        self.omega = -self.gamma
+        self.gamma = sqrt(max(self.gamma, 0.0))
+        self.omega = sqrt(max(numpy.inner(res_red, res_red) + self.omega, 0.0))
+
+        # find the Hessian of the objective and the Hessian of the augmented
+        # Lagrangian in the reduced space
+        Hess_red = VtZ_r.T.dot(H_r) - VtZ_dual_r.T.dot(H_r) - H_r.T.dot(VtZ_dual_r)
+        VtVH = VtV_dual_r.dot(H_r)
+        Hess_aug = self.mu*H_r.T.dot(VtVH)
+        Hess_aug += Hess_red
+
+        # compute the RHS for the augmented Lagrangian problem
+        rhs_aug = numpy.zeros(self.iters)
+        for k in xrange(self.iters):
+            rhs_aug[k] = -self.g[0]*(self.VtZ_prim[0, k] + self.mu*VtVH[0, k])
+
+        lamb = 0.0
+        radius_aug = self.radius
+        try:
+            # compute the transformation to apply trust-radius directly
+            rhs_tmp = numpy.copy(rhs_aug)
+            UTU = numpy.linalg.cholesky(ZtZ_prim_r).T
+            # NOTE: Numpy Cholesky always returns a lower triangular matrix
+            # Since UTU is presumed upper triangular, we transpose it here
+            rhs_aug = solve_tri(UTU, rhs_tmp)
+
+            for j in xrange(self.iters):
+                rhs_tmp[:] = Hess_aug[:, j]
+                vec_tmp = solve_tri(UTU, rhs_tmp)
+                Hess_aug[:, j] = vec_tmp[:]
+
+            for j in xrange(self.iters):
+                rhs_tmp[:] = Hess_aug[j, :]
+                vec_tmp = solve_tri(UTU, rhs_tmp)
+                Hess_aug[j, :] = vec_tmp[:]
+
+            vec_tmp, lamb, tmp = solve_trust_reduced(Hess_aug, rhs_aug, radius_aug)
+            self.y_aug = solve_tri(UTU, vec_tmp)
+
+        except numpy.linalg.LinAlgError:
+            # if Cholesky factorization fails, compute a conservative radius
+            eig_vals, _ = eigen_decomp(ZtZ_prim_r)
+            radius_aug = self.radius/sqrt(eig_vals[self.iters-1])
+            y_aug, lamb, _ = solve_trust_reduced(Hess_aug, rhs_aug, radius_aug)
+
+        # check if the trust-radius constraint is active
+        self.trust_active = False
+        if lamb > 0.0:
+            self.trust_active = True
+
+        # compute residual norms for the augmented Lagrangian solution
+        res_red = H_r.dot(y_aug) - g_r
+        self.beta_aug = numpy.linalg.norm2(res_red)
+        self.gamma_aug = numpy.inner(res_red, VtV_dual_r.dot(res_red))
+        self.gamma_aug = sqrt(max(self.gamma_aug, 0.0))
+
+        # set the dual reduced-space solution
+        self.y_mult.resize(self.iters)
+        self.y_mult[:] = y_r[:]
+
+        # compute the predicted reductions in the objective (not penalty func.)
+        self.pred = -0.5*numpy.inner(y_r, Hess_red.dot(y_r))
+        for k in xrange(self.iters):
+            self.pred += self.g[0]*VtZ_prim_r[0, k]*y_r[k]
+        self.pred_aug = -0.5*numpy.inner(self.y_aug, Hess_red.dot(self.y_aug))
+        for k in xrange(self.iters):
+            self.pred_aug += self.g[0]*VtZ_prim_r[0, k]*self.y_aug[k]
+
+        # determine if negative curvature may be present
+        self.neg_curv = False
+        if (self.pred_aug - self.pred) > 0.05*abs(pred):
+            self.neg_curv = True
 
     def solve(self, mat_vec, b, x, precond):
         # validate solver options
@@ -190,7 +281,6 @@ class FLECS(KrylovSolver):
 
             # modified Gram-Schmidt orthonogalization
             try:
-                raise NotImplementedError
                 mod_gram_schmidt(i, self.H, V)
             except numpy.linalg.LinAlgError:
                 self.lin_depend = True
