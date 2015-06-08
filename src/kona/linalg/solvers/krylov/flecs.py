@@ -156,19 +156,19 @@ class FLECS(KrylovSolver):
             UTU = numpy.linalg.cholesky(ZtZ_prim_r).T
             # NOTE: Numpy Cholesky always returns a lower triangular matrix
             # Since UTU is presumed upper triangular, we transpose it here
-            rhs_aug = solve_tri(UTU, rhs_tmp)
+            rhs_aug = solve_tri(UTU.T, rhs_tmp, lower=True)
 
             for j in xrange(self.iters):
                 rhs_tmp[:] = Hess_aug[:, j]
-                vec_tmp = solve_tri(UTU, rhs_tmp)
+                vec_tmp = solve_tri(UTU.T, rhs_tmp, lower=True)
                 Hess_aug[:, j] = vec_tmp[:]
 
             for j in xrange(self.iters):
                 rhs_tmp[:] = Hess_aug[j, :]
-                vec_tmp = solve_tri(UTU, rhs_tmp)
+                vec_tmp = solve_tri(UTU.T, rhs_tmp, lower=True)
                 Hess_aug[j, :] = vec_tmp[:]
 
-            vec_tmp, lamb, tmp = solve_trust_reduced(Hess_aug, rhs_aug, radius_aug)
+            vec_tmp, lamb, _ = solve_trust_reduced(Hess_aug, rhs_aug, radius_aug)
             self.y_aug = solve_tri(UTU, vec_tmp)
 
         except numpy.linalg.LinAlgError:
