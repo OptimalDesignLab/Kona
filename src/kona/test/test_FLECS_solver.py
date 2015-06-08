@@ -64,41 +64,56 @@ class FLECSSolverTestCase(unittest.TestCase):
         except ValueError as err:
             self.assertEqual(str(err), 'trust-region radius must be nonnegative: radius = -1.000000')
 
-    def test_radius_inactive(self):
+    def test_radius_inactive_with_small_mu(self):
         # reset the solution vector
         self.x.equals(0)
         self.b.equals(1)
         # solve the system with FLECS
-        self.krylov.radius = 1.0
+        self.krylov.radius = 100.0
+        self.krylov.mu = 1.0
+        self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
+        # hard code expected result
+        expected = numpy.array([0.0625, 0.3125, 4, -6])
+        # compare actual result to expected
+        total_data = numpy.zeros(4)
+        total_data[0:2] = self.x._primal._data.data[:]
+        total_data[2:] = self.x._dual._data.data[:]
+        diff = abs(total_data - expected)
+        diff = max(diff)
+        self.assertTrue(diff <= 1.e-3)
+
+    def test_radius_inactive_with_large_mu(self):
+        # reset the solution vector
+        self.x.equals(0)
+        self.b.equals(1)
+        # solve the system with FLECS
+        self.krylov.radius = 100.0
+        self.krylov.mu = 100000.0
         self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
         # calculate expected result
         rhs = numpy.zeros(4)
         rhs[0:2] = self.b._primal._data.data[:]
         rhs[2:] = self.b._dual._data.data[:]
         expected = numpy.linalg.solve(self.A, rhs)
-        #print expected
         # compare actual result to expected
         total_data = numpy.zeros(4)
         total_data[0:2] = self.x._primal._data.data[:]
         total_data[2:] = self.x._dual._data.data[:]
-        #print total_data
         diff = abs(total_data - expected)
         diff = max(diff)
-        #self.assertTrue(diff < 1.e-6)
-        self.failUnless('Untested')
+        self.assertTrue(diff <= 1.e-3)
 
     def test_radius_active(self):
         # reset the solution vector
         self.x.equals(0)
         self.b.equals(1)
         # solve the system with FLECS
-        self.krylov.radius = 1e-5
+        self.krylov.radius = 0.1
         self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
         # compare actual result to expected
         exp_norm = self.krylov.radius
-        actual_norm = self.x.norm2
-        #self.assertTrue(abs(actual_norm - exp_norm) <= 1e-5)
-        self.failUnless('Untested')
+        actual_norm = self.x._primal.norm2
+        self.assertTrue(abs(actual_norm - exp_norm) <= 1e-3)
 
 if __name__ == "__main__":
 

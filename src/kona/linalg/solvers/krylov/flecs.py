@@ -50,10 +50,10 @@ class FLECS(KrylovSolver):
         self.rel_tol = get_opt(optns, 0.5, 'rel_tol')
 
         # get trust radius
-        self.radius = get_opt(optns, 1e100, 'radius')
+        self.radius = get_opt(optns, 1.0, 'radius')
 
         # get quadratic subproblem constraint penalty
-        self.mu = get_opt(optns, 0.0, 'mu_init')
+        self.mu = get_opt(optns, 1.0, 'mu_init')
 
         # get scalings
         self.grad_scale = get_opt(optns, 1.0, 'grad_scale')
