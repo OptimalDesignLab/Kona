@@ -3,9 +3,11 @@ from numpy import sqrt
 
 from kona.options import BadKonaOption, get_opt
 from kona.linalg.vectors.common import PrimalVector, DualVector
+from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import EPS, write_header, write_history, \
-                                     solve_tri, solve_trust_reduced
+                                     solve_tri, solve_trust_reduced, \
+                                     eigen_decomp, mod_gram_schmidt
 
 class FLECS(KrylovSolver):
     """
@@ -60,7 +62,7 @@ class FLECS(KrylovSolver):
         # extract vector factories from the factory array
         self.primal_factory = None
         self.dual_factory = None
-        for factory in vec_factory:
+        for factory in vector_factories:
             if factory._vec_type is PrimalVector:
                 self.primal_factory = factory
             elif factory._vec_type is DualVector:
@@ -76,16 +78,16 @@ class FLECS(KrylovSolver):
         return ReducedKKTVector(primal, dual)
 
     def _validate_options(self):
-        super(FLECS, self).__init__()
+        super(FLECS, self)._validate_options()
 
         if (self.primal_factory is None) or (self.dual_factory is None):
             raise TypeError('wrong vector factory types')
 
-    def _write_header(self, norm0, res0, grad0, feas0):
+    def _write_header(self, norm0, grad0, feas0):
         self.out_file.write(
             '# FLECS convergence history\n' + \
             '# residual tolerance target = %e\n'%self.rel_tol + \
-            '# initial residual norm     = %e\n'%res0 + \
+            '# initial residual norm     = %e\n'%norm0 + \
             '# initial gradient norm     = %e\n'%grad0 + \
             '# initial constraint norm   = %e\n'%feas0 + \
             '# iters' + ' '*5 + \
@@ -128,7 +130,7 @@ class FLECS(KrylovSolver):
 
         # compute residuals
         res_red = H_r.dot(y_r) - g_r
-        self.beta = numpy.linalg.norm2(res_red)
+        self.beta = numpy.linalg.norm(res_red)
         self.gamma = numpy.inner(res_red, VtV_dual_r.dot(res_red))
         self.omega = -self.gamma
         self.gamma = sqrt(max(self.gamma, 0.0))
@@ -173,7 +175,7 @@ class FLECS(KrylovSolver):
             # if Cholesky factorization fails, compute a conservative radius
             eig_vals, _ = eigen_decomp(ZtZ_prim_r)
             radius_aug = self.radius/sqrt(eig_vals[self.iters-1])
-            y_aug, lamb, _ = solve_trust_reduced(Hess_aug, rhs_aug, radius_aug)
+            self.y_aug, lamb, _ = solve_trust_reduced(Hess_aug, rhs_aug, radius_aug)
 
         # check if the trust-radius constraint is active
         self.trust_active = False
@@ -181,8 +183,8 @@ class FLECS(KrylovSolver):
             self.trust_active = True
 
         # compute residual norms for the augmented Lagrangian solution
-        res_red = H_r.dot(y_aug) - g_r
-        self.beta_aug = numpy.linalg.norm2(res_red)
+        res_red = H_r.dot(self.y_aug) - g_r
+        self.beta_aug = numpy.linalg.norm(res_red)
         self.gamma_aug = numpy.inner(res_red, VtV_dual_r.dot(res_red))
         self.gamma_aug = sqrt(max(self.gamma_aug, 0.0))
 
@@ -200,7 +202,7 @@ class FLECS(KrylovSolver):
 
         # determine if negative curvature may be present
         self.neg_curv = False
-        if (self.pred_aug - self.pred) > 0.05*abs(pred):
+        if (self.pred_aug - self.pred) > 0.05*abs(self.pred):
             self.neg_curv = True
 
     def solve(self, mat_vec, b, x, precond):
@@ -218,7 +220,8 @@ class FLECS(KrylovSolver):
         self.VtZ_prim = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
         self.VtZ_dual = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
         self.VtV_dual = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter + 1)))
-        self.y_aug, self.y_mult = numpy.ndarray([])
+        self.y_aug = numpy.ndarray([])
+        self.y_mult = numpy.ndarray([])
         self.iters = 0
 
         # generate residual vector
@@ -244,7 +247,7 @@ class FLECS(KrylovSolver):
         self.omega = sqrt(max(self.beta**2 - self.gamma**2, 0.0))
 
         # initialize RHS of the reduced system
-        g[0] = self.beta
+        self.g[0] = self.beta
 
         # output header information
         self._write_header(norm0, grad0, feas0)
@@ -270,7 +273,7 @@ class FLECS(KrylovSolver):
             precond(V[i], Z[i])
 
             # add to Krylov subspace
-            V.append(self._generate.composite())
+            V.append(self._generate_vector())
             Z[i]._primal.times(self.grad_scale)
             Z[i]._dual.times(self.feas_scale)
             mat_vec(Z[i], V[i+1])
@@ -297,7 +300,7 @@ class FLECS(KrylovSolver):
                 self.VtZ[i+1, k] = self.VtZ_prim[i+1, k] + self.VtZ_dual[i+1, k]
 
                 self.ZtZ_prim[k, i] = Z[k]._primal.inner(Z[i]._primal)
-                self.ZtZ_prim[i+1, k] = Z[i+1]._primal.inner(Z[k]._primal)
+                self.ZtZ_prim[i, k] = Z[i]._primal.inner(Z[k]._primal)
 
                 self.VtV_dual[k, i] = V[k]._dual.inner(V[i]._dual)
                 self.VtV_dual[i+1, k] = V[i+1]._dual.inner(V[k]._dual)
@@ -330,7 +333,7 @@ class FLECS(KrylovSolver):
 
         # compute solution: augmented-Lagrangian step for primal, FGMRES for dual
         x.equals(0.0)
-        for k in xrange(iters):
+        for k in xrange(self.iters):
             x._primal.equals_ax_p_by(1.0, x._primal, self.y_aug[k], Z[k]._primal)
             x._dual.equals_ax_p_by(1.0, x._dual, self.y_mult[k], Z[k]._dual)
 
@@ -342,8 +345,8 @@ class FLECS(KrylovSolver):
         if self.check_res:
             # calculate true residual for the solution
             V[0].equals(0.0)
-            for k in xrange(iters):
-                V[0].equals_ax_p_by(1.0, V[0], y_mult[k], Z[k])
+            for k in xrange(self.iters):
+                V[0].equals_ax_p_by(1.0, V[0], self.y_mult[k], Z[k])
             mat_vec(V[0], res)
             res.equals_ax_p_by(1.0, b, -1.0, res)
             true_res = res.norm2
@@ -369,7 +372,7 @@ class FLECS(KrylovSolver):
                     '# (res - beta)/res0 = %e\n'%out_data
                 )
             # print warning for constraint disagreement
-            computed_feas = gamma/self.feas_scale
+            computed_feas = self.gamma/self.feas_scale
             if (abs(true_feas - computed_feas) > 0.01*self.rel_tol*feas0):
                 out_data = (true_feas - computed_feas)/feas0
                 self.out_file.write(

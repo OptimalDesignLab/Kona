@@ -353,11 +353,11 @@ def mod_gram_schmidt(i, Hsbg, w):
     if abs(nrm) <= EPS:
         # norm of w[i+1] is effectively zero; it is linearly dependent
         # raise a LinAlgError to catch later
-        raise numpy.linalg.LinAlgError
+        raise np.linalg.LinAlgError
     elif nrm < -EPS:
         # the norm of w[i+1] < 0.0
         raise ValueError('mod_gram_schmidt failed : w[i+1].inner(w[i+1]) < 0.0')
-    elif numpy.isnan(nrm):
+    elif np.isnan(nrm):
         raise ValueError('mod_gram_schmidt failed : w[i+1] = NaN')
 
     if i < 0:
@@ -389,7 +389,7 @@ def mod_gram_schmidt(i, Hsbg, w):
     if (nrm <= 0.0):
         # norm of w[i+1] is effectively zero; it is linearly dependent
         # raise a LinAlgError to catch later
-        raise numpy.linalg.LinAlgError
+        raise np.linalg.LinAlgError
     else:
         # scale the resulting vector and exit
         w[i+1].divide_by(nrm)

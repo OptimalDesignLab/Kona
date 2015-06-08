@@ -13,7 +13,7 @@ from kona.linalg.matrices.common import IdentityMatrix
 from kona.user import UserSolver
 from kona.linalg.memory import KonaMemory
 
-class KrylovSolverTestCase(unittest.TestCase):
+class STCGSolverTestCase(unittest.TestCase):
 
     def setUp(self):
         solver = UserSolver(4,0,0)
