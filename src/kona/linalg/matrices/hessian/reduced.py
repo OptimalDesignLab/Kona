@@ -34,7 +34,7 @@ class ReducedHessian(BaseHessian):
         # read reduced options
         self.product_fac = get_opt(optns, 0.001, 'product_fac')
         self.lamb = get_opt(optns, 0.0, 'lambda')
-        self.scale = get_opt(optns, 0.0, 'scale')
+        self.scale = get_opt(optns, 1.0, 'scale')
         self.nu = get_opt(optns, 0.95, 'nu')
         self.dynamic_tol = get_opt(optns, False, 'dynamic_tol')
 
@@ -44,7 +44,7 @@ class ReducedHessian(BaseHessian):
         self.krylov = None
 
         # reset the linearization flag
-        self._linearized = False
+        self._allocated = False
 
         # get references to individual factories
         self.primal_factory = None
@@ -85,7 +85,7 @@ class ReducedHessian(BaseHessian):
         self.at_adjoint = at_adjoint
 
         # if this is the first ever linearization...
-        if not self._linearized:
+        if not self._allocated:
 
             # generate state vectors
             self.adjoint_res = self.state_factory.generate()
@@ -101,7 +101,7 @@ class ReducedHessian(BaseHessian):
             self.primal_work = []
             for i in xrange(2):
                 self.primal_work.append(self.primal_factory.generate())
-            self._linearized = True
+            self._allocated = True
 
         # compute adjoint residual at the linearization
         self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
@@ -143,7 +143,7 @@ class ReducedHessian(BaseHessian):
 
         # solve the first 2nd order adjoint
         self.dRdU.linearize(self.at_design, self.at_state)
-        self.dRdU.solve(self.state_work[0], self.product_fac, self.w_adj)
+        self.dRdU.solve(self.state_work[0], self.w_adj, rel_tol=self.product_fac)
 
         # second adjoint system
         #####################################
@@ -175,7 +175,7 @@ class ReducedHessian(BaseHessian):
 
         # solve the second 2nd order adjoint
         self.dRdU.linearize(self.at_design, self.at_state)
-        self.dRdU.T.solve(self.state_work[0], self.product_fac, self.lambda_adj)
+        self.dRdU.T.solve(self.state_work[0], self.lambda_adj, rel_tol=self.product_fac)
 
         # assemble the Hessian-vector product using 2nd order adjoints
         ##############################################################

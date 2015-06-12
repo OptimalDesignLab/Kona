@@ -4,7 +4,7 @@ from numpy import sqrt
 from kona.options import BadKonaOption, get_opt
 
 from kona.linalg import current_solution, objective_value
-from kona.linalg.matrices.common import dRdX, dRdU, IdentityMatrix
+from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS, ReducedHessian
 from kona.linalg.solvers.krylov import STCG
 

@@ -396,7 +396,7 @@ class StateVector(KonaVector):
         jacobian = dRdU(at_primal, at_state)
         state_work.equals_objective_partial(at_primal, at_state)
         state_work.times(-1) # negative of the objective partial (-dF/dU)
-        jacobian.T.solve(state_work, 1.e-12, self) # this is the adjoint solution now
+        jacobian.T.solve(state_work, self) # this is the adjoint solution now
 
 class DualVector(KonaVector):
     """
