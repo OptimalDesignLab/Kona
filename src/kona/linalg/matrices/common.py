@@ -144,27 +144,25 @@ class dRdU(KonaMatrix):
         # self._check_type(solution, StateVector)
         # self._check_type(rhs_vec, StateVector)
         if not self._transposed:
-            if isinstance(rel_tol, float):
-                cost = self._solver.solve_linear(
-                            self._primal._data, self._state._data,
-                            rhs_vec._data, rel_tol, solution._data)
-            elif rel_tol == 'approx':
-                cost = self._solver.apply_precond(
-                            self._primal._data, self._state._data,
-                            rhs_vec._data, solution._data)
-            else:
-                raise TypeError('Invalid solution tolerance')
+            cost = self._solver.solve_linear(
+                        self._primal._data, self._state._data,
+                        rhs_vec._data, rel_tol, solution._data)
         else:
-            if isinstance(rel_tol, float):
-                cost = self._solver.solve_adjoint(
-                            self._primal._data, self._state._data,
-                            rhs_vec._data, rel_tol, solution._data)
-            elif rel_tol == 'approx':
-                cost = self._solver.apply_precond_T(
-                            self._primal._data, self._state._data,
-                            rhs_vec._data, solution._data)
-            else:
-                raise TypeError('Invalid solution tolerance')
+            cost = self._solver.solve_adjoint(
+                        self._primal._data, self._state._data,
+                        rhs_vec._data, rel_tol, solution._data)
+
+        self._memory.cost += cost
+
+    def precond(self, in_vec, out_vec):
+        if not self._transposed:
+            cost = self._solver.apply_precond(
+                        self._primal._data, self._state._data,
+                        in_vec._data, out_vec._data)
+        else:
+            cost = self._solver.apply_precond_T(
+                        self._primal._data, self._state._data,
+                        in_vec._data, out_vec._data)
 
         self._memory.cost += cost
 

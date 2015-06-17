@@ -38,13 +38,8 @@ class ReducedKKTMatrix(BaseHessian):
         self.precond = get_opt(optns, None, 'precond')
         self.krylov = None
 
-        # set tolerances for dRdU solves
-        # NOTE: this will switch dRdU solve into the preconditioner product
-        # if the KKT matrix is flagged as "approxmiate"
-        if not approx:
-            self.rel_tol = 1e-8
-        else:
-            self.rel_tol = 'approx'
+        # set flag for approximate KKT Matrix
+        self.approx = approx
 
         # reset the linearization flag
         self._allocated = False
@@ -60,6 +55,19 @@ class ReducedKKTMatrix(BaseHessian):
         self.dCdX = dCdX()
         self.dCdU = dCdU()
 
+    def _linear_solve(self, rhs_vec, solution, rel_tol=1e-8):
+        self.dRdU.linearize(at_design, at_state)
+        if not self.approx:
+            self.dRdU.solve(rhs_vec, solution, rel_tol=rel_tol)
+        else:
+            self.dRdU.precond(rhs_vec, solution)
+
+    def _adjoint_solve(self, rhs_vec, solution, rel_tol=1e-8):
+        self.dRdU.linearize(at_design, at_state)
+        if not self.approx:
+            self.dRdU.T.solve(rhs_vec, solution, rel_tol=rel_tol)
+        else:
+            self.dRdU.T.precond(rhs_vec, solution)
 
     def set_krylov_solver(self, krylov_solver):
         if isinstance(krylov_solver, KrylovSolver):
@@ -72,6 +80,11 @@ class ReducedKKTMatrix(BaseHessian):
             self.quasi_newton = quasi_newton
         else:
             raise TypeError('Object is not a valid QuasiNewtonApprox')
+
+    @property
+    def approx(self):
+        self.approx = True
+        return self
 
     def linearize(self, at_design, at_state, at_dual, at_adjoint):
 
@@ -140,8 +153,9 @@ class ReducedKKTMatrix(BaseHessian):
 
         # perform the adjoint solution
         self.w_adj.equals(0.0)
-        self.dRdU.linearize(self.at_design, self.at_state)
-        self.dRdU.solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
+        #self.dRdU.linearize(self.at_design, self.at_state)
+        #self.dRdU.solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
+        self._linear_solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
 
         # find the adjoint perturbation by solving the linearized dual equation
         self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec._design)
@@ -177,8 +191,9 @@ class ReducedKKTMatrix(BaseHessian):
 
         # perform the adjoint solution
         self.lambda_adj.equals(0.0)
-        self.dRdU.linearize(self.at_design, self.at_state)
-        self.dRdU.T.solve(self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
+        #self.dRdU.linearize(self.at_design, self.at_state)
+        #self.dRdU.T.solve(self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
+        self._adjoint_solve(self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
 
         # evaluate first order optimality conditions at perturbed design, state
         # and adjoint:
@@ -209,6 +224,9 @@ class ReducedKKTMatrix(BaseHessian):
         self.dCdU.product(self.w_adj, self.dual_work)
         out_vec._dual.plus(self.dual_work)
         out_vec._dual.times(self.ceq_scale)
+
+        # reset the approximation flag
+        self.approx = False
 
     def solve(self, in_vec, out_vec, rel_tol=None):
 
