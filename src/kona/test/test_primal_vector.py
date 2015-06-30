@@ -153,16 +153,16 @@ class TestCasePrimalVectorIDF(unittest.TestCase):
         self.pv = km.primal_factory.generate()
         self.dv = km.dual_factory.generate()
 
-    def test_restrict_target_state(self):
+    def test_restrict_to_design(self):
         self.pv.equals(5)
-        self.pv.restrict_target_state()
+        self.pv.restrict_to_design()
         inner_prod = self.pv.inner(self.pv)
         expected_prod = 5.*5.*5
         self.assertEqual(inner_prod, expected_prod)
 
-    def test_restrict_real_design(self):
+    def test_restrict_to_target(self):
         self.pv.equals(5)
-        self.pv.restrict_real_design()
+        self.pv.restrict_to_target()
         inner_prod = self.pv.inner(self.pv)
         expected_prod = 5.*5.*10
         self.assertEqual(inner_prod, expected_prod)

@@ -4,7 +4,9 @@ from numpy import sqrt
 from kona.options import BadKonaOption, get_opt
 from kona.linalg.vectors.common import PrimalVector, DualVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import EPS, write_header, write_history, apply_givens, generate_givens
+from kona.linalg.solvers.util import EPS, write_header, write_history, \
+                                     solve_tri, solve_trust_reduced, \
+                                     eigen_decomp, mod_gram_schmidt
 
 class FGMRES(KrylovSolver):
     """
@@ -86,7 +88,6 @@ class FGMRES(KrylovSolver):
 
             # try modified Gram-Schmidt orthogonalization
             try:
-                raise NotImplementedError
                 mod_gram_schmidt(i, H, W)
             except numpy.linalg.LinAlgError:
                 self.lin_depend = True
@@ -94,8 +95,9 @@ class FGMRES(KrylovSolver):
             # apply old Givens rotations to new column of the Hessenberg matrix
             # then generate new Givens rotation matrix and apply it to the last
             # two elements of H[i, :] and g
-            for j in xrange(i):
+            for k in xrange(i):
                 H[k, i], H[k+1, i] = apply_givens(sn[k], cs[k], H[k, i], H[k+1, i])
+
             H[i, i], H[i+1, i], sn[i], cn[i] = generate_givens(H[i, i], H[i+1, i], sn[i], cn[i])
             g[i], g[i+1] = apply_givens(sn[i], cn[i], g[i], g[i+1])
 

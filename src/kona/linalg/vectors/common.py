@@ -223,17 +223,17 @@ class PrimalVector(KonaVector):
     to design vectors.
     """
 
-    def restrict_target_state(self):
+    def restrict_to_design(self):
         """
-        Set target state variables to zero.
+        Set target state variables to zero, leaving design variables untouched.
 
         Used only for IDF problems.
         """
         self._memory.solver.restrict_design(0, self._data)
 
-    def restrict_real_design(self):
+    def restrict_to_target(self):
         """
-        Set design variables to zero.
+        Set design variables to zero, leaving target state variables untouched.
 
         Used only for IDF problems.
         """

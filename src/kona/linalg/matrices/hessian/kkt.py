@@ -5,7 +5,7 @@ from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix
-from kona.linalg.matrices.hessian.basic import BaseHessian, QuasiNewtonApprox
+from kona.linalg.matrices.hessian.basic import BaseHessian
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import calc_epsilon
 

@@ -7,9 +7,9 @@ from kona.linalg import current_solution, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
+from kona.linalg.matrices.preconditioners import ReducedSchurPreconditioner, \
+                                                 NestedKKTPreconditioner
 from kona.linalg.solvers.krylov import FLECS
-
-# NOTE: Latest C++ source has the filter disabled entirely!!!
 from kona.algorithms.util import Filter
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
@@ -78,10 +78,10 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             embedded_krylov = krylov(
                 [self.primal_factory, self.dual_factory],
                 krylov_optns)
-            # set this new solver into the KKT matrix
-            self.KKT_matrix.set_krylov_solver(embedded_krylov)
+            # initialize the nested preconditioner
+            self.nested = NestedKKTPreconditioner(self.KKT_matrix, embedded_krylov)
             # define preconditioner as approximate solve of KKT system
-            self.precond = self.KKT_matrix.approx.solve
+            self.precond = self.nested.product
 
         elif self.precond == 'idf_schur':
             # NOTE: IDF preconditioner not implemented yet
