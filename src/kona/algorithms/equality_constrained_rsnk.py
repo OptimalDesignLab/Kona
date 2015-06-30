@@ -63,7 +63,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         # initialize the preconditioner for the KKT matrix
         self.precond = get_opt(optns, None, 'reduced', 'precond')
 
-        if self.precond = None:
+        if self.precond == None:
             # use identity matrix product as preconditioner
             self.eye = IdentityMatrix()
             self.precond = self.eye.product

@@ -1,5 +1,6 @@
 from reduced_space_quasi_newton import ReducedSpaceQuasiNewton
 from reduced_space_newton_krylov import ReducedSpaceNewtonKrylov
+from equality_constrained_rsnk import EqualityConstrainedRSNK
 from base_algorithm import OptimizationAlgorithm
 
 import util
