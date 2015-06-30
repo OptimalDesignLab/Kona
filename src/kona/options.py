@@ -76,6 +76,11 @@ defaults = {
         'tol'           : 0.1,
     },
 
+    'aug_lag' : {
+        'mu_init' : 0.1,
+        'mu_pow' : 1.0,
+    },
+
     'reduced' : {
         'product_fac'   : 0.001,
         'lambda'        : 0.0,
@@ -112,12 +117,8 @@ defaults = {
         'max_iter'      : 10,
         'rel_tol'       : 1e-8,
         'check_res'     : True,
-        # STCG options
-        'radius'        : 1.0,
-        'proj_cg'       : False,
-        # FLECS options
-        'mu_init'       : 0.0,
-        'grad_scale'    : 1.0,
-        'feas_scale'    : 1.0,
+        'proj_cg'       : False, # STCG
+        'grad_scale'    : 1.0, # FLECS
+        'feas_scale'    : 1.0, # FLECS
     },
 }

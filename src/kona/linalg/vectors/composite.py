@@ -1,5 +1,6 @@
 import numpy as np
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 
 class CompositeVector(object):
     """
@@ -219,9 +220,48 @@ class ReducedKKTVector(CompositeVector):
     _dual : DualVector
         Dual components of the composite vector.
     """
-    def __init__(self, primal_vec, dual_vec):
-        super(ReducedKKTVector, self).__init__(primal_vec, dual_vec)
 
     def equals_init_guess(self):
+        """
+        Sets the KKT vector to the initial guess, using the initial design.
+        """
         self._primal.equals_init_design()
         self._dual.equals(0.0)
+
+    def equals_KKT_conditions(self, x, state, adjoint, primal_work):
+        """
+        Calculates the total derivative of the Lagrangian
+        :math:`\\mathcal{L}(x, u) = f(x, u) + \\lambda c(x, u)` with respect to
+        :math:`\\begin{pmatrix}x & \\lambda\\end{pmatrix}^T`. This total
+        derivative represents the Karush-Kuhn-Tucker (KKT) convergence
+        conditions for the optimization problem defined by
+        :math:`\\mathcal{L}(x, u)`.
+
+        The full expression of the KKT conditions are:
+
+        .. math::
+            \\begin{pmatrix} g(x, u, \lambda, \psi) \\ c(x, u) \\end{pmatrix} = \\begin{pmatrix}\\end{pmatrix}
+
+        Parameters
+        ----------
+        x : ReducedKKTVector
+            Evaluate KKT conditions at this primal-dual point.
+        state : StateVector
+            Evaluate KKT conditions at this state point.
+        adjoint : StateVector
+            Evaluate KKT conditions using this adjoint vector.
+        primal_work : PrimalVector
+            Work vector for intermediate calculations.
+        """
+        # evaluate constraints at the design/state point
+        self._dual.equals_constraints(x._primal, state)
+        # evaluate objective partial w.r.t. design variables
+        primal_work.equals_objective_partial(x._primal, state)
+        # evaluate dRdX^T * adjoint
+        dRdX(x._primal, state).T.product(adjoint, self._primal)
+        # assemble the total objective derivative w.r.t. design variables
+        self._primal.plus(primal_work)
+        # evaluate dCdX^T * lambda
+        dCdX(x._primal, state).T.product(x._dual, primal_work)
+        # assemble the total lagrangian derivative w.r.t. design variables
+        self._primal.plus(primal_work)

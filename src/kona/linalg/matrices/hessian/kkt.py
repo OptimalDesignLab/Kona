@@ -26,6 +26,7 @@ class ReducedKKTMatrix(BaseHessian):
         # get references to individual factories
         self.primal_factory = None
         self.state_factory = None
+        self.dual_factory = None
         for factory in self.vec_fac:
             if factory._vec_type is PrimalVector:
                 self.primal_factory = factory
@@ -34,12 +35,12 @@ class ReducedKKTMatrix(BaseHessian):
             elif factory._vec_type is DualVector:
                 self.dual_factory = factory
 
-        # preconditioner and solver settings
-        self.precond = get_opt(optns, None, 'precond')
+        # set empty solver handle
         self.krylov = None
 
         # set flag for approximate KKT Matrix
-        self.approx = approx
+        self._use_approx = approx
+        self._reset_approx = False
 
         # reset the linearization flag
         self._allocated = False
@@ -57,14 +58,14 @@ class ReducedKKTMatrix(BaseHessian):
 
     def _linear_solve(self, rhs_vec, solution, rel_tol=1e-8):
         self.dRdU.linearize(at_design, at_state)
-        if not self.approx:
+        if not self._use_approx:
             self.dRdU.solve(rhs_vec, solution, rel_tol=rel_tol)
         else:
             self.dRdU.precond(rhs_vec, solution)
 
     def _adjoint_solve(self, rhs_vec, solution, rel_tol=1e-8):
         self.dRdU.linearize(at_design, at_state)
-        if not self.approx:
+        if not self._use_approx:
             self.dRdU.T.solve(rhs_vec, solution, rel_tol=rel_tol)
         else:
             self.dRdU.T.precond(rhs_vec, solution)
@@ -75,15 +76,9 @@ class ReducedKKTMatrix(BaseHessian):
         else:
             raise TypeError('Solver is not a valid KrylovSolver')
 
-    def set_quasi_newton(self, quasi_newton):
-        if isinstance(quasi_newton, QuasiNewtonApprox):
-            self.quasi_newton = quasi_newton
-        else:
-            raise TypeError('Object is not a valid QuasiNewtonApprox')
-
     @property
     def approx(self):
-        self.approx = True
+        self._use_approx = True
         return self
 
     def linearize(self, at_design, at_state, at_dual, at_adjoint):
@@ -225,8 +220,9 @@ class ReducedKKTMatrix(BaseHessian):
         out_vec._dual.plus(self.dual_work)
         out_vec._dual.times(self.ceq_scale)
 
-        # reset the approximation flag
-        self.approx = False
+        # if this is a single product, we reset the approximation flag
+        if self._reset_approx:
+            self._use_approx = False
 
     def solve(self, in_vec, out_vec, rel_tol=None):
 
@@ -235,18 +231,23 @@ class ReducedKKTMatrix(BaseHessian):
             raise AttributeError('krylov solver not set')
 
         # define the preconditioner
-        if self.precond is not None:
-            if self.quasi_newton is not None:
-                precond = self.quasi_newton.solve
-            else:
-                raise AttributeError('preconditioner is specified but not set')
-        else:
-            eye = IdentityMatrix()
-            precond = eye.product
+        eye = IdentityMatrix()
+        precond = eye.product
 
         # update the solution tolerance if necessary
         if isinstance(rel_tol, float):
             self.krylov.rel_tol = rel_tol
 
+        # if this is an approximate solve, temporarily prevent the product from
+        # resetting the approximation flag
+        if self._use_approx:
+            self._reset_approx = False
+
         # trigger the solution
-        return self.krylov.solve(self.product, in_vec, out_vec, precond)
+        self.krylov.solve(self.product, in_vec, out_vec, precond)
+
+        # reset approximate matrix flag
+        self._use_approx = False
+
+        # make sure that next product will reset the approximation flag
+        self._reset_approx = True

@@ -351,6 +351,12 @@ class UserSolver(object):
         """
         out_vec.data[:] = 0.
 
+    def apply_active_set(self, at_design, at_state, in_vec, out_vec):
+        out_vec.data[:] = in_vec.data[:]
+
+    def apply_active_set_T(self, at_design, at_state, in_vec, out_vec):
+        out_vec.data[:] = in_vec.data[:]
+
     def multiply_dCdU_T(self, at_design, at_state, in_vec, out_vec):
         """
         Perform the following tasks:

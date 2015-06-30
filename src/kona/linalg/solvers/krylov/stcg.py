@@ -20,8 +20,14 @@ class STCG(KrylovSolver):
     """
     def __init__(self, vector_factory, optns={}):
         super(STCG, self).__init__(vector_factory, optns)
+
+        # set a default trust radius
+        # NOTE: the trust radius is set by the optimization algorithm
         self.radius = 1.0
+
+        # get other options
         self.proj_cg = get_opt(optns, False, 'proj_cg')
+
         # set factory and request vectors needed in solve() method
         self.vec_fac.request_num_vectors(7)
 

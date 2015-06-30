@@ -9,8 +9,6 @@ from kona.linalg.matrices.hessian import LimitedMemoryBFGS, ReducedHessian
 from kona.linalg.solvers.krylov import STCG
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
-from kona.algorithms.util.merit import ObjectiveMerit
-from kona.algorithms.util.linesearch import StrongWolfe
 
 class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
     """
@@ -28,7 +26,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         self.state_factory.request_num_vectors(8)
 
         # get other options
-        self.radius = get_opt(optns, 0.1, 'trust', 'init_radius')
+        self.radius = get_opt(optns, 1.0, 'trust', 'init_radius')
         self.max_radius = get_opt(optns, 1.0, 'trust', 'max_radius')
         self.trust_tol = get_opt(optns, 0.1, 'trust', 'tol')
 
