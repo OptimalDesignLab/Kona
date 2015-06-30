@@ -10,7 +10,37 @@ from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import calc_epsilon
 
 class ReducedKKTMatrix(BaseHessian):
+    """
+    Reduced approximation of the KKT matrix using a 2nd order adjoint
+    formulation.
 
+    The KKT system is defined as:
+
+    .. math::
+        \\begin{pmatrix}\\frac{d^2\\mathcal{L}}{dx^2} && \\frac{d^2C}{dx d\\lambda} \\ \\frac{d^2C}{d\\lambda dx} && 0 \\end{pmatrix} \\begin{pmatrix} \\delta x \\ \\delta \\lambda \\end{pmatrix} = \\begin{pmatrix} \\nambla_x \\mathcal{L} \\ C \\end{pmatrix}
+
+    where :math:`\\mathcal{L}` is the Lagrangian defined as:
+
+    .. math::
+        \\mathcal{L}(x, u(x), \lambda) = F(x, u(X)) + \\lambda C(x, u(x))
+
+    .. note::
+        Insert paper reference describing the 2nd order adjoint formulation.
+
+    Attributes
+    ----------
+    product_fac : float
+    product_tol : float
+    lamb : float
+    scale : float
+    grad_scale : float
+    ceq_scale : float
+    dynamic_tol : boolean
+    krylov : KrylovSolver
+        A krylov solver object used to solve the system defined by this matrix.
+    dRdX, dRdU, dCdX, dCdU : KonaMatrix
+        Various abstract jacobians used in calculating the mat-vec product.
+    """
     def __init__(self, vector_factories, optns={}, approx=False):
         super(ReducedKKTMatrix, self).__init__(vector_factories, optns)
 
@@ -78,11 +108,39 @@ class ReducedKKTMatrix(BaseHessian):
 
     @property
     def approx(self):
+        """
+        Used to perform approximate products and solves.
+
+        The approximate version of this matrix uses
+        :math:`\\frac{\\partial R}{\\partial u}` preconditioner from the solver
+        to calculate the 2nd order adjoints.
+
+        The approximate solution, `ReducedKKTMatrix.approx.solve()`, can then
+        be used as a "nested" preconditioner during the optimization.
+        """
         self._use_approx = True
         return self
 
     def linearize(self, at_design, at_state, at_dual, at_adjoint):
+        """
+        An abstracted "linearization" method for the matrix.
 
+        This method does not actually factor any real matrices. It also does
+        not perform expensive linear or non-linear solves. It is used to update
+        internal vector references and perform basic calculations using only
+        cheap matrix-vector products.
+
+        Parameters
+        ----------
+        at_design : PrimalVector
+            Design point at which the product is evaluated.
+        at_state : StateVector
+            State point at which the product is evaluated.
+        at_dual : DualVector
+            Lagrange multipliers at which the product is evaluated.
+        at_adjoint : StateVector
+            1st order adjoint variables at which the product is evaluated.
+        """
         # store the linearization point
         self.at_design = at_design
         self.primal_norm = self.at_design.norm2
@@ -128,7 +186,16 @@ class ReducedKKTMatrix(BaseHessian):
         self.reduced_grad.plus(self.primal_work[0])
 
     def product(self, in_vec, out_vec):
+        """
+        Matrix-vector product for the reduced KKT system.
 
+        Parameters
+        ----------
+        in_vec : ReducedKKTVector
+            Vector to be multiplied with the KKT matrix.
+        out_vec : ReducedKKTVector
+            Result of the operation.
+        """
         # type check given vectors
         if not isinstance(in_vec, ReducedKKTVector):
             raise TypeError('Multiplying vector is not a ReducedKKTVector')
@@ -224,8 +291,20 @@ class ReducedKKTMatrix(BaseHessian):
         if self._reset_approx:
             self._use_approx = False
 
-    def solve(self, in_vec, out_vec, rel_tol=None):
+    def solve(self, rhs, solution, rel_tol=None):
+        """
+        Solve the linear system defined by this matrix using the embedded
+        krylov solver.
 
+        Parameters
+        ----------
+        rhs : PrimalVector
+            Right hand side vector for the system.
+        solution : PrimalVector
+            Solution of the system.
+        rel_tol : float (optional)
+            Relative tolerance for the krylov solver.
+        """
         # make sure we have a krylov solver
         if self.krylov is None:
             raise AttributeError('krylov solver not set')
@@ -244,7 +323,7 @@ class ReducedKKTMatrix(BaseHessian):
             self._reset_approx = False
 
         # trigger the solution
-        self.krylov.solve(self.product, in_vec, out_vec, precond)
+        self.krylov.solve(self.product, rhs, solution, precond)
 
         # reset approximate matrix flag
         self._use_approx = False

@@ -76,7 +76,25 @@ class ReducedHessian(BaseHessian):
             raise TypeError('Object is not a valid QuasiNewtonApprox')
 
     def linearize(self, at_design, at_state, at_adjoint):
+        """
+        An abstracted "linearization" method for the matrix.
 
+        This method does not actually factor any real matrices. It also does
+        not perform expensive linear or non-linear solves. It is used to update
+        internal vector references and perform basic calculations using only
+        cheap matrix-vector products.
+
+        Parameters
+        ----------
+        at_design : PrimalVector
+            Design point at which the product is evaluated.
+        at_state : StateVector
+            State point at which the product is evaluated.
+        at_dual : DualVector
+            Lagrange multipliers at which the product is evaluated.
+        at_adjoint : StateVector
+            1st order adjoint variables at which the product is evaluated.
+        """
         # store the linearization point
         self.at_design = at_design
         self.primal_norm = self.at_design.norm2
@@ -116,7 +134,16 @@ class ReducedHessian(BaseHessian):
         self.reduced_grad.plus(self.primal_work[0])
 
     def product(self, in_vec, out_vec):
+        """
+        Matrix-vector product for the reduced KKT system.
 
+        Parameters
+        ----------
+        in_vec : ReducedKKTVector
+            Vector to be multiplied with the KKT matrix.
+        out_vec : ReducedKKTVector
+            Result of the operation.
+        """
         # perturb the design vector
         epsilon_fd = calc_epsilon(self.primal_norm, in_vec.norm2)
         self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec)
@@ -201,8 +228,20 @@ class ReducedHessian(BaseHessian):
         if self.lamb > numpy.finfo(float).eps:
             out_vec.equals_ax_p_by((1.-self.lamb), out_vec, self.lamb*self.scale, in_vec)
 
-    def solve(self, in_vec, out_vec, rel_tol=None):
+    def solve(self, rhs, solution, rel_tol=None):
+        """
+        Solve the linear system defined by this matrix using the embedded
+        krylov solver.
 
+        Parameters
+        ----------
+        rhs : PrimalVector
+            Right hand side vector for the system.
+        solution : PrimalVector
+            Solution of the system.
+        rel_tol : float (optional)
+            Relative tolerance for the krylov solver.
+        """
         # make sure we have a krylov solver
         if self.krylov is None:
             raise AttributeError('krylov solver not set')
@@ -222,4 +261,4 @@ class ReducedHessian(BaseHessian):
             self.krylov.rel_tol = rel_tol
 
         # trigger the solution
-        return self.krylov.solve(self.product, in_vec, out_vec, precond)
+        return self.krylov.solve(self.product, rhs, solution, precond)
