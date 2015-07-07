@@ -5,8 +5,8 @@ from kona.options import BadKonaOption, get_opt
 from kona.linalg.vectors.common import PrimalVector, DualVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import EPS, write_header, write_history, \
-                                     solve_tri, solve_trust_reduced, \
-                                     eigen_decomp, mod_gram_schmidt
+                                     generate_givens, apply_givens, \
+                                     mod_gram_schmidt
 
 class FGMRES(KrylovSolver):
     """
@@ -14,7 +14,7 @@ class FGMRES(KrylovSolver):
     """
 
     def __init__(self, vector_factory, optns={}):
-        super(FGMRES, self).__init__(vector_factories, optns)
+        super(FGMRES, self).__init__(vector_factory, optns)
 
         # get relative tolerance
         self.rel_tol = get_opt(optns, 0.5, 'rel_tol')
@@ -96,9 +96,9 @@ class FGMRES(KrylovSolver):
             # then generate new Givens rotation matrix and apply it to the last
             # two elements of H[i, :] and g
             for k in xrange(i):
-                H[k, i], H[k+1, i] = apply_givens(sn[k], cs[k], H[k, i], H[k+1, i])
+                H[k, i], H[k+1, i] = apply_givens(sn[k], cn[k], H[k, i], H[k+1, i])
 
-            H[i, i], H[i+1, i], sn[i], cn[i] = generate_givens(H[i, i], H[i+1, i], sn[i], cn[i])
+            H[i, i], H[i+1, i], sn[i], cn[i] = generate_givens(H[i, i], H[i+1, i])
             g[i], g[i+1] = apply_givens(sn[i], cn[i], g[i], g[i+1])
 
             # set L2 norm of residual and output relative residual if necessary
@@ -109,7 +109,7 @@ class FGMRES(KrylovSolver):
         # END BIG LOOP
 
         # solve the least squares system
-        y[:i] = numpy.linalg.solve(H[:i, :i], g[:i])
+        y[:i] = numpy.linalg.solve(H[:i, :i], -g[:i])
         for k in xrange(i):
             x.equals_ax_p_by(1.0, x, y[k], Z[k])
 

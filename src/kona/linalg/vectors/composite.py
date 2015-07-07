@@ -1,6 +1,28 @@
 import numpy as np
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector, \
+                                       objective_value
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
+
+def augmented_lagrangian(at_kkt, at_state, at_ceq, mu):
+    """
+    Calculate and return the scalar value of the augmented Lagrangian penalty
+    function.
+
+    Parameters
+    ----------
+    at_kkt : ReducedKKTVector
+    at_state : StateVector
+    at_ceq : DualVector
+    mu : float
+
+    Returns
+    -------
+    float
+    """
+    aug_lag = objective_value(at_kkt._primal, at_state)
+    aug_lag += at_kkt._dual.inner(at_ceq)
+    aug_lag += 0.5 * at_ceq.inner(at_ceq)
+    return aug_lag
 
 class CompositeVector(object):
     """
@@ -253,15 +275,8 @@ class ReducedKKTVector(CompositeVector):
         primal_work : PrimalVector
             Work vector for intermediate calculations.
         """
+        # evaluate lagrangian total derivative
+        self._primal.equals_lagrangian_total_gradient(
+            x._primal, state, x._dual, adjoint, primal_work)
         # evaluate constraints at the design/state point
         self._dual.equals_constraints(x._primal, state)
-        # evaluate objective partial w.r.t. design variables
-        primal_work.equals_objective_partial(x._primal, state)
-        # evaluate dRdX^T * adjoint
-        dRdX(x._primal, state).T.product(adjoint, self._primal)
-        # assemble the total objective derivative w.r.t. design variables
-        self._primal.plus(primal_work)
-        # evaluate dCdX^T * lambda
-        dCdX(x._primal, state).T.product(x._dual, primal_work)
-        # assemble the total lagrangian derivative w.r.t. design variables
-        self._primal.plus(primal_work)

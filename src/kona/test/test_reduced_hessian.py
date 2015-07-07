@@ -12,8 +12,8 @@ class ReducedHessianTestCase(unittest.TestCase):
     '''Test case for the Reduced Hessian approximation matrix.'''
 
     def setUp(self):
-        #solver = Simple2x2()
-        solver = Spiral()
+        solver = Simple2x2()
+        #solver = Spiral()
         km = KonaMemory(solver)
         self.pf = km.primal_factory
         self.sf = km.state_factory
@@ -40,8 +40,8 @@ class ReducedHessianTestCase(unittest.TestCase):
         state_work = self.sf.generate()
 
         # calculate total derivative at current design
-        init_design = 3*np.pi
-        #init_design = 1.0
+        #init_design = 3*np.pi
+        init_design = 1.0
         x.equals(init_design)
         state.equals_primal_solution(x)
         adjoint.equals_adjoint_solution(x, state, state_work)

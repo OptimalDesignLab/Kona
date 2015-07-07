@@ -7,7 +7,7 @@ from kona.user import UserSolverIDF
 
 class ScalableIDF(UserSolverIDF):
 
-    def configure(self, alpha, mu, nState, initDesign, cout = True):
+    def __init__(self, alpha, mu, nState, initDesign, cout = True):
         # check if number of design variables is even
         if len(initDesign)%2 != 0:
             raise ValueError('ERROR: Odd number of design variables!')
@@ -16,8 +16,8 @@ class ScalableIDF(UserSolverIDF):
         # initialize the discipline solver
         self.solver = MDODiscipline(len(self.startFrom)/2, nState, alpha)
         # allocate optimization storage and sizing
-        self.__init__(len(self.startFrom),
-                      2*self.solver.nState)
+        super(ScalableIDF, self).__init__(
+            len(self.startFrom), 2*self.solver.nState, 0)
         # store the coupling strength parameters
         self.mu = mu
         # preconditioner call counter for cost measurements
@@ -218,7 +218,7 @@ class ScalableIDF(UserSolverIDF):
         dRdTargStateTransProd = numpy.hstack((outUt, outWt))
         # assemble the complete product and store
         out = numpy.hstack((dRdDesignTransProd, dRdTargStateTransProd))
-        result.data = out
+        result.data[:] = out[:]
 
     def multiply_dRdU_T(self, at_design, at_state, vec, result):
         # get the state vector from storage
@@ -253,20 +253,20 @@ class ScalableIDF(UserSolverIDF):
         result.data = numpy.hstack((vecUt, vecWt))
 
     def multiply_dCdU(self, at_design, at_state, vec, result):
-        result.data = -vec.data
+        result.data[:] = -vec.data[:]
 
     def multiply_dCdX_T(self, at_design, at_state, vec, result):
         dCdyTvec = numpy.zeros(self.num_real_design)
-        dCdTargStateTvec = vec.data
+        dCdTargStateTvec = vec.data.copy()
         result.data = numpy.hstack((dCdyTvec, dCdTargStateTvec))
 
     def multiply_dCdU_T(self, at_design, at_state, vec, result):
-        result.data = -vec.data
+        result.data[:] = -vec.data[:]
 
     def eval_dFdX(self, at_design, at_state, result):
         # for this problem, the gradient of the objective function w.r.t the
         # design variables is zero
-        result.data = numpy.zeros(self.num_design)
+        result.data = numpy.zeros(self.num_primal)
 
     def eval_dFdU(self, at_design, at_state, result):
         # take the state vector out from storage
@@ -285,7 +285,7 @@ class ScalableIDF(UserSolverIDF):
         result.data = numpy.hstack((dJdu, dJdw))
 
     def init_design(self, store):
-        initDesign = numpy.zeros(self.num_design)
+        initDesign = numpy.zeros(self.num_primal)
         initDesign[:2*self.solver.nDesign] = self.startFrom
         store.data = initDesign
 
@@ -306,7 +306,7 @@ class ScalableIDF(UserSolverIDF):
         state = at_state.data
         [u, w] = numpy.hsplit(state, 2)
         # get the RHS vector from storage
-        rhs = self.kona_state[rhs]
+        rhs = rhs.data
         [rhsU, rhsW] = numpy.hsplit(rhs, 2)
         rhsU[0] = 0.
         rhsU[-1] = 0.
@@ -372,7 +372,7 @@ class ScalableIDF(UserSolverIDF):
             rhsW[-1] *= 0.5
         # otherwise use whatever rhs index is provided
         else:
-            rhs = self.kona_state[rhs]
+            rhs = rhs.data
             [rhsU, rhsW] = numpy.hsplit(rhs, 2)
             rhsU[0] = 0.
             rhsU[-1] = 0.

@@ -5,9 +5,9 @@ from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix
-from kona.linalg.matrices.hessian.basic import BaseHessian
+from kona.linalg.matrices.hessian.basic import BaseHessian, QuasiNewtonApprox
 from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import calc_epsilon
+from kona.linalg.solvers.util import calc_epsilon, EPS
 
 class ReducedKKTMatrix(BaseHessian):
     """
@@ -87,18 +87,24 @@ class ReducedKKTMatrix(BaseHessian):
         self.dCdU = dCdU()
 
     def _linear_solve(self, rhs_vec, solution, rel_tol=1e-8):
-        self.dRdU.linearize(at_design, at_state)
+        self.dRdU.linearize(self.at_design, self.at_state)
         if not self._use_approx:
             self.dRdU.solve(rhs_vec, solution, rel_tol=rel_tol)
         else:
             self.dRdU.precond(rhs_vec, solution)
 
     def _adjoint_solve(self, rhs_vec, solution, rel_tol=1e-8):
-        self.dRdU.linearize(at_design, at_state)
+        self.dRdU.linearize(self.at_design, self.at_state)
         if not self._use_approx:
             self.dRdU.T.solve(rhs_vec, solution, rel_tol=rel_tol)
         else:
             self.dRdU.T.precond(rhs_vec, solution)
+
+    def set_quasi_newton(self, quasi_newton):
+        if isinstance(quasi_newton, QuasiNewtonApprox):
+            self.quasi_newton = quasi_newton
+        else:
+            raise TypeError('Object is not a valid quasi-Newton approximation')
 
     def set_krylov_solver(self, krylov_solver):
         if isinstance(krylov_solver, KrylovSolver):
@@ -121,7 +127,7 @@ class ReducedKKTMatrix(BaseHessian):
         self._use_approx = True
         return self
 
-    def linearize(self, at_design, at_state, at_dual, at_adjoint):
+    def linearize(self, at_kkt, at_state, at_adjoint):
         """
         An abstracted "linearization" method for the matrix.
 
@@ -142,11 +148,11 @@ class ReducedKKTMatrix(BaseHessian):
             1st order adjoint variables at which the product is evaluated.
         """
         # store the linearization point
-        self.at_design = at_design
+        self.at_design = at_kkt._primal
         self.primal_norm = self.at_design.norm2
         self.at_state = at_state
         self.state_norm = self.at_state.norm2
-        self.at_dual = at_dual
+        self.at_dual = at_kkt._dual
         self.at_adjoint = at_adjoint
 
         # if this is the first ever linearization...
@@ -182,8 +188,11 @@ class ReducedKKTMatrix(BaseHessian):
         # compute reduced gradient at the linearization
         self.reduced_grad.equals_objective_partial(self.at_design, self.at_state)
         self.dRdX.linearize(self.at_design, self.at_state)
-        self.dRdX.T.product(self.at_adjoint, self.primal_work[0])
-        self.reduced_grad.plus(self.primal_work[0])
+        self.dRdX.T.product(self.at_adjoint, self.primal_work)
+        self.reduced_grad.plus(self.primal_work)
+        self.dCdX.linearize(self.at_design, self.at_state)
+        self.dCdX.T.product(self.at_dual, self.primal_work)
+        self.reduced_grad.plus(self.primal_work)
 
     def product(self, in_vec, out_vec):
         """
@@ -202,34 +211,35 @@ class ReducedKKTMatrix(BaseHessian):
         if not isinstance(out_vec, ReducedKKTVector):
             raise TypeError('Result vector is not a ReducedKKTVector')
 
+        # clear output vector
+        out_vec.equals(0.0)
+
         # calculate appropriate FD perturbation for design
         epsilon_fd = calc_epsilon(self.primal_norm, in_vec._primal.norm2)
 
         # assemble RHS for first adjoint system
         self.dRdX.linearize(self.at_design, self.at_state)
-        self.dRdX.T.product(in_vec._primal, self.state_work[0])
+        self.dRdX.product(in_vec._primal, self.state_work[0])
         self.state_work[0].times(-1.0)
-
-        # calculate tolerance for adjoint solution
-        #rel_tol = self.product_tol*self.product_fac/self.state_work[0].norm2
 
         # perform the adjoint solution
         self.w_adj.equals(0.0)
-        #self.dRdU.linearize(self.at_design, self.at_state)
-        #self.dRdU.solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
+        # rel_tol = self.product_tol*self.product_fac/self.state_work[0].norm2
+        rel_tol = 1e-8
         self._linear_solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
 
         # find the adjoint perturbation by solving the linearized dual equation
-        self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec._design)
+        self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec._primal)
         self.state_work[2].equals_ax_p_by(1.0, self.at_state, epsilon_fd, self.w_adj)
 
         # first part of LHS: evaluate the adjoint equation residual at
         # perturbed design and state
         self.state_work[0].equals_objective_partial(self.pert_design, self.state_work[2])
-        self.dRdU.linearize(self.pert_design, self.state_work[2])
+        pert_state = self.state_work[2] # aliasing for readability
+        self.dRdU.linearize(self.pert_design, pert_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[1])
         self.state_work[0].plus(self.state_work[1])
-        self.dCdU.linearize(self.pert_design, self.state_work[2])
+        self.dCdU.linearize(self.pert_design, pert_state)
         self.dCdU.T.product(self.at_dual, self.state_work[1])
         self.state_work[0].plus(self.state_work[1])
 
@@ -248,35 +258,34 @@ class ReducedKKTMatrix(BaseHessian):
         # assemble final RHS
         self.state_work[0].minus(self.state_work[1])
 
-        # calculate tolerance for adjoint solution
-        #rel_tol = self.product_tol*self.product_fac/self.state_work[0].norm2
-
         # perform the adjoint solution
         self.lambda_adj.equals(0.0)
-        #self.dRdU.linearize(self.at_design, self.at_state)
-        #self.dRdU.T.solve(self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
+        # rel_tol = self.product_tol*self.product_fac/self.state_work[0].norm2
+        rel_tol = 1e-8
         self._adjoint_solve(self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
 
         # evaluate first order optimality conditions at perturbed design, state
         # and adjoint:
-        # g = df/dX + lag_mult*dC/dX + (state + eps_fd*lambda_adj)*dR/dX
+        # g = df/dX + lag_mult*dC/dX + (adjoint + eps_fd*lambda_adj)*dR/dX
         self.state_work[1].equals_ax_p_by(1.0, self.at_adjoint, epsilon_fd, self.lambda_adj)
-        out_vec._primal.equals_objective_partial(self.pert_design, self.state_work[2])
-        self.dRdX.linearize(self.pert_design, self.state_work[2])
-        self.dRdX.T.product(self.state_work[1], self.primal_work)
+        pert_adjoint = self.state_work[1] # aliasing for readability
+        out_vec._primal.equals_objective_partial(self.pert_design, pert_state)
+        self.dRdX.linearize(self.pert_design, pert_state)
+        self.dRdX.T.product(pert_adjoint, self.primal_work)
         out_vec._primal.plus(self.primal_work)
-        self.dCdX.linearize(self.pert_design, self.state_work[2])
+        self.dCdX.linearize(self.pert_design, pert_state)
         self.dCdX.T.product(self.at_dual, self.primal_work)
-        out_vec._primal.plus(self.primal_work)
-        self.dCdX.linearize(self.at_design, self.at_state)
-        self.dCdX.T.product(in_vec._dual, self.primal_work)
-        self.primal_work.times(epsilon_fd)
         out_vec._primal.plus(self.primal_work)
 
         # take difference with unperturbed conditions
         out_vec._primal.times(self.grad_scale)
         out_vec._primal.minus(self.reduced_grad)
         out_vec._primal.divide_by(epsilon_fd)
+
+        # the dual part needs no FD
+        self.dCdX.linearize(self.at_design, self.at_state)
+        self.dCdX.T.product(in_vec._dual, self.primal_work)
+        out_vec._primal.plus(self.primal_work)
 
         # evaluate dual part of product:
         # C = dC/dX*in_vec + dC/dU*w_adj
@@ -286,6 +295,10 @@ class ReducedKKTMatrix(BaseHessian):
         self.dCdU.product(self.w_adj, self.dual_work)
         out_vec._dual.plus(self.dual_work)
         out_vec._dual.times(self.ceq_scale)
+
+        # add globalization if necessary
+        if self.lamb > EPS:
+            out_vec._primal.equals_ax_p_by(1., out_vec._primal, self.lamb*self.scale, in_vec._primal)
 
         # if this is a single product, we reset the approximation flag
         if self._reset_approx:

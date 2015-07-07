@@ -250,8 +250,8 @@ class PrimalVector(KonaVector):
         dual_vector : DualVector
             Source vector for target state variable data.
         """
-        self._memory.solver.copy_dual_to_targstate(dual_vector._data,
-                                                   self._data)
+        self._memory.solver.copy_dual_to_targstate(
+            dual_vector._data, self._data)
 
     def equals_init_design(self):
         """
@@ -292,10 +292,8 @@ class PrimalVector(KonaVector):
         """
         # first compute the objective partial
         primal_work.equals_objective_partial(at_primal, at_state)
-        # construct the residual jacobian
-        jacobian = dRdX(at_primal, at_state)
         # multiply the adjoint variables with the jacobian
-        jacobian.T.product(at_adjoint, self)
+        dRdX(at_primal, at_state).T.product(at_adjoint, self)
         # add it to the objective partial
         self.plus(primal_work)
 
@@ -319,10 +317,8 @@ class PrimalVector(KonaVector):
         """
         # first compute the total derivative of the objective
         self.equals_total_gradient(at_primal, at_state, at_adjoint, primal_work)
-        # initialize the linearized constraint jacobian
-        cnstr_jac = dCdX(at_primal, at_state)
         # multiply the lagrange multipliers by the constraint jacobian
-        cnstr_jac.T.product(at_dual, primal_work)
+        dCdX(at_primal, at_state).T.product(at_dual, primal_work)
         # add it to the total objective derivative
         self.plus(primal_work)
 
@@ -344,8 +340,7 @@ class StateVector(KonaVector):
             Current state point.
         """
         self._memory.solver.eval_dFdU(
-            at_primal._data, at_state._data, self._data
-            )
+            at_primal._data, at_state._data, self._data)
 
     def equals_residual(self, at_primal, at_state):
         """
@@ -358,9 +353,8 @@ class StateVector(KonaVector):
         at_state : StateVector
             Current state point.
         """
-        self._memory.solver.eval_residual(at_primal._data,
-                                          at_state._data,
-                                          self._data)
+        self._memory.solver.eval_residual(
+            at_primal._data, at_state._data, self._data)
 
     def equals_primal_solution(self, at_primal):
         """
@@ -393,10 +387,9 @@ class StateVector(KonaVector):
         state_work : StateVector
             Temporary work vector of State type.
         """
-        jacobian = dRdU(at_primal, at_state)
         state_work.equals_objective_partial(at_primal, at_state)
         state_work.times(-1) # negative of the objective partial (-dF/dU)
-        jacobian.T.solve(state_work, self) # this is the adjoint solution now
+        dRdU(at_primal, at_state).T.solve(state_work, self)
 
 class DualVector(KonaVector):
     """
@@ -413,7 +406,8 @@ class DualVector(KonaVector):
         primal_vector : PrimalVector
             Source vector for target state variable data.
         """
-        self._memory.solver.copy_targstate_to_dual(primal_vector._data, self._data)
+        self._memory.solver.copy_targstate_to_dual(
+            primal_vector._data, self._data)
 
     def equals_constraints(self, at_primal, at_state):
         """
@@ -427,6 +421,5 @@ class DualVector(KonaVector):
         at_state : StateVector
             Current state point.
         """
-        self._memory.solver.eval_ceq(at_primal._data,
-                                     at_state._data,
-                                     self._data)
+        self._memory.solver.eval_ceq(
+            at_primal._data, at_state._data, self._data)

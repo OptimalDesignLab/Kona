@@ -604,9 +604,9 @@ class UserSolverIDF(UserSolver):
     """
 
 
-    def __init__(self, num_design, num_state, num_ceq, allocator=None):
+    def __init__(self, num_design, num_state, num_real_ceq, allocator=None):
         self.num_real_design = num_design
-        self.num_real_ceq = num_ceq
+        self.num_real_ceq = num_real_ceq
         super(UserSolverIDF, self).__init__(
             self.num_real_design + num_state,
             num_state,
