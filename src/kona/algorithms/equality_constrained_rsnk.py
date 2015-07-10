@@ -17,7 +17,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
     def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
-        super(ReducedSpaceNewtonKrylov, self).__init__(
+        super(EqualityConstrainedRSNK, self).__init__(
             primal_factory, state_factory, dual_factory, optns
         )
 
@@ -135,9 +135,9 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         P_norm = self.primal_factory.generate()
         P_tang = self.primal_factory.generate()
         init_design = self.primal_factory.generate()
-        design_work = []
+        primal_work = []
         for i in xrange(3):
-            design_work.append(self.primal_factory.generate())
+            primal_work.append(self.primal_factory.generate())
 
         # generate state vectors
         state = self.state_factory.generate()
@@ -250,7 +250,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             dLdX.times(-1)
 
             # linearize the KKT matrix
-            self.KKT_matrix.linearize(X._primal, state, X._dual, adjoint)
+            self.KKT_matrix.linearize(X, state, adjoint)
 
             # trigger the krylov solution
             self.krylov.solve(self.mat_vec, dLdX, P, self.precond)
@@ -261,7 +261,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             max_filter_iter = 3
             for j in xrange(max_filter_iter):
                 # save old design and state before updating
-                design_work[0].equals(X._primal)
+                primal_work[0].equals(X._primal)
                 state_save.equals(state)
                 # update design
                 X._primal.plus(P._primal)
@@ -303,7 +303,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
                 # if we get here, filter dominated the point
                 # reset and shrink radius
-                X._primal.equals(design_work[0])
+                X._primal.equals(primal_work[0])
                 state.equals(state_save)
                 self.radius *= 0.25
                 if (j == max_filter_iter-1):

@@ -94,17 +94,19 @@ class FLECS(KrylovSolver):
     def _reset(self):
         # clear out all the vectors stored in V
         # the data goes back to the stack and is used again later
-        for i in xrange(len(self.V)):
-            del self.V[i]._primal
-            del self.V[i]._dual
-            del self.V[i]
+        for vector in self.V:
+            del vector._primal
+            del vector._dual
+            del vector
+        self.V = []
 
         # clear out all vectors stored in Z
         # the data goes back to the stack and is used again later
-        for j in xrange(len(self.Z)):
-            del self.Z[i]._primal
-            del self.Z[i]._dual
-            del self.Z[i]
+        for vector in self.Z:
+            del vector._primal
+            del vector._dual
+            del vector
+        self.Z = []
 
     def _write_header(self, norm0, grad0, feas0):
         self.out_file.write(
@@ -152,7 +154,7 @@ class FLECS(KrylovSolver):
         # construct the primal solution, leave the dual solution untouched
         step._primal.equals(0.0)
         for k in xrange(self.iters):
-            step._primal.equals_ax_p_by(1.0. step._primal, self.y[k], self.Z[k]._primal)
+            step._primal.equals_ax_p_by(1.0, step._primal, self.y[k], self.Z[k]._primal)
 
     def solve_subspace_problems(self):
         # perform some vector/matrix deep copies to preserve previous data
@@ -447,15 +449,15 @@ class FLECS(KrylovSolver):
         res_norm = sqrt(max(res_norm, 0.0))
 
         # write into solution history
-        self.hist_file.write('# FLECS resolving at new radius\n')
+        self.out_file.write('# FLECS resolving at new radius\n')
         self._write_history(res_norm/norm0,
             self.omega/(self.grad_scale*grad0),
             self.gamma/(self.feas_scale*feas0),
             self.gamma_aug/(self.feas_scale*feas0))
         if self.neg_curv:
-            self.hist_file.write('# negative curvature suspected\n')
+            self.out_file.write('# negative curvature suspected\n')
         if self.trust_active:
-            self.hist_file.write('# trust-radius constraint active\n')
+            self.out_file.write('# trust-radius constraint active\n')
 
         # always use composite-step approach in re-solve
         x.equals(0.0)
