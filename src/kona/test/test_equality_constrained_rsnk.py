@@ -13,7 +13,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
         km = KonaMemory(solver)
 
         optns = {
-            'max_iter' : 100,
+            'max_iter' : 50,
             'primal_tol' : 1e-6,
             'constraint_tol' : 1e-6,
 
@@ -44,10 +44,12 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             },
         }
 
-        rsnk = EqualityConstrainedRSNK(
+        algorithm = EqualityConstrainedRSNK(
             km.primal_factory, km.state_factory, km.dual_factory, optns)
         km.allocate_memory()
-        rsnk.solve()
+        algorithm.solve()
+
+        print solver.curr_design
 
         #diff = abs(solver.curr_design - numpy.ones(num_design))
         #self.assertTrue(max(diff) < 1e-5)

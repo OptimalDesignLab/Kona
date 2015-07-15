@@ -17,7 +17,7 @@ class SimpleConstrained(UserSolver):
         x = at_design.data[0]
         y = at_design.data[1]
         z = at_design.data[2]
-        store_here.data[0] = x**2 + y**2 + z**2
+        store_here.data[0] = x**2 + y**2 + z**2 - 3
 
     def multiply_dCdX(self, at_design, at_state, in_vec, out_vec):
         x = at_design.data[0]

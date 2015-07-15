@@ -94,17 +94,17 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.hist_file.write(
             '# Kona equality-constrained RSNK convergence history file\n' + \
             '# iters' + ' '*5 + \
-            '       cost' + ' '*5 + \
-            ' optimality' + ' '*5 + \
-            'feasibility' + ' '*5 + \
-            '  objective' + ' '*5 + \
-            '   mu param' + '\n'
+            '   cost' + ' '*5 + \
+            'optimality  ' + ' '*5 + \
+            'feasibility ' + ' '*5 + \
+            'objective   ' + ' '*5 + \
+            'mu param    ' + '\n'
         )
 
     def _write_history(self, opt, feas, obj, mu):
         self.hist_file.write(
-            ' %6i'%self.iter + ' '*5 + \
-            '%11e'%self.primal_factory._memory.cost + ' '*5 + \
+            '%7i'%self.iter + ' '*5 + \
+            '%7i'%self.primal_factory._memory.cost + ' '*5 + \
             '%11e'%opt + ' '*5 + \
             '%11e'%feas + ' '*5 + \
             '%11e'%obj + ' '*5 + \
