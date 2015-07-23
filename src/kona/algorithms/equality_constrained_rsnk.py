@@ -257,72 +257,74 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # START FILTER LOOP
             ######################
-            filter_success = False
-            max_filter_iter = 3
-            for j in xrange(max_filter_iter):
-                # save old design and state before updating
-                primal_work[0].equals(X._primal)
-                state_save.equals(state)
-                # update design
-                X._primal.plus(P._primal)
-                if state.equals_primal_solution(X._primal):
-                    # state equation solution was successful so try the filter
-                    obj = objective_value(X._primal, state)
-                    dual_work.equals_constraints(X._primal, state)
-                    cnstr_norm = dual_work.norm2
-                    if self.filter.dominates(obj, cnstr_norm):
-                        if (j == 0) and self.krylov.trust_active:
-                            self.radius = min(2.*self.radius, self.max_radius)
-                        filter_success = True
-                        break
-
-                if (j == 0):
-                    # try a second order correction
-                    self.info_file.write('attempting a second-order correction...')
-                    P.equals(0.0)
-                    self.krylov.rel_tol = krylov_tol
-                    self.krylov.mu = self.mu_init
-                    self.grad_tol = 0.9*grad_norm
-                    self.feas_tol = 0.9*feas_norm
-                    self.krylov.out_file.write(
-                        '#-------------------------------------------------\n' + \
-                        '# Second-order correction (iter = %i)\n'%self.iter)
-                    dual_work.times(-1)
-                    self.krylov.apply_correction(dual_work, P)
-                    X._primal.plus(P._primal)
-                    if state.equals_primal_solution(X._primal):
-                        # state equation solution was successful so try the filter
-                        obj = objective_value(X._primal, state)
-                        dual_work.equals_constraints(X._primal, state)
-                        cnstr_norm = dual_work.norm2
-                        if self.filter.dominates(obj, cnstr_norm):
-                            filter_success = True
-                            self.info_file.write('successful\n')
-                            break
-                        self.info_file.write('unsuccessful\n')
-
-                # if we get here, filter dominated the point
-                # reset and shrink radius
-                X._primal.equals(primal_work[0])
-                state.equals(state_save)
-                self.radius *= 0.25
-                if (j == max_filter_iter-1):
-                    break
-
-                # resolve with reduced radius
-                self.krylov.radius = self.radius
-                self.krylov.rel_tol = krylov_tol
-                self.krylov.mu = mu
-                self.krylov.re_solve(dLdX, P)
+            # filter_success = False
+            # max_filter_iter = 3
+            # for j in xrange(max_filter_iter):
+            #     # save old design and state before updating
+            #     primal_work[0].equals(X._primal)
+            #     state_save.equals(state)
+            #     # update design
+            #     X._primal.plus(P._primal)
+            #     if state.equals_primal_solution(X._primal):
+            #         # state equation solution was successful so try the filter
+            #         obj = objective_value(X._primal, state)
+            #         dual_work.equals_constraints(X._primal, state)
+            #         cnstr_norm = dual_work.norm2
+            #         if self.filter.dominates(obj, cnstr_norm):
+            #             if (j == 0) and self.krylov.trust_active:
+            #                 self.radius = min(2.*self.radius, self.max_radius)
+            #             filter_success = True
+            #             break
+            #
+            #     if (j == 0):
+            #         # try a second order correction
+            #         self.info_file.write('attempting a second-order correction...')
+            #         P.equals(0.0)
+            #         self.krylov.rel_tol = krylov_tol
+            #         self.krylov.mu = self.mu_init
+            #         self.grad_tol = 0.9*grad_norm
+            #         self.feas_tol = 0.9*feas_norm
+            #         self.krylov.out_file.write(
+            #             '#-------------------------------------------------\n' + \
+            #             '# Second-order correction (iter = %i)\n'%self.iter)
+            #         dual_work.times(-1)
+            #         self.krylov.apply_correction(dual_work, P)
+            #         X._primal.plus(P._primal)
+            #         if state.equals_primal_solution(X._primal):
+            #             # state equation solution was successful so try the filter
+            #             obj = objective_value(X._primal, state)
+            #             dual_work.equals_constraints(X._primal, state)
+            #             cnstr_norm = dual_work.norm2
+            #             if self.filter.dominates(obj, cnstr_norm):
+            #                 filter_success = True
+            #                 self.info_file.write('successful\n')
+            #                 break
+            #             self.info_file.write('unsuccessful\n')
+            #
+            #     # if we get here, filter dominated the point
+            #     # reset and shrink radius
+            #     X._primal.equals(primal_work[0])
+            #     state.equals(state_save)
+            #     self.radius *= 0.25
+            #     if (j == max_filter_iter-1):
+            #         break
+            #
+            #     # resolve with reduced radius
+            #     self.krylov.radius = self.radius
+            #     self.krylov.rel_tol = krylov_tol
+            #     self.krylov.mu = mu
+            #     self.krylov.re_solve(dLdX, P)
 
             ###########################
             # END FILTER LOOP
 
             # if filter succeeded, then update multipliers
-            if filter_success:
-                X._dual.plus(P._dual)
+            # if filter_success:
+            #     X._dual.plus(P._dual)
 
             # recalculate adjoint
+            X.plus(P)
+            state.equals_primal_solution(X._primal)
             adjoint.equals_adjoint_solution(X._primal, state, state_work[0])
 
             # write current solution

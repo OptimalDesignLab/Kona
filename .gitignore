@@ -82,3 +82,7 @@ target/
 # ignore temporary files created by emacs, etc.
 *~
 \#*
+
+# PyCharm temporary folders and files
+.idea/
+nosetests.json

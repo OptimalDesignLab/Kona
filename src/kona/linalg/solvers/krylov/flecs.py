@@ -138,10 +138,10 @@ class FLECS(KrylovSolver):
         )
 
     def apply_correction(self, ceq, step):
-        # perform some deep copies to preserve previous data
-        ZtZ_prim_r = numpy.copy( self.ZtZ_prim[ 0:self.iters, 0:self.iters ] )
-        VtV_dual_r = numpy.copy( self.VtV_dual[ 0:self.iters, 0:self.iters+1 ] )
-        H_r = numpy.copy( self.H[ 0:self.iters+1, 0:self.iters ])
+        # perform some aliasing to improve readability
+        ZtZ_prim_r = self.ZtZ_prim[ 0:self.iters, 0:self.iters ]
+        VtV_dual_r = self.VtV_dual[ 0:self.iters, 0:self.iters+1 ]
+        H_r = self.H[ 0:self.iters+1, 0:self.iters ]
 
         # construct and solve the subspace problem
         VtVH = VtV_dual_r.dot(H_r)
@@ -168,10 +168,13 @@ class FLECS(KrylovSolver):
         ZtZ_prim_r = self.ZtZ_prim[ 0:self.iters, 0:self.iters ]
 
         # solve the reduced (primal-dual) problem (i.e.: FGMRES solution)
-        y_r, _, _, _ = numpy.linalg.lstsq(H_r, g_r)
+        y_r, _ , _, _ = numpy.linalg.lstsq(H_r, g_r)
+        # make sure the data is persistent
+        self.y[0:self.iters] = y_r[:]
 
         # compute residuals
         res_red = H_r.dot(y_r) - g_r
+        self.beta = numpy.linalg.norm(res_red)
         self.gamma = numpy.inner(res_red, VtV_dual_r.dot(res_red))
         self.omega = -self.gamma
         self.gamma = sqrt(max(self.gamma, 0.0))
@@ -179,43 +182,38 @@ class FLECS(KrylovSolver):
 
         # find the Hessian of the objective and the Hessian of the augmented
         # Lagrangian in the reduced space
-        Hess_red = VtZ_r.T.dot(H_r) - VtZ_dual_r.T.dot(H_r) \
-            - H_r.T.dot(VtZ_dual_r)
+        Hess_red = VtZ_r.T.dot(H_r) - VtZ_dual_r.T.dot(H_r) - H_r.T.dot(VtZ_dual_r)
         VtVH = VtV_dual_r.dot(H_r)
         Hess_aug = self.mu * H_r.T.dot(VtVH)
         Hess_aug += Hess_red
-        if self.iters == 1:
-            self.out_file.write('# Hess_aug[0, 0] = %e\n'%Hess_aug[0, 0])
 
         # compute the RHS for the augmented Lagrangian problem
         rhs_aug = numpy.zeros(self.iters)
         for k in xrange(self.iters):
             rhs_aug[k] = -self.g[0]*(self.VtZ_prim[0, k] + self.mu*VtVH[0, k])
-        if self.iters == 1:
-            self.out_file.write('# rhs_aug[0] = %e\n'%rhs_aug[0])
 
         lamb = 0.0
         radius_aug = self.radius
         try:
             # compute the transformation to apply trust-radius directly
             rhs_tmp = numpy.copy(rhs_aug)
-            UTU = numpy.linalg.cholesky(ZtZ_prim_r).T
             # NOTE: Numpy Cholesky always returns a lower triangular matrix
             # Since UTU is presumed upper triangular, we transpose it here
+            UTU = numpy.linalg.cholesky(ZtZ_prim_r).T
             rhs_aug = solve_tri(UTU.T, rhs_tmp, lower=True)
 
             for j in xrange(self.iters):
-                rhs_tmp[:] = numpy.reshape(Hess_aug[:,j], rhs_tmp.shape)[:]
+                rhs_tmp[:] = Hess_aug[:,j]
                 vec_tmp = solve_tri(UTU.T, rhs_tmp, lower=True)
-                Hess_aug[:, j] = numpy.reshape(vec_tmp[:], Hess_aug[:, j].shape)[:]
+                Hess_aug[:, j] = vec_tmp[:]
 
             for j in xrange(self.iters):
-                rhs_tmp[:] = numpy.reshape(Hess_aug[:,j], rhs_tmp.shape)[:]
+                rhs_tmp[:] = Hess_aug[j,:]
                 vec_tmp = solve_tri(UTU.T, rhs_tmp, lower=True)
-                Hess_aug[j, :] = numpy.reshape(vec_tmp[:], Hess_aug[j, :].shape)[:]
+                Hess_aug[j,:] = vec_tmp[:]
 
             vec_tmp, lamb, _ = solve_trust_reduced(Hess_aug, rhs_aug, radius_aug)
-            self.y_aug = solve_tri(UTU, vec_tmp)
+            self.y_aug = solve_tri(UTU, vec_tmp, lower=False)
 
         except numpy.linalg.LinAlgError:
             # if Cholesky factorization fails, compute a conservative radius
@@ -352,15 +350,13 @@ class FLECS(KrylovSolver):
                 self.ZtZ_prim[k, i] = self.Z[k]._primal.inner(self.Z[i]._primal)
                 self.ZtZ_prim[i, k] = self.Z[i]._primal.inner(self.Z[k]._primal)
 
-                self.VtV_dual[k, i] = self.V[k]._dual.inner(self.V[i]._dual)
+                self.VtV_dual[k, i+1] = self.V[k]._dual.inner(self.V[i+1]._dual)
                 self.VtV_dual[i+1, k] = self.V[i+1]._dual.inner(self.V[k]._dual)
 
             self.VtV_dual[i+1, i+1] = self.V[i+1]._dual.inner(self.V[i+1]._dual)
 
             # solve the reduced problems and compute the residual
             self.solve_subspace_problems()
-            if i == 0:
-                self.out_file.write('# y_aug[%i] = %e\n'%(i, self.y_aug[i]))
 
             # calculate the new residual norm
             res_norm = (self.gamma/self.feas_scale)**2 + \
@@ -371,7 +367,7 @@ class FLECS(KrylovSolver):
             self._write_history(res_norm/norm0,
                 self.omega/(self.grad_scale*grad0),
                 self.gamma/(self.feas_scale*feas0),
-                    self.gamma_aug/(self.feas_scale*feas0))
+                self.gamma_aug/(self.feas_scale*feas0))
 
             # check for convergence
             if (self.gamma < self.rel_tol*self.feas_scale*feas0) and \
@@ -445,8 +441,8 @@ class FLECS(KrylovSolver):
         norm0 = sqrt(grad0**2 + feas0**2)
 
         # reset some prior data and re-solve the subspace problem
-        self.y_aug = numpy.ndarray([])
-        self.y_mult = numpy.ndarray([])
+        self.y_aug = numpy.array([])
+        self.y_mult = numpy.array([])
         self.neg_curv = False
         self.trust_active = False
         self.radius /= self.grad_scale

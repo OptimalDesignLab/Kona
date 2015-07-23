@@ -204,13 +204,18 @@ def solve_trust_reduced(H, g, radius):
     eig_vals, eig = eigen_decomp(H)
     eigmin = eig_vals[0]
     lam = 0.0
+    n = H.shape[0]
     if eigmin > 1e-12:
         # Hessian is semi-definite on span(Z), so solve for y and check if ||y||
         # is in trust region radius
         y, fnc, dfnc = secular_function(H, g, lam, radius)
         if (fnc < 0.0): # i.e. norm_2(y) < raidus
             # compute predicted decrease in objective and return
-            pred = -y.dot(0.5*np.array(H.dot(y))[0] + g)
+            pred = 0.0
+            for i in xrange(n):
+                for j in xrange(n):
+                    pred -= 0.5*y[i]*H[i,j]*y[j]
+                pred -= g[i]*y[i]
             return y, lam, pred
 
     # if we get here, either the Hessian is semi-definite or ||y|| > radius
@@ -239,17 +244,20 @@ def solve_trust_reduced(H, g, radius):
         y, fnc_l, dfnc = secular_function(H, g, lam_l, radius)
 
     # Apply (safe-guarded) Newton's method to find lam
-    max_Newt = 50
-    lam = 0.5*(lam_l + lam_h)
     dlam_old = abs(lam_h - lam_l)
     dlam = dlam_old
+
+    max_Newt = 50
     tol = np.sqrt(EPS)
-    lam_tol = tol*dlam
+    lam_tol = np.sqrt(EPS)*dlam
+
+    lam = 0.5*(lam_l + lam_h)
     y, fnc, dfnc = secular_function(H, g, lam, radius)
     res0 = abs(fnc)
+
     for l in xrange(max_Newt):
         # check if y lies on the trust region; if so, exit loop
-        if abs(fnc) < tol*res0 or abs(dlam) < lam_tol:
+        if (abs(fnc) < tol*res0) or (abs(dlam) < lam_tol):
             break
         # choose safe-guarded step
         if ((lam - lam_h)*dfnc - fnc)*((lam - lam_l)*dfnc - fnc) > 0.0 or \
@@ -315,30 +323,36 @@ def secular_function(H, g, lam, radius):
 
     # perform Cholesky factorization, with regularization if necessary
     diag = max(1.0, lam)*0.01*EPS
+    semidefinite = True
+    reg_iter = 0
     max_iter = 20
-    for reg_iter in xrange(max_iter):
-        H_hat = H + np.eye(H.shape[0])*(lam + diag)
+    while semidefinite:
+        reg_iter += 1
         try:
-            L = np.linalg.cholesky(H_hat)
-            break
+            H_hat = H + np.eye(H.shape[0])*(lam + diag)
+            UTU = np.linalg.cholesky(H_hat).T
+            semidefinite = False
         except np.linalg.LinAlgError:
+            #print '        secular_function: np.linalg.cholesky() failed, adding %f to diagonal...'%diag
             diag *= 100.0
-    if reg_iter+1 == max_iter:
+        if reg_iter >= max_iter:
+            break
+    if semidefinite:
         raise Exception('Regularization of Cholesky factorization failed')
 
-    y = -g.copy() # minus sign to move to rhs
-    work = solve_tri(L, y, lower=True)
-    y = solve_tri(L.T, work, lower=False)
+    work = solve_tri(UTU.T, g, lower=True)
+    y = solve_tri(UTU, work, lower=False)
+    y *= -1.
 
     # compute the secular function
     norm_y = np.linalg.norm(y)
     fnc = 1.0/radius - 1.0/norm_y
 
     # compute its derivative
-    work = solve_tri(L, y, lower=True)
+    work = solve_tri(UTU.T, y, lower=True)
     norm_work = np.linalg.norm(work)
     dfnc = norm_work/norm_y
-    dfnc = -(dfnc*dfnc)/norm_y
+    dfnc = -(dfnc**2)/norm_y
 
     return y, fnc, dfnc
 
