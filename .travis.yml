@@ -1,32 +1,35 @@
 sudo: false
+
 language: python
 python:
   - "2.7"
+
 notifications:
   email: false
 
-# Setup anaconda
+cache: apt
+
+addons:
+  apt:
+    packages:
+      - libatlas-dev
+      - libatlas-base-dev
+      - liblapack-dev
+      - gfortran
+
 before_install:
-  - "wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh"
-  - "chmod +x miniconda.sh"
-  - "./miniconda.sh -b"
-  - "export PATH=/home/travis/miniconda/bin:$PATH"
-  - "conda update --yes conda"
-  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
-  # - "sudo rm -rf /dev/shm"
-  # - "sudo ln -s /run/shm /dev/shm"
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - conda update --yes conda
 
-# Install packages
 install:
-  - "conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy nose"
-  # Coverage packages are on my binstar channel
-  - "conda install --yes -c dan_blanchard python-coveralls coverage nose-cov"
-  - "python setup.py install"
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy nose
+  - pip install coveralls coverage
+  - python setup.py install
 
-# Run test
 script:
-  - "nosetests --with-coverage --cover-package=kona --logging-level=INFO"
+  - coverage run --source=kona setup.py test
 
-# Calculate coverage
 after_success:
-  - "coveralls --config_file .coveragerc"
+  - coveralls --config_file .coveragerc
