@@ -2,7 +2,7 @@ import unittest
 
 import numpy
 
-from kona.examples import ScalableIDF, SimpleConstrained, Constrained2x2
+from kona.examples import Constrained2x2
 from kona.linalg.memory import KonaMemory
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.vectors.composite import ReducedKKTVector, augmented_lagrangian
