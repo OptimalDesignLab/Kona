@@ -1,6 +1,9 @@
 [run]
 branch = True
 source = kona
+omit =
+    */src/kona/test/*
+    */src/kona/examples/*
 
 [report]
 exclude_lines =
