@@ -25,11 +25,11 @@ before_install:
 
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy nose
-  - pip install coveralls coverage
+  - pip install python-coveralls coverage
   - python setup.py install
 
 script:
   - nosetests --with-coverage --cover-package=kona
 
 after_success:
-  - coveralls
+  - coveralls --config_file .coveragerc
