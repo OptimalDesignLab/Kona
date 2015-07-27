@@ -4,6 +4,7 @@ source = kona
 omit =
     */src/kona/test/*
     */src/kona/examples/*
+    */__init__.py
 
 [report]
 exclude_lines =
