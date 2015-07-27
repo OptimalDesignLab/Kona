@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = Kona
+source = kona
 omit =
     */python?.?/*
     */lib-python/?.?/*.py

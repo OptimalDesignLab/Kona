@@ -32,4 +32,4 @@ script:
   - nosetests --with-coverage --cover-package=kona
 
 after_success:
-  - coveralls --config_file .coveragerc
+  - coveralls
