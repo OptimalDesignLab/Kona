@@ -1,10 +1,9 @@
 import os.path
 
-from kona.options import defaults
-
 from kona.user import UserSolver
-from kona.algorithms import OptimizationAlgorithm
+from kona.algorithms import OptimizationAlgorithm, Verifier
 from kona.linalg.memory import KonaMemory
+from kona.options import defaults
 
 #from kona.linalg.vectors import objective_value
 
@@ -35,22 +34,32 @@ class Optimizer(object):
         self._memory = KonaMemory(solver)
         # modify defaults either from config file or from given dictionary
         self._read_options(optns)
-        # get two mandatory vector factories
+        # get vector factories
         primal_factory = self._memory.primal_factory
         state_factory = self._memory.state_factory
-        # check to see if we have constraints
         if solver.num_dual > 0:
-            # if we do, recover a dual factory
             dual_factory = self._memory.dual_factory
-            # initialize constrained algorithm
-            self._algorithm = algorithm(
-                primal_factory, state_factory, dual_factory, self._optns)
         else:
-            # otherwise initialize unconstrained algorithm
-            self._algorithm = algorithm(primal_factory, state_factory, self._optns)
+            dual_factory = None
+        # check if this is a verification
+        if algorithm is Verify:
+            self._optns['verify']['info_file'] = self._optns['info_file']
+            self._algorithm = Verify(
+                [primal_factory, state_factory, dual_factory],
+                solver, self._optns['verify'])
+        else:
+            # otherwise initialize the optimization algorithm
+            if dual_factory is not None:
+                self._algorithm = algorithm(
+                    primal_factory, state_factory, dual_factory, self._optns)
+            else:
+                self._algorithm = algorithm(
+                    primal_factory, state_factory, self._optns)
 
     def _read_options(self, optns):
+        # get default options
         self._optns = defaults.copy()
+        # update default options with the given dictionary
         if isinstance(optns, dict):
             self._optns.update(optns)
             self._optns['info_file'] = \

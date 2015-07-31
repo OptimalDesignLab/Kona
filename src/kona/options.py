@@ -121,4 +121,15 @@ defaults = {
         'grad_scale'    : 1.0, # FLECS
         'feas_scale'    : 1.0, # FLECS
     },
+
+    'verify' : {
+        'primal_vec'    : True,
+        'state_vec'     : True,
+        'dual_vec'      : False,
+        'gradients'     : True,
+        'pde_jac'       : True,
+        'cnstr_jac'     : False,
+        'red_grad'      : True,
+        'lin_solve'     : False,
+    },
 }
