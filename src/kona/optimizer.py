@@ -42,9 +42,10 @@ class Optimizer(object):
         else:
             dual_factory = None
         # check if this is a verification
-        if algorithm is Verify:
-            self._optns['verify']['info_file'] = self._optns['info_file']
-            self._algorithm = Verify(
+        if algorithm is Verifier:
+            self._optns['verify']['out_file'] = \
+                self._memory.open_file(self._optns['verify']['out_file'])
+            self._algorithm = Verifier(
                 [primal_factory, state_factory, dual_factory],
                 solver, self._optns['verify'])
         else:

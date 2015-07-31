@@ -131,5 +131,6 @@ defaults = {
         'cnstr_jac'     : False,
         'red_grad'      : True,
         'lin_solve'     : False,
+        'out_file'      : sys.stdout,
     },
 }

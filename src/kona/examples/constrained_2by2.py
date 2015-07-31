@@ -13,7 +13,7 @@ class Constrained2x2(UserSolver):
         self.dRdU = numpy.array([[1,1],[0,1]])
 
     def eval_obj(self, at_design, at_state):
-        return numpy.sum(at_state.data**2) + (at_design.data[0]-3)**2
+        return numpy.sum(at_state.data**2) + numpy.sum(at_design.data**2) - 3
 
     def eval_residual(self, at_design, at_state, store_here):
         p = at_design.data
@@ -62,7 +62,7 @@ class Constrained2x2(UserSolver):
 
     def eval_dFdU(self, at_design, at_state, store_here):
         U = at_state.data
-        store_here.data = numpy.array([2*(U[0]), 0])
+        store_here.data = numpy.array([2*U[0], 2*U[1]])
 
     def init_design(self, store_here):
         store_here.data = numpy.array([10., 10.])
