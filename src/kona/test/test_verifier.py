@@ -1,7 +1,6 @@
 import sys
 import unittest
 import numpy
-import difflib
 
 import kona
 

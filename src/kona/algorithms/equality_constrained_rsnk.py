@@ -7,8 +7,8 @@ from kona.linalg import current_solution, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.matrices.preconditioners import ReducedSchurPreconditioner, \
-                                                 NestedKKTPreconditioner
+from kona.linalg.matrices.preconds import ReducedSchurPreconditioner, \
+                                          NestedKKTPreconditioner
 from kona.linalg.solvers.krylov import FLECS
 from kona.algorithms.util import Filter
 from kona.algorithms.base_algorithm import OptimizationAlgorithm

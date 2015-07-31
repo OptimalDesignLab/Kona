@@ -423,8 +423,8 @@ class ScalableIDF(UserSolverIDF):
             return -self.precondCount
 
     def current_solution(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
-        self.current_design = curr_design.data
-        Yu, Yw, __, __ = self.splitDesignSpace(self.current_design)
-        self.current_state = curr_state.data
+        self.curr_design = curr_design.data
+        Yu, Yw, __, __ = self.splitDesignSpace(self.curr_design)
+        self.curr_state = curr_state.data
         if self.cout:
             print numpy.hstack((Yu, Yw))

@@ -82,6 +82,7 @@ defaults = {
     },
 
     'reduced' : {
+        'precond'       : None,
         'product_fac'   : 0.001,
         'lambda'        : 0.0,
         'scale'         : 0.0,

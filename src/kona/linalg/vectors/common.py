@@ -56,8 +56,16 @@ def objective_value(at_design, at_state):
         raise MemoryError('objective_value() >> Primal and State ' + \
                           'vectors are not on the same memory manager!')
 
-    return solver.eval_obj(at_design._data, at_state._data)
+    result = solver.eval_obj(at_design._data, at_state._data)
 
+    if isinstance(result, tuple):
+        at_design._memory.cost += result[1]
+        return result[0]
+    elif isinstance(result, float):
+        return result
+    else:
+        raise TypeError('objective_value() >> solver.eval_obj() returned ' + \
+                        'unrecognized data type')
 
 class KonaVector(object):
     """
