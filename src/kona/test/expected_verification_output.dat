@@ -1,0 +1,88 @@
+============================================================
+Directional derivative test (design): dF/dX * 1
+   FD perturbation      : 1.490116e-07
+   analytical dir_deriv : 40.000000
+   finite-difference    : 40.000000
+   relative error       : 9.536743e-09
+============================================================
+Directional derivative test (state): dF/dU * 1
+   FD perturbation      : 1.053671e-07
+   analytical dir_deriv : 20.000000
+   finite-difference    : 20.000000
+   relative error       : 2.555316e-10
+============================================================
+nPDE jacobian-vector product test (design): dR/dX * 1
+   FD perturbation      : 1.490116e-07
+   absolute error       : 0.000000e+00
+   relative error       : 0.000000e+00
+============================================================
+PDE jacobian-vector transpose-product test (design): 
+1^{T} dR/dX * 1
+   forward product      : -2.000000
+   reverse product      : -2.000000
+   relative error       : 0.000000e+00
+============================================================
+PDE jacobian-vector product test (state): dR/dU * 1
+   FD perturbation      : 1.053671e-07
+   absolute error       : 5.713858e-10
+   relative error       : 2.555315e-10
+============================================================
+PDE jacobian-vector transpose-product test (state): 
+1^{T} dR/dU * 1
+   FD perturbation      : 1.053671e-07
+   analytical product   : 3.000000
+   FD product           : 3.000000
+   relative error       : 2.555314e-10
+============================================================
+Constraint jacobian-vector product test (design):
+dC/dX * 1
+   FD perturbation      : 1.490116e-07
+   absolute error       : 3.814697e-07
+   relative error       : 9.536743e-09
+============================================================
+Constraint jacobian-vector transpose-product test (design): 
+1^{T} dC/dX * 1
+   FD perturbation      : 1.490116e-07
+   analytical product   : 40.000000
+   FD product           : 40.000000
+   relative error       : 9.536743e-09
+============================================================
+Constraint jacobian-vector product test (state):
+dC/dU * 1
+   FD perturbation      : 1.053671e-07
+   absolute error       : 0.000000e+00
+   relative error       : 0.000000e+00
+============================================================
+Constraint jacobian-vector transpose-product test (state): 
+1^{T} dC/dU * 1
+   FD perturbation      : 1.053671e-07
+   analytical product   : 0.000000
+   FD product           : 0.000000
+   relative error       : 0.000000e+00
+============================================================
+Linear solve test: dR/dU * w = z 
+   FWD solve product    : 1.000000e+00
+   REV solve product    : 1.000000e+00
+   difference           : 0.000000e+00
+============================================================
+Reduced gradient (total derivative) test: dF/dX * 1 
+1^{T} dC/dU * 1
+   FD perturbation      : 1.490116e-07
+   analytical product   : 60.000000
+   FD product           : 60.000001
+   relative error       : 1.271566e-08
+============================================================
+Verification Report
+------------------------------
+eval_dFdU..............Passed
+eval_dFdX..............Passed
+multiply_dRdX..........Passed
+multiply_dRdX_T........Passed
+multiply_dRdU..........Passed
+multiply_dRdU_T........Passed
+multiply_dCdX..........Passed
+multiply_dCdX_T........Passed
+multiply_dCdU..........Passed
+multiply_dCdU_T........Passed
+solve_linear...........Passed
+solve_adjoint..........Passed
