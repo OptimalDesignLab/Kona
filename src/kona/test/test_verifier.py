@@ -1,6 +1,5 @@
-import sys
+import os
 import unittest
-import numpy
 
 import kona
 
@@ -24,20 +23,22 @@ class VerifierTestCase(unittest.TestCase):
         optimizer = kona.Optimizer(solver, kona.algorithms.Verifier, optns)
         optimizer.solve()
 
-        expected = open('expected_verification_output.dat', 'r')
+        filename = os.path.realpath(__file__)
+        dirname = os.path.dirname(filename)
+        expected = open(dirname + '/expected_verification_output.dat', 'r')
         tested = open('kona_verify.dat', 'r')
 
         line1, line2 = expected.readline(), tested.readline()
 
-        same = True
+        files_are_same = True
         while line1 and line2:
             if line1 != line2:
-                same = False
+                files_are_same = False
 
         expected.close()
         tested.close()
 
-        self.failUnless(same)
+        self.failUnless(files_are_same)
 
 if __name__ == "__main__":
     unittest.main()

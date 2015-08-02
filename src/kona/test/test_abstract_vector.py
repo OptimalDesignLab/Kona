@@ -19,6 +19,7 @@ class AbsVectorTestCase(unittest.TestCase):
         pass
 
     def test_inner_product(self):
+        '''BaseVector.inner()'''
         val = self.x_vec.inner(self.x_vec)
         self.assertEquals(val, 10)
 
@@ -26,15 +27,17 @@ class AbsVectorTestCase(unittest.TestCase):
         self.assertEquals(val, 20)
 
     def test_times_equals(self):
+        '''BaseVector.times()'''
         self.x_vec.times(3)
         self.assertEquals(self.x_vec.inner(self.x_vec), 90)
 
     def test_plus_equals(self):
+        '''BaseVector.plus()'''
         self.x_vec.plus(self.y_vec)
         self.assertEquals(self.x_vec.inner(self.x_vec), 90)
 
     def test_assignment(self):
-
+        '''BaseVector.equals_value() and BaseVector.equals_vector()'''
         x_vec = self.x_vec
 
         self.z_vec.equals_value(15)
@@ -47,6 +50,7 @@ class AbsVectorTestCase(unittest.TestCase):
         self.z_vec.equals_ax_p_by(2, self.x_vec, 3, self.y_vec)
 
     def test_bad_value(self):
+        '''BaseVector.__init__() error tests'''
         try:
             BaseVector(size=10, val="s")
         except ValueError as err:
