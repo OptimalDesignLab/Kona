@@ -7,7 +7,7 @@ from kona.user import UserSolverIDF
 
 class ScalableIDF(UserSolverIDF):
 
-    def __init__(self, alpha, mu, nState, initDesign, cout = True):
+    def __init__(self, alpha, mu, nState, initDesign, cout=True):
         # check if number of design variables is even
         if len(initDesign)%2 != 0:
             raise ValueError('ERROR: Odd number of design variables!')
@@ -426,5 +426,4 @@ class ScalableIDF(UserSolverIDF):
         self.curr_design = curr_design.data
         Yu, Yw, __, __ = self.splitDesignSpace(self.curr_design)
         self.curr_state = curr_state.data
-        if self.cout:
-            print numpy.hstack((Yu, Yw))
+        print numpy.hstack((Yu, Yw))

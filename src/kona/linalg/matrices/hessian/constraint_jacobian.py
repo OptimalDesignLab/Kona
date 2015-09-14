@@ -1,3 +1,5 @@
+
+from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian.basic import BaseHessian
 
@@ -89,6 +91,10 @@ class TotalConstraintJacobian(BaseHessian):
         # do some aliasing to make the code look pretty
         at_design = self.at_design
         at_state = self.at_state
+        design_work = self.design_work
+        state_work = self.state_work
+        dual_work = self.dual_work
+        adjoint = self.adjoint
 
         # compute out = A^T * (in)_(target subspace)
         if self._transposed:
@@ -121,7 +127,7 @@ class TotalConstraintJacobian(BaseHessian):
             if self.use_design and not self.use_target:
                 out_vec.restrict_to_design()
             if not self.use_design and self.use_target:
-                out_vec.restrict_to_state()
+                out_vec.restrict_to_target()
 
         # compute (out)_(target subspace) = A * in
         else:
@@ -130,7 +136,7 @@ class TotalConstraintJacobian(BaseHessian):
             if self.use_design and not self.use_target:
                 design_work.restrict_to_design()
             if not self.use_design and self.use_target:
-                design_work.restrict_to_state()
+                design_work.restrict_to_target()
 
             # compute (dC/dX) * in
             dCdX(at_design, at_state).product(design_work, dual_work)

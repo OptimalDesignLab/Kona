@@ -12,7 +12,7 @@ class Filter(object):
     def __init__(self):
         self.point_list = []
 
-    def dominates(self, obj, constr):
+    def accepts(self, obj, constr):
         """
         Determines whether the given objective and constraint pair is dominated
         by the filter.
@@ -37,7 +37,7 @@ class Filter(object):
         # check if new point is dominated by points in the filter
         for point in self.point_list:
             if new_point > point:
-                return True
+                return False
 
         # if we got here, new point is acceptable to the filter
         # remove old points that are dominated by the new one
@@ -48,7 +48,7 @@ class Filter(object):
         # add the new point to the filter
         self.point_list.append(new_point)
 
-        return False
+        return True
 
     def info(self, fout=sys.stdout):
         """

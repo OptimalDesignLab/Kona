@@ -3,9 +3,10 @@ import unittest
 import numpy
 
 from kona.examples import Constrained2x2
+from kona.linalg import augmented_lagrangian
 from kona.linalg.memory import KonaMemory
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.vectors.composite import ReducedKKTVector, augmented_lagrangian
+from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.options import BadKonaOption
 
 

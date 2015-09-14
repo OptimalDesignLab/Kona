@@ -1,28 +1,7 @@
 import numpy as np
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector, \
-                                       objective_value
+
+from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
-
-def augmented_lagrangian(at_kkt, at_state, at_ceq, mu):
-    """
-    Calculate and return the scalar value of the augmented Lagrangian penalty
-    function.
-
-    Parameters
-    ----------
-    at_kkt : ReducedKKTVector
-    at_state : StateVector
-    at_ceq : DualVector
-    mu : float
-
-    Returns
-    -------
-    float
-    """
-    aug_lag = objective_value(at_kkt._primal, at_state)
-    aug_lag += at_kkt._dual.inner(at_ceq)
-    aug_lag += 0.5 * at_ceq.inner(at_ceq)
-    return aug_lag
 
 class CompositeVector(object):
     """

@@ -1,6 +1,7 @@
 import copy
 import numpy
 
+from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian
 from kona.linalg.matrices.hessian import TotalConstraintJacobian
@@ -97,12 +98,12 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.krylov.check_res = False
 
         out_vec.equals(0.0)
-        design_work[0].equals(in_vec._design)
+        design_work[0].equals(in_vec._primal)
         design_work[0].restrict_to_target()
 
         # Step 1: Solve (dC/dy)^T in_dual = (u_design)_(target subspace)
         self.cnstr_jac.restrict_to_target()
-        design_work[1].equals(in_vec._design)
+        design_work[1].equals(in_vec._primal)
         design_work[1].restrict_to_target()
         design_work[0].equals(0.0)
         self.krylov.solve(self._jac_prod_T, design_work[1], design_work[0], self.precond)

@@ -1,6 +1,6 @@
 import sys
 
-from kona.linalg.vectors.common import objective_value
+from kona.linalg import objective_value
 from kona.linalg.solvers.util import EPS
 from kona.linalg.matrices.common import dRdX
 

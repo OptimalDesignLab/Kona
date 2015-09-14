@@ -2,71 +2,6 @@ import numpy as np
 
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX
 
-def current_solution(curr_design, curr_state=None, curr_adj=None, curr_dual=None, num_iter=None):
-    """
-    Notify the solver of the current solution point.
-
-    Parameters
-    ----------
-    curr_design : PrimalVector
-        Current design variables.
-    curr_state : StateVector, optional
-        Current state variables.
-    curr_adj : StateVector, optional
-        Current adjoint variables.
-    curr_dual : DualVector, optional
-        Current constraint residual.
-    num_iter : int
-        Current iteration of the optimization.
-    """
-
-    solver = curr_design._memory.solver
-    curr_design = curr_design._data
-
-    if curr_state is not None:
-        curr_state = curr_state._data
-
-    if curr_adj is not None:
-        curr_adj = curr_adj._data
-
-    if curr_dual is not None:
-        curr_dual = curr_dual._data
-
-    solver.current_solution(curr_design, curr_state, curr_adj, curr_dual, num_iter)
-
-def objective_value(at_design, at_state):
-    """
-    Evaluate the objective value the given Primal and State point.
-
-    Parameters
-    ----------
-    at_design : PrimalVector
-        Current primal point.
-    at_state : StateVector
-        Current state point.
-
-    Returns
-    -------
-    float
-        Objective function value.
-    """
-    solver = at_design._memory.solver
-
-    if solver != at_state._memory.solver:
-        raise MemoryError('objective_value() >> Primal and State ' + \
-                          'vectors are not on the same memory manager!')
-
-    result = solver.eval_obj(at_design._data, at_state._data)
-
-    if isinstance(result, tuple):
-        at_design._memory.cost += result[1]
-        return result[0]
-    elif isinstance(result, float):
-        return result
-    else:
-        raise TypeError('objective_value() >> solver.eval_obj() returned ' + \
-                        'unrecognized data type')
-
 class KonaVector(object):
     """
     An abstract vector class connected to the Kona memory, containing a
@@ -375,7 +310,7 @@ class StateVector(KonaVector):
             Current primal point.
         """
         cost = self._memory.solver.solve_nonlinear(at_primal._data, self._data)
-        self._memory.cost += cost
+        self._memory.cost += abs(cost)
         if cost < 0:
             return False
         else:

@@ -1,7 +1,7 @@
 import unittest
 
 from kona.linalg.memory import KonaMemory
-from kona.linalg.vectors.common import objective_value
+from kona.linalg import objective_value
 
 from kona.algorithms.util.merit import ObjectiveMerit
 from kona.examples.simple_2by2 import Simple2x2

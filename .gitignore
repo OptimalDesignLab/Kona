@@ -1,8 +1,13 @@
-# ignore Kona data files
+# ignore data files
 kona_hist.dat
 kona_info.dat
 kona_krylov.dat
 *.dat
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.tiff
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

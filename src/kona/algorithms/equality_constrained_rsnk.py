@@ -3,7 +3,7 @@ from numpy import sqrt
 
 from kona.options import BadKonaOption, get_opt
 
-from kona.linalg import current_solution, objective_value
+from kona.linalg import current_solution, objective_value, factor_linear_system
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
@@ -32,8 +32,9 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.trust_tol = get_opt(optns, 0.1, 'trust', 'tol')
         self.mu_init = get_opt(optns, 0.1, 'aug_lag', 'mu_init')
         self.mu_pow = get_opt(optns, 1, 'aug_lag', 'mu_pow')
-        self.ceq_tol = get_opt(optns, 1e-8, 'contraint_tol')
+        self.ceq_tol = get_opt(optns, 1e-8, 'constraint_tol')
         self.nu = get_opt(optns, 0.95, 'reduced', 'nu')
+        self.factor_matrices = get_opt(optns, False, 'factor_matrices')
 
         # set the krylov solver
         acceptable_solvers = [FLECS]
@@ -62,6 +63,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
         # initialize the preconditioner for the KKT matrix
         self.precond = get_opt(optns, None, 'reduced', 'precond')
+        self.idf_schur = None
 
         if self.precond == None:
             # use identity matrix product as preconditioner
@@ -84,8 +86,9 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             self.precond = self.nested.product
 
         elif self.precond == 'idf_schur':
-            # NOTE: IDF preconditioner not implemented yet
-            raise NotImplementedError
+            self.idf_schur = ReducedSchurPreconditioner(
+                [self.primal_factory, self.state_factory, self.dual_factory])
+            self.precond = self.idf_schur.product
 
         else:
             raise BadKonaOption(optns, 'reduced', 'precond')
@@ -251,85 +254,120 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # linearize the KKT matrix
             self.KKT_matrix.linearize(X, state, adjoint)
+            if self.idf_schur is not None:
+                self.idf_schur.linearize(X, state)
 
             # trigger the krylov solution
             self.krylov.solve(self.mat_vec, dLdX, P, self.precond)
 
-            # START FILTER LOOP
-            ######################
-            # filter_success = False
-            # max_filter_iter = 3
-            # for j in xrange(max_filter_iter):
-            #     # save old design and state before updating
-            #     primal_work[0].equals(X._primal)
-            #     state_save.equals(state)
-            #     # update design
-            #     X._primal.plus(P._primal)
-            #     if state.equals_primal_solution(X._primal):
-            #         # state equation solution was successful so try the filter
-            #         obj = objective_value(X._primal, state)
-            #         dual_work.equals_constraints(X._primal, state)
-            #         cnstr_norm = dual_work.norm2
-            #         if self.filter.dominates(obj, cnstr_norm):
-            #             if (j == 0) and self.krylov.trust_active:
-            #                 self.radius = min(2.*self.radius, self.max_radius)
-            #             filter_success = True
-            #             break
-            #
-            #     if (j == 0):
-            #         # try a second order correction
-            #         self.info_file.write('attempting a second-order correction...')
-            #         P.equals(0.0)
-            #         self.krylov.rel_tol = krylov_tol
-            #         self.krylov.mu = self.mu_init
-            #         self.grad_tol = 0.9*grad_norm
-            #         self.feas_tol = 0.9*feas_norm
-            #         self.krylov.out_file.write(
-            #             '#-------------------------------------------------\n' + \
-            #             '# Second-order correction (iter = %i)\n'%self.iter)
-            #         dual_work.times(-1)
-            #         self.krylov.apply_correction(dual_work, P)
-            #         X._primal.plus(P._primal)
-            #         if state.equals_primal_solution(X._primal):
-            #             # state equation solution was successful so try the filter
-            #             obj = objective_value(X._primal, state)
-            #             dual_work.equals_constraints(X._primal, state)
-            #             cnstr_norm = dual_work.norm2
-            #             if self.filter.dominates(obj, cnstr_norm):
-            #                 filter_success = True
-            #                 self.info_file.write('successful\n')
-            #                 break
-            #             self.info_file.write('unsuccessful\n')
-            #
-            #     # if we get here, filter dominated the point
-            #     # reset and shrink radius
-            #     X._primal.equals(primal_work[0])
-            #     state.equals(state_save)
-            #     self.radius *= 0.25
-            #     if (j == max_filter_iter-1):
-            #         break
-            #
-            #     # resolve with reduced radius
-            #     self.krylov.radius = self.radius
-            #     self.krylov.rel_tol = krylov_tol
-            #     self.krylov.mu = mu
-            #     self.krylov.re_solve(dLdX, P)
+            use_filter = False
+            if use_filter:
+                # START FILTER LOOP
+                ######################
+                filter_success = False
+                max_filter_iter = 3
+                for j in xrange(max_filter_iter):
+                    # save old design and state before updating
+                    primal_work[0].equals(X._primal)
+                    state_save.equals(state)
+                    # update design
+                    X._primal.plus(P._primal)
+                    # update state
+                    if state.equals_primal_solution(X._primal):
+                        # state equation solution was successful so try the filter
+                        obj = objective_value(X._primal, state)
+                        dual_work.equals_constraints(X._primal, state)
+                        cnstr_norm = dual_work.norm2
+                        # if the new (obj, cnstr) point is acceptable to the filter
+                        if self.filter.accepts(obj, cnstr_norm):
+                            # flag filter success
+                            filter_success = True
+                            # increase radius if the trust region boundary is active
+                            if (j == 0) and self.krylov.trust_active:
+                                self.radius = min(2.*self.radius, self.max_radius)
+                            # break out of filter loop
+                            break
 
-            ###########################
-            # END FILTER LOOP
+                    # if we get here it means the filter did not accept point
+                    if (j == 0):
+                        # on the first iteration, try a second-order correction
+                        self.info_file.write('attempting a second-order correction...')
+                        # reset step size...this is where SOC step is stored
+                        P.equals(0.0)
+                        # set in solution parameters
+                        self.krylov.rel_tol = krylov_tol
+                        self.krylov.mu = self.mu_init
+                        # write in new tolerances
+                        #grad_tol = 0.9*grad_norm
+                        #feas_tol = 0.9*feas_norm
+                        # apply the correction
+                        self.krylov.out_file.write(
+                            '#-------------------------------------------------\n' + \
+                            '# Second-order correction (iter = %i)\n'%self.iter)
+                        dual_work.times(-1)
+                        self.krylov.apply_correction(dual_work, P)
+                        # apply the SOC step
+                        X._primal.plus(P._primal)
+                        # update states
+                        if state.equals_primal_solution(X._primal):
+                            # state equation solution was successful so try the filter
+                            obj = objective_value(X._primal, state)
+                            dual_work.equals_constraints(X._primal, state)
+                            cnstr_norm = dual_work.norm2
+                            # if the corrected (obj, cnstr) point is acceptable
+                            if self.filter.accepts(obj, cnstr_norm):
+                                # flag filter success
+                                filter_success = True
+                                # print correction success
+                                self.info_file.write('successful\n')
+                                # break out of filter loop
+                                break
+                            # otherwise print correction failure
+                            self.info_file.write('unsuccessful\n')
 
-            # if filter succeeded, then update multipliers
-            # if filter_success:
-            #     X._dual.plus(P._dual)
+                    # if we get here, filter dominated the point and the
+                    # second order correction did not help
 
-            # recalculate adjoint
-            X.plus(P)
-            state.equals_primal_solution(X._primal)
+                    # reset the primal step and shrink radius
+                    X._primal.equals(primal_work[0])
+                    state.equals(state_save)
+                    self.radius *= 0.25
+
+                    # perform a re-solve at new radius only if there are more
+                    # filter iteations left to perform
+                    if (j < max_filter_iter-1):
+                        self.info_file.write(
+                            're-solving with new radius: %f\n'%self.radius)
+                        self.krylov.radius = self.radius
+                        self.krylov.rel_tol = krylov_tol
+                        self.krylov.mu = mu
+                        self.krylov.re_solve(dLdX, P)
+
+                ###########################
+                # END FILTER LOOP
+
+                # if filter succeeded, then update multipliers
+                if filter_success:
+                    self.info_file.write(
+                        'filter worked with %i iterations\n'%(j+1))
+                    X._dual.plus(P._dual)
+                else:
+                    self.info_file.write('filter failed!\n')
+            else:
+                X.plus(P)
+                state.equals_primal_solution(X._primal)
+
+            # solve for adjoint
             adjoint.equals_adjoint_solution(X._primal, state, state_work[0])
 
             # write current solution
             current_solution(X._primal, state, adjoint, X._dual, self.iter)
             self.info_file.write('Norm of multipliers = %e\n'%X._dual.norm2)
+
+            # if this is a matrix-based problem, tell the solver to factor
+            # some important matrices to be used in the next iteration
+            if (self.factor_matrices) and (self.iter < self.max_iter):
+                factor_linear_system(X._primal, state)
 
         ############################
         # END OF BIG LOOP

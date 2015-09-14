@@ -1,10 +1,10 @@
 import sys
 
 from kona.options import get_opt
+from kona.linalg import objective_value
 from kona.linalg.solvers.util import EPS, calc_epsilon
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector, \
-                                       objective_value
+from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 
 class Verifier(object):
     """

@@ -215,9 +215,25 @@ class UserSolver(object):
         """
         pass
 
-    def build_precond(self):
+    def factor_linear_system(self, at_design, at_state):
         """
-        OPTIONAL: Build the system preconditioner.
+        OPTIONAL: Build the dR/dU linear system and its preconditioner. These
+        matrices are then used to perform forward solves, adjoint solves and
+        forward/transpose preconditioner applications.
+
+        This routine is only used by matrix-based solvers where matrix factorizations
+        are costly and should be done only once per optimization iteration.
+
+        NOTE: If the user chooses to leverage this factorization, then design
+        and state linearizations should be ignored for preconditioner
+        application, linear solve, and adjoint solve calls.
+
+        Parameters
+        ----------
+        at_design : BaseVector
+            Current design vector.
+        at_state : BaseVector
+            Current state vector.
         """
         pass
 
@@ -227,6 +243,10 @@ class UserSolver(object):
         store the result in ``out_vec``. If the preconditioner has to be
         linearized, use the design and state vectors provided in ``at_design``
         and ``at_state``.
+
+        NOTE: If the solver uses ``factor_linear_system()``, ignore the design
+        and state linearization points and use the previously factored
+        preconditioner.
 
         Parameters
         ----------
@@ -252,6 +272,10 @@ class UserSolver(object):
         ``in_vec`` and store the result in ``out_vec``. If the preconditioner
         has to be linearized, use the design and state vectors provided in
         ``at_design`` and ``at_state``.
+
+        NOTE: If the solver uses ``factor_linear_system()``, ignore the design
+        and state linearization points and use the previously factored
+        preconditioner.
 
         Parameters
         ----------
@@ -473,7 +497,7 @@ class UserSolver(object):
             # Must return negative cost to Kona when your system solve fails to
             # converge. This is important because it helps Kona determine when
             # it needs to back-track on the optimization.
-            return -1
+            return -cost
 
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
         """
@@ -486,6 +510,10 @@ class UserSolver(object):
 
         The solution vector, :math:`\\mathbf{u}`, should be stored at
         ``result``.
+
+        NOTE: If the solver uses ``factor_linear_system()``, ignore the design
+        and state linearization points and use the previously factored
+        dR/dU matrix.
 
         Parameters
         ----------
@@ -519,6 +547,10 @@ class UserSolver(object):
 
         The solution vector, :math:`\\mathbf{u}`, should be stored at
         ``result``.
+
+        NOTE: If the solver uses ``factor_linear_system()``, ignore the design
+        and state linearization points and use the previously factored
+        dR/dU^T matrix.
 
         Parameters
         ----------
