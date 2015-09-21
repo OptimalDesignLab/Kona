@@ -1,7 +1,7 @@
 import sys
 
 from kona.options import get_opt
-from kona.linalg import objective_value
+from kona.linalg import objective_value, factor_linear_system
 from kona.linalg.solvers.util import EPS, calc_epsilon
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
@@ -55,6 +55,7 @@ class Verifier(object):
             'lin_solve'  : get_opt(optns, True, 'lin_solve'),
         }
         self.out_stream = get_opt(optns, sys.stdout, 'out_file')
+        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # request vectors
         num_primal = 0
@@ -648,6 +649,8 @@ class Verifier(object):
 
         u_p.equals_init_design()
         u_s.equals_primal_solution(u_p)
+        if self.factor_matrices:
+            factor_linear_system(u_p, u_s)
         J = objective_value(u_p, u_s)
 
         v_s.equals_adjoint_solution(u_p, u_s, w_s)
@@ -705,6 +708,8 @@ class Verifier(object):
 
         primal.equals_init_design()
         primal_sol.equals_primal_solution(primal)
+        if self.factor_matrices:
+            factor_linear_system(primal, primal_sol)
 
         u.equals(1.0)
         v.equals(1.0)
