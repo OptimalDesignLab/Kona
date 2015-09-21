@@ -65,6 +65,16 @@ def objective_value(at_design, at_state):
                         'unrecognized data type')
 
 def factor_linear_system(at_design, at_state):
+    """
+    Trigger the solver to factor and store the dR/dU matrix and its
+    preconditioner, linearized at the given ``at_design`` and ``at_state``
+    point.
+
+    Parameters
+    ----------
+    at_design : PrimalVector
+    at_state : StateVector
+    """
     solver = at_design._memory.solver
 
     if solver != at_state._memory.solver:

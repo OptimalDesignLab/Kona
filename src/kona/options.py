@@ -65,7 +65,7 @@ defaults = {
     'constraint_tol'    : 1e-8,
     'info_file'         : sys.stdout,
     'hist_file'         : 'kona_hist.dat',
-    'factor_matrices'   : False,
+    'matrix_explicit'   : False,
 
     'merit_function' : {
         'type'          : ObjectiveMerit,

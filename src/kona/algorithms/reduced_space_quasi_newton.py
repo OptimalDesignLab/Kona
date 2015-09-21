@@ -2,7 +2,7 @@ import sys
 
 from kona.options import BadKonaOption, get_opt
 
-from kona.linalg import current_solution
+from kona.linalg import current_solution, factor_linear_system
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
@@ -28,6 +28,9 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         # number of vectors required in solve() method
         self.primal_factory.request_num_vectors(6)
         self.state_factory.request_num_vectors(3)
+
+        # check if this problem is matrix-explicit
+        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # set the type of quasi-Newton method
         try:
@@ -86,13 +89,15 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         x.equals_init_design()
         initial_design.equals(x)
         # start optimization outer iterations
-        nonlinear_sum = 0
+        self.iter = 0
         converged = False
         self._write_header()
         for i in xrange(self.max_iter):
             info.write('========== Outer Iteration %i ==========\n'%(i+1))
             if not state.equals_primal_solution(x):
                 info.write('WARNING: Nonlinear solution failed to converge!\n')
+            if self.factor_matrices:
+                factor_linear_system(x, state)
             adjoint.equals_adjoint_solution(x, state, state_work)
             dfdx.equals_total_gradient(x, state, adjoint, design_work)
             # check for convergence
@@ -116,9 +121,9 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
                 self.approx_hessian.add_correction(p, dfdx_old)
                 dfdx_old.equals(dfdx)
             # write convergence history here
-            current_solution(x, state, num_iter=nonlinear_sum)
+            current_solution(x, state, num_iter=self.iter)
             info.write('\n')
-            self._write_history(nonlinear_sum, grad_norm)
+            self._write_history(self.iter, grad_norm)
             # solve for search direction
             self.approx_hessian.solve(dfdx, p)
             p.times(-1.0)
@@ -130,6 +135,6 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             x.equals_ax_p_by(1.0, x, alpha, p)
             # s = delta x = alpha * p is needed later by quasi-Newton method
             p.times(alpha)
-            nonlinear_sum += 1
+            self.iter += 1
         # optimization is finished, so print total number of iterations
-        info.write('Total number of nonlinear iterations: %i\n'%nonlinear_sum)
+        info.write('Total number of nonlinear iterations: %i\n'%self.iter)

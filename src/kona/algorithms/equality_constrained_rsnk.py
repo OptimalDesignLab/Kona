@@ -34,7 +34,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.mu_pow = get_opt(optns, 1, 'aug_lag', 'mu_pow')
         self.ceq_tol = get_opt(optns, 1e-8, 'constraint_tol')
         self.nu = get_opt(optns, 0.95, 'reduced', 'nu')
-        self.factor_matrices = get_opt(optns, False, 'factor_matrices')
+        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # set the krylov solver
         acceptable_solvers = [FLECS]
@@ -366,7 +366,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # if this is a matrix-based problem, tell the solver to factor
             # some important matrices to be used in the next iteration
-            if (self.factor_matrices) and (self.iter < self.max_iter):
+            if self.factor_matrices and self.iter < self.max_iter:
                 factor_linear_system(X._primal, state)
 
         ############################

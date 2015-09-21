@@ -29,6 +29,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         self.radius = get_opt(optns, 1.0, 'trust', 'init_radius')
         self.max_radius = get_opt(optns, 1.0, 'trust', 'max_radius')
         self.trust_tol = get_opt(optns, 0.1, 'trust', 'tol')
+        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # set the krylov solver
         try:
@@ -107,7 +108,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         # START THE NEWTON LOOP
         #######################
         self._write_header()
-        nonlinear_sum = 0
+        self.iter = 0
         rho = 0.0
         for i in xrange(self.max_iter):
 
@@ -132,8 +133,8 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
                     self.quasi_newton.add_correction(p, dJdX_old)
                 dJdX_old.equals(dJdX)
             # write history
-            current_solution(x, state, adjoint, num_iter=nonlinear_sum)
-            self._write_history(nonlinear_sum, grad_norm, rho)
+            current_solution(x, state, adjoint, num_iter=self.iter)
+            self._write_history(self.iter, grad_norm, rho)
             # check convergence
             if grad_norm < grad_tol:
                 converged = True
@@ -182,8 +183,11 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
             else:
                 adjoint.equals_adjoint_solution(x, state, state_work)
 
-            nonlinear_sum += 1
+            if self.factor_matrices and self.iter < self.max_iter:
+                factor_linear_system(x, state)
+
+            self.iter += 1
         #####################
         # END THE NEWTON LOOP
 
-        self.info_file.write('Total number of nonlinear iterations: %i\n'%nonlinear_sum)
+        self.info_file.write('Total number of nonlinear iterations: %i\n'%self.iter)
