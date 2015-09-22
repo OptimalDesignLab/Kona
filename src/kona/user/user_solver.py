@@ -403,9 +403,6 @@ class UserSolver(object):
     def apply_active_set(self, at_design, at_state, in_vec, out_vec):
         out_vec.data[:] = in_vec.data[:]
 
-    def apply_active_set_T(self, at_design, at_state, in_vec, out_vec):
-        out_vec.data[:] = in_vec.data[:]
-
     def eval_dFdX(self, at_design, at_state, store_here):
         """
         Evaluate the design component of the objective gradient at the

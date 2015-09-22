@@ -206,12 +206,8 @@ class ActiveSetMatrix(KonaMatrix):
     """
     def product(self, in_vec, out_vec):
         self._check_linearization()
-        if not self._transposed:
-            self._solver.apply_active_set(self._primal.data, self._state._data,
-                                            in_vec._data, out_vec._data)
-        else:
-            self._solver.apply_active_set_T(self._primal.data, self._state._data,
-                                                in_vec._data, out_vec._data)
+        self._solver.apply_active_set(
+            self._primal.data, self._state._data, in_vec._data, out_vec._data)
 
 class IdentityMatrix(KonaMatrix):
     """
