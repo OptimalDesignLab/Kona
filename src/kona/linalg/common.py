@@ -81,7 +81,7 @@ def factor_linear_system(at_design, at_state):
         raise MemoryError('objective_value() >> Primal and State ' + \
                           'vectors are not on the same memory manager!')
 
-    solver.factor_linear_system(at_design, at_state)
+    solver.factor_linear_system(at_design._data, at_state._data)
 
 def augmented_lagrangian(at_kkt, at_state, at_ceq, mu):
     """

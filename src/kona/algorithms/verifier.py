@@ -307,6 +307,8 @@ class Verifier(object):
 
         u_p.equals_init_design()
         u_s.equals_primal_solution(u_p)
+        if self.factor_matrices:
+            factor_linear_system(u_p, u_s)
         J = objective_value(u_p, u_s)
 
         v_p.equals(1./EPS)
@@ -381,6 +383,8 @@ class Verifier(object):
 
         u_p.equals_init_design()
         u_s.equals_primal_solution(u_p)
+        if self.factor_matrices:
+            factor_linear_system(u_p, u_s)
         z_p.equals(1.0)
         z_s.equals(1.0)
         x_s.equals_residual(u_p, u_s)
@@ -518,6 +522,8 @@ class Verifier(object):
 
         u_p.equals_init_design()
         u_s.equals_primal_solution(u_p)
+        if self.factor_matrices:
+            factor_linear_system(u_p, u_s)
         x_d.equals_constraints(u_p, u_s)
 
         z_p.equals(1.0)
@@ -663,6 +669,8 @@ class Verifier(object):
         w_p.times(epsilon_fd)
         w_p.plus(u_p)
         w_s.equals_primal_solution(w_p)
+        if self.factor_matrices:
+            factor_linear_system(w_p, w_s)
         J_pert = objective_value(w_p, w_s)
         prod_fd = (J_pert - J)/epsilon_fd
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)

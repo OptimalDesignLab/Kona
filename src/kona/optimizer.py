@@ -45,9 +45,11 @@ class Optimizer(object):
         if algorithm is Verifier:
             self._optns['verify']['out_file'] = \
                 self._memory.open_file(self._optns['verify']['out_file'])
+            verifier_optns = self._optns['verify']
+            verifier_optns['matrix_explicit'] = self._optns['matrix_explicit']
             self._algorithm = Verifier(
                 [primal_factory, state_factory, dual_factory],
-                solver, self._optns['verify'])
+                solver, verifier_optns)
         else:
             # otherwise initialize the optimization algorithm
             if dual_factory is not None:
