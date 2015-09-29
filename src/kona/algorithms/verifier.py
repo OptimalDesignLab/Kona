@@ -169,9 +169,9 @@ class Verifier(object):
 
     def _print_failure_report(self):
         self.out_stream.write(
-        '============================================================\n' + \
-        'Verification Report\n' + \
-        '------------------------------\n'
+            '============================================================\n' + 
+            'Verification Report\n' + 
+            '------------------------------\n'
         )
         # failures in vector space operations are critical errors
         # other tests cannot work properly without these operations
@@ -182,8 +182,8 @@ class Verifier(object):
                 if self.failures[op_name][function]:
                     end_report = True
                     self.out_stream.write(
-                    '%10s : %20s... '%(op_name[:-4], function) + \
-                    'CRITICAL FAILURE! Check for errors\n'
+                        '%10s : %20s... '%(op_name[:-4], function) + 
+                        'CRITICAL FAILURE! Check for errors\n'
                     )
             if end_report:
                 return
@@ -199,7 +199,8 @@ class Verifier(object):
                     else:
                         result = 'Passed'
                 self.out_stream.write(
-                ('%s'%function).ljust(20).replace(' ', '.') + '...%s\n'%result
+                    ('%s'%function).ljust(20).replace(' ', '.') + 
+                    '...%s\n'%result
                 )
 
     def _verify_primal_vec(self):
@@ -324,18 +325,18 @@ class Verifier(object):
         rel_error = abs(dir_deriv - dir_deriv_fd)/(EPS + abs(dir_deriv))
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'Directional derivative test (design): dF/dX * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   analytical dir_deriv : %f\n'%dir_deriv + \
-        '   finite-difference    : %f\n'%dir_deriv_fd + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'Directional derivative test (design): dF/dX * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   analytical dir_deriv : %f\n'%dir_deriv + 
+            '   finite-difference    : %f\n'%dir_deriv_fd + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if abs(dir_deriv - dir_deriv_fd) > (abs(dir_deriv) + EPS)*epsilon_fd:
             self.failures['gradients']['eval_dFdX'] = True
             self.out_stream.write(
-            'WARNING: eval_dFdX() or eval_obj() may be inaccurate!\n'
+                'WARNING: eval_dFdX() or eval_obj() may be inaccurate!\n'
             )
 
         v_s.equals(1./EPS)
@@ -351,18 +352,18 @@ class Verifier(object):
         rel_error = abs(dir_deriv - dir_deriv_fd)/(EPS + abs(dir_deriv))
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'Directional derivative test (state): dF/dU * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   analytical dir_deriv : %f\n'%dir_deriv + \
-        '   finite-difference    : %f\n'%dir_deriv_fd + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'Directional derivative test (state): dF/dU * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   analytical dir_deriv : %f\n'%dir_deriv + 
+            '   finite-difference    : %f\n'%dir_deriv_fd + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if abs(dir_deriv - dir_deriv_fd) > (abs(dir_deriv) + EPS)*epsilon_fd:
             self.failures['gradients']['eval_dFdU'] = True
             self.out_stream.write(
-            'WARNING: eval_dFdU() or eval_obj() may be inaccurate!\n')
+                'WARNING: eval_dFdU() or eval_obj() may be inaccurate!\n')
 
     def _verify_pde_jac(self):
         if not self.optns['pde_jac']:
@@ -371,8 +372,6 @@ class Verifier(object):
         u_p = self.primal_factory.generate()
         v_p = self.primal_factory.generate()
         w_p = self.primal_factory.generate()
-        x_p = self.primal_factory.generate()
-        y_p = self.primal_factory.generate()
         z_p = self.primal_factory.generate()
         u_s = self.state_factory.generate()
         v_s = self.state_factory.generate()
@@ -406,16 +405,16 @@ class Verifier(object):
         rel_error = error/(y_s.norm2 + EPS)
 
         self.out_stream.write(
-        '============================================================\nn' + \
-        'PDE jacobian-vector product test (design): dR/dX * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   absolute error       : %e\n'%error + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\nn' + 
+            'PDE jacobian-vector product test (design): dR/dX * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   absolute error       : %e\n'%error + 
+            '   relative error       : %e\n'%rel_error
         )
         if error > prod_norm*epsilon_fd:
             self.failures['pde_jac']['multiply_dRdX'] = True
             self.out_stream.write(
-            'WARNING: multiply_dRdX() or eval_residual() may be inaccurate!\n'
+                'WARNING: multiply_dRdX() or eval_residual() may be inaccurate!\n'
             )
 
         v_p.equals(1./EPS)
@@ -424,22 +423,22 @@ class Verifier(object):
         rel_error = abs(prod_fwd - prod_rev)/(abs(prod_fwd) + EPS)
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'PDE jacobian-vector transpose-product test (design): \n' + \
-        '1^{T} dR/dX * 1\n' + \
-        '   forward product      : %f\n'%prod_fwd + \
-        '   reverse product      : %f\n'%prod_rev + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'PDE jacobian-vector transpose-product test (design): \n' + 
+            '1^{T} dR/dX * 1\n' + 
+            '   forward product      : %f\n'%prod_fwd + 
+            '   reverse product      : %f\n'%prod_rev + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if abs(prod_fwd - prod_rev) > abs(prod_fwd)*EPS:
             self.failures['pde_jac']['multiply_dRdX_T'] = True
             self.out_stream.write(
-            'WARNING: multiply_dRdX_T() may be inaccurate!\n'
+                'WARNING: multiply_dRdX_T() may be inaccurate!\n'
             )
             if self.failures['pde_jac']['multiply_dRdX']:
                 self.out_stream.write(
-                'WARNING: Fix multiply_dRdX() and check this test again!\n'
+                    'WARNING: Fix multiply_dRdX() and check this test again!\n'
                 )
 
         v_s.equals(1./EPS)
@@ -459,17 +458,17 @@ class Verifier(object):
         rel_error = error/(y_s.norm2 + EPS)
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'PDE jacobian-vector product test (state): dR/dU * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   absolute error       : %e\n'%error + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'PDE jacobian-vector product test (state): dR/dU * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   absolute error       : %e\n'%error + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if error > prod_norm*epsilon_fd:
             self.failures['pde_jac']['multiply_dRdU'] = True
             self.out_stream.write(
-            'WARNING: multiply_dRdU() or eval_residual() may be inaccurate!\n'
+                'WARNING: multiply_dRdU() or eval_residual() may be inaccurate!\n'
             )
 
         v_s.equals(1./EPS)
@@ -478,23 +477,23 @@ class Verifier(object):
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'PDE jacobian-vector transpose-product test (state): \n' + \
-        '1^{T} dR/dU * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   analytical product   : %f\n'%prod + \
-        '   FD product           : %f\n'%prod_fd + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'PDE jacobian-vector transpose-product test (state): \n' + 
+            '1^{T} dR/dU * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   analytical product   : %f\n'%prod + 
+            '   FD product           : %f\n'%prod_fd + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if abs(prod - prod_fd) > (abs(prod) + EPS)*epsilon_fd:
             self.failures['pde_jac']['multiply_dRdU_T'] = True
             self.out_stream.write(
-            'WARNING: multiply_dRdU_T() may be inaccurate!\n'
+                'WARNING: multiply_dRdU_T() may be inaccurate!\n'
             )
             if self.failures['pde_jac']['multiply_dRdU']:
                 self.out_stream.write(
-                'WARNING: Fix multiply_dRdU() and check this test again!\n'
+                    'WARNING: Fix multiply_dRdU() and check this test again!\n'
                 )
 
     def _verify_cnstr_jac(self):
@@ -504,18 +503,12 @@ class Verifier(object):
         u_p = self.primal_factory.generate()
         v_p = self.primal_factory.generate()
         w_p = self.primal_factory.generate()
-        x_p = self.primal_factory.generate()
-        y_p = self.primal_factory.generate()
         z_p = self.primal_factory.generate()
         u_s = self.state_factory.generate()
         v_s = self.state_factory.generate()
         w_s = self.state_factory.generate()
-        x_s = self.state_factory.generate()
-        y_s = self.state_factory.generate()
         z_s = self.state_factory.generate()
-        u_d = self.dual_factory.generate()
         v_d = self.dual_factory.generate()
-        w_d = self.dual_factory.generate()
         x_d = self.dual_factory.generate()
         y_d = self.dual_factory.generate()
         z_d = self.dual_factory.generate()
@@ -543,18 +536,18 @@ class Verifier(object):
         rel_error = error/(prod_norm + EPS)
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'Constraint jacobian-vector product test (design):\n' + \
-        'dC/dX * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   absolute error       : %e\n'%error + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'Constraint jacobian-vector product test (design):\n' + 
+            'dC/dX * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   absolute error       : %e\n'%error + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if error > prod_norm*epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdX'] = True
             self.out_stream.write(
-            'WARNING: multiply_dCdX() or eval_ceq() may be inaccurate!\n'
+                'WARNING: multiply_dCdX() or eval_ceq() may be inaccurate!\n'
             )
 
         z_d.equals(1.0)
@@ -565,23 +558,23 @@ class Verifier(object):
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'Constraint jacobian-vector transpose-product test (design): \n' + \
-        '1^{T} dC/dX * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   analytical product   : %f\n'%prod + \
-        '   FD product           : %f\n'%prod_fd + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'Constraint jacobian-vector transpose-product test (design): \n' + 
+            '1^{T} dC/dX * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   analytical product   : %f\n'%prod + 
+            '   FD product           : %f\n'%prod_fd + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if abs(prod - prod_fd) > (abs(prod) + EPS)*epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdX_T'] = True
             self.out_stream.write(
-            'WARNING: multiply_dCdX_T() may be inaccurate!\n'
+                'WARNING: multiply_dCdX_T() may be inaccurate!\n'
             )
             if self.failures['cnstr_jac']['multiply_dCdX']:
                 self.out_stream.write(
-                'WARNING: Fix multiply_dCdX() and check this test again!\n'
+                    'WARNING: Fix multiply_dCdX() and check this test again!\n'
                 )
 
         z_s.equals(1.0)
@@ -600,18 +593,18 @@ class Verifier(object):
         rel_error = error/(prod_norm + EPS)
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'Constraint jacobian-vector product test (state):\n' + \
-        'dC/dU * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   absolute error       : %e\n'%error + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'Constraint jacobian-vector product test (state):\n' + 
+            'dC/dU * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   absolute error       : %e\n'%error + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if error > prod_norm*epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdU'] = True
             self.out_stream.write(
-            'WARNING: multiply_dCdU() or eval_ceq() may be inaccurate!\n'
+                'WARNING: multiply_dCdU() or eval_ceq() may be inaccurate!\n'
             )
 
         v_s.equals(1./EPS)
@@ -621,23 +614,23 @@ class Verifier(object):
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'Constraint jacobian-vector transpose-product test (state): \n' + \
-        '1^{T} dC/dU * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   analytical product   : %f\n'%prod + \
-        '   FD product           : %f\n'%prod_fd + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'Constraint jacobian-vector transpose-product test (state): \n' + 
+            '1^{T} dC/dU * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   analytical product   : %f\n'%prod + 
+            '   FD product           : %f\n'%prod_fd + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if abs(prod - prod_fd) > (abs(prod) + EPS)*epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdU_T'] = True
             self.out_stream.write(
-            'WARNING: multiply_dCdU_T() may be inaccurate!\n'
+                'WARNING: multiply_dCdU_T() may be inaccurate!\n'
             )
             if self.failures['cnstr_jac']['multiply_dCdU']:
                 self.out_stream.write(
-                'WARNING: Fix multiply_dCdU() and check this test again!\n'
+                    'WARNING: Fix multiply_dCdU() and check this test again!\n'
                 )
 
     def _verify_red_grad(self):
@@ -651,7 +644,6 @@ class Verifier(object):
         u_s = self.state_factory.generate()
         v_s = self.state_factory.generate()
         w_s = self.state_factory.generate()
-        z_s = self.state_factory.generate()
 
         u_p.equals_init_design()
         u_s.equals_primal_solution(u_p)
@@ -676,31 +668,31 @@ class Verifier(object):
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'Reduced gradient (total derivative) test: dF/dX * 1 \n' + \
-        '1^{T} dC/dU * 1\n' + \
-        '   FD perturbation      : %e\n'%epsilon_fd + \
-        '   analytical product   : %f\n'%prod + \
-        '   FD product           : %f\n'%prod_fd + \
-        '   relative error       : %e\n'%rel_error
+            '============================================================\n' + 
+            'Reduced gradient (total derivative) test: dF/dX * 1 \n' + 
+            '1^{T} dC/dU * 1\n' + 
+            '   FD perturbation      : %e\n'%epsilon_fd + 
+            '   analytical product   : %f\n'%prod + 
+            '   FD product           : %f\n'%prod_fd + 
+            '   relative error       : %e\n'%rel_error
         )
 
         if abs(prod - prod_fd) > (abs(prod) + EPS)*epsilon_fd:
             self.failures['red_grad']['solve_adjoint'] = True
             self.out_stream.write(
-            'WARNING: solve_adjoint() may be inaccurate!\n'
+                'WARNING: solve_adjoint() may be inaccurate!\n'
             )
             if self.failures['gradients']['eval_dFdX']:
                 self.out_stream.write(
-                'WARNING: Fix eval_dFdX() and check this test again!\n'
+                    'WARNING: Fix eval_dFdX() and check this test again!\n'
                 )
             if self.failures['gradients']['eval_dFdU']:
                 self.out_stream.write(
-                'WARNING: Fix eval_dFdU() and check this test again!\n'
+                    'WARNING: Fix eval_dFdU() and check this test again!\n'
                 )
             if self.failures['pde_jac']['multiply_dRdX_T']:
                 self.out_stream.write(
-                'WARNING: Fix multiply_dRdX_T() and check this test again!\n'
+                    'WARNING: Fix multiply_dRdX_T() and check this again!\n'
                 )
 
     def _verify_lin_solve(self):
@@ -730,19 +722,19 @@ class Verifier(object):
         error = forward - reverse
 
         self.out_stream.write(
-        '============================================================\n' + \
-        'Linear solve test: dR/dU * w = z \n' + \
-        '   FWD solve product    : %e\n'%forward + \
-        '   REV solve product    : %e\n'%reverse + \
-        '   difference           : %e\n'%error
+            '============================================================\n' + 
+            'Linear solve test: dR/dU * w = z \n' + 
+            '   FWD solve product    : %e\n'%forward + 
+            '   REV solve product    : %e\n'%reverse + 
+            '   difference           : %e\n'%error
         )
 
         if abs(forward - reverse) > (abs(forward) + EPS)*10.0*rel_tol:
             self.failures['lin_solve']['solve_linear'] = True
             self.out_stream.write(
-            'WARNING: solve_linear() may be inaccurate!\n'
+                'WARNING: solve_linear() may be inaccurate!\n'
             )
             if self.failures['red_grad']['solve_adjoint']:
                 self.out_stream.write(
-                'WARNING: Fix solve_adjoint() and check this test again!\n'
+                    'WARNING: Fix solve_adjoint() and check this test again!\n'
                 )
