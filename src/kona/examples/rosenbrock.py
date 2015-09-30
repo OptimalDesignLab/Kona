@@ -1,7 +1,6 @@
 import numpy
 
 from kona.user import UserSolver
-from kona.user import BaseVector
 
 class Rosenbrock(UserSolver):
 

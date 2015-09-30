@@ -2,12 +2,6 @@ import unittest
 
 import numpy
 
-import os, sys
-kona_path = os.path.abspath('../..')
-sys.path.append(kona_path)
-
-import kona
-
 from kona.linalg.solvers.krylov import FLECS
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import IdentityMatrix
@@ -60,9 +54,12 @@ class FLECSSolverTestCase(unittest.TestCase):
         # solve the system with FLECS
         self.krylov.radius = -1.
         try:
-            self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
+            self.krylov.solve(
+                self.mat_vec, self.b, self.x, self.precond.product)
         except ValueError as err:
-            self.assertEqual(str(err), 'trust-region radius must be nonnegative: radius = -1.000000')
+            self.assertEqual(
+                str(err),
+                'trust-region radius must be nonnegative: radius = -1.000000')
 
     def test_radius_inactive_with_small_mu(self):
         # reset the solution vector

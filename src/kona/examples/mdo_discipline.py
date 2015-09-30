@@ -103,14 +103,16 @@ class MDODiscipline(object):
         result = numpy.zeros(self.nState)
         for i in range(self.nState):
             for j in range(self.nDesign):
-                result[i] += vec[j]*numpy.sin(i*(j+1)*numpy.pi/(self.nState - 1.))
+                result[i] += \
+                    vec[j]*numpy.sin(i*(j+1)*numpy.pi/(self.nState - 1.))
         return result
 
     def dBdDesignTransProd(self, vec):
         result = numpy.zeros(self.nDesign)
         for j in range(self.nDesign):
             for i in range(self.nState):
-                result[j] += vec[i]*numpy.sin(i*(j+1)*numpy.pi/(self.nState - 1.))
+                result[j] += \
+                    vec[i]*numpy.sin(i*(j+1)*numpy.pi/(self.nState - 1.))
         return result
 
     def resDerivPrecondProd(self, state, vec):

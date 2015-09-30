@@ -1,13 +1,11 @@
 import unittest
 
-import numpy
+import numpy as np
 
 from kona.examples import Constrained2x2
-from kona.linalg import augmented_lagrangian
 from kona.linalg.memory import KonaMemory
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.options import BadKonaOption
 
 
 class ReducedKKTMatrixTestCase(unittest.TestCase):
@@ -22,10 +20,6 @@ class ReducedKKTMatrixTestCase(unittest.TestCase):
         self.assertTrue(np.linalg.norm(vec1 - vec2) < atol)
 
     def test_scalable_IDF_product(self):
-        alpha = 0.5
-        mu = 0.5
-        nState = 4
-        init_design = 2.*numpy.ones(2)
         solver = Constrained2x2()
         km = KonaMemory(solver)
         self.pf = km.primal_factory

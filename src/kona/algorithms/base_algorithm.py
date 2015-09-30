@@ -1,6 +1,6 @@
 import sys
 
-from kona.options import BadKonaOption, get_opt
+from kona.options import get_opt
 
 class OptimizationAlgorithm(object):
     """
@@ -36,7 +36,8 @@ class OptimizationAlgorithm(object):
     merit_func : MeritFunction
         Merit function for the optimization
     """
-    def __init__(self, primal_factory, state_factory, dual_factory=None, optns={}):
+    def __init__(self, primal_factory, state_factory, dual_factory=None,
+                 optns={}):
         # set up vector factories
         self.primal_factory = primal_factory
         self.state_factory = state_factory

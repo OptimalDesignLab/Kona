@@ -146,7 +146,8 @@ class ObjectiveMerit(MeritFunction):
         # do calculations only if alpha changed significantly
         if abs(alpha - self.last_func_alpha) > EPS:
             # calculate the trial primal and state vectors
-            self.x_trial.equals_ax_p_by(1.0, self.x_start, alpha, self.search_dir)
+            self.x_trial.equals_ax_p_by(
+                1.0, self.x_start, alpha, self.search_dir)
             self.u_trial.equals_primal_solution(self.x_trial)
             # calculate and return the raw objective function
             self.func_val = objective_value(self.x_trial, self.u_trial)
@@ -159,14 +160,17 @@ class ObjectiveMerit(MeritFunction):
         # do calculations only if alpha changed significantly
         if abs(alpha - self.last_grad_alpha) > EPS:
             # calculate the trial primal and state vectors
-            self.x_trial.equals_ax_p_by(1.0, self.x_start, alpha, self.search_dir)
+            self.x_trial.equals_ax_p_by(
+                1.0, self.x_start, alpha, self.search_dir)
             self.u_trial.equals_primal_solution(self.x_trial)
             # calculate objective partial
-            self.primal_work.equals_objective_partial(self.x_trial, self.u_trial)
+            self.primal_work.equals_objective_partial(
+                self.x_trial, self.u_trial)
             # add contribution from objective partial
             self.p_dot_grad = self.search_dir.inner(self.primal_work)
             # calculate adjoint
-            self.adjoint_work.equals_adjoint_solution(self.x_trial, self.u_trial, self.state_work)
+            self.adjoint_work.equals_adjoint_solution(
+                self.x_trial, self.u_trial, self.state_work)
             # create dR/dX jacobian wrapper
             jacobian = dRdX(self.x_trial, self.u_trial)
             # multiply the adjoint by dR/dX^T and store into primal work

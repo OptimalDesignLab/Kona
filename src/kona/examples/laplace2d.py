@@ -293,7 +293,8 @@ class Laplace2D(object):
         # perform the solution
         u = sp.linalg.spsolve(self.coeff_matrix, self.rhs_vector)
         # map the solution onto the domain
-        self.solution[1:-1, 1:-1] = np.reshape(u, (self.nx-2, self.ny-2), order='F')
+        self.solution[1:-1, 1:-1] = np.reshape(u, (self.nx-2, self.ny-2),
+                                               order='F')
         # apply boundary conditions
         self.apply_boundaries()
         print('Solution succeeded!')

@@ -1,8 +1,6 @@
 import numpy
 
 from kona.user import UserSolver
-from kona.user import BaseVector
-
 
 class Simple2x2(UserSolver):
 
@@ -48,7 +46,6 @@ class Simple2x2(UserSolver):
         return 0
 
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
-        X = at_design.data
         result.data = numpy.linalg.solve(self.dRdU, rhs_vec.data)
         return 0
 

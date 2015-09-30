@@ -8,7 +8,6 @@ from kona.examples.simple_2by2 import Simple2x2
 
 class StrongWolfeTestCase(unittest.TestCase):
 
-
     def setUp(self):
         solver = Simple2x2()
         km = KonaMemory(solver)
@@ -101,7 +100,9 @@ class StrongWolfeTestCase(unittest.TestCase):
         try:
             alpha, n_iter = self.sw.find_step_length(self.merit)
         except ValueError as err:
-            self.assertEqual(str(err), 'search direction is not a descent direction')
+            self.assertEqual(
+                str(err),
+                'search direction is not a descent direction')
         else:
             self.fail('ValueError expected')
 
@@ -118,7 +119,9 @@ class StrongWolfeTestCase(unittest.TestCase):
         try:
             alpha, n_iter = self.sw.find_step_length(None)
         except ValueError as err:
-            self.assertEqual(str(err), 'alpha_init must be greater than zero (0)')
+            self.assertEqual(
+                str(err),
+                'alpha_init must be greater than zero (0)')
         else:
             self.fail('ValueError expected')
 
@@ -127,7 +130,9 @@ class StrongWolfeTestCase(unittest.TestCase):
         try:
             alpha, n_iter = self.sw.find_step_length(None)
         except ValueError as err:
-            self.assertEqual(str(err), 'alpha_max must be positive and > alpha_init')
+            self.assertEqual(
+                str(err),
+                'alpha_max must be positive and > alpha_init')
         else:
             self.fail('ValueError expected')
 
@@ -136,7 +141,9 @@ class StrongWolfeTestCase(unittest.TestCase):
         try:
             alpha, n_iter = self.sw.find_step_length(None)
         except ValueError as err:
-            self.assertEqual(str(err), 'curv_cond must be suff_cond < curv_cond < 1')
+            self.assertEqual(
+                str(err),
+                'curv_cond must be suff_cond < curv_cond < 1')
         else:
             self.fail('ValueError expected')
 

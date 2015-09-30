@@ -1,5 +1,4 @@
 import sys
-import numpy
 
 from kona.options import get_opt
 

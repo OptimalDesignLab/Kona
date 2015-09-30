@@ -47,7 +47,8 @@ class KonaVector(object):
         val : float or KonaVector
             Right hand side term for assignment.
         """
-        if isinstance(val, (float, np.float32, np.float64, int, np.int32, np.int64)):
+        if isinstance(val,
+                      (float, np.float32, np.float64, int, np.int32, np.int64)):
             self._data.equals_value(val)
         else:
             self._check_type(val)
@@ -97,7 +98,8 @@ class KonaVector(object):
         value : float
             Vector to be added.
         """
-        if isinstance(value, (float, np.float32, np.float64, int, np.int32, np.int64)):
+        if isinstance(value,
+                      (float, np.float32, np.float64, int, np.int32, np.int64)):
             self._data.times(value)
         else:
             raise TypeError('Argument must be a float.')
@@ -218,7 +220,8 @@ class PrimalVector(KonaVector):
                                       at_state._data,
                                       self._data)
 
-    def equals_total_gradient(self, at_primal, at_state, at_adjoint, primal_work):
+    def equals_total_gradient(self, at_primal, at_state, at_adjoint,
+                              primal_work):
         """
         Computes in-place the total derivative of the objective function.
 
@@ -241,7 +244,7 @@ class PrimalVector(KonaVector):
         self.plus(primal_work)
 
     def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
-                                           at_adjoint, primal_work):
+                                         at_adjoint, primal_work):
         """
         Computes in-place the total derivative of the Lagrangian.
 

@@ -1,8 +1,7 @@
 import copy
-import numpy
 
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix
+from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian
 from kona.linalg.matrices.hessian import TotalConstraintJacobian
 from kona.linalg.solvers.krylov import FGMRES
@@ -29,7 +28,8 @@ class ReducedSchurPreconditioner(BaseHessian):
 
     """
     def __init__(self, vector_factories, optns={}):
-        super(ReducedSchurPreconditioner, self).__init__(vector_factories, optns)
+        super(ReducedSchurPreconditioner, self).__init__(
+            vector_factories, optns)
 
         # get references to individual factories
         self.primal_factory = None
@@ -87,10 +87,6 @@ class ReducedSchurPreconditioner(BaseHessian):
     def product(self, in_vec, out_vec):
         # do some aliasing to make life easier
         design_work = self.design_work
-        at_design = self.at_design
-        at_state = self.at_state
-        at_dual = self.at_dual
-        at_KKT = self.at_KKT
 
         # set solver settings
         rel_tol = 0.01
@@ -106,7 +102,8 @@ class ReducedSchurPreconditioner(BaseHessian):
         design_work[1].equals(in_vec._primal)
         design_work[1].restrict_to_target()
         design_work[0].equals(0.0)
-        self.krylov.solve(self._jac_prod_T, design_work[1], design_work[0], self.precond)
+        self.krylov.solve(
+            self._jac_prod_T, design_work[1], design_work[0], self.precond)
         out_vec._dual.convert(design_work[0])
 
         # Step 2: Compute (out_design)_(design subspace) =
@@ -114,7 +111,8 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.cnstr_jac.restrict_to_design()
         self._jac_prod_T(design_work[0], out_vec._primal)
         fac = 1.0/(1.0 + self.diag)
-        out_vec._primal.equals_ax_p_by(-fac, out_vec._primal, fac, in_vec._primal)
+        out_vec._primal.equals_ax_p_by(
+            -fac, out_vec._primal, fac, in_vec._primal)
         out_vec._primal.restrict_to_design()
 
         # Step 3: Solve (dC/dy) (out_design)_(target subspace) =
@@ -124,5 +122,6 @@ class ReducedSchurPreconditioner(BaseHessian):
         design_work[0].equals_ax_p_by(-1., design_work[0], 1., design_work[1])
         design_work[1].equals(0.0)
         self.cnstr_jac.restrict_to_target()
-        self.krylov.solve(self._jac_prod, design_work[0], design_work[1], self.precond)
+        self.krylov.solve(
+            self._jac_prod, design_work[0], design_work[1], self.precond)
         out_vec._primal.plus(design_work[1])

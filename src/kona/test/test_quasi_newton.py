@@ -6,7 +6,6 @@ from kona.linalg.memory import KonaMemory
 from kona.user import UserSolver
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 from kona.linalg.matrices.hessian import LimitedMemorySR1
-from kona.algorithms.util.linesearch import StrongWolfe, BackTracking
 from kona.algorithms import ReducedSpaceQuasiNewton
 from kona.options import BadKonaOption
 
@@ -25,38 +24,40 @@ class QuasiNewtonTestCase(unittest.TestCase):
 
     def test_no_quasi_newton(self):
 
-        primal = self.pf.generate()
-        state = self.sf.generate()
-
         optns = {'quasi_newton': {'type': None}}
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
         except BadKonaOption as err:
-            self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = None")
+            self.assertEqual(
+                str(err),
+                "Invalid Kona option: optns['quasi_newton']['type'] = None")
 
         optns = {'quasi_newton': None}
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
         except BadKonaOption as err:
-            self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = None")
+            self.assertEqual(
+                str(err),
+                "Invalid Kona option: optns['quasi_newton']['type'] = None")
 
         optns = {'quasi_newton': {'type': 25}}
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
         except BadKonaOption as err:
-            self.assertEqual(str(err), "Invalid Kona option: optns['quasi_newton']['type'] = 25")
+            self.assertEqual(
+                str(err),
+                "Invalid Kona option: optns['quasi_newton']['type'] = 25")
 
         optns = {'quasi_newton': {'type': LimitedMemoryBFGS}}
-        # try:
-        ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
-        # except:
-            # self.fail('No Error Expected')
+        try:
+            ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
+        except:
+            self.fail('No Error Expected')
 
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf)
         except:
             self.fail('No Error Expected')
-
 
     def test_no_line_search(self):
 
@@ -64,9 +65,9 @@ class QuasiNewtonTestCase(unittest.TestCase):
         try:
             ReducedSpaceQuasiNewton(self.pf, self.sf, optns)
         except BadKonaOption as err:
-            self.assertEqual(str(err), "Invalid Kona option: optns['line_search']['type'] = None")
-
-
+            self.assertEqual(
+                str(err),
+                "Invalid Kona option: optns['line_search']['type'] = None")
 
 class HessianApproxTestCase(unittest.TestCase):
     '''Test case for quasi-Newton classes'''

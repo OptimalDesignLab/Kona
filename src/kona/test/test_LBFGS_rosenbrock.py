@@ -4,7 +4,6 @@ import numpy
 from kona.linalg.memory import KonaMemory
 from kona.algorithms.util.linesearch import BackTracking, StrongWolfe
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS
-from kona.linalg.matrices.hessian import LimitedMemorySR1
 from kona.examples.rosenbrock import Rosenbrock
 from kona.algorithms import ReducedSpaceQuasiNewton
 
@@ -26,7 +25,8 @@ class RosenbrockLBFGSTestCase(unittest.TestCase):
                 'type' : LimitedMemoryBFGS
             },
         }
-        rsqn = ReducedSpaceQuasiNewton(km.primal_factory, km.state_factory, optns)
+        rsqn = ReducedSpaceQuasiNewton(
+            km.primal_factory, km.state_factory, optns)
         km.allocate_memory()
         rsqn.solve()
 
@@ -49,7 +49,8 @@ class RosenbrockLBFGSTestCase(unittest.TestCase):
                 'type' : LimitedMemoryBFGS
             },
         }
-        rsqn = ReducedSpaceQuasiNewton(km.primal_factory, km.state_factory, optns)
+        rsqn = ReducedSpaceQuasiNewton(
+            km.primal_factory, km.state_factory, optns)
         km.allocate_memory()
         rsqn.solve()
 

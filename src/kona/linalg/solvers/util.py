@@ -197,7 +197,8 @@ def solve_trust_reduced(H, g, radius):
         predicted decrease in the objective
     """
     if radius < 0.0:
-        raise ValueError('trust-region radius must be nonnegative: radius = %f'%radius)
+        raise ValueError(
+            'trust-region radius must be nonnegative: radius = %f'%radius)
     if H.shape[0] != H.shape[1] != g.shape[0]:
         raise ValueError('reduced Hessian or gradient shape inconsistency')
 
@@ -261,11 +262,11 @@ def solve_trust_reduced(H, g, radius):
             break
         # choose safe-guarded step
         if ((lam - lam_h)*dfnc - fnc)*((lam - lam_l)*dfnc - fnc) > 0.0 or \
-            abs(2.0*fnc) > abs(dlam_old*dfnc):
-            #  use bisection if Newton-step is out of range or not decreasing fast
+                abs(2.0*fnc) > abs(dlam_old*dfnc):
+            #  use bisection if Newton is out of range or not decreasing fast
             dlam_old = dlam
-            dlam = 0.5*(lam_h - lam_l);
-            lam = lam_l + dlam;
+            dlam = 0.5*(lam_h - lam_l)
+            lam = lam_l + dlam
             if (lam_l == lam):
                 break
         else:
@@ -317,7 +318,8 @@ def secular_function(H, g, lam, radius):
         the derivative of the secular equation with respect to lam
     """
     if radius < 0.0:
-        raise ValueError('trust-region radius must be nonnegative: radius = %f'%radius)
+        raise ValueError(
+            'trust-region radius must be nonnegative: radius = %f'%radius)
     if H.shape[0] != H.shape[1] != g.shape[0]:
         raise ValueError('reduced Hessian or gradient shape inconsistency')
 
@@ -333,7 +335,6 @@ def secular_function(H, g, lam, radius):
             UTU = np.linalg.cholesky(H_hat).T
             semidefinite = False
         except np.linalg.LinAlgError:
-            #print '        secular_function: np.linalg.cholesky() failed, adding %f to diagonal...'%diag
             diag *= 100.0
         if reg_iter >= max_iter:
             break
@@ -376,7 +377,7 @@ def mod_gram_schmidt(i, Hsbg, w):
 
     if i < 0:
         # just normalize and exit
-        w[i+1].divide_by(sqrt(nrm))
+        w[i+1].divide_by(np.sqrt(nrm))
         return
 
     # begin main Gram-Schmidt loop
@@ -425,9 +426,9 @@ def write_header(out_file, solver_name, res_tol, res_init):
         Initial residual norm.
     """
     out_file.write(
-        '# %s residual history\n'%solver_name + \
-        '# residual tolerance target = %e\n'%res_tol + \
-        '# initial residual norm     = %e\n'%res_init + \
+        '# %s residual history\n'%solver_name +
+        '# residual tolerance target = %e\n'%res_tol +
+        '# initial residual norm     = %e\n'%res_init + 
         '# iters' + ' '*12 + 'rel. res.\n'
     )
 

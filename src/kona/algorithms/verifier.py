@@ -169,8 +169,8 @@ class Verifier(object):
 
     def _print_failure_report(self):
         self.out_stream.write(
-            '============================================================\n' + 
-            'Verification Report\n' + 
+            '============================================================\n' +
+            'Verification Report\n' +
             '------------------------------\n'
         )
         # failures in vector space operations are critical errors
@@ -182,7 +182,7 @@ class Verifier(object):
                 if self.failures[op_name][function]:
                     end_report = True
                     self.out_stream.write(
-                        '%10s : %20s... '%(op_name[:-4], function) + 
+                        '%10s : %20s... '%(op_name[:-4], function) +
                         'CRITICAL FAILURE! Check for errors\n'
                     )
             if end_report:
@@ -199,7 +199,7 @@ class Verifier(object):
                     else:
                         result = 'Passed'
                 self.out_stream.write(
-                    ('%s'%function).ljust(20).replace(' ', '.') + 
+                    ('%s'%function).ljust(20).replace(' ', '.') +
                     '...%s\n'%result
                 )
 
@@ -325,11 +325,11 @@ class Verifier(object):
         rel_error = abs(dir_deriv - dir_deriv_fd)/(EPS + abs(dir_deriv))
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'Directional derivative test (design): dF/dX * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   analytical dir_deriv : %f\n'%dir_deriv + 
-            '   finite-difference    : %f\n'%dir_deriv_fd + 
+            '============================================================\n' +
+            'Directional derivative test (design): dF/dX * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical dir_deriv : %f\n'%dir_deriv +
+            '   finite-difference    : %f\n'%dir_deriv_fd +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -352,11 +352,11 @@ class Verifier(object):
         rel_error = abs(dir_deriv - dir_deriv_fd)/(EPS + abs(dir_deriv))
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'Directional derivative test (state): dF/dU * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   analytical dir_deriv : %f\n'%dir_deriv + 
-            '   finite-difference    : %f\n'%dir_deriv_fd + 
+            '============================================================\n' +
+            'Directional derivative test (state): dF/dU * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical dir_deriv : %f\n'%dir_deriv +
+            '   finite-difference    : %f\n'%dir_deriv_fd +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -405,16 +405,16 @@ class Verifier(object):
         rel_error = error/(y_s.norm2 + EPS)
 
         self.out_stream.write(
-            '============================================================\nn' + 
-            'PDE jacobian-vector product test (design): dR/dX * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   absolute error       : %e\n'%error + 
+            '============================================================\nn' +
+            'PDE jacobian-vector product test (design): dR/dX * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
         if error > prod_norm*epsilon_fd:
             self.failures['pde_jac']['multiply_dRdX'] = True
             self.out_stream.write(
-                'WARNING: multiply_dRdX() or eval_residual() may be inaccurate!\n'
+                'WARNING: multiply_dRdX or eval_residual may be inaccurate!\n'
             )
 
         v_p.equals(1./EPS)
@@ -423,11 +423,11 @@ class Verifier(object):
         rel_error = abs(prod_fwd - prod_rev)/(abs(prod_fwd) + EPS)
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'PDE jacobian-vector transpose-product test (design): \n' + 
-            '1^{T} dR/dX * 1\n' + 
-            '   forward product      : %f\n'%prod_fwd + 
-            '   reverse product      : %f\n'%prod_rev + 
+            '============================================================\n' +
+            'PDE jacobian-vector transpose-product test (design): \n' +
+            '1^{T} dR/dX * 1\n' +
+            '   forward product      : %f\n'%prod_fwd +
+            '   reverse product      : %f\n'%prod_rev +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -458,10 +458,10 @@ class Verifier(object):
         rel_error = error/(y_s.norm2 + EPS)
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'PDE jacobian-vector product test (state): dR/dU * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   absolute error       : %e\n'%error + 
+            '============================================================\n' +
+            'PDE jacobian-vector product test (state): dR/dU * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -477,12 +477,12 @@ class Verifier(object):
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'PDE jacobian-vector transpose-product test (state): \n' + 
-            '1^{T} dR/dU * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   analytical product   : %f\n'%prod + 
-            '   FD product           : %f\n'%prod_fd + 
+            '============================================================\n' +
+            'PDE jacobian-vector transpose-product test (state): \n' +
+            '1^{T} dR/dU * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %f\n'%prod +
+            '   FD product           : %f\n'%prod_fd +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -536,11 +536,11 @@ class Verifier(object):
         rel_error = error/(prod_norm + EPS)
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'Constraint jacobian-vector product test (design):\n' + 
-            'dC/dX * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   absolute error       : %e\n'%error + 
+            '============================================================\n' +
+            'Constraint jacobian-vector product test (design):\n' +
+            'dC/dX * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -558,12 +558,12 @@ class Verifier(object):
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'Constraint jacobian-vector transpose-product test (design): \n' + 
-            '1^{T} dC/dX * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   analytical product   : %f\n'%prod + 
-            '   FD product           : %f\n'%prod_fd + 
+            '============================================================\n' +
+            'Constraint jacobian-vector transpose-product test (design): \n' +
+            '1^{T} dC/dX * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %f\n'%prod +
+            '   FD product           : %f\n'%prod_fd +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -593,11 +593,11 @@ class Verifier(object):
         rel_error = error/(prod_norm + EPS)
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'Constraint jacobian-vector product test (state):\n' + 
-            'dC/dU * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   absolute error       : %e\n'%error + 
+            '============================================================\n' +
+            'Constraint jacobian-vector product test (state):\n' +
+            'dC/dU * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -614,12 +614,12 @@ class Verifier(object):
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'Constraint jacobian-vector transpose-product test (state): \n' + 
-            '1^{T} dC/dU * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   analytical product   : %f\n'%prod + 
-            '   FD product           : %f\n'%prod_fd + 
+            '============================================================\n' +
+            'Constraint jacobian-vector transpose-product test (state): \n' +
+            '1^{T} dC/dU * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %f\n'%prod +
+            '   FD product           : %f\n'%prod_fd +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -668,12 +668,12 @@ class Verifier(object):
         rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'Reduced gradient (total derivative) test: dF/dX * 1 \n' + 
-            '1^{T} dC/dU * 1\n' + 
-            '   FD perturbation      : %e\n'%epsilon_fd + 
-            '   analytical product   : %f\n'%prod + 
-            '   FD product           : %f\n'%prod_fd + 
+            '============================================================\n' +
+            'Reduced gradient (total derivative) test: dF/dX * 1 \n' +
+            '1^{T} dC/dU * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %f\n'%prod +
+            '   FD product           : %f\n'%prod_fd +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -722,10 +722,10 @@ class Verifier(object):
         error = forward - reverse
 
         self.out_stream.write(
-            '============================================================\n' + 
-            'Linear solve test: dR/dU * w = z \n' + 
-            '   FWD solve product    : %e\n'%forward + 
-            '   REV solve product    : %e\n'%reverse + 
+            '============================================================\n' +
+            'Linear solve test: dR/dU * w = z \n' +
+            '   FWD solve product    : %e\n'%forward +
+            '   REV solve product    : %e\n'%reverse +
             '   difference           : %e\n'%error
         )
 

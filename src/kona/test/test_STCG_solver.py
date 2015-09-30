@@ -2,12 +2,6 @@ import unittest
 
 import numpy
 
-import os, sys
-kona_path = os.path.abspath('../..')
-sys.path.append(kona_path)
-
-import kona
-
 from kona.linalg.solvers.krylov import STCG
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.user import UserSolver
@@ -48,7 +42,8 @@ class STCGSolverTestCase(unittest.TestCase):
         # solve the system with CG
         self.krylov.radius = -1.
         try:
-            self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
+            self.krylov.solve(
+                self.mat_vec, self.b, self.x, self.precond.product)
         except ValueError as err:
             self.assertEqual(str(err), 'radius must be postive')
 

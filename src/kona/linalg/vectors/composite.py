@@ -1,7 +1,6 @@
 import numpy as np
 
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 
 class CompositeVector(object):
     """
@@ -31,24 +30,24 @@ class CompositeVector(object):
             self._primal = primal_vec
             self._memory = self._primal._memory
         else:
-            raise TypeError('CompositeVector() >> ' + \
+            raise TypeError('CompositeVector() >> ' +
                             'Unidentified design vector.')
 
         if isinstance(state_vec, StateVector) or state_vec is None:
             self._state = state_vec
         else:
-            raise TypeError('CompositeVector() >> ' + \
+            raise TypeError('CompositeVector() >> ' +
                             'Unidentified state vector.')
 
         if isinstance(dual_vec, DualVector):
             self._dual = dual_vec
         else:
-            raise TypeError('CompositeVector() >> ' + \
+            raise TypeError('CompositeVector() >> ' +
                             'Unidentified dual vector.')
 
     def _check_type(self, vec):
         if not isinstance(vec, type(self)):
-            raise TypeError('CompositeVector() >> ' + \
+            raise TypeError('CompositeVector() >> ' +
                             'Wrong vector type. Must be %s' % type(self))
 
     def equals(self, rhs):
@@ -64,7 +63,8 @@ class CompositeVector(object):
         rhs : float or CompositeVector
             Right hand side term for assignment.
         """
-        if isinstance(rhs, (float, int, np.float64, np.int64, np.float32, np.int32)):
+        if isinstance(rhs,
+                      (float, int, np.float64, np.int64, np.float32, np.int32)):
             if self._primal is not None:
                 self._primal.equals(rhs)
             if self._state is not None:
@@ -129,7 +129,8 @@ class CompositeVector(object):
         value : float
             Vector to be added.
         """
-        if isinstance(value, (float, int, np.float64, np.int64, np.float32, np.int32)):
+        if isinstance(value,
+                      (float, int, np.float64, np.int64, np.float32, np.int32)):
             if self._primal is not None:
                 self._primal.times(value)
             if self._state is not None:
@@ -137,7 +138,7 @@ class CompositeVector(object):
             if self._dual is not None:
                 self._dual.times(value)
         else:
-            raise TypeError('CompositeVector.times() >> ' + \
+            raise TypeError('CompositeVector.times() >> ' +
                             'Wrong argument type. Must be FLOAT.')
 
     def divide_by(self, value):
@@ -203,7 +204,7 @@ class CompositeVector(object):
         """
         prod = self.inner(self)
         if prod < 0:
-            raise ValueError('CompositeVector.norm2 >> ' + \
+            raise ValueError('CompositeVector.norm2 >> ' +
                              'Inner product is negative!')
         else:
             return np.sqrt(prod)
@@ -241,7 +242,11 @@ class ReducedKKTVector(CompositeVector):
         The full expression of the KKT conditions are:
 
         .. math::
-            \\begin{pmatrix} g(x, u, \lambda, \psi) \\ c(x, u) \\end{pmatrix} = \\begin{pmatrix}\\end{pmatrix}
+            \\begin{pmatrix}
+            g(x, u, \lambda, \psi) \\
+            c(x, u) \\end{pmatrix}
+            =
+            \\begin{pmatrix}\\end{pmatrix}
 
         Parameters
         ----------

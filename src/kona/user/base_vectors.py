@@ -31,7 +31,7 @@ class BaseVector(object):
             self.data = np.array(val)
         else:
             raise ValueError(
-                'val must be a scalar or array like, ' + \
+                'val must be a scalar or array like, ' + 
                 'but was given as type %s'%(type(val)))
 
     def plus(self, vector):

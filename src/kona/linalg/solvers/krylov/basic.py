@@ -1,7 +1,4 @@
-
-import sys
-
-from kona.options import BadKonaOption, get_opt
+from kona.options import get_opt
 
 class KrylovSolver(object):
     """

@@ -1,4 +1,3 @@
-import sys, gc
 import numpy
 
 from kona.options import get_opt
@@ -128,7 +127,8 @@ class ReducedHessian(BaseHessian):
         self.adjoint_res.plus(self.state_work[0])
 
         # compute reduced gradient at the linearization
-        self.reduced_grad.equals_objective_partial(self.at_design, self.at_state)
+        self.reduced_grad.equals_objective_partial(
+            self.at_design, self.at_state)
         self.dRdX.linearize(self.at_design, self.at_state)
         self.dRdX.T.product(self.at_adjoint, self.primal_work[0])
         self.reduced_grad.plus(self.primal_work[0])
@@ -170,13 +170,15 @@ class ReducedHessian(BaseHessian):
 
         # solve the first 2nd order adjoint
         self.dRdU.linearize(self.at_design, self.at_state)
-        self.dRdU.solve(self.state_work[0], self.w_adj, rel_tol=self.product_fac)
+        self.dRdU.solve(
+            self.state_work[0], self.w_adj, rel_tol=self.product_fac)
 
         # second adjoint system
         #####################################
 
         # calculate total (dg/dx)^T*w using FD
-        self.state_work[0].equals_objective_partial(self.pert_design, self.at_state)
+        self.state_work[0].equals_objective_partial(
+            self.pert_design, self.at_state)
         self.dRdU.linearize(self.pert_design, self.at_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[1])
         self.state_work[0].plus(self.state_work[1])
@@ -188,21 +190,26 @@ class ReducedHessian(BaseHessian):
 
         # perform state perturbation
         epsilon_fd = calc_epsilon(self.state_norm, self.w_adj.norm2)
-        self.state_work[1].equals_ax_p_by(1.0, self.at_state, epsilon_fd, self.w_adj)
+        self.state_work[1].equals_ax_p_by(
+            1.0, self.at_state, epsilon_fd, self.w_adj)
 
         # calculate total (dS/du)^T*z using FD
-        self.state_work[2].equals_objective_partial(self.at_design, self.state_work[1])
-        self.state_work[3].equals_ax_p_by(-1./epsilon_fd, self.state_work[2], 1./epsilon_fd, self.adjoint_res)
+        self.state_work[2].equals_objective_partial(
+            self.at_design, self.state_work[1])
+        self.state_work[3].equals_ax_p_by(
+            -1./epsilon_fd, self.state_work[2], 1./epsilon_fd, self.adjoint_res)
         self.dRdU.linearize(self.at_design, self.state_work[1])
         self.dRdU.T.product(self.at_adjoint, self.state_work[2])
-        self.state_work[3].equals_ax_p_by(1., self.state_work[3], -1./epsilon_fd, self.state_work[2])
+        self.state_work[3].equals_ax_p_by(
+            1., self.state_work[3], -1./epsilon_fd, self.state_work[2])
 
         # assemble RHS
         self.state_work[0].plus(self.state_work[3])
 
         # solve the second 2nd order adjoint
         self.dRdU.linearize(self.at_design, self.at_state)
-        self.dRdU.T.solve(self.state_work[0], self.lambda_adj, rel_tol=self.product_fac)
+        self.dRdU.T.solve(
+            self.state_work[0], self.lambda_adj, rel_tol=self.product_fac)
 
         # assemble the Hessian-vector product using 2nd order adjoints
         ##############################################################
@@ -213,11 +220,14 @@ class ReducedHessian(BaseHessian):
         out_vec.plus(self.primal_work[0])
 
         # apply w_adj to the cross-derivative part of the jacobian
-        self.primal_work[0].equals_objective_partial(self.at_design, self.state_work[1])
+        self.primal_work[0].equals_objective_partial(
+            self.at_design, self.state_work[1])
         self.dRdX.linearize(self.at_design, self.state_work[1])
         self.dRdX.T.product(self.at_adjoint, self.primal_work[1])
         self.primal_work[0].plus(self.primal_work[1])
-        self.primal_work[0].equals_ax_p_by(1./epsilon_fd, self.primal_work[0], -1./epsilon_fd, self.reduced_grad)
+        self.primal_work[0].equals_ax_p_by(
+            1./epsilon_fd, self.primal_work[0],
+            -1./epsilon_fd, self.reduced_grad)
         out_vec.plus(self.primal_work[0])
 
         # update quasi-Newton method if necessary
@@ -226,7 +236,8 @@ class ReducedHessian(BaseHessian):
 
         # add globalization if necessary
         if self.lamb > numpy.finfo(float).eps:
-            out_vec.equals_ax_p_by((1.-self.lamb), out_vec, self.lamb*self.scale, in_vec)
+            out_vec.equals_ax_p_by(
+                1.-self.lamb, out_vec, self.lamb*self.scale, in_vec)
 
     def solve(self, rhs, solution, rel_tol=None):
         """

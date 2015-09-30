@@ -2,12 +2,6 @@ import unittest
 
 import numpy
 
-import os, sys
-kona_path = os.path.abspath('../..')
-sys.path.append(kona_path)
-
-import kona
-
 from kona.linalg.solvers.krylov import FGMRES
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.user import UserSolver

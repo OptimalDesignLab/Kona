@@ -11,7 +11,7 @@ class AbsVectorTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        self.x_vec = BaseVector(val=1, size=10) #initial value for the vector
+        self.x_vec = BaseVector(val=1, size=10) # initial value for the vector
         self.y_vec = BaseVector(val=2, size=10)
         self.z_vec = BaseVector(val=np.linspace(0,10,10), size=10)
 
@@ -38,8 +38,6 @@ class AbsVectorTestCase(unittest.TestCase):
 
     def test_assignment(self):
         '''BaseVector.equals_value() and BaseVector.equals_vector()'''
-        x_vec = self.x_vec
-
         self.z_vec.equals_value(15)
         self.assertEquals(self.z_vec.inner(self.z_vec), 2250)
 
@@ -54,12 +52,16 @@ class AbsVectorTestCase(unittest.TestCase):
         try:
             BaseVector(size=10, val="s")
         except ValueError as err:
-            self.assertEqual(str(err), 'val must be a scalar or array like, but was given as type str')
+            self.assertEqual(
+                str(err),
+                'val must be a scalar or array like, but was given as type str')
 
         try:
             BaseVector(size=10, val=np.ones(12))
         except ValueError as err:
-            self.assertEqual(str(err), 'size given as 10, but length of value 12')
+            self.assertEqual(
+                str(err),
+                'size given as 10, but length of value 12')
 
 
 class TestCaseProblemAllocator(unittest.TestCase):

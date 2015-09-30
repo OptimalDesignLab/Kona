@@ -30,7 +30,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         eval_at_norm = 1e-30
 
         out2 = calc_epsilon(eval_at_norm, mult_by_norm)
-        self.assertTrue(abs(out2 - 1.4901161193847656e-13) < 1e-10 )
+        self.assertTrue(abs(out2 - 1.4901161193847656e-13) < 1e-10)
 
         mult_by_norm = 1
         eval_at_norm = 2
@@ -198,7 +198,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         A[2][2] = 0.640027225520312
         A = np.matrix(A)
         b = np.array([-1e-5, -1e-5, -1e-5])
-        rad = 10000.0
+        radius = 10000.
         x, lamb, pred = solve_trust_reduced(A, b, radius)
         self.assertFalse(abs(x[0] - 6612.245873748023) > 1e-6*abs(x[0]))
         self.assertFalse(abs(x[1] - 6742.073357887492) > 1e-6*abs(x[1]))

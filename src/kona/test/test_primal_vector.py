@@ -16,7 +16,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         km.dual_factory.request_num_vectors(1)
         km.allocate_memory()
 
-        #can't create bear KonaVectors because the memory manager doesn't
+        # can't create bear KonaVectors because the memory manager doesn't
         # like them, so I'll just use the PrimalVector to test the
         # KonaVectorMethods
         self.pv = km.primal_factory.generate()
@@ -26,7 +26,10 @@ class PrimalVectorTestCase(unittest.TestCase):
         try:
             self.pv._check_type(self.sv)
         except TypeError as err:
-            self.assertEqual(str(err), "Vector type mismatch. Must be <class 'kona.linalg.vectors.common.PrimalVector'>")
+            self.assertEqual(
+                str(err),
+                "Vector type mismatch. " +
+                "Must be <class 'kona.linalg.vectors.common.PrimalVector'>")
         else:
             self.fail('TypeError expected')
 
@@ -37,10 +40,14 @@ class PrimalVectorTestCase(unittest.TestCase):
 
     # NOTE: If test_inner is not working, none of the other tests will!!!
     def test_inner(self):
-        self.pv._data.data = 2*np.ones(10) # have to manually poke the data here, so the test doesn't rely on any other methods
+        # have to manually poke the data here
+        # so the test doesn't rely on any other methods
+        self.pv._data.data = 2*np.ones(10)
         self.assertEqual(self.pv.inner(self.pv), 40)
 
-        self.pv._data.data = -2*np.ones(10) # have to manually poke the data here, so the test doesn't rely on any other methods
+        # have to manually poke the data here
+        # so the test doesn't rely on any other methods
+        self.pv._data.data = -2*np.ones(10)
         self.assertEqual(self.pv.inner(self.pv), 40)
 
     def test_norm2(self):
@@ -58,7 +65,7 @@ class PrimalVectorTestCase(unittest.TestCase):
 
     def test_minus(self):
         self.pv.equals(1)
-        self.pv.minus(self.pv) #special case
+        self.pv.minus(self.pv) # special case
         self.assertEqual(self.pv.inner(self.pv), 0)
 
         self.pv.equals(1)

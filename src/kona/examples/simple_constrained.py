@@ -1,5 +1,3 @@
-import numpy
-
 from kona.user import UserSolver
 
 class SimpleConstrained(UserSolver):
@@ -23,7 +21,8 @@ class SimpleConstrained(UserSolver):
         x = at_design.data[0]
         y = at_design.data[1]
         z = at_design.data[2]
-        out_vec.data[0] = 2*(x*in_vec.data[0] + y*in_vec.data[1] + z*in_vec.data[2])
+        out_vec.data[0] = 2*(x*in_vec.data[0] + y*in_vec.data[1] +
+                             z*in_vec.data[2])
         pass
 
     def multiply_dCdU(self, at_design, at_state, in_vec, out_vec):

@@ -1,12 +1,10 @@
 import numpy
-from numpy import sqrt
 
-from kona.options import BadKonaOption, get_opt
-from kona.linalg.vectors.common import PrimalVector, DualVector
+from kona.options import get_opt
 from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import EPS, write_header, write_history, \
-                                     generate_givens, apply_givens, \
-                                     mod_gram_schmidt
+from kona.linalg.solvers.util import \
+    EPS, write_header, write_history, \
+    generate_givens, apply_givens, mod_gram_schmidt
 
 class FGMRES(KrylovSolver):
     """
@@ -21,7 +19,6 @@ class FGMRES(KrylovSolver):
 
         # put in memory request
         self.vec_fac.request_num_vectors(2*self.max_iter + 1)
-
 
     def solve(self, mat_vec, b, x, precond):
         # validate solver options
@@ -70,8 +67,8 @@ class FGMRES(KrylovSolver):
             # check convergence and linear dependence
             if lin_depend and (beta > self.rel_tol*norm0):
                 raise RuntimeError(
-                    'FGMRES: Arnoldi process breakdown: ' + \
-                    'H(%i, %i) = %e, however '%(i+1, i, H[i+1, i]) + \
+                    'FGMRES: Arnoldi process breakdown: ' +
+                    'H(%i, %i) = %e, however '%(i+1, i, H[i+1, i]) +
                     '||res|| = %e\n'%beta)
             elif beta < self.rel_tol*norm0:
                 break
@@ -96,9 +93,11 @@ class FGMRES(KrylovSolver):
             # then generate new Givens rotation matrix and apply it to the last
             # two elements of H[i, :] and g
             for k in xrange(i):
-                H[k, i], H[k+1, i] = apply_givens(sn[k], cn[k], H[k, i], H[k+1, i])
+                H[k, i], H[k+1, i] = apply_givens(
+                    sn[k], cn[k], H[k, i], H[k+1, i])
 
-            H[i, i], H[i+1, i], sn[i], cn[i] = generate_givens(H[i, i], H[i+1, i])
+            H[i, i], H[i+1, i], sn[i], cn[i] = generate_givens(
+                H[i, i], H[i+1, i])
             g[i], g[i+1] = apply_givens(sn[i], cn[i], g[i], g[i+1])
 
             # set L2 norm of residual and output relative residual if necessary
@@ -119,13 +118,13 @@ class FGMRES(KrylovSolver):
             W[0].equals_ax_p_by(1.0, b, -1.0, W[0])
             true_res = W[0].norm2
             self.out_file.write(
-                '# FGMRES final (true) residual : ' + \
+                '# FGMRES final (true) residual : ' +
                 '|res|/|res0| = %e\n'%(true_res/norm0)
             )
             if abs(true_res - beta) > 0.01*self.rel_tol*norm0:
                 self.out_file.write(
-                    '# WARNING in FGMRES: true residual norm and ' + \
-                    'calculated residual norm do not agree.\n' + \
+                    '# WARNING in FGMRES: true residual norm and ' +
+                    'calculated residual norm do not agree.\n' + 
                     '# (res - beta)/res0 = %e\n'%((true_res - beta)/norm0)
                 )
             return iters, true_res

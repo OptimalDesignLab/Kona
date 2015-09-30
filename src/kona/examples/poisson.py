@@ -1,7 +1,14 @@
 import numpy as np
+from scipy.sparse.linalg import LinearOperator, cg
 
 from kona.user import UserSolver
-from kona.user import BaseVector
+
+import matplotlib
+matplotlib.use('TkAgg')
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+import matplotlib.pyplot as plt
 
 class InversePoisson(UserSolver):
 
@@ -9,7 +16,7 @@ class InversePoisson(UserSolver):
         num_design = nx - 2
         num_state = (nx-2)*(ny-2)
 
-        super(inversePoisson, self).__init__(num_design, num_state, 0)
+        super(InversePoisson, self).__init__(num_design, num_state, 0)
 
         self.Nx = nx-2
         self.Ny = ny-2
@@ -125,7 +132,8 @@ class InversePoisson(UserSolver):
         else:
             return -self.precond_calls
 
-    def current_solution(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
+    def current_solution(self, curr_design, curr_state, curr_adj,
+                         curr_dual, num_iter):
         # print the current design and state vectors at each iteration
         self.curr_design = curr_design.data
         self.num_iter = num_iter
@@ -145,7 +153,8 @@ class InversePoisson(UserSolver):
 
         fig = plt.figure()
         ax1 = fig.add_subplot(1,1,1,projection='3d')
-        surf1 = ax1.plot_surface(X, Y, T, rstride=1, cstride=1, cmap=cm.coolwarm,
+        surf1 = ax1.plot_surface(
+            X, Y, T, rstride=1, cstride=1, cmap=cm.coolwarm,
             linewidth=0, antialiased=False)
         plt.xlabel('X')
         plt.ylabel('Y')
@@ -155,20 +164,26 @@ class InversePoisson(UserSolver):
         ax1.view_init(30,45)
         plt.savefig('temp.png')
 
-
     def solve_state(self, design, rel_tol):
         """
         parameters for CG the KrylovSolver:
 
-        maxiter   : maximum number of allowed iterations
-        tol       : relative convergence tolerance, i.e. tol is scaled by ||b||
-        residuals : list - residuals has the residual norm history, including the initial residual, appended to it
+        Parameters
+        ----------
+        maxiter   : int
+            maximum number of allowed iterations
+        tol       : float
+            relative convergence tolerance, i.e. tol is scaled by ||b||
+        residuals : list
+            residuals has the residual norm history, including the initial
+            residual, appended to it
         """
 
         if len(design) == (self.Nx*self.Ny):
             # when the input vector is of the same length as the state vector
             # it can be used as the RHS of the system eqaution Kv = b
-            # granted that the input vector is a valid and correct RHS, b.c. included
+            # granted that the input vector is a valid and correct RHS, b.c.
+            # included
             b = design
         else:
             # when the input vector is of design vector's length
@@ -179,15 +194,16 @@ class InversePoisson(UserSolver):
 
         self.reset_precond()
 
-        Kv = LinearOperator((self.Nx*self.Ny, self.Nx*self.Ny),
-            matvec = lambda v: self.apply_Kv(v), dtype='float64')
+        Kv = LinearOperator(
+            (self.Nx*self.Ny, self.Nx*self.Ny),
+            matvec=lambda v: self.apply_Kv(v), dtype='float64')
 
         max_iter = 2*self.Nx*self.Ny
         converged = False
 
-        (T, info) = cg(Kv, b, maxiter=max_iter, tol = rel_tol, residuals = None)
-        #    0 : successful exit
-        #    >0: convergence to tolerance not achieved, return iteration count instead
+        (T, info) = cg(Kv, b, maxiter=max_iter, tol=rel_tol, residuals=None)
+        # 0 : successful exit
+        # >0: convergence to tolerance not achieved, return iteration count
 
         self.add_solves()
 
@@ -197,7 +213,6 @@ class InversePoisson(UserSolver):
         else:
             raise TypeError("solve_state() >> CG failed!")
         return T, converged
-
 
     def apply_Kv(self, v):
         """

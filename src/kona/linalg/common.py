@@ -1,5 +1,6 @@
 
-def current_solution(curr_design, curr_state=None, curr_adj=None, curr_dual=None, num_iter=None):
+def current_solution(curr_design, curr_state=None, curr_adj=None,
+                     curr_dual=None, num_iter=None):
     """
     Notify the solver of the current solution point.
 
@@ -29,7 +30,8 @@ def current_solution(curr_design, curr_state=None, curr_adj=None, curr_dual=None
     if curr_dual is not None:
         curr_dual = curr_dual._data
 
-    solver.current_solution(curr_design, curr_state, curr_adj, curr_dual, num_iter)
+    solver.current_solution(
+        curr_design, curr_state, curr_adj, curr_dual, num_iter)
 
 def objective_value(at_design, at_state):
     """
@@ -50,7 +52,7 @@ def objective_value(at_design, at_state):
     solver = at_design._memory.solver
 
     if solver != at_state._memory.solver:
-        raise MemoryError('objective_value() >> Primal and State ' + \
+        raise MemoryError('objective_value() >> Primal and State ' +
                           'vectors are not on the same memory manager!')
 
     result = solver.eval_obj(at_design._data, at_state._data)
@@ -61,7 +63,7 @@ def objective_value(at_design, at_state):
     elif isinstance(result, float):
         return result
     else:
-        raise TypeError('objective_value() >> solver.eval_obj() returned ' + \
+        raise TypeError('objective_value() >> solver.eval_obj() returned ' +
                         'unrecognized data type')
 
 def factor_linear_system(at_design, at_state):
@@ -78,7 +80,7 @@ def factor_linear_system(at_design, at_state):
     solver = at_design._memory.solver
 
     if solver != at_state._memory.solver:
-        raise MemoryError('objective_value() >> Primal and State ' + \
+        raise MemoryError('objective_value() >> Primal and State ' + 
                           'vectors are not on the same memory manager!')
 
     solver.factor_linear_system(at_design._data, at_state._data)

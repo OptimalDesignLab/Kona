@@ -1,4 +1,3 @@
-import numpy
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 
 class VectorFactory(object):
@@ -41,7 +40,7 @@ class VectorFactory(object):
             Number of vectors requested.
         """
         if count < 1:
-            raise ValueError('VectorFactory() >> ' + \
+            raise ValueError('VectorFactory() >> ' +
                              'Cannot request less than 1 vector.')
         self.num_vecs += count
 
@@ -58,10 +57,12 @@ class VectorFactory(object):
             try:
                 data = self._memory.pop_vector(self._vec_type)
             except IndexError:
-                raise MemoryError('no more vector memory available. Allocate more vectors in your algorithm initialization')
+                raise MemoryError(
+                    'No more vector memory available. ' +
+                    'Allocate more vectors in your algorithm initialization')
             return self._vec_type(self._memory, data)
         else:
-            raise RuntimeError('VectorFactory() >> ' + \
+            raise RuntimeError('VectorFactory() >> ' +
                                'Must allocate memory before generating vector.')
 
 class KonaFile(object):
@@ -130,7 +131,6 @@ class KonaMemory(object):
 
         self.is_allocated = False
 
-
     def push_vector(self, vec_type, user_data):
         """
         Pushes an unused user vector data container into the memory stack so it
@@ -162,7 +162,7 @@ class KonaMemory(object):
             User-defined vector data structure.
         """
         if vec_type not in self.vector_stack.keys():
-            raise TypeError('KonaMemory.pop_vector() >> ' + \
+            raise TypeError('KonaMemory.pop_vector() >> ' +
                             'Unknown vector type!')
         else:
             return self.vector_stack[vec_type].pop()
@@ -181,9 +181,12 @@ class KonaMemory(object):
 
         allocator = self.solver.allocator
 
-        self.vector_stack[PrimalVector] = allocator.alloc_primal(self.primal_factory.num_vecs)
-        self.vector_stack[StateVector] = allocator.alloc_state(self.state_factory.num_vecs)
-        self.vector_stack[DualVector] = allocator.alloc_dual(self.dual_factory.num_vecs)
+        self.vector_stack[PrimalVector] = \
+            allocator.alloc_primal(self.primal_factory.num_vecs)
+        self.vector_stack[StateVector] = \
+            allocator.alloc_state(self.state_factory.num_vecs)
+        self.vector_stack[DualVector] = \
+            allocator.alloc_dual(self.dual_factory.num_vecs)
 
         self.is_allocated = True
 

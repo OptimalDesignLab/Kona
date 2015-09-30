@@ -1,9 +1,8 @@
-import sys
 from numpy import sqrt
 
 from kona.options import BadKonaOption, get_opt
 
-from kona.linalg import current_solution, objective_value
+from kona.linalg import current_solution, objective_value, factor_linear_system
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS, ReducedHessian
 from kona.linalg.solvers.krylov import STCG
@@ -54,11 +53,12 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         if self.precond == 'quasi_newton':
             # set the type of quasi-Newton method
             try:
-                quasi_newton = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
+                quasi_newton = get_opt(
+                    optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
                 qn_optns = get_opt(optns, {}, 'quasi_newton')
                 qn_optns['out_file'] = self.info_file
                 self.quasi_newton = quasi_newton(self.primal_factory, qn_optns)
-            except Exception as err:
+            except Exception:
                 raise BadKonaOption(optns, 'quasi_newton','type')
             self.precond = self.quasi_newton.solve
             self.hessian.quasi_newton = self.quasi_newton
@@ -68,20 +68,20 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
 
     def _write_header(self):
         self.hist_file.write(
-            '# Kona trust-region RSNK convergence history file\n' + \
-            '# iters' + ' '*5 + \
-            '      cost' + ' '*5 + \
-            ' grad norm' + ' '*5 + \
-            '     ratio' + ' '*5 + \
+            '# Kona trust-region RSNK convergence history file\n' +
+            '# iters' + ' '*5 +
+            '      cost' + ' '*5 +
+            ' grad norm' + ' '*5 +
+            '     ratio' + ' '*5 +
             '    radius' + '\n'
         )
 
     def _write_history(self, num_iter, norm, rho):
         self.hist_file.write(
-            ' %6i'%num_iter + ' '*5 + \
-            '%10e'%self.primal_factory._memory.cost + ' '*5 + \
-            '%10e'%norm + ' '*5 + \
-            '%10e'%rho + ' '*5 + \
+            ' %6i'%num_iter + ' '*5 +
+            '%10e'%self.primal_factory._memory.cost + ' '*5 +
+            '%10e'%norm + ' '*5 +
+            '%10e'%rho + ' '*5 +
             '%10e'%self.radius + '\n'
         )
 
@@ -94,7 +94,6 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         primal_work = self.primal_factory.generate()
         state = self.state_factory.generate()
         adjoint = self.state_factory.generate()
-        adjoint_old = self.state_factory.generate()
         state_work = self.state_factory.generate()
 
         # set initial design and solve for state
@@ -112,7 +111,8 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         rho = 0.0
         for i in xrange(self.max_iter):
 
-            self.info_file.write('==================================================\n')
+            self.info_file.write(
+                '==================================================\n')
             self.info_file.write('Beginning Trust-Region iteration %i\n'%(i+1))
             self.info_file.write('\n')
 
@@ -126,7 +126,8 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
                 dJdX_old.equals(dJdX)
             else:
                 grad_norm = dJdX.norm2
-                self.info_file.write('grad norm : grad_tol = %e : %e\n'%(grad_norm, grad_tol))
+                self.info_file.write(
+                    'grad norm : grad_tol = %e : %e\n'%(grad_norm, grad_tol))
                 dJdX_old.minus(dJdX)
                 dJdX_old.times(-1.0)
                 if self.precond == 'quasi_newton':
@@ -141,7 +142,8 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
                 break
 
             # define adaptive Krylov tolerance for superlinear convergence
-            krylov_tol = self.krylov.rel_tol*min(1.0, sqrt(grad_norm/grad_norm0))
+            krylov_tol = self.krylov.rel_tol*min(
+                1.0, sqrt(grad_norm/grad_norm0))
             krylov_tol = max(krylov_tol, grad_tol/grad_norm)
             krylov_tol *= self.hessian.nu
 
@@ -155,7 +157,8 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
             self.krylov.rel_tol = krylov_tol
             self.krylov.radius = self.radius
             self.hessian.linearize(x, state, adjoint)
-            pred, active = self.krylov.solve(self.hessian.product, dJdX, p, self.precond)
+            pred, active = self.krylov.solve(
+                self.hessian.product, dJdX, p, self.precond)
             dJdX.times(-1.0)
             x.plus(p)
 
@@ -190,4 +193,10 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         #####################
         # END THE NEWTON LOOP
 
-        self.info_file.write('Total number of nonlinear iterations: %i\n'%self.iter)
+        if converged:
+            self.info_file.write('Optimization successful!\n')
+        else:
+            self.info_file.write('Failed to converge!\n')
+
+        self.info_file.write(
+            'Total number of nonlinear iterations: %i\n'%self.iter)

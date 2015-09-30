@@ -1,4 +1,4 @@
-import sys, gc
+import gc
 import numpy
 
 from kona.options import get_opt
@@ -45,7 +45,8 @@ class LimitedMemorySR1(QuasiNewtonApprox):
             v_vec.equals_ax_p_by(1.0, v_vec, fac, y_list[i])
             v_vec.equals_ax_p_by(1.0, v_vec, -fac, Bs[i])
             for j in xrange(i+1, num_stored):
-                fac = (y_list[i].inner(s_list[j]) - Bs[i].inner(s_list[j]))*denom
+                fac = (y_list[i].inner(s_list[j])
+                       - Bs[i].inner(s_list[j]))*denom
                 Bs[j].equals_ax_p_by(1.0, Bs[j], fac, y_list[i])
                 Bs[j].equals_ax_p_by(1.0, Bs[j], -fac, Bs[i])
 
@@ -57,11 +58,11 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         y_list = self.y_list
         threshold = self.threshold
 
-        alpha[k] = (1.0 - lambda0) * z_list[k].inner(y_list[k]) + \
-            lambda0 * norm_init * z_list[k].inner(s_list[k])
-        norm_grad = (1.0 - lambda0) ** 2 * y_list[k].inner(y_list[k]) + \
-            lambda0 ** 2 * norm_init ** 2 * s_list[k].inner(s_list[k]) + \
-            2.0 * lambda0 * norm_init * (1.0 - lambda0) * y_list[k].inner(s_list[k])
+        alpha[k] = (1.0 - lambda0)*z_list[k].inner(y_list[k]) + \
+            lambda0*norm_init*z_list[k].inner(s_list[k])
+        norm_grad = (1.0 - lambda0)**2*y_list[k].inner(y_list[k]) + \
+            lambda0**2*norm_init**2*s_list[k].inner(s_list[k]) + \
+            2.0*lambda0*norm_init*(1.0 - lambda0)*y_list[k].inner(s_list[k])
         norm_grad = numpy.sqrt(norm_grad)
 
         if abs(alpha[k]) < threshold * norm_grad * z_list[k].norm2 or \
@@ -90,8 +91,9 @@ class LimitedMemorySR1(QuasiNewtonApprox):
 
         if prod < threshold*norm_resid*norm_y_new or \
                 prod < numpy.finfo(float).eps:
-            self.out_file.write('LimitedMemorySR1::AddCorrection():' +
-                               'correction skipped due to threshold condition.')
+            self.out_file.write(
+                'LimitedMemorySR1::AddCorrection():' +
+                'correction skipped due to threshold condition.')
             return
 
         # if maximum is reached, remove old elements

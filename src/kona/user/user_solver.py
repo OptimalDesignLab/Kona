@@ -41,10 +41,10 @@ class UserSolver(object):
         self.num_state = self.allocator.num_state
         self.num_dual = self.allocator.num_dual
 
-
     def get_rank(self):
         """
-        Rank of current process is needed purely for purposes of printing to screen
+        Rank of current process is needed purely for purposes of printing to
+        screen
         """
         return 0
 
@@ -221,8 +221,9 @@ class UserSolver(object):
         matrices are then used to perform forward solves, adjoint solves and
         forward/transpose preconditioner applications.
 
-        This routine is only used by matrix-based solvers where matrix factorizations
-        are costly and should be done only once per optimization iteration.
+        This routine is only used by matrix-based solvers where matrix
+        factorizations are costly and should be done only once per optimization
+        iteration.
 
         NOTE: If the user chooses to leverage this factorization, then design
         and state linearizations should be ignored for preconditioner
@@ -569,7 +570,8 @@ class UserSolver(object):
         """
         return 0
 
-    def current_solution(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
+    def current_solution(self, curr_design, curr_state, curr_adj,
+                         curr_dual, num_iter):
         """
         Kona will evaluate this method at every outer optimization iteration.
         It can be used to print out useful information to monitor the process,
@@ -631,7 +633,6 @@ class UserSolverIDF(UserSolver):
     num_ceq : int
         Number of TOTAL equality constraints, including IDF constraints
     """
-
 
     def __init__(self, num_design, num_state, num_real_ceq, allocator=None):
         self.num_real_design = num_design

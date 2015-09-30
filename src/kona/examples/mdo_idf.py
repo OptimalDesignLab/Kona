@@ -38,12 +38,12 @@ class ScalableIDF(UserSolverIDF):
         [u, w] = numpy.hsplit(state, 2)
         # calculate the u component of the residual
         Ru = (1.-self.mu)*self.solver.resKernel(u) \
-                - self.mu*self.solver.resKernel(wT) \
-                + self.solver.getB(Yu)
+            - self.mu*self.solver.resKernel(wT) \
+            + self.solver.getB(Yu)
         # calculate the w component of the residual
         Rw = self.mu*self.solver.resKernel(uT) \
-                +(1.-self.mu)*self.solver.resKernel(w) \
-                + self.solver.getB(Yw)
+            + (1.-self.mu)*self.solver.resKernel(w) \
+            + self.solver.getB(Yw)
         # stack and return the result
         return numpy.hstack((Ru, Rw))
 
@@ -89,18 +89,22 @@ class ScalableIDF(UserSolverIDF):
             print "iter = %i : L2 norm of residual = %e" % \
                 (0, numpy.linalg.norm(R))
         # mat-vec products for dR/dState
-        dRudu = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda du:(1.-self.mu)*self.solver.dRdStateProd(u, du),
+        dRudu = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda du:(1.-self.mu)*self.solver.dRdStateProd(u, du),
             dtype='float64')
-        dRwdw = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda dw:(1.-self.mu)*self.solver.dRdStateProd(w, dw),
+        dRwdw = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda dw:(1.-self.mu)*self.solver.dRdStateProd(w, dw),
             dtype='float64')
         # mat-vec products for the ILU-based preconditioners
-        Pu = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:self.precondWrapper(u, v),
+        Pu = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:self.precondWrapper(u, v),
             dtype='float64')
-        Pw = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:self.precondWrapper(w, v),
+        Pw = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:self.precondWrapper(w, v),
             dtype='float64')
         # solution parameters
         max_iter = 100
@@ -138,10 +142,6 @@ class ScalableIDF(UserSolverIDF):
         # return the solution vector, flags for convergence and solution cost
         state = numpy.hstack((u, w))
         return state, converged, self.precondCount
-
-################################################################################
-#####################            KONA FUNCTIONS            #####################
-################################################################################
 
     def eval_obj(self, at_design, at_state):
         # take the state vector data
@@ -313,18 +313,22 @@ class ScalableIDF(UserSolverIDF):
         rhsW[0] = 0.
         rhsW[-1] = 0.
         # mat-vec products for dR/dState
-        dRudu = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:(1.-self.mu)*self.solver.dRdStateProd(u, v),
+        dRudu = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:(1.-self.mu)*self.solver.dRdStateProd(u, v),
             dtype='float64')
-        dRwdw = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:(1.-self.mu)*self.solver.dRdStateProd(w, v),
+        dRwdw = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:(1.-self.mu)*self.solver.dRdStateProd(w, v),
             dtype='float64')
         # mat-vec products for the ILU-based preconditioners
-        Pu = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:self.precondWrapper(u, v),
+        Pu = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:self.precondWrapper(u, v),
             dtype='float64')
-        Pw = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:self.precondWrapper(w, v),
+        Pw = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:self.precondWrapper(w, v),
             dtype='float64')
         # calculate tolerances
         abs_tol = 1.e-7
@@ -339,7 +343,7 @@ class ScalableIDF(UserSolverIDF):
         if infoU == 0:
             convergedU = True
         elif infoU > 0:
-            print "solve_linearsys() >> FGMRES for U: Failed @ %i iter" % info
+            print "solve_linearsys() >> FGMRES for U: Failed @ %i iter" % infoU
         else:
             print "solve_linearsys() >> FGMRES for U: Breakdown!"
         # evaluate FGMRES output for W discipline
@@ -347,7 +351,7 @@ class ScalableIDF(UserSolverIDF):
         if infoW == 0:
             convergedW = True
         elif infoW > 0:
-            print "solve_linearsys() >> FGMRES for W: Failed @ %i iter" % info
+            print "solve_linearsys() >> FGMRES for W: Failed @ %i iter" % infoW
         else:
             print "solve_linearsys() >> FGMRES for W: Breakdown!"
         # check convergence and return cost
@@ -379,18 +383,22 @@ class ScalableIDF(UserSolverIDF):
             rhsW[0] = 0.
             rhsW[-1] = 0.
         # mat-vec products for dR/dState
-        dRuduT = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:(1.-self.mu)*self.solver.dRdStateTransProd(u, v),
+        dRuduT = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:(1.-self.mu)*self.solver.dRdStateTransProd(u, v),
             dtype='float64')
-        dRwdwT = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:(1.-self.mu)*self.solver.dRdStateTransProd(w, v),
+        dRwdwT = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:(1.-self.mu)*self.solver.dRdStateTransProd(w, v),
             dtype='float64')
         # mat-vec products for the ILU-based preconditioners
-        PTu = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:self.transPrecondWrapper(u, v),
+        PTu = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:self.transPrecondWrapper(u, v),
             dtype='float64')
-        PTw = LinearOperator((self.solver.nState, self.solver.nState),
-            matvec= lambda v:self.transPrecondWrapper(w, v),
+        PTw = LinearOperator(
+            (self.solver.nState, self.solver.nState),
+            matvec=lambda v:self.transPrecondWrapper(w, v),
             dtype='float64')
         # calculate tolerances
         abs_tol = 1.e-7
@@ -405,7 +413,7 @@ class ScalableIDF(UserSolverIDF):
         if infoU == 0:
             convergedU = True
         elif infoU > 0:
-            print "solve_linearsys() >> FGMRES for U: Failed @ %i iter" % info
+            print "solve_linearsys() >> FGMRES for U: Failed @ %i iter" % infoU
         else:
             print "solve_linearsys() >> FGMRES for U: Breakdown!"
         # evaluate FGMRES output for W discipline
@@ -413,7 +421,7 @@ class ScalableIDF(UserSolverIDF):
         if infoW == 0:
             convergedW = True
         elif infoW > 0:
-            print "solve_linearsys() >> FGMRES for W: Failed @ %i iter" % info
+            print "solve_linearsys() >> FGMRES for W: Failed @ %i iter" % infoW
         else:
             print "solve_linearsys() >> FGMRES for W: Breakdown!"
         # check convergence and return cost
@@ -422,7 +430,8 @@ class ScalableIDF(UserSolverIDF):
         else:
             return -self.precondCount
 
-    def current_solution(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
+    def current_solution(self, curr_design, curr_state, curr_adj,
+                         curr_dual, num_iter):
         self.curr_design = curr_design.data
         Yu, Yw, __, __ = self.splitDesignSpace(self.curr_design)
         self.curr_state = curr_state.data

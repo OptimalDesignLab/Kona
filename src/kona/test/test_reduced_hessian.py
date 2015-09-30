@@ -3,9 +3,8 @@ import unittest
 import numpy as np
 
 from kona.linalg.memory import KonaMemory
-from kona.examples import Spiral, Simple2x2
+from kona.examples import Simple2x2
 from kona.linalg.matrices.hessian import ReducedHessian
-from kona.options import BadKonaOption
 
 
 class ReducedHessianTestCase(unittest.TestCase):
@@ -13,7 +12,6 @@ class ReducedHessianTestCase(unittest.TestCase):
 
     def setUp(self):
         solver = Simple2x2()
-        #solver = Spiral()
         km = KonaMemory(solver)
         self.pf = km.primal_factory
         self.sf = km.state_factory
@@ -40,7 +38,7 @@ class ReducedHessianTestCase(unittest.TestCase):
         state_work = self.sf.generate()
 
         # calculate total derivative at current design
-        #init_design = 3*np.pi
+        # init_design = 3*np.pi
         init_design = 1.0
         x.equals(init_design)
         state.equals_primal_solution(x)

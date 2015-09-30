@@ -1,5 +1,4 @@
-import sys, warnings
-from numpy import sqrt
+import sys
 
 from kona.options import get_opt
 
@@ -9,7 +8,8 @@ from kona.algorithms.util.merit import MeritFunction
 #                        Step Interpolation Functions                          #
 ################################################################################
 
-def quadratic_step(alpha_low, alpha_hi, f_low, f_hi, df_low, out_file=sys.stdout):
+def quadratic_step(alpha_low, alpha_hi, f_low, f_hi,
+                   df_low, out_file=sys.stdout):
     """
     Finds a new step between ``alpha_low`` and ``alpha_hi`` using quadratic
     interpolation.
@@ -39,13 +39,13 @@ def quadratic_step(alpha_low, alpha_hi, f_low, f_hi, df_low, out_file=sys.stdout
     min_alpha = min(alpha_hi, alpha_low)
     max_alpha = max(alpha_hi, alpha_low)
     if max_alpha < step < min_alpha:
-        raise Exception('quadratic_step(): step = %f\n'%step + \
-            'alpha_low = %f\n'%alpha_low + \
-            'alpha_hi = %f\n'%alpha_hi + \
-            'f_low = %f\n'%f_low + \
-            'f_hi = %f\n'%f_hi + \
-            'df_low = %f\n'%df_low +\
-            '>> Check StrongWolfe._zoom() for bugs! <<')
+        raise Exception('quadratic_step(): step = %f\n'%step +
+                        'alpha_low = %f\n'%alpha_low +
+                        'alpha_hi = %f\n'%alpha_hi +
+                        'f_low = %f\n'%f_low +
+                        'f_hi = %f\n'%f_hi +
+                        'df_low = %f\n'%df_low +
+                        '>> Check StrongWolfe._zoom() for bugs! <<')
 
     if (step - min_alpha) < 1.e-2*(max_alpha - min_alpha):
         step = 0.5*(alpha_low + alpha_hi)
@@ -216,16 +216,17 @@ class StrongWolfe(LineSearch):
         for i in xrange(self.max_iter):
 
             # user interpolation to get the new step
-            alpha_new = quadratic_step(alpha_low, alpha_hi, phi_low, phi_hi, dphi_low)
+            alpha_new = quadratic_step(
+                alpha_low, alpha_hi, phi_low, phi_hi, dphi_low)
             # evaluate the merit function at the interpolated step
             phi_new = merit.eval_func(alpha_new)
 
             # check if this step violates sufficient decrease
-            phi_sufficient = self.phi_init + self.decr_cond*alpha_new*self.dphi_init
+            phi_sufficient = self.phi_init + \
+                self.decr_cond*alpha_new*self.dphi_init
             if (phi_new > phi_sufficient) and (phi_new >= phi_low):
                 alpha_hi = alpha_new
                 phi_hi = phi_new
-                dphi_hi = 0.0
                 self.deriv_hi = False # we don't know the derivative at alpha_hi
             else:
                 # now we evaluate merit grad and check curvature condition
@@ -238,7 +239,6 @@ class StrongWolfe(LineSearch):
                     # alpha_new and alpha_low bracket a minimum
                     alpha_hi = alpha_low
                     phi_hi = phi_low
-                    dphi_hi = dphi_low
                     self.deriv_hi = True
 
                 # we satisfied sufficient decrease so the new step is low step
@@ -249,7 +249,8 @@ class StrongWolfe(LineSearch):
         # END OF BIG FOR-LOOP
         phi_sufficient = self.phi_init + self.decr_cond*alpha_new*self.dphi_init
         if phi_new < phi_sufficient:
-            self.out_file.write('>> WARNING << StrongWolfe._zoom(): ' + \
+            self.out_file.write(
+                '>> WARNING << StrongWolfe._zoom(): ' +
                 'Step found but curvature condition not met. >> WARNING <<\n')
             return alpha_new, i
 
@@ -298,7 +299,8 @@ class StrongWolfe(LineSearch):
             phi_new = merit.eval_func(alpha_new)
 
             # if new step violates sufficient decrease, call zoom
-            phi_sufficient = self.phi_init + self.decr_cond*alpha_new*self.dphi_init
+            phi_sufficient = self.phi_init + \
+                self.decr_cond*alpha_new*self.dphi_init
             if (phi_new > phi_sufficient) or ((i > 0) and (phi_new >= phi_old)):
                 dphi_new = 0.0
                 self.deriv_hi = False
@@ -348,7 +350,8 @@ class StrongWolfe(LineSearch):
 
             # update old variables
             quad_coeff = alpha_new - alpha_old
-            quad_coeff = ((phi_new - phi_old) - dphi_new*quad_coeff)/(quad_coeff**2)
+            quad_coeff = ((phi_new - phi_old) -
+                          dphi_new*quad_coeff)/(quad_coeff**2)
             alpha_old = alpha_new
             phi_old = phi_new
             dphi_old = dphi_new
@@ -356,5 +359,5 @@ class StrongWolfe(LineSearch):
         # END OF BIG FOR-LOOP
 
         # if we got here then we didn't find a step
-        raise Exception('StrongWolfe.find_step_lenght(): ' + \
+        raise Exception('StrongWolfe.find_step_lenght(): ' +
                         'failed to find a step length')

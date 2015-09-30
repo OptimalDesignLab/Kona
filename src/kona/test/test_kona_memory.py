@@ -1,8 +1,6 @@
 import gc
 import unittest
 
-import numpy as np
-
 from kona.linalg.memory import KonaMemory
 from kona.linalg.vectors.common import PrimalVector
 from kona.user.user_solver import UserSolver
@@ -40,7 +38,10 @@ class VectorFactoryTestCase(unittest.TestCase):
         try:
             vf.generate()
         except RuntimeError as err:
-            self.assertEqual(str(err), 'VectorFactory() >> Must allocate memory before generating vector.')
+            self.assertEqual(
+                str(err),
+                'VectorFactory() >> ' +
+                'Must allocate memory before generating vector.')
         else:
             self.fail('RuntimeError')
 
@@ -49,7 +50,9 @@ class VectorFactoryTestCase(unittest.TestCase):
         try:
             km.allocate_memory()
         except RuntimeError as err:
-            self.assertEqual(str(err), 'Memory allready allocated, can-not re-allocate')
+            self.assertEqual(
+                str(err),
+                'Memory allready allocated, can-not re-allocate')
         else:
             self.fail("RuntimeError expected")
 
@@ -66,7 +69,10 @@ class VectorFactoryTestCase(unittest.TestCase):
             vec1 = vf.generate()
             vec2 = vf.generate()
         except MemoryError as err:
-            self.assertEqual(str(err), 'no more vector memory available. Allocate more vectors in your algorithm initialization')
+            self.assertEqual(
+                str(err),
+                'No more vector memory available. ' +
+                'Allocate more vectors in your algorithm initialization')
         else:
             self.fail('MemoryError expected')
 

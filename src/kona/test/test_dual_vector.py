@@ -1,5 +1,4 @@
 import unittest
-import numpy
 
 from kona.linalg.memory import KonaMemory
 from kona.user import UserSolverIDF

@@ -1,5 +1,3 @@
-import sys
-
 from kona.options import BadKonaOption, get_opt
 
 from kona.linalg import current_solution, factor_linear_system
@@ -34,11 +32,13 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
 
         # set the type of quasi-Newton method
         try:
-            approx_hessian = get_opt(optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
+            approx_hessian = get_opt(
+                optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
             hessian_optns = get_opt(optns, {}, 'quasi_newton')
             hessian_optns['out_file'] = self.info_file
-            self.approx_hessian = approx_hessian(self.primal_factory, hessian_optns)
-        except Exception as err:
+            self.approx_hessian = approx_hessian(
+                self.primal_factory, hessian_optns)
+        except Exception:
             raise BadKonaOption(optns, 'quasi_newton','type')
 
         # set up the merit function
@@ -60,16 +60,16 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
 
     def _write_header(self):
         self.hist_file.write(
-            '# Kona reduced-space quasi-Newton convergence history file\n' + \
-            '# iters' + ' '*5 + \
-            '      cost' + ' '*5 + \
+            '# Kona reduced-space quasi-Newton convergence history file\n' +
+            '# iters' + ' '*5 +
+            '      cost' + ' '*5 +
             ' grad norm' + '\n'
         )
 
     def _write_history(self, num_iter, norm):
         self.hist_file.write(
-            '# %5i'%num_iter + ' '*5 + \
-            '%10e'%self.primal_factory._memory.cost + ' '*5 + \
+            '# %5i'%num_iter + ' '*5 +
+            '%10e'%self.primal_factory._memory.cost + ' '*5 +
             '%10e'%norm + '\n'
         )
 
@@ -106,12 +106,14 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
                 grad_norm = grad_norm0
                 self.approx_hessian.norm_init = grad_norm0
                 grad_tol = self.primal_tol * grad_norm0
-                info.write('grad_norm = %e : grad_tol = %e\n'%(grad_norm0, grad_tol))
+                info.write(
+                    'grad_norm = %e : grad_tol = %e\n'%(grad_norm0, grad_tol))
                 # save gradient for quasi-Newton
                 dfdx_old.equals(dfdx)
             else:
                 grad_norm = dfdx.norm2
-                info.write('grad_norm = %e : grad_tol = %e\n'%(grad_norm, grad_tol))
+                info.write(
+                    'grad_norm = %e : grad_tol = %e\n'%(grad_norm, grad_tol))
                 if grad_norm < grad_tol:
                     converged = True
                     break
@@ -137,4 +139,10 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             p.times(alpha)
             self.iter += 1
         # optimization is finished, so print total number of iterations
+
+        if converged:
+            self.info_file.write('Optimization successful!\n')
+        else:
+            self.info_file.write('Failed to converge!\n')
+            
         info.write('Total number of nonlinear iterations: %i\n'%self.iter)

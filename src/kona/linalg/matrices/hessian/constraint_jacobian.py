@@ -86,7 +86,8 @@ class TotalConstraintJacobian(BaseHessian):
 
     def product(self, in_vec, out_vec):
         if not self.use_design and not self.use_target:
-            raise RuntimeError('Both design and target components are set to false')
+            raise RuntimeError(
+                'Both design and target components are set to false')
 
         # do some aliasing to make the code look pretty
         at_design = self.at_design

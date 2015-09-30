@@ -8,7 +8,6 @@ from kona.examples.simple_2by2 import Simple2x2
 
 class BackTrackingTestCase(unittest.TestCase):
 
-
     def setUp(self):
         solver = Simple2x2()
         km = KonaMemory(solver)
@@ -44,7 +43,6 @@ class BackTrackingTestCase(unittest.TestCase):
         dfdx.equals_total_gradient(at_design, at_state, adjoint, primal_work)
         self.bt.p_dot_dfdx = dfdx.inner(search_dir)
 
-
     def test_stops_after_one_iter(self):
         '''Assuming your first guess viloates sufficient decrease condition'''
 
@@ -69,14 +67,13 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
+        self.bt.alpha_init = .3 # should evaluate 2.5, 2.5
         self.bt.rdtn_factor = .3
         self.bt.decr_cond = 1e-4
         alpha, n_iter = self.bt.find_step_length(self.merit)
 
         self.assertEqual(n_iter, 1)
         self.assertEqual(alpha, .09)
-
 
     def test_stops_after_multiple_iter(self):
         '''Assuming your first guess viloates sufficient decrease condition'''
@@ -109,7 +106,6 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.assertEqual(n_iter, 3)
 
-
     def test_from_running_other_way(self):
         '''Check that it works when the search direction sign is flips'''
 
@@ -135,7 +131,7 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, self.bt.p_dot_dfdx)
 
-        self.bt.alpha_init = 1 #should evaluate 2.5, 2.5
+        self.bt.alpha_init = 1 # should evaluate 2.5, 2.5
         alpha, n_iter = self.bt.find_step_length(self.merit)
 
         self.assertEqual(n_iter, 1)
@@ -164,13 +160,15 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.alpha_init = .3 #should evaluate 2.5, 2.5
+        self.bt.alpha_init = .3 # should evaluate 2.5, 2.5
 
         self.merit.p_dot_grad *= -1
         try:
             alpha, n_iter = self.bt.find_step_length(self.merit)
         except ValueError as err:
-            self.assertEqual(str(err), 'search direction is not a descent direction')
+            self.assertEqual(
+                str(err),
+                'search direction is not a descent direction')
         else:
             self.fail('ValueError expected')
 

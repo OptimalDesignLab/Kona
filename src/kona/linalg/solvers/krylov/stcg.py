@@ -1,10 +1,6 @@
-import sys
-import pdb
-
-import numpy
 from numpy import sqrt
 
-from kona.options import BadKonaOption, get_opt
+from kona.options import get_opt
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import EPS, write_header, write_history
 
@@ -183,7 +179,6 @@ class STCG(KrylovSolver):
         r.minus(b)
 
         # if flagged, perform the residual check
-        output_string = ''
         failed_res = False
         if self.check_res:
             # get the final residual
@@ -203,13 +198,15 @@ class STCG(KrylovSolver):
                     failed_res = True
                     failed_out = (res - res_norm2)/norm0
             # write the residual check message
-            self.out_file.write('# STCG final (true) residual : ' + \
+            self.out_file.write(
+                '# STCG final (true) residual : ' +
                 '|res|/|res0| = %e\n'%(res/norm0))
             if failed_res:
-                self.out_file.write('# WARNING in STCG.solve(): ' + \
-                    'true residual norm and calculated residual norm ' + \
+                self.out_file.write(
+                    '# WARNING in STCG.solve(): ' +
+                    'true residual norm and calculated residual norm ' +
                     'do not agree.\n')
-                self.out_file.write('# (res - beta)/res0 = %e\n'%(failed_res))
+                self.out_file.write('# (res - beta)/res0 = %e\n'%(failed_out))
 
         # check that the solution satisfies the trust-region
         x_norm2 = x.norm2

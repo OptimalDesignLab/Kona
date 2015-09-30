@@ -1,14 +1,14 @@
-import sys, copy
+import copy
 from numpy import sqrt
 
 from kona.options import BadKonaOption, get_opt
 
 from kona.linalg import current_solution, objective_value, factor_linear_system
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.matrices.common import dRdU, IdentityMatrix
+from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.matrices.preconds import ReducedSchurPreconditioner, \
-                                          NestedKKTPreconditioner
+from kona.linalg.matrices.preconds import \
+    ReducedSchurPreconditioner, NestedKKTPreconditioner
 from kona.linalg.solvers.krylov import FLECS
 from kona.algorithms.util import Filter
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
@@ -22,9 +22,9 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         )
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(11)
-        self.state_factory.request_num_vectors(9)
-        self.dual_factory.request_num_vectors(6)
+        self.primal_factory.request_num_vectors(8)
+        self.state_factory.request_num_vectors(8)
+        self.dual_factory.request_num_vectors(5)
 
         # get other options
         self.radius = get_opt(optns, 0.1, 'trust', 'init_radius')
@@ -65,7 +65,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.precond = get_opt(optns, None, 'reduced', 'precond')
         self.idf_schur = None
 
-        if self.precond == None:
+        if self.precond is None:
             # use identity matrix product as preconditioner
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
@@ -81,7 +81,8 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 [self.primal_factory, self.dual_factory],
                 krylov_optns)
             # initialize the nested preconditioner
-            self.nested = NestedKKTPreconditioner(self.KKT_matrix, embedded_krylov)
+            self.nested = NestedKKTPreconditioner(
+                self.KKT_matrix, embedded_krylov)
             # define preconditioner as approximate solve of KKT system
             self.precond = self.nested.product
 
@@ -95,22 +96,22 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
     def _write_header(self):
         self.hist_file.write(
-            '# Kona equality-constrained RSNK convergence history file\n' + \
-            '# iters' + ' '*5 + \
-            '   cost' + ' '*5 + \
-            'optimality  ' + ' '*5 + \
-            'feasibility ' + ' '*5 + \
-            'objective   ' + ' '*5 + \
+            '# Kona equality-constrained RSNK convergence history file\n' +
+            '# iters' + ' '*5 +
+            '   cost' + ' '*5 +
+            'optimality  ' + ' '*5 +
+            'feasibility ' + ' '*5 +
+            'objective   ' + ' '*5 +
             'mu param    ' + '\n'
         )
 
     def _write_history(self, opt, feas, obj, mu):
         self.hist_file.write(
-            '%7i'%self.iter + ' '*5 + \
-            '%7i'%self.primal_factory._memory.cost + ' '*5 + \
-            '%11e'%opt + ' '*5 + \
-            '%11e'%feas + ' '*5 + \
-            '%11e'%obj + ' '*5 + \
+            '%7i'%self.iter + ' '*5 +
+            '%7i'%self.primal_factory._memory.cost + ' '*5 +
+            '%11e'%opt + ' '*5 +
+            '%11e'%feas + ' '*5 +
+            '%11e'%obj + ' '*5 +
             '%11e'%mu + '\n'
         )
 
@@ -123,20 +124,17 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
         self._write_header()
         self.info_file.write(
-            '**************************************************\n' + \
-            '***        Using FLECS-based Algorithm         ***\n' + \
+            '**************************************************\n' +
+            '***        Using FLECS-based Algorithm         ***\n' +
             '**************************************************\n')
 
         # generate composite KKT vectors
         X = self._generate_KKT_vector()
         P = self._generate_KKT_vector()
-        P_corr = self._generate_KKT_vector()
         dLdX = self._generate_KKT_vector()
         dLdX_save = self._generate_KKT_vector()
 
         # generate primal vectors
-        P_norm = self.primal_factory.generate()
-        P_tang = self.primal_factory.generate()
         init_design = self.primal_factory.generate()
         primal_work = []
         for i in xrange(3):
@@ -146,7 +144,6 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         state = self.state_factory.generate()
         state_save = self.state_factory.generate()
         adjoint = self.state_factory.generate()
-        adjoint_res = self.state_factory.generate()
         state_work = []
         for i in xrange(5):
             state_work.append(self.state_factory.generate())
@@ -173,9 +170,9 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             self.iter += 1
 
             self.info_file.write(
-                '\n' + \
-                '==========================================\n' + \
-                'Beginning Major Iteration %i\n'%self.iter + \
+                '\n' +
+                '==========================================\n' +
+                'Beginning Major Iteration %i\n'%self.iter +
                 '\n')
 
             # evaluate optimality, feasibility and KKT norms
@@ -192,7 +189,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 feas_norm = feas_norm0
                 # print out convergence norms
                 self.info_file.write(
-                    'grad_norm0 = %e\n'%grad_norm0 + \
+                    'grad_norm0 = %e\n'%grad_norm0 +
                     'feas_norm0 = %e\n'%feas_norm0
                 )
                 # calculate convergence tolerances
@@ -207,8 +204,10 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 # update the augmented Lagrangian penalty
                 mu = max(mu, self.mu_init)*((feas_norm/feas_norm0)**self.mu_pow)
                 self.info_file.write(
-                    'grad_norm = %e (%e <-- tolerance)\n'%(grad_norm, grad_tol) + \
-                    'feas_norm = %e (%e <-- tolerance)\n'%(feas_norm, feas_tol)
+                    'grad_norm = %e (%e <-- tolerance)\n'%(
+                        grad_norm, grad_tol) +
+                    'feas_norm = %e (%e <-- tolerance)\n'%(
+                        feas_norm, feas_tol)
                 )
             # save the current dL/dX
             dLdX_save.equals(dLdX)
@@ -225,25 +224,27 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             # compute krylov tolerances in order to achieve superlinear
             # convergence but to avoid oversolving
             krylov_tol = self.krylov.rel_tol*min(1.0, sqrt(kkt_norm/kkt_norm0))
-            krylov_tol = max(krylov_tol, min(grad_tol/grad_norm, feas_tol/feas_norm))
+            krylov_tol = max(krylov_tol,
+                             min(grad_tol/grad_norm, feas_tol/feas_norm))
             krylov_tol *= self.nu
             self.info_file.write('krylov tol = %e\n'%krylov_tol)
 
             # set ReducedKKTMatrix product tolerances
             if self.KKT_matrix.dynamic_tol:
-                raise NotImplementedError('EqualityConstrainedRSNK.solve()' + \
+                raise NotImplementedError(
+                    'EqualityConstrainedRSNK.solve()' +
                     'not yet set up for dynamic tolerance in product')
             else:
                 self.KKT_matrix.product_fac *= krylov_tol/self.krylov.max_iter
 
             # set other solver and product options
-            self.KKT_matrix.lamb =0.0
+            self.KKT_matrix.lamb = 0.0
             self.krylov.rel_tol = krylov_tol
             self.krylov.radius = self.radius
             self.krylov.mu = mu
 
             self.krylov.out_file.write(
-                '#-------------------------------------------------\n' + \
+                '#-------------------------------------------------\n' +
                 '# primal solve\n')
 
             # reset the primal-dual step vector
@@ -274,35 +275,38 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                     X._primal.plus(P._primal)
                     # update state
                     if state.equals_primal_solution(X._primal):
-                        # state equation solution was successful so try the filter
+                        # state equation solution was successful
+                        # try the filter
                         obj = objective_value(X._primal, state)
                         dual_work.equals_constraints(X._primal, state)
                         cnstr_norm = dual_work.norm2
-                        # if the new (obj, cnstr) point is acceptable to the filter
+                        # if the new (obj, cnstr) point is acceptable
                         if self.filter.accepts(obj, cnstr_norm):
                             # flag filter success
                             filter_success = True
-                            # increase radius if the trust region boundary is active
+                            # increase radius if the trust region is active
                             if (j == 0) and self.krylov.trust_active:
-                                self.radius = min(2.*self.radius, self.max_radius)
+                                self.radius = \
+                                    min(2.*self.radius, self.max_radius)
                             # break out of filter loop
                             break
 
                     # if we get here it means the filter did not accept point
                     if (j == 0):
                         # on the first iteration, try a second-order correction
-                        self.info_file.write('attempting a second-order correction...')
+                        self.info_file.write(
+                            'attempting a second-order correction...')
                         # reset step size...this is where SOC step is stored
                         P.equals(0.0)
                         # set in solution parameters
                         self.krylov.rel_tol = krylov_tol
                         self.krylov.mu = self.mu_init
                         # write in new tolerances
-                        #grad_tol = 0.9*grad_norm
-                        #feas_tol = 0.9*feas_norm
+                        # grad_tol = 0.9*grad_norm
+                        # feas_tol = 0.9*feas_norm
                         # apply the correction
                         self.krylov.out_file.write(
-                            '#-------------------------------------------------\n' + \
+                            '#---------------------------------------------\n' +
                             '# Second-order correction (iter = %i)\n'%self.iter)
                         dual_work.times(-1)
                         self.krylov.apply_correction(dual_work, P)
@@ -310,7 +314,8 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                         X._primal.plus(P._primal)
                         # update states
                         if state.equals_primal_solution(X._primal):
-                            # state equation solution was successful so try the filter
+                            # state equation solution was successful
+                            # try the filter
                             obj = objective_value(X._primal, state)
                             dual_work.equals_constraints(X._primal, state)
                             cnstr_norm = dual_work.norm2
@@ -371,6 +376,11 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
         ############################
         # END OF BIG LOOP
+
+        if converged:
+            self.info_file.write('Optimization successful!\n')
+        else:
+            self.info_file.write('Failed to converge!\n')
 
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n'%self.iter)

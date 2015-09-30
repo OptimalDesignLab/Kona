@@ -1,6 +1,3 @@
-import sys, gc
-import numpy
-
 from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
@@ -17,7 +14,10 @@ class ReducedKKTMatrix(BaseHessian):
     The KKT system is defined as:
 
     .. math::
-        \\begin{pmatrix}\\frac{d^2\\mathcal{L}}{dx^2} && \\frac{d^2C}{dx d\\lambda} \\ \\frac{d^2C}{d\\lambda dx} && 0 \\end{pmatrix} \\begin{pmatrix} \\delta x \\ \\delta \\lambda \\end{pmatrix} = \\begin{pmatrix} \\nambla_x \\mathcal{L} \\ C \\end{pmatrix}
+        \\begin{pmatrix}\\frac{d^2\\mathcal{L}}{dx^2} && \\frac{d^2C}{dx
+        d\\lambda} \\ \\frac{d^2C}{d\\lambda dx} && 0 \\end{pmatrix}
+        \\begin{pmatrix} \\delta x \\ \\delta \\lambda \\end{pmatrix} =
+        \\begin{pmatrix} \\nambla_x \\mathcal{L} \\ C \\end{pmatrix}
 
     where :math:`\\mathcal{L}` is the Lagrangian defined as:
 
@@ -186,7 +186,8 @@ class ReducedKKTMatrix(BaseHessian):
         self.adjoint_res.plus(self.state_work[0])
 
         # compute reduced gradient at the linearization
-        self.reduced_grad.equals_objective_partial(self.at_design, self.at_state)
+        self.reduced_grad.equals_objective_partial(
+            self.at_design, self.at_state)
         self.dRdX.linearize(self.at_design, self.at_state)
         self.dRdX.T.product(self.at_adjoint, self.primal_work)
         self.reduced_grad.plus(self.primal_work)
@@ -229,12 +230,15 @@ class ReducedKKTMatrix(BaseHessian):
         self._linear_solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
 
         # find the adjoint perturbation by solving the linearized dual equation
-        self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec._primal)
-        self.state_work[2].equals_ax_p_by(1.0, self.at_state, epsilon_fd, self.w_adj)
+        self.pert_design.equals_ax_p_by(
+            1.0, self.at_design, epsilon_fd, in_vec._primal)
+        self.state_work[2].equals_ax_p_by(
+            1.0, self.at_state, epsilon_fd, self.w_adj)
 
         # first part of LHS: evaluate the adjoint equation residual at
         # perturbed design and state
-        self.state_work[0].equals_objective_partial(self.pert_design, self.state_work[2])
+        self.state_work[0].equals_objective_partial(
+            self.pert_design, self.state_work[2])
         pert_state = self.state_work[2] # aliasing for readability
         self.dRdU.linearize(self.pert_design, pert_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[1])
@@ -262,12 +266,14 @@ class ReducedKKTMatrix(BaseHessian):
         self.lambda_adj.equals(0.0)
         # rel_tol = self.product_tol*self.product_fac/self.state_work[0].norm2
         rel_tol = 1e-8
-        self._adjoint_solve(self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
+        self._adjoint_solve(
+            self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
 
         # evaluate first order optimality conditions at perturbed design, state
         # and adjoint:
         # g = df/dX + lag_mult*dC/dX + (adjoint + eps_fd*lambda_adj)*dR/dX
-        self.state_work[1].equals_ax_p_by(1.0, self.at_adjoint, epsilon_fd, self.lambda_adj)
+        self.state_work[1].equals_ax_p_by(
+            1.0, self.at_adjoint, epsilon_fd, self.lambda_adj)
         pert_adjoint = self.state_work[1] # aliasing for readability
         out_vec._primal.equals_objective_partial(self.pert_design, pert_state)
         self.dRdX.linearize(self.pert_design, pert_state)
@@ -298,7 +304,8 @@ class ReducedKKTMatrix(BaseHessian):
 
         # add globalization if necessary
         if self.lamb > EPS:
-            out_vec._primal.equals_ax_p_by(1., out_vec._primal, self.lamb*self.scale, in_vec._primal)
+            out_vec._primal.equals_ax_p_by(
+                1., out_vec._primal, self.lamb*self.scale, in_vec._primal)
 
         # if this is a single product, we reset the approximation flag
         if self._reset_approx:

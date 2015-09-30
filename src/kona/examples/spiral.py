@@ -22,9 +22,9 @@ class SpiralSolver(object):
     @property
     def dRdX(self):
         dRdX1 = -np.sin(self.theta)*self.U[0] + np.cos(self.theta)*self.U[1] \
-                + (self.X**2)*np.sin(self.alpha) - 4.0*self.X*np.cos(self.alpha)
+            + (self.X**2)*np.sin(self.alpha) - 4.0*self.X*np.cos(self.alpha)
         dRdX2 = -np.cos(self.theta)*self.U[0] - np.sin(self.theta)*self.U[1] \
-                - (self.X**2)*np.cos(self.alpha) - 4.0*self.X*np.sin(self.alpha)
+            - (self.X**2)*np.cos(self.alpha) - 4.0*self.X*np.sin(self.alpha)
         return 0.5*np.array([[dRdX1],[dRdX2]])
 
     @property
@@ -134,9 +134,11 @@ class Spiral(UserSolver):
         result.data = np.linalg.solve(self.PDE.dRdU.T, rhs_vec.data)
         return 0
 
-    def current_solution(self, curr_design, curr_state, curr_adj, curr_dual, num_iter):
+    def current_solution(self, curr_design, curr_state, curr_adj,
+                         curr_dual, num_iter):
 
-        super(Spiral, self).current_solution(curr_design, curr_state, curr_adj, curr_dual, num_iter)
+        super(Spiral, self).current_solution(
+            curr_design, curr_state, curr_adj, curr_dual, num_iter)
 
         print 'Current Design: '
         print self.curr_design
@@ -148,4 +150,5 @@ class Spiral(UserSolver):
         self.u1_hist.append(curr_state.data[0])
         self.u2_hist.append(curr_state.data[1])
         self.obj_hist.append(self.PDE.F)
-        self.grad_hist.append(self.PDE.dFdX + self.PDE.dRdX.T.dot(curr_adj.data))
+        self.grad_hist.append(
+            self.PDE.dFdX + self.PDE.dRdX.T.dot(curr_adj.data))
