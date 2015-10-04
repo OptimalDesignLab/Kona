@@ -239,10 +239,12 @@ class FLECS(KrylovSolver):
         self.y_mult.resize(self.iters)
         self.y_mult[:] = y_r[:]
 
-        # compute the predicted reductions in the objective (not penalty func.)
+        # compute the predicted reductions in the objective
+        # first compute the FGMRES prediction
         self.pred = -0.5*numpy.inner(y_r, numpy.inner(Hess_red, y_r))
         for k in xrange(self.iters):
             self.pred += self.g[0]*VtZ_prim_r[0, k]*y_r[k]
+        # now compute the FLECS prediction
         self.pred_aug = -0.5*numpy.inner(
             self.y_aug, numpy.inner(Hess_red, self.y_aug))
         for k in xrange(self.iters):

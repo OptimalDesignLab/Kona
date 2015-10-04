@@ -400,6 +400,7 @@ class Verifier(object):
         y_s.equals_residual(w_p, u_s)
         y_s.minus(x_s)
         y_s.divide_by(epsilon_fd)
+        prod_norm_fd = y_s.norm2
         v_s.minus(y_s)
         error = v_s.norm2
         rel_error = error/(y_s.norm2 + EPS)
@@ -408,6 +409,8 @@ class Verifier(object):
             '============================================================\nn' +
             'PDE jacobian-vector product test (design): dR/dX * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %e\n'%prod_norm +
+            '   FD product           : %e\n'%prod_norm_fd +
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
@@ -452,15 +455,18 @@ class Verifier(object):
         y_s.equals_residual(u_p, w_s)
         y_s.minus(x_s)
         y_s.divide_by(epsilon_fd)
+        prod_norm_fd = y_s.norm2
         prod_fd = y_s.inner(z_s)
         v_s.minus(y_s)
         error = v_s.norm2
-        rel_error = error/(y_s.norm2 + EPS)
+        rel_error = error/(prod_norm_fd + EPS)
 
         self.out_stream.write(
             '============================================================\n' +
             'PDE jacobian-vector product test (state): dR/dU * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %e\n'%prod_norm +
+            '   FD product           : %e\n'%prod_norm_fd +
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
@@ -468,7 +474,8 @@ class Verifier(object):
         if error > prod_norm*epsilon_fd:
             self.failures['pde_jac']['multiply_dRdU'] = True
             self.out_stream.write(
-                'WARNING: multiply_dRdU() or eval_residual() may be inaccurate!\n'
+                'WARNING: multiply_dRdU() or eval_residual() ' +
+                'may be inaccurate!\n'
             )
 
         v_s.equals(1./EPS)
@@ -531,6 +538,7 @@ class Verifier(object):
         y_d.equals_constraints(w_p, u_s)
         y_d.minus(x_d)
         y_d.divide_by(epsilon_fd)
+        prod_norm_fd = y_d.norm2
         v_d.minus(y_d)
         error = v_d.norm2
         rel_error = error/(prod_norm + EPS)
@@ -540,6 +548,8 @@ class Verifier(object):
             'Constraint jacobian-vector product test (design):\n' +
             'dC/dX * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %e\n'%prod_norm +
+            '   FD product           : %e\n'%prod_norm_fd +
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
@@ -588,6 +598,7 @@ class Verifier(object):
         y_d.equals_constraints(u_p, w_s)
         y_d.minus(x_d)
         y_d.divide_by(epsilon_fd)
+        prod_norm_fd = y_d.norm2
         v_d.minus(y_d)
         error = v_d.norm2
         rel_error = error/(prod_norm + EPS)
@@ -597,6 +608,8 @@ class Verifier(object):
             'Constraint jacobian-vector product test (state):\n' +
             'dC/dU * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %e\n'%prod_norm +
+            '   FD product           : %e\n'%prod_norm_fd +
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
