@@ -6,7 +6,8 @@ from kona.options import BadKonaOption, get_opt
 from kona.linalg import current_solution, objective_value, factor_linear_system
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import IdentityMatrix
-from kona.linalg.matrices.hessian import ReducedKKTMatrix
+from kona.linalg.matrices.hessian import ReducedKKTMatrix, \
+    IneqCnstrReducedKKTMatrix
 from kona.linalg.matrices.preconds import \
     ReducedSchurPreconditioner, NestedKKTPreconditioner
 from kona.linalg.solvers.krylov import FLECS
@@ -384,3 +385,17 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n'%self.iter)
+
+
+class InequalityConstrainedRSNK(EqualityConstrainedRSNK):
+
+    def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
+        super(InequalityConstrainedRSNK, self).__init__(
+            primal_factory, state_factory, dual_factory, optns
+        )
+
+        self.modified_matrix = IneqCnstrReducedKKTMatrix(self.KKT_matrix)
+        self.mat_vec = self.modified_matrix.product
+
+        if get_opt(optns, None, 'reduced', 'precond') == 'nested':
+            self.nested.KKT_matrix = self.modified_matrix
