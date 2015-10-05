@@ -11,7 +11,7 @@ class SimpleConstrained(UserSolver):
     def eval_residual(self, at_design, at_state, store_here):
         pass
 
-    def eval_ceq(self, at_design, at_state, store_here):
+    def eval_constraints(self, at_design, at_state, store_here):
         x = at_design.data[0]
         y = at_design.data[1]
         z = at_design.data[2]

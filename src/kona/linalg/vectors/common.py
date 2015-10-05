@@ -367,5 +367,5 @@ class DualVector(KonaVector):
         at_state : StateVector
             Current state point.
         """
-        self._memory.solver.eval_ceq(
+        self._memory.solver.eval_constraints(
             at_primal._data, at_state._data, self._data)

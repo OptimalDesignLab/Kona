@@ -10,7 +10,7 @@ class DummySolver(UserSolver):
     def eval_residual(self, at_design, at_state, store_here):
         store_here.data[:] = self.eval_obj(at_design, at_state)
 
-    def eval_ceq(self, at_design, at_state, store_here):
+    def eval_constraints(self, at_design, at_state, store_here):
         store_here.data[:] = self.eval_obj(at_design, at_state)
 
     def multiply_dRdX(self, at_design, at_state, in_vec, out_vec):

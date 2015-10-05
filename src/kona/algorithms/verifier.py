@@ -557,7 +557,8 @@ class Verifier(object):
         if error > prod_norm*epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdX'] = True
             self.out_stream.write(
-                'WARNING: multiply_dCdX() or eval_ceq() may be inaccurate!\n'
+                'WARNING: multiply_dCdX() or eval_constraints() ' +
+                'may be inaccurate!\n'
             )
 
         z_d.equals(1.0)
@@ -617,7 +618,8 @@ class Verifier(object):
         if error > prod_norm*epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdU'] = True
             self.out_stream.write(
-                'WARNING: multiply_dCdU() or eval_ceq() may be inaccurate!\n'
+                'WARNING: multiply_dCdU() or eval_constraints() ' +
+                'may be inaccurate!\n'
             )
 
         v_s.equals(1./EPS)

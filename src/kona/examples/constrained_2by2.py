@@ -19,7 +19,7 @@ class Constrained2x2(UserSolver):
         u = at_state.data
         store_here.data[:] = self.dRdU.dot(u) - p
 
-    def eval_ceq(self, at_design, at_state, store_here):
+    def eval_constraints(self, at_design, at_state, store_here):
         x = at_design.data[0]
         y = at_design.data[1]
 

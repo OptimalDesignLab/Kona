@@ -161,7 +161,7 @@ class ScalableIDF(UserSolverIDF):
         # store the result
         result.data = self.getResidual(design, state)
 
-    def eval_ceq(self, at_design, at_state, result):
+    def eval_constraints(self, at_design, at_state, result):
         # check the design and state vectors out of storage
         design = at_design.data
         __, __, uT, uW = self.splitDesignSpace(design)

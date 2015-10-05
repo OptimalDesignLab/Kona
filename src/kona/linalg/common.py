@@ -80,7 +80,7 @@ def factor_linear_system(at_design, at_state):
     solver = at_design._memory.solver
 
     if solver != at_state._memory.solver:
-        raise MemoryError('objective_value() >> Primal and State ' + 
+        raise MemoryError('objective_value() >> Primal and State ' +
                           'vectors are not on the same memory manager!')
 
     solver.factor_linear_system(at_design._data, at_state._data)

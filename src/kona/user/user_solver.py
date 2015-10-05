@@ -53,10 +53,6 @@ class UserSolver(object):
         Evaluate the objective function using the design variables stored at
         ``at_design`` and the state variables stored at ``at_state``.
 
-        This function should return a tuple containing the objective function
-        value as the first element, and the number of preconditioner calls as
-        the second.
-
         .. note::
 
             This method must be implemented for any problem type.
@@ -78,9 +74,9 @@ class UserSolver(object):
 
     def eval_residual(self, at_design, at_state, store_here):
         """
-        Evaluate the linearized system (PDE) using the design point stored in
-        ``at_design`` and the state variables stored in ``at_state``. Put the
-        residual vector in ``store_here``.
+        Evaluate the governing equations (discretized PDE residual) at the
+        design variables stored in ``at_design`` and the state variables stored
+        in ``at_state``. Put the residual vector in ``store_here``.
 
         Parameters
         ----------
@@ -93,11 +89,17 @@ class UserSolver(object):
         """
         pass
 
-    def eval_ceq(self, at_design, at_state, store_here):
+    def eval_constraints(self, at_design, at_state, store_here):
         """
-        Evaluate the vector of equality constraints using the design variables
-        stored at `at_design`` and the state variables stored at ``at_state``.
-        Store the constraint residual at ``store_here``.
+        Evaluate the vector of constraints using the design variables stored at
+        ``at_design`` and the state variables stored at ``at_state``. Store the
+        constraint residual at ``store_here``.
+
+        .. note::
+
+            The constraints must have the form (c - c_target). In other words
+            the constraints should be structured in a way that they are equal
+            to or less/greater than zero when satisfied.
 
         Parameters
         ----------
@@ -112,15 +114,19 @@ class UserSolver(object):
 
     def multiply_dRdX(self, at_design, at_state, in_vec, out_vec):
         """
-        Perform the following tasks:
+        Evaluate the matrix-vector product for the design-jacobian of the PDE
+        residual. The multiplying vector is ``in_vec`` and the result should be
+        stored in ``out_vec``. The product should be evaluated at the given
+        design and state vectors, ``at_design`` and ``at_state`` respectively.
 
-        * Update the linearized system jacobian using the design point in
-          ``at_design`` and the state variables in ``at_state``.
+        .. math::
 
-        * Multiply the design component of the system jacobian with the vector
-          stored in ``in_vec``.
+            \frac{\partial R(at_design, at_state)}{\partial X} in_vec = out_vec
 
-        * Store the result in ``out_vec``.
+        .. note::
+
+            This jacobian is a partial. No total derivatives, gradients or
+            jacobians should be evaluated by any UserSolver implementation.
 
         Parameters
         ----------
@@ -137,15 +143,19 @@ class UserSolver(object):
 
     def multiply_dRdU(self, at_design, at_state, in_vec, out_vec):
         """
-        Perform the following tasks:
+        Evaluate the matrix-vector product for the state-jacobian of the PDE
+        residual. The multiplying vector is ``in_vec`` and the result should be
+        stored in ``out_vec``. The product should be evaluated at the given
+        design and state vectors, ``at_design`` and ``at_state`` respectively.
 
-        * Update the linearized system jacobian using the design point in
-          ``at_design`` and the state variables in ``at_state``.
+        .. math::
 
-        * Multiply the state component of the system jacobian with the vector
-          stored in ``in_vec``.
+            \frac{\partial R(at_design, at_state)}{\partial U} in_vec = out_vec
 
-        * Store the result in ``out_vec``.
+        .. note::
+
+            This jacobian is a partial. No total derivatives, gradients or
+            jacobians should be evaluated by any UserSolver implementation.
 
         Parameters
         ----------
@@ -162,20 +172,25 @@ class UserSolver(object):
 
     def multiply_dRdX_T(self, at_design, at_state, in_vec, out_vec):
         """
-        Perform the following tasks:
+        Evaluate the transposed matrix-vector product for the design-jacobian
+        of the PDE residual. The multiplying vector is ``in_vec`` and the
+        result should be stored in ``out_vec``. The product should be evaluated
+        at the given design and state vectors, ``at_design`` and ``at_state``
+        respectively.
 
-        * Update the linearized system jacobian using the design point in
-          ``at_design`` and the state variables in ``at_state``.
+        .. math::
 
-        * Multiply the transposed design component of the system jacobian with
-          the vector stored in ``in_vec``.
-
-        * Store the result in ``out_vec``.
+            \frac{\partial R(at_design, at_state)}{\partial X}^T in_vec = out_vec
 
         .. note::
 
             Must always store a result even when it isn't implemented. Use a
             zero vector of length ``self.num_design`` for this purpose.
+
+        .. note::
+
+            This jacobian is a partial. No total derivatives, gradients or
+            jacobians should be evaluated by any UserSolver implementation.
 
         Parameters
         ----------
@@ -192,15 +207,20 @@ class UserSolver(object):
 
     def multiply_dRdU_T(self, at_design, at_state, in_vec, out_vec):
         """
-        Perform the following tasks:
+        Evaluate the transposed matrix-vector product for the state-jacobian
+        of the PDE residual. The multiplying vector is ``in_vec`` and the
+        result should be stored in ``out_vec``. The product should be evaluated
+        at the given design and state vectors, ``at_design`` and ``at_state``
+        respectively.
 
-        * Update the linearized system jacobian using the design point in
-          ``at_design`` and the state variables in ``at_state``.
+        .. math::
 
-        * Multiply the transposed state component of the system jacobian with
-          the vector stored in ``in_vec``.
+            \frac{\partial R(at_design, at_state)}{\partial U}^T in_vec = out_vec
 
-        * Store the result in ``out_vec``.
+        .. note::
+
+            This jacobian is a partial. No total derivatives, gradients or
+            jacobians should be evaluated by any UserSolver implementation.
 
         Parameters
         ----------
@@ -217,17 +237,22 @@ class UserSolver(object):
 
     def factor_linear_system(self, at_design, at_state):
         """
-        OPTIONAL: Build the dR/dU linear system and its preconditioner. These
+        OPTIONAL: Build/factor the dR/dU matrix and its preconditioner at the
+        given design and state vectors, ``at_design`` and ``at_state``. These
         matrices are then used to perform forward solves, adjoint solves and
         forward/transpose preconditioner applications.
 
         This routine is only used by matrix-based solvers where matrix
         factorizations are costly and should be done only once per optimization
-        iteration.
+        iteration. The optimization options dictionary must have the
+        ``matrix_explicit`` key set to ``True``.
 
-        NOTE: If the user chooses to leverage this factorization, then design
-        and state linearizations should be ignored for preconditioner
-        application, linear solve, and adjoint solve calls.
+        .. note::
+
+            If the user chooses to leverage this factorization, the
+            (design, state) evaluation points should be ignored for
+            preconditioner application, linear solve, and adjoint
+            solve calls.
 
         Parameters
         ----------
@@ -240,14 +265,16 @@ class UserSolver(object):
 
     def apply_precond(self, at_design, at_state, in_vec, out_vec):
         """
-        OPTIONAL: Apply the preconditioner to the vector at ``in_vec`` and
-        store the result in ``out_vec``. If the preconditioner has to be
-        linearized, use the design and state vectors provided in ``at_design``
-        and ``at_state``.
+        Apply the preconditioner to the vector at ``in_vec`` and
+        store the result in ``out_vec``. If the preconditioner is nonlinear,
+        evaluate the application using the design and state vectors provided
+        in ``at_design`` and ``at_state``.
 
-        NOTE: If the solver uses ``factor_linear_system()``, ignore the design
-        and state linearization points and use the previously factored
-        preconditioner.
+        .. note::
+
+            If the solver uses ``factor_linear_system()``, ignore the
+            (design, state) evaluation point and use the previously factored
+            preconditioner.
 
         Parameters
         ----------
@@ -265,18 +292,21 @@ class UserSolver(object):
         int
             Number of preconditioner calls required for the operation.
         """
+        out_vec.data[:] = in_vec.data[:]
         return 0
 
     def apply_precond_T(self, at_design, at_state, in_vec, out_vec):
         """
-        OPTIONAL: Apply the transposed preconditioner to the vector at
-        ``in_vec`` and store the result in ``out_vec``. If the preconditioner
-        has to be linearized, use the design and state vectors provided in
-        ``at_design`` and ``at_state``.
+        Apply the transposed preconditioner to the vector at ``in_vec`` and
+        store the result in ``out_vec``. If the preconditioner is nonlinear,
+        evaluate the application using the design and state vectors provided
+        in ``at_design`` and ``at_state``.
 
-        NOTE: If the solver uses ``factor_linear_system()``, ignore the design
-        and state linearization points and use the previously factored
-        preconditioner.
+        .. note::
+
+            If the solver uses ``factor_linear_system()``, ignore the
+            (design, state) evaluation point and use the previously factored
+            preconditioner.
 
         Parameters
         ----------
@@ -294,19 +324,25 @@ class UserSolver(object):
         int
             Number of preconditioner calls required for the operation.
         """
+        out_vec.data[:] = in_vec.data[:]
         return 0
 
     def multiply_dCdX(self, at_design, at_state, in_vec, out_vec):
         """
-        Perform the following tasks:
+        Evaluate the matrix-vector product for the design-jacobian of the
+        constraint vector. The multiplying vector is ``in_vec`` and the result
+        should be stored in ``out_vec``. The product should be evaluated at the
+        given design and state vectors, ``at_design`` and ``at_state``
+        respectively.
 
-        * Linearize the constraint jacobian about the design point in
-          ``at_design`` and the state variables in ``at_state``.
+        .. math::
 
-        * Multiply the design component of the constraint jacobian with
-          the vector stored in ``in_vec``.
+            \frac{\partial C(at_design, at_state)}{\partial X} in_vec = out_vec
 
-        * Store the result in ``out_vec``.
+        .. note::
+
+            This jacobian is a partial. No total derivatives, gradients or
+            jacobians should be evaluated by any UserSolver implementation.
 
         Parameters
         ----------
@@ -323,15 +359,20 @@ class UserSolver(object):
 
     def multiply_dCdU(self, at_design, at_state, in_vec, out_vec):
         """
-        Perform the following tasks:
+        Evaluate the matrix-vector product for the state-jacobian of the
+        constraint vector. The multiplying vector is ``in_vec`` and the result
+        should be stored in ``out_vec``. The product should be evaluated at the
+        given design and state vectors, ``at_design`` and ``at_state``
+        respectively.
 
-        * Linearize the constraint jacobian about the design point in
-          ``at_design`` and the state variables in ``at_state``.
+        .. math::
 
-        * Multiply the state component of the constraint jacobian with
-          the vector stored in ``in_vec``.
+            \frac{\partial C(at_design, at_state)}{\partial U} in_vec = out_vec
 
-        * Store the result in ``out_vec``.
+        .. note::
+
+            This jacobian is a partial. No total derivatives, gradients or
+            jacobians should be evaluated by any UserSolver implementation.
 
         Parameters
         ----------
@@ -348,20 +389,20 @@ class UserSolver(object):
 
     def multiply_dCdX_T(self, at_design, at_state, in_vec, out_vec):
         """
-        Perform the following tasks:
+        Evaluate the transposed matrix-vector product for the design-jacobian
+        of the constraint vector. The multiplying vector is ``in_vec`` and the
+        result should be stored in ``out_vec``. The product should be evaluated
+        at the given design and state vectors, ``at_design`` and ``at_state``
+        respectively.
 
-        * Linearize the constraint jacobian about the design point in
-          ``at_design`` and the state variables in ``at_state``.
+        .. math::
 
-        * Multiply the transposed design component of the constraint jacobian
-          with the vector stored in ``in_vec``.
-
-        * Store the result in ``out_vec``.
+            \frac{\partial C(at_design, at_state)}{\partial X}^T in_vec = out_vec
 
         .. note::
 
-            Must always store a result even when it isn't implemented. Use a
-            zero vector of length ``self.num_design`` for this purpose.
+            This jacobian is a partial. No total derivatives, gradients or
+            jacobians should be evaluated by any UserSolver implementation.
 
         Parameters
         ----------
@@ -378,15 +419,20 @@ class UserSolver(object):
 
     def multiply_dCdU_T(self, at_design, at_state, in_vec, out_vec):
         """
-        Perform the following tasks:
+        Evaluate the transposed matrix-vector product for the state-jacobian
+        of the constraint vector. The multiplying vector is ``in_vec`` and the
+        result should be stored in ``out_vec``. The product should be evaluated
+        at the given design and state vectors, ``at_design`` and ``at_state``
+        respectively.
 
-        * Linearize the constraint jacobian about the design point in
-          ``at_design`` and the state variables in ``at_state``.
+        .. math::
 
-        * Multiply the transposed state component of the constraint jacobian
-          with the vector stored in ``in_vec``.
+            \frac{\partial C(at_design, at_state)}{\partial U}^T in_vec = out_vec
 
-        * Store the result in ``out_vec``.
+        .. note::
+
+            This jacobian is a partial. No total derivatives, gradients or
+            jacobians should be evaluated by any UserSolver implementation.
 
         Parameters
         ----------
@@ -402,11 +448,19 @@ class UserSolver(object):
         pass
 
     def apply_active_set(self, at_design, at_state, in_vec, out_vec):
+        """
+        This is a method used only for inequality constrained problems.
+
+        The active-set "matrix" is intended as a modified identity matrix
+        with matching dimensions to the constraint vector. The diagonal entries
+        corresponding to inactive
+        where the
+        """
         out_vec.data[:] = in_vec.data[:]
 
     def eval_dFdX(self, at_design, at_state, store_here):
         """
-        Evaluate the design component of the objective gradient at the
+        Evaluate the partial of the objective w.r.t. design variables at the
         design point stored in ``at_design`` and the state variables stored in
         ``at_state``. Store the result in ``store_here``.
 
@@ -427,9 +481,13 @@ class UserSolver(object):
 
     def eval_dFdU(self, at_design, at_state, store_here):
         """
-        Evaluate the design component of the objective gradient at the
+        Evaluate the partial of the objective w.r.t. state variable at the
         design point stored in ``at_design`` and the state variables stored in
         ``at_state``. Store the result in ``store_here``.
+
+        .. note::
+
+            If there are no state variables, a zero vector must be stored.
 
         Parameters
         ----------
@@ -440,7 +498,7 @@ class UserSolver(object):
         store_here : BaseVector
             Location where user should store the result.
         """
-        pass
+        store_here.data[:] = 0.
 
     def init_design(self, store_here):
         """
@@ -455,23 +513,26 @@ class UserSolver(object):
 
     def solve_nonlinear(self, at_design, result):
         """
-        Solve the non linear system at the design point stored in
-        ``at_design``. Store the calculated state variables (u) under
-        ``result``.
+        Compute the state variables at the given design point, ``at_design``.
+        Store the resulting state variables in ``result``.
 
-        A simple example is provided below, where the stiffness matrix is
-        nonlinearly dependent on the solution.
+        For linear problems, this can be a simple linear system solution:
 
-        .. math:: \mathcal{K}(\mathbf{u})\mathbf{u} = \mathbf{F}
+        .. math:: \mathcal{K}(x)\mathbf{u} = \mathbf{F}(x)
 
-        If the nonlinear solution fails to converge, the user should return a
-        ``-1`` integer in order to let Kona decide to backtrack on the
+        For nonlinear problems, this can involve Newton iterations:
+
+        .. math:: \frac{\partial R(x, u_{guess})}{\partual u} \Delta u = -R(x, u_{guess})
+
+        If the solution fails to converge, the user should return a
+        negative integer in order to help Kona intelligently backtrack in the
         optimization.
 
         Similarly, in the case of correct convergence, the user is encouraged
         to return the number of preconditioner calls it took to solve the
         nonlinear system. Kona uses this information to track the
-        computational cost of the optimization.
+        computational cost of the optimization. If the number of preconditioner
+        calls is not available, return a 1 (one).
 
         Parameters
         ----------
@@ -486,7 +547,7 @@ class UserSolver(object):
             Number of preconditioner calls required for the solution.
         """
         converged = True
-        cost = 0
+        cost = 1
         if converged:
             # You can return the number of preconditioner calls here.
             # This is used by Kona to track computational cost.
@@ -499,19 +560,23 @@ class UserSolver(object):
 
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
         """
-        Evaluate the state jacobian, :math:`\\frac{\partial R}{\partial U}`,
-        at the design point stored in ``at_design`` and the state variables
-        stored in ``at_state``. Solve the linear system
-        :math:`\\frac{\partial R}{\partial U}\\mathbf{u}=\\mathbf{v}` where the
-        right hand side vector, :math:`\\mathbf{v}`, is the vector stored in
-        ``rhs_vec``.
+        Solve the linear system defined by the state-jacobian of the PDE
+        residual, to the specified absolute tolerance ``tol``.
 
-        The solution vector, :math:`\\mathbf{u}`, should be stored at
-        ``result``.
+        .. math::
 
-        NOTE: If the solver uses ``factor_linear_system()``, ignore the design
-        and state linearization points and use the previously factored
-        dR/dU matrix.
+            \frac{\partial R(at_design, at_state)}{\partial U} result = rhs_vec
+
+        The jacobian should be evaluated at the given (design, state) point,
+        ``at_design`` and ``at_state``.
+
+        Store the solution in ``result``.
+
+        .. note::
+
+            If the solver uses ``factor_linear_system()``, ignore the
+            ``at_design`` evaluation point and use the previously factored
+            preconditioner.
 
         Parameters
         ----------
@@ -535,20 +600,23 @@ class UserSolver(object):
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, tol, result):
         """
-        Evaluate the transposed state jacobian,
-        :math:`\\frac{\partial R}{\partial U}^T`, at the design point stored in
-        ``at_design`` and the state variables stored in ``at_state``. Solve the
-        adjoint system
-        :math:`\\frac{\partial R}{\partial U}^T\\mathbf{u}=\\mathbf{v}` where
-        the right hand side vector, :math:`\\mathbf{v}`, is the vector stored
-        in ``rhs_vec``.
+        Solve the linear system defined by the transposed state-jacobian of the
+        PDE residual, to the specified absolute tolerance ``tol``.
 
-        The solution vector, :math:`\\mathbf{u}`, should be stored at
-        ``result``.
+        .. math::
 
-        NOTE: If the solver uses ``factor_linear_system()``, ignore the design
-        and state linearization points and use the previously factored
-        dR/dU^T matrix.
+            \frac{\partial R(at_design, at_state)}{\partial U}^T result = rhs_vec
+
+        The jacobian should be evaluated at the given (design, state) point,
+        ``at_design`` and ``at_state``.
+
+        Store the solution in ``result``.
+
+        .. note::
+
+            If the solver uses ``factor_linear_system()``, ignore the
+            ``at_design`` evaluation point and use the previously factored
+            preconditioner.
 
         Parameters
         ----------
