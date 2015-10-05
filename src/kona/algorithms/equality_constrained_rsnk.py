@@ -394,8 +394,8 @@ class InequalityConstrainedRSNK(EqualityConstrainedRSNK):
             primal_factory, state_factory, dual_factory, optns
         )
 
-        self.modified_matrix = IneqCnstrReducedKKTMatrix(self.KKT_matrix)
-        self.mat_vec = self.modified_matrix.product
+        self.KKT_matrix = IneqCnstrReducedKKTMatrix(self.KKT_matrix)
+        self.mat_vec = self.KKT_matrix.product
 
         if get_opt(optns, None, 'reduced', 'precond') == 'nested':
             self.nested.KKT_matrix = self.modified_matrix

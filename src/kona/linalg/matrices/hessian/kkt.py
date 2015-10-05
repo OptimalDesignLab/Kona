@@ -378,26 +378,46 @@ class IneqCnstrReducedKKTMatrix(BaseHessian):
         self.primal_factory = self.base_matrix.primal_factory
         self.dual_factory = self.base_matrix.dual_factory
         self.primal_factory.request_num_vectors(2)
-        self.dual_factory.request_num_vectors(2)
-        self.linearized = False
+        self.dual_factory.request_num_vectors(3)
+        self._allocated = False
 
     @property
     def approx(self):
         self.base_matrix = self.base_matrix.approx
         return self
 
+    @property
+    def dynamic_tol(self):
+        return self.base_matrix.dynamic_tol
+
+    @dynamic_tol.setter
+    def dynamic_tol(self, value):
+        self.base_matrix.dynamic_tol = value
+
+    @property
+    def product_fac(self):
+        return self.base_matrix.product_fac
+
+    @product_fac.setter
+    def product_fac(self, value):
+        self.base_matrix.product_fac = value
+
+    def _check_allocation(self):
+        if not self._allocated:
+            raise RuntimeError('IneqCnstrReducedKKTMatrix is not allocated!!')
+
     def set_krylov_solver(self, krylov_solver):
         self.base_matrix.set_krylov_solver(krylov_solver)
 
     def linearize(self, at_kkt, at_state, at_adjoint):
         # if this is the first ever linearization, create some work vectors
-        if not self.linearized:
+        if not self._allocated:
             self.modified_kkt = ReducedKKTVector(
                 self.primal_factory.generate(), self.dual_factory.generate())
             self.modified_invec = ReducedKKTVector(
                 self.primal_factory.generate(), self.dual_factory.generate())
             self.constraints = self.dual_factory.generate()
-            self.linearized = True
+            self._allocated = True
 
         # modify the dual variables using the active-set matrix
         # this will zero out dual variables for all inactive constraints
