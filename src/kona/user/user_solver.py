@@ -95,11 +95,13 @@ class UserSolver(object):
         ``at_design`` and the state variables stored at ``at_state``. Store the
         constraint residual at ``store_here``.
 
-        .. note::
+        The constraints must have the form (c - c_target). In other words:
 
-            The constraints must have the form (c - c_target). In other words
-            the constraints should be structured in a way that they are equal
-            to or less/greater than zero when satisfied.
+        * For equality constraints, the constraint value should be zero at
+          feasibility.
+
+        * For inequality constraints, the constraint value should be greater
+          than zero when feasible.
 
         Parameters
         ----------
@@ -447,14 +449,25 @@ class UserSolver(object):
         """
         pass
 
-    def apply_active_set(self, at_design, at_state, in_vec, out_vec):
+    def apply_active_set(self, at_constraints, in_vec, out_vec):
         """
         This is a method used only for inequality constrained problems.
 
-        The active-set "matrix" is intended as a modified identity matrix
-        with matching dimensions to the constraint vector. The diagonal entries
-        corresponding to inactive
-        where the
+        The active-set "matrix" is mathematically defined as a modified
+        identity matrix with matching dimensions to the constraint vector.
+        The diagonal entries of this matrix corresponding to inactive
+        inequality constraints are set to zero.
+
+        The user solver should parse the data in the given constraint vector,
+        ``at_constraints``, evaluate feasibility, and then zero out the
+        appropriate values for the given input vector, ``in_vec``. The result
+        of the operation should be stored in ``out_vec``.
+
+        Parameters
+        ----------
+        at_constraints : BaseVector
+        in_vec : BaseVector
+        out_vec : BaseVector
         """
         out_vec.data[:] = in_vec.data[:]
 
