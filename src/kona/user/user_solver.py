@@ -463,6 +463,12 @@ class UserSolver(object):
         appropriate values for the given input vector, ``in_vec``. The result
         of the operation should be stored in ``out_vec``.
 
+        .. note::
+
+            The user should only evaluate feasibility for inequality
+            constraints. No work should be done regarding any equality
+            constraints.
+
         Parameters
         ----------
         at_constraints : BaseVector
