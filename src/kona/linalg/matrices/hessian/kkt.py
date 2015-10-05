@@ -396,12 +396,14 @@ class IneqCnstrReducedKKTMatrix(BaseHessian):
                 self.primal_factory.generate(), self.dual_factory.generate())
             self.modified_invec = ReducedKKTVector(
                 self.primal_factory.generate(), self.dual_factory.generate())
+            self.constraints = self.dual_factory.generate()
             self.linearized = True
 
         # modify the dual variables using the active-set matrix
         # this will zero out dual variables for all inactive constraints
         self.modified_kkt._primal.equals(at_kkt._primal)
-        ActiveSetMatrix(at_kkt._primal, at_state).product(
+        self.constraints.equals_constraints(at_kkt._primal, at_state)
+        ActiveSetMatrix(self.constraints).product(
             at_kkt._dual, self.modified_kkt._dual)
 
         # store references to some useful vectors
@@ -416,12 +418,12 @@ class IneqCnstrReducedKKTMatrix(BaseHessian):
         # preserve the primal variables in the incoming vector
         self.modified_invec._primal.equals(in_vec._primal)
         # zero out the dual variables corresponding to inactive constraints
-        ActiveSetMatrix(self.modified_kkt._primal, self.at_state).product(
+        ActiveSetMatrix(self.constraints).product(
             in_vec._dual, self.modified_invec._dual)
         # perform the product on the modified incoming vector
         self.base_matrix.product(self.modified_invec, out_vec)
         # zero out the necessary dual variables again, this time in the result
-        ActiveSetMatrix(self.modified_kkt._primal, self.at_state).product(
+        ActiveSetMatrix(self.constraints).product(
             out_vec._dual, out_vec._dual)
 
     def solve(self, rhs, solution, rel_tol=None):

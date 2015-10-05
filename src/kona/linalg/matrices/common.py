@@ -209,10 +209,16 @@ class ActiveSetMatrix(KonaMatrix):
     """
     Augmented identity matrix that determines which constraints are active.
     """
+    def linearize(self, at_constraints):
+        self._constraints = at_constraints
+        self._memory = self._constraints._memory
+        self._solver = self._constraints.solver
+        self._linearized = True
+
     def product(self, in_vec, out_vec):
         self._check_linearization()
         self._solver.apply_active_set(
-            self._primal.data, self._state._data, in_vec._data, out_vec._data)
+            self._constraints._data, in_vec._data, out_vec._data)
 
 class IdentityMatrix(KonaMatrix):
     """
