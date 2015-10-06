@@ -15,7 +15,7 @@ class UserSolver(object):
         Primal space size.
     num_state : int, optional
         State space size.
-    num_ceq : int, optional
+    num_dual : int, optional
         Dual space size.
     allocator : BaseAllocator, optional
         Allocator object that produces the abstracted vector data containers.
@@ -26,15 +26,15 @@ class UserSolver(object):
         Size of the design space
     num_state : int, optional
         Number of state variables
-    num_ceq : int, optional
-        Size of the equality constraint residual
+    num_dual : int, optional
+        Number of constraints (equality and inequality together)
     allocator : BaseAllocator
         Object that allocates BaseVector instances when Kona asks for it.
     """
 
-    def __init__(self, num_primal=0, num_state=0, num_ceq=0, allocator=None):
+    def __init__(self, num_primal=0, num_state=0, num_dual=0, allocator=None):
         if allocator is None:
-            self.allocator = BaseAllocator(num_primal, num_state, num_ceq)
+            self.allocator = BaseAllocator(num_primal, num_state, num_dual)
         else:
             self.allocator = allocator
         self.num_primal = self.allocator.num_primal
