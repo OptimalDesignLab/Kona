@@ -161,6 +161,8 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         X.equals_init_guess()
         init_design.equals(X._primal)
         state.equals_primal_solution(init_design)
+        if self.factor_matrices and self.iter < self.max_iter:
+            factor_linear_system(X._primal, state)
         adjoint.equals_adjoint_solution(init_design, state, state_work[0])
         current_solution(init_design, state, adjoint, X._dual, self.iter)
 
@@ -363,17 +365,17 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 X.plus(P)
                 state.equals_primal_solution(X._primal)
 
+            # if this is a matrix-based problem, tell the solver to factor
+            # some important matrices to be used in the next iteration
+            if self.factor_matrices and self.iter < self.max_iter:
+                factor_linear_system(X._primal, state)
+
             # solve for adjoint
             adjoint.equals_adjoint_solution(X._primal, state, state_work[0])
 
             # write current solution
             current_solution(X._primal, state, adjoint, X._dual, self.iter)
             self.info_file.write('Norm of multipliers = %e\n'%X._dual.norm2)
-
-            # if this is a matrix-based problem, tell the solver to factor
-            # some important matrices to be used in the next iteration
-            if self.factor_matrices and self.iter < self.max_iter:
-                factor_linear_system(X._primal, state)
 
         ############################
         # END OF BIG LOOP
