@@ -153,16 +153,16 @@ class BackTracking(LineSearch):
             raise ValueError('search direction is not a descent direction')
 
         alpha = self.alpha_init
-        f_init = merit.eval_func(alpha)
-        f = merit.eval_func(alpha)
+        self.f_init = merit.eval_func(alpha)
+        self.f = merit.eval_func(alpha)
 
         n_iter = 0
         while (alpha > self.alpha_min) and (n_iter < self.max_iter):
-            f_sufficient = f_init + self.decr_cond*alpha*self.p_dot_dfdx
-            if f <= f_sufficient:
+            f_sufficient = self.f_init + self.decr_cond*alpha*self.p_dot_dfdx
+            if self.f <= f_sufficient:
                 return alpha, n_iter
             alpha *= self.rdtn_factor
-            f = merit.eval_func(alpha)
+            self.f = merit.eval_func(alpha)
             n_iter += 1
 
         # if we get here, we didn't find a step

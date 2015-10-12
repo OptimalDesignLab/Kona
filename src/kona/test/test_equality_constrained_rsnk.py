@@ -3,13 +3,14 @@ import numpy
 
 from kona.linalg.memory import KonaMemory
 from kona.algorithms import EqualityConstrainedRSNK
-from kona.examples import SimpleConstrained
+from kona.examples import SimpleConstrained, Constrained2x2
 
 class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
         solver = SimpleConstrained()
+        # solver = Constrained2x2()
         km = KonaMemory(solver)
 
         optns = {
@@ -23,8 +24,8 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             },
 
             'aug_lag' : {
-                'mu_init' : 10.0,
-                'mu_pow' : 0.5,
+                'mu_init' : 1.0,
+                'mu_pow' : 1.0,
             },
 
             'reduced' : {

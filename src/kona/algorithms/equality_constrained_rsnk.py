@@ -5,13 +5,15 @@ from kona.options import BadKonaOption, get_opt
 
 from kona.linalg import current_solution, objective_value, factor_linear_system
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.matrices.common import IdentityMatrix
+from kona.linalg.matrices.common import IdentityMatrix, dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian import ReducedKKTMatrix, \
     IneqCnstrReducedKKTMatrix
 from kona.linalg.matrices.preconds import \
     ReducedSchurPreconditioner, NestedKKTPreconditioner
 from kona.linalg.solvers.krylov import FLECS
 from kona.algorithms.util import Filter
+from kona.algorithms.util.linesearch import BackTracking
+from kona.algorithms.util.merit import AugmentedLagrangian
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class EqualityConstrainedRSNK(OptimizationAlgorithm):
@@ -23,8 +25,8 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         )
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(8)
-        self.state_factory.request_num_vectors(8)
+        self.primal_factory.request_num_vectors(7)
+        self.state_factory.request_num_vectors(5)
         self.dual_factory.request_num_vectors(5)
 
         # get other options
@@ -50,9 +52,20 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         except:
             raise BadKonaOption(optns, 'krylov', 'solver')
 
-        # create the filter
+        # initialize the globalization method
         # NOTE: Latest C++ source has the filter disabled entirely!!!
-        self.filter = Filter()
+        self.globalization = 'linesearch'
+        if self.globalization == 'filter':
+            self.filter = Filter()
+        elif self.globalization == 'linesearch':
+            # set up the merit function
+            self.merit_func = AugmentedLagrangian(
+                self.primal_factory, self.state_factory, self.dual_factory,
+                {}, self.info_file)
+            # set the type of line-search algorithm
+            self.line_search = BackTracking({}, self.info_file)
+        else:
+            raise TypeError('Wrong globalization method!')
 
         # initialize the KKT matrix definition
         reduced_optns = get_opt(optns, {}, 'reduced')
@@ -138,16 +151,15 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         # generate primal vectors
         init_design = self.primal_factory.generate()
         primal_work = []
-        for i in xrange(3):
+        for i in xrange(2):
             primal_work.append(self.primal_factory.generate())
 
         # generate state vectors
         state = self.state_factory.generate()
         state_save = self.state_factory.generate()
         adjoint = self.state_factory.generate()
-        state_work = []
-        for i in xrange(5):
-            state_work.append(self.state_factory.generate())
+        state_work = self.state_factory.generate()
+        adjoint_work = self.state_factory.generate()
 
         # generate dual vectors
         dual_work = self.dual_factory.generate()
@@ -163,7 +175,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         state.equals_primal_solution(init_design)
         if self.factor_matrices and self.iter < self.max_iter:
             factor_linear_system(X._primal, state)
-        adjoint.equals_adjoint_solution(init_design, state, state_work[0])
+        adjoint.equals_adjoint_solution(init_design, state, state_work)
         current_solution(init_design, state, adjoint, X._dual, self.iter)
 
         # BEGIN BIG LOOP HERE
@@ -205,7 +217,6 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 feas_norm = dLdX._dual.norm2
                 kkt_norm = sqrt(feas_norm**2 + grad_norm**2)
                 # update the augmented Lagrangian penalty
-                mu = max(mu, self.mu_init)*((feas_norm/feas_norm0)**self.mu_pow)
                 self.info_file.write(
                     'grad_norm = %e (%e <-- tolerance)\n'%(
                         grad_norm, grad_tol) +
@@ -254,7 +265,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             P.equals(0.0)
 
             # move dL/dX to right hand side
-            dLdX.times(-1)
+            dLdX.times(-1.)
 
             # linearize the KKT matrix
             self.KKT_matrix.linearize(X, state, adjoint)
@@ -263,105 +274,25 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # trigger the krylov solution
             self.krylov.solve(self.mat_vec, dLdX, P, self.precond)
+            # recover the updated mu
+            mu = self.krylov.mu
 
-            use_filter = False
-            if use_filter:
-                # START FILTER LOOP
-                ######################
-                filter_success = False
-                max_filter_iter = 3
-                for j in xrange(max_filter_iter):
-                    # save old design and state before updating
-                    primal_work[0].equals(X._primal)
-                    state_save.equals(state)
-                    # update design
-                    X._primal.plus(P._primal)
-                    # update state
-                    if state.equals_primal_solution(X._primal):
-                        # state equation solution was successful
-                        # try the filter
-                        obj = objective_value(X._primal, state)
-                        dual_work.equals_constraints(X._primal, state)
-                        cnstr_norm = dual_work.norm2
-                        # if the new (obj, cnstr) point is acceptable
-                        if self.filter.accepts(obj, cnstr_norm):
-                            # flag filter success
-                            filter_success = True
-                            # increase radius if the trust region is active
-                            if (j == 0) and self.krylov.trust_active:
-                                self.radius = \
-                                    min(2.*self.radius, self.max_radius)
-                            # break out of filter loop
-                            break
+            # move dL/dX back to left hand side
+            dLdX.times(-1.)
 
-                    # if we get here it means the filter did not accept point
-                    if (j == 0):
-                        # on the first iteration, try a second-order correction
-                        self.info_file.write(
-                            'attempting a second-order correction...')
-                        # reset step size...this is where SOC step is stored
-                        P.equals(0.0)
-                        # set in solution parameters
-                        self.krylov.rel_tol = krylov_tol
-                        self.krylov.mu = self.mu_init
-                        # write in new tolerances
-                        # grad_tol = 0.9*grad_norm
-                        # feas_tol = 0.9*feas_norm
-                        # apply the correction
-                        self.krylov.out_file.write(
-                            '#---------------------------------------------\n' +
-                            '# Second-order correction (iter = %i)\n'%self.iter)
-                        dual_work.times(-1)
-                        self.krylov.apply_correction(dual_work, P)
-                        # apply the SOC step
-                        X._primal.plus(P._primal)
-                        # update states
-                        if state.equals_primal_solution(X._primal):
-                            # state equation solution was successful
-                            # try the filter
-                            obj = objective_value(X._primal, state)
-                            dual_work.equals_constraints(X._primal, state)
-                            cnstr_norm = dual_work.norm2
-                            # if the corrected (obj, cnstr) point is acceptable
-                            if self.filter.accepts(obj, cnstr_norm):
-                                # flag filter success
-                                filter_success = True
-                                # print correction success
-                                self.info_file.write('successful\n')
-                                # break out of filter loop
-                                break
-                            # otherwise print correction failure
-                            self.info_file.write('unsuccessful\n')
+            # implement some globalization method here
+            if self.globalization == 'filter':
+                self.filter_step(
+                    X, state, P, dLdX, krylov_tol, mu,
+                    primal_work[0], state_save, dual_work)
+            elif self.globalization == 'linesearch':
 
-                    # if we get here, filter dominated the point and the
-                    # second order correction did not help
-
-                    # reset the primal step and shrink radius
-                    X._primal.equals(primal_work[0])
-                    state.equals(state_save)
-                    self.radius *= 0.25
-
-                    # perform a re-solve at new radius only if there are more
-                    # filter iteations left to perform
-                    if (j < max_filter_iter-1):
-                        self.info_file.write(
-                            're-solving with new radius: %f\n'%self.radius)
-                        self.krylov.radius = self.radius
-                        self.krylov.rel_tol = krylov_tol
-                        self.krylov.mu = mu
-                        self.krylov.re_solve(dLdX, P)
-
-                ###########################
-                # END FILTER LOOP
-
-                # if filter succeeded, then update multipliers
-                if filter_success:
-                    self.info_file.write(
-                        'filter worked with %i iterations\n'%(j+1))
-                    X._dual.plus(P._dual)
-                else:
-                    self.info_file.write('filter failed!\n')
+                # trigger the line search
+                self.backtrack_step(
+                    X, state, P, dLdX, mu, adjoint_work,
+                    primal_work, state_work, dual_work)
             else:
+                # no globalization, use FLECS step as-is
                 X.plus(P)
                 state.equals_primal_solution(X._primal)
 
@@ -371,7 +302,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 factor_linear_system(X._primal, state)
 
             # solve for adjoint
-            adjoint.equals_adjoint_solution(X._primal, state, state_work[0])
+            adjoint.equals_adjoint_solution(X._primal, state, state_work)
 
             # write current solution
             current_solution(X._primal, state, adjoint, X._dual, self.iter)
@@ -388,6 +319,153 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n'%self.iter)
 
+    def backtrack_step(self, X, state, P, dLdX, mu, adjoint_work,
+                       primal_work, state_work, dual_work):
+        # first we have to compute the total derivative of the
+        # augmented Lagrangian merit function
+        # to do this, we have to solve a special adjoint system
+        # STEP 1: define the RHS for the system
+        dual_work.equals(dLdX._dual)
+        dCdU(X._primal, state).T.product(dual_work, state_work)
+        state_work.times(-mu)
+        # STEP 2: solve the adjoint system
+        dRdU(X._primal, state).T.solve(state_work, adjoint_work)
+        # STEP 3: with the adjoint, we assemble the gradient
+        dCdX(X._primal, state).T.product(dual_work, primal_work[0])
+        primal_work[0].times(mu)
+        dRdX(X._primal, state).T.product(
+            adjoint_work, primal_work[1])
+        primal_work[0].plus(primal_work[1])
+        primal_work[0].plus(dLdX._primal)
+        # now we compute p_dot_grad
+        p_dot_grad = primal_work[0].inner(P._primal) \
+            + dual_work.inner(P._dual)
+        # reset the merit function
+        self.merit_func.reset(X, state, P, p_dot_grad, mu)
+        # store the initial merit value
+        merit_init = self.merit_func.func_val
+        # run the line search
+        alpha, n_iter = self.line_search.find_step_length(self.merit_func)
+        # print success/failure info
+        if n_iter == self.line_search.max_iter:
+            self.info_file.write('Linesearch failed! Using FLECS step.\n')
+            merit_next = self.line_search.f_init
+            success = True
+        else:
+            self.info_file.write('Linesearch succeeded!\n')
+            merit_next = self.line_search.f
+            success = False
+        # evaluate how we did against predicted decrease
+        rho = (merit_init - merit_next)/self.krylov.pred_aug
+        # update radius as needed
+        radius_updated = False
+        if rho < 0.25:
+            self.radius *= 0.25
+            radius_updated = True
+        elif rho > 0.75:
+            self.radius = min(2.*self.radius, self.max_radius)
+            radius_updated = True
+        if radius_updated:
+            self.info_file.write('new radius = %e\n'%self.radius)
+        # finally update the step and return success flag
+        X.equals_ax_p_by(1., X, alpha, P)
+        state.equals_primal_solution(X._primal)
+        return success
+
+    def filter_step(self, X, state, P, dLdX, krylov_tol, mu,
+                    primal_work, state_work, dual_work):
+        filter_success = False
+        max_filter_iter = 3
+        for j in xrange(max_filter_iter):
+            # save old design and state before updating
+            primal_work.equals(X._primal)
+            state_work.equals(state)
+            # update design
+            X._primal.plus(P._primal)
+            # update state
+            if state.equals_primal_solution(X._primal):
+                # state equation solution was successful
+                # try the filter
+                obj = objective_value(X._primal, state)
+                dual_work.equals_constraints(X._primal, state)
+                cnstr_norm = dual_work.norm2
+                # if the new (obj, cnstr) point is acceptable
+                if self.filter.accepts(obj, cnstr_norm):
+                    # flag filter success
+                    filter_success = True
+                    # increase radius if the trust region is active
+                    if (j == 0) and self.krylov.trust_active:
+                        self.radius = \
+                            min(2.*self.radius, self.max_radius)
+                    # break out of filter loop
+                    break
+
+            # if we get here it means the filter did not accept point
+            if (j == 0):
+                # on the first iteration, try a second-order correction
+                self.info_file.write(
+                    'attempting a second-order correction...')
+                # reset step size...this is where SOC step is stored
+                P.equals(0.0)
+                # set in solution parameters
+                self.krylov.rel_tol = krylov_tol
+                self.krylov.mu = self.mu_init
+                # write in new tolerances
+                # grad_tol = 0.9*grad_norm
+                # feas_tol = 0.9*feas_norm
+                # apply the correction
+                self.krylov.out_file.write(
+                    '#---------------------------------------------\n' +
+                    '# Second-order correction (iter = %i)\n'%self.iter)
+                dual_work.times(-1)
+                self.krylov.apply_correction(dual_work, P)
+                # apply the SOC step
+                X._primal.plus(P._primal)
+                # update states
+                if state.equals_primal_solution(X._primal):
+                    # state equation solution was successful
+                    # try the filter
+                    obj = objective_value(X._primal, state)
+                    dual_work.equals_constraints(X._primal, state)
+                    cnstr_norm = dual_work.norm2
+                    # if the corrected (obj, cnstr) point is acceptable
+                    if self.filter.accepts(obj, cnstr_norm):
+                        # flag filter success
+                        filter_success = True
+                        # print correction success
+                        self.info_file.write('successful\n')
+                        # break out of filter loop
+                        break
+                    # otherwise print correction failure
+                    self.info_file.write('unsuccessful\n')
+
+            # if we get here, filter dominated the point and the
+            # second order correction did not help
+
+            # reset the primal step and shrink radius
+            X._primal.equals(primal_work)
+            state.equals(state_work)
+            self.radius *= 0.25
+
+            # perform a re-solve at new radius only if there are more
+            # filter iteations left to perform
+            if (j < max_filter_iter-1):
+                self.info_file.write(
+                    're-solving with new radius: %f\n'%self.radius)
+                self.krylov.radius = self.radius
+                self.krylov.rel_tol = krylov_tol
+                self.krylov.mu = mu
+                self.krylov.re_solve(dLdX, P)
+
+        # if filter succeeded, then update multipliers
+        if filter_success:
+            self.info_file.write(
+                'filter worked with %i iterations\n'%(j+1))
+            X._dual.plus(P._dual)
+        else:
+            self.info_file.write('filter failed!\n')
+
+        return filter_success
 
 class InequalityConstrainedRSNK(EqualityConstrainedRSNK):
 
@@ -400,4 +478,4 @@ class InequalityConstrainedRSNK(EqualityConstrainedRSNK):
         self.mat_vec = self.KKT_matrix.product
 
         if get_opt(optns, None, 'reduced', 'precond') == 'nested':
-            self.nested.KKT_matrix = self.modified_matrix
+            self.nested.KKT_matrix = self.KKT_matrix

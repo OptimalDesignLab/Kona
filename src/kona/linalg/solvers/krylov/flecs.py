@@ -240,15 +240,14 @@ class FLECS(KrylovSolver):
         self.y_mult[:] = y_r[:]
 
         # compute the predicted reductions in the objective
-        # first compute the FGMRES prediction
-        self.pred = -0.5*numpy.inner(y_r, numpy.inner(Hess_red, y_r))
-        for k in xrange(self.iters):
-            self.pred += self.g[0]*VtZ_prim_r[0, k]*y_r[k]
-        # now compute the FLECS prediction
-        self.pred_aug = -0.5*numpy.inner(
-            self.y_aug, numpy.inner(Hess_red, self.y_aug))
-        for k in xrange(self.iters):
-            self.pred_aug += self.g[0]*VtZ_prim_r[0, k]*self.y_aug[k]
+        self.pred = \
+            0.5*numpy.inner(y_r, numpy.inner(Hess_red, y_r)) \
+            - numpy.inner(
+                self.g[0], numpy.inner(VtZ_prim_r[0, 0:self.iters], y_r))
+        self.pred_aug = \
+            0.5*numpy.inner(self.y_aug, numpy.inner(Hess_aug, self.y_aug)) \
+            - numpy.inner(
+                self.g[0], numpy.inner(VtZ_prim_r[0, 0:self.iters], self.y_aug))
 
         # determine if negative curvature may be present
         self.neg_curv = False
@@ -384,6 +383,11 @@ class FLECS(KrylovSolver):
 
         #########################################
         # finished looping over search directions
+
+        if self.pred_aug < 0.:
+            self.mu *= 10
+            self.solve_subspace_problems()
+
         if self.neg_curv:
             self.out_file.write('# negative curvature suspected\n')
         if self.trust_active:

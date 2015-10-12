@@ -87,7 +87,7 @@ class UserSolver(object):
         result : BaseVector
             Location where user should store the result.
         """
-        pass
+        store_here.data[:] = 0.
 
     def eval_constraints(self, at_design, at_state, store_here):
         """
@@ -112,7 +112,7 @@ class UserSolver(object):
         result : BaseVector
             Location where user should store the result.
         """
-        pass
+        store_here.data[:] = 0.
 
     def multiply_dRdX(self, at_design, at_state, in_vec, out_vec):
         """
@@ -141,7 +141,7 @@ class UserSolver(object):
         out_vec : BaseVector
             Location where user should store the result.
         """
-        pass
+        out_vec.data[:] = 0.
 
     def multiply_dRdU(self, at_design, at_state, in_vec, out_vec):
         """
@@ -170,7 +170,7 @@ class UserSolver(object):
         out_vec : BaseVector
             Location where user should store the result.
         """
-        pass
+        out_vec.data[:] = 0.
 
     def multiply_dRdX_T(self, at_design, at_state, in_vec, out_vec):
         """
@@ -235,7 +235,7 @@ class UserSolver(object):
         out_vec : BaseVector
             Location where user should store the result.
         """
-        pass
+        out_vec.data[:] = 0.
 
     def factor_linear_system(self, at_design, at_state):
         """
@@ -357,7 +357,7 @@ class UserSolver(object):
         out_vec : BaseVector
             Location where user should store the result.
         """
-        pass
+        out_vec.data[:] = 0.
 
     def multiply_dCdU(self, at_design, at_state, in_vec, out_vec):
         """
@@ -387,7 +387,7 @@ class UserSolver(object):
         out_vec : BaseVector
             Location where user should store the result.
         """
-        pass
+        out_vec.data[:] = 0.
 
     def multiply_dCdX_T(self, at_design, at_state, in_vec, out_vec):
         """
@@ -447,7 +447,7 @@ class UserSolver(object):
         out_vec : BaseVector
             Location where user should store the result.
         """
-        pass
+        out_vec.data[:] = 0.0
 
     def apply_active_set(self, at_constraints, in_vec, out_vec):
         """
