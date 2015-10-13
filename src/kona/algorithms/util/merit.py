@@ -198,13 +198,13 @@ class AugmentedLagrangian(MeritFunction):
         if not self._allocated:
             self.x_trial = self.primal_factory.generate()
             self.u_trial = self.state_factory.generate()
-            self.dual_trial = self.dual_factory.generate()
+            self.dual_frozen = self.dual_factory.generate()
             self.dual_work = self.dual_factory.generate()
             self._allocated = True
         # store information for the new point the merit function is reset at
         self.search_dir = search_dir
         self.x_trial.equals(kkt_start._primal)
-        self.dual_trial.equals(kkt_start._dual)
+        self.dual_frozen.equals(kkt_start._dual)
         self.u_trial.equals(u_start)
         self.p_dot_grad = p_dot_grad
         self.mu = mu
@@ -212,7 +212,7 @@ class AugmentedLagrangian(MeritFunction):
         self.dual_work.equals_constraints(self.x_trial, self.u_trial)
         self.func_val = \
             objective_value(self.x_trial, self.u_trial) \
-            + self.dual_trial.inner(self.dual_work) \
+            + self.dual_frozen.inner(self.dual_work) \
             + 0.5*self.mu*(self.dual_work.norm2**2)
         self.last_func_alpha = 0.0
 
@@ -220,13 +220,11 @@ class AugmentedLagrangian(MeritFunction):
         if abs(alpha - self.last_func_alpha) > EPS:
             self.x_trial.equals_ax_p_by(
                 1., self.x_trial, alpha, self.search_dir._primal)
-            self.dual_trial.equals_ax_p_by(
-                1., self.dual_trial, alpha, self.search_dir._dual)
             self.u_trial.equals_primal_solution(self.x_trial)
             self.dual_work.equals_constraints(self.x_trial, self.u_trial)
             self.func_val = \
                 objective_value(self.x_trial, self.u_trial) \
-                + self.dual_trial.inner(self.dual_work) \
+                + self.dual_frozen.inner(self.dual_work) \
                 + 0.5*self.mu*(self.dual_work.norm2**2)
             self.last_func_alpha = alpha
 

@@ -3,7 +3,7 @@ import numpy
 
 from kona.linalg.memory import KonaMemory
 from kona.algorithms import EqualityConstrainedRSNK
-from kona.examples import SimpleConstrained, Constrained2x2
+from kona.examples import SimpleConstrained
 
 class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
@@ -14,18 +14,21 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
         km = KonaMemory(solver)
 
         optns = {
+            'info_file' : 'kona_info.dat',
             'max_iter' : 30,
             'primal_tol' : 1e-6,
             'constraint_tol' : 1e-6,
 
             'trust' : {
-                'init_radius' : 0.5,
-                'max_radius' : 1.0,
+                'init_radius' : 1.0,
+                'max_radius' : 20.0,
+                'min_radius' : 1e-2,
             },
 
             'aug_lag' : {
                 'mu_init' : 1.0,
-                'mu_pow' : 1.0,
+                'mu_pow' : 0.5,
+                'mu_max' : 1e6,
             },
 
             'reduced' : {
@@ -50,7 +53,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
         km.allocate_memory()
         algorithm.solve()
 
-        print solver.curr_design
+        # print solver.curr_design
 
         expected = -1.*numpy.ones(solver.num_primal)
         diff = abs(solver.curr_design - expected)

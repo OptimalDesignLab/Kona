@@ -289,7 +289,7 @@ def solve_trust_reduced(H, g, radius):
         raise Exception("Newton's method failed to converge to a valid lambda")
 
     # compute predicted decrease in objective
-    pred = -y.dot(0.5*np.array(H.dot(y))[0] + g)
+    pred = -y.dot(0.5*np.array(H.dot(y)) + g)
     return y, lam, pred
 
 def secular_function(H, g, lam, radius):
@@ -428,7 +428,7 @@ def write_header(out_file, solver_name, res_tol, res_init):
     out_file.write(
         '# %s residual history\n'%solver_name +
         '# residual tolerance target = %e\n'%res_tol +
-        '# initial residual norm     = %e\n'%res_init + 
+        '# initial residual norm     = %e\n'%res_init +
         '# iters' + ' '*12 + 'rel. res.\n'
     )
 

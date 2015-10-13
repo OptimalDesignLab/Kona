@@ -42,3 +42,10 @@ class SimpleConstrained(UserSolver):
         store_here.data[0] = 0.51
         store_here.data[1] = 0.52
         store_here.data[2] = 0.53
+
+    def current_solution(self, curr_design, curr_state, curr_adj,
+                         curr_dual, num_iter):
+        super(SimpleConstrained, self).current_solution(
+            curr_design, curr_state, curr_adj, curr_dual, num_iter)
+
+        print self.curr_design
