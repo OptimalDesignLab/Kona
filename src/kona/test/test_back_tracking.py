@@ -135,7 +135,7 @@ class BackTrackingTestCase(unittest.TestCase):
         alpha, n_iter = self.bt.find_step_length(self.merit)
 
         self.assertEqual(n_iter, 1)
-        self.assertEqual(alpha, .3)
+        self.assertEqual(alpha, .5)
 
     def test_bad_search_direction(self):
 

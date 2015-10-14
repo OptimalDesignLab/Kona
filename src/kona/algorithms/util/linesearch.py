@@ -157,16 +157,16 @@ class BackTracking(LineSearch):
 
         n_iter = 0
         while (alpha > self.alpha_min) and (n_iter < self.max_iter):
-            n_iter += 1
             f_sufficient = self.f_init + self.decr_cond*alpha*self.p_dot_dfdx
             self.f = merit.eval_func(alpha)
             if self.f <= f_sufficient:
                 return alpha, n_iter
             else:
                 alpha *= self.rdtn_factor
+            n_iter += 1
 
-        # if we get here, we didn't find a step
-        return self.alpha_init, self.max_iter+1
+        # if we got here, linesearch failed
+        return self.alpha_init, n_iter
 
 ################################################################################
 #                           Strong Wolfe Line-Search                           #
