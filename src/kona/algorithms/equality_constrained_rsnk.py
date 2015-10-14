@@ -54,7 +54,6 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.ceq_tol = get_opt(optns, 1e-8, 'constraint_tol')
         self.nu = get_opt(optns, 0.95, 'reduced', 'nu')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
-        self.eta = 1./(self.mu_init**0.1)
 
         # set the krylov solver
         acceptable_solvers = [FLECS]
@@ -68,6 +67,10 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 krylov_optns)
         except Exception:
             raise BadKonaOption(optns, 'krylov', 'solver')
+
+        # penalty parameter data
+        self.mu = self.mu_init
+        self.eta = 1./(self.mu**0.1)
 
         # initialize the globalization method
         # NOTE: Latest C++ source has the filter disabled entirely!!!
@@ -136,14 +139,14 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             'mu param    ' + '\n'
         )
 
-    def _write_history(self, opt, feas, obj, mu):
+    def _write_history(self, opt, feas, obj):
         self.hist_file.write(
             '%7i'%self.iter + ' '*5 +
             '%7i'%self.primal_factory._memory.cost + ' '*5 +
             '%11e'%opt + ' '*5 +
             '%11e'%feas + ' '*5 +
             '%11e'%obj + ' '*5 +
-            '%11e'%mu + '\n'
+            '%11e'%self.mu + '\n'
         )
 
     def _generate_KKT_vector(self):
@@ -183,7 +186,6 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
         # initialize basic data for outer iterations
         converged = False
-        mu = self.mu_init
         self.iter = 0
 
         # evaluate the initial design before starting outer iterations
@@ -227,7 +229,6 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 # calculate convergence tolerances
                 grad_tol = self.primal_tol
                 feas_tol = self.ceq_tol * max(feas_norm0, 1e-8)
-                mu = self.mu_init
             else:
                 # calculate current norms
                 grad_norm = dLdX._primal.norm2
@@ -245,7 +246,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # write convergence history
             obj_val = objective_value(X._primal, state)
-            self._write_history(grad_norm, feas_norm, obj_val, mu)
+            self._write_history(grad_norm, feas_norm, obj_val)
 
             # check for convergence
             if (grad_norm < grad_tol) and (feas_norm < feas_tol):
@@ -272,7 +273,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             self.KKT_matrix.lamb = 0.0
             self.krylov.rel_tol = krylov_tol
             self.krylov.radius = self.radius
-            self.krylov.mu = mu
+            self.krylov.mu = self.mu
 
             self.krylov.out_file.write(
                 '#-------------------------------------------------\n' +
@@ -297,13 +298,13 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # implement some globalization method here
             if self.globalization == 'filter':
-                success, mu = self.filter_step(
-                    X, state, P, dLdX, krylov_tol, mu,
+                self.filter_step(
+                    X, state, P, dLdX, krylov_tol,
                     primal_work[0], state_save, dual_work)
             elif self.globalization == 'linesearch':
                 # trigger the line search
-                success, mu = self.backtrack_step(
-                    X, state, P, dLdX, mu, adjoint_work,
+                self.backtrack_step(
+                    X, state, P, dLdX, adjoint_work,
                     primal_work, state_work, dual_work, feas_tol)
             else:
                 # no globalization, use FLECS step as-is
@@ -333,7 +334,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n'%self.iter)
 
-    def backtrack_step(self, X, state, P, dLdX, mu, adjoint_work,
+    def backtrack_step(self, X, state, P, dLdX, adjoint_work,
                        primal_work, state_work, dual_work, feas_tol):
         # first we have to compute the total derivative of the
         # augmented Lagrangian merit function
@@ -341,12 +342,12 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         # STEP 1: define the RHS for the system
         dual_work.equals(dLdX._dual)
         dCdU(X._primal, state).T.product(dual_work, state_work)
-        state_work.times(-mu)
+        state_work.times(-self.mu)
         # STEP 2: solve the adjoint system
         dRdU(X._primal, state).T.solve(state_work, adjoint_work)
         # STEP 3: with the adjoint, we assemble the gradient
         dCdX(X._primal, state).T.product(dual_work, primal_work[0])
-        primal_work[0].times(mu)
+        primal_work[0].times(self.mu)
         dRdX(X._primal, state).T.product(
             adjoint_work, primal_work[1])
         primal_work[0].plus(primal_work[1])
@@ -355,29 +356,16 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         p_dot_grad = primal_work[0].inner(P._primal)
 
         # reset the merit function
-        self.merit_func.reset(X, state, P, p_dot_grad, mu)
+        self.merit_func.reset(X, state, P, p_dot_grad, self.mu)
         # store the initial merit value
         merit_init = self.merit_func.func_val
         # run the line search
         alpha, n_iter = self.line_search.find_step_length(self.merit_func)
-        # print success/failure info
-        if n_iter == self.line_search.max_iter:
-            merit_next = self.line_search.f_init
-            success = False
-        else:
-            merit_next = self.line_search.f
-            success = True
-        # evaluate how the FLECS model compares
-        rho = (merit_init - merit_next)/self.krylov.pred_aug
-        self.info_file.write(
-            '   merit_init = %f\n'%merit_init +
-            '   merit_next = %f\n'%merit_next +
-            '   pred_aug = %f\n'%self.krylov.pred_aug +
-            '   rho = %f\n'%rho)
 
-        if success:
+        # check line search success
+        if n_iter < self.line_search.max_iter:
+            # line search worked -- accept step
             self.info_file.write('Linesearch succeeded with alpha = %f\n'%alpha)
-            # accept step
             X._primal.equals_ax_p_by(1., X._primal, alpha, P._primal)
             state.equals_primal_solution(X._primal)
             X._dual.equals_ax_p_by(1., X._dual, alpha, P._dual)
@@ -386,14 +374,21 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             dual_work.equals_constraints(X._primal, state)
             cnstr_norm = dual_work.norm2
             if cnstr_norm > self.eta:
-                mu = min((10.**self.mu_pow)*mu, self.mu_max)
-                self.eta = 1./(mu**0.1)
-                self.info_file.write('   New mu = %1.2e\n'%mu)
+                self.mu = min((10.**self.mu_pow)*self.mu, self.mu_max)
+                self.eta = 1./(self.mu**0.1)
+                self.info_file.write('   New mu = %1.2e\n'%self.mu)
             else:
                 if cnstr_norm > feas_tol:
-                    self.eta = self.eta/(mu**0.9)
+                    self.eta = self.eta/(self.mu**0.9)
 
             # evaluate FLECS model
+            merit_next = self.line_search.f_init
+            rho = (merit_init - merit_next)/self.krylov.pred_aug
+            self.info_file.write(
+                '   merit_init = %f\n'%merit_init +
+                '   merit_next = %f\n'%merit_next +
+                '   pred_aug = %f\n'%self.krylov.pred_aug +
+                '   rho = %f\n'%rho)
             if rho < 0.1:
                 # model is bad -- shrink radius
                 self.radius = max(0.25*self.radius, self.min_radius)
@@ -414,9 +409,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 'Line search failed: Reject step and shrink radius.\n' +
                 '   New radius = %f\n'%self.radius)
 
-        return success, mu
-
-    def filter_step(self, X, state, P, dLdX, krylov_tol, mu,
+    def filter_step(self, X, state, P, dLdX, krylov_tol,
                     primal_work, state_work, dual_work):
         filter_success = False
         max_filter_iter = 3
@@ -498,7 +491,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                     're-solving with new radius: %f\n'%self.radius)
                 self.krylov.radius = self.radius
                 self.krylov.rel_tol = krylov_tol
-                self.krylov.mu = mu
+                self.krylov.mu = self.mu
                 self.krylov.re_solve(dLdX, P)
 
         # if filter succeeded, then update multipliers
@@ -508,8 +501,6 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             X._dual.plus(P._dual)
         else:
             self.info_file.write('filter failed!\n')
-
-        return filter_success, mu
 
 class InequalityConstrainedRSNK(EqualityConstrainedRSNK):
 
