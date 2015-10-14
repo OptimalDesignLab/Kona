@@ -20,8 +20,6 @@ from kona.linalg.solvers.krylov import FLECS
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
-from kona.algorithms.util import Filter
-from kona.algorithms.util.linesearch import BackTracking
 from kona.algorithms.util.merit import AugmentedLagrangian
 
 class EqualityConstrainedRSNK(OptimizationAlgorithm):
@@ -68,11 +66,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         # initialize the globalization method
         # NOTE: Latest C++ source has the filter disabled entirely!!!
         # set the type of line-search algorithm
-        merit_func = get_opt(
-            optns, AugmentedLagrangian, 'merit_function', 'type')
-        if merit_func not in [AugmentedLagrangian]:
-            raise BadKonaOption(optns, 'merit_function', 'type')
-        self.merit_func = merit_func(
+        self.merit_func = AugmentedLagrangian(
             self.primal_factory, self.state_factory, self.dual_factory,
             {}, self.info_file)
 
