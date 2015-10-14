@@ -74,18 +74,23 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
         # initialize the globalization method
         # NOTE: Latest C++ source has the filter disabled entirely!!!
-        self.globalization = 'linesearch'
-        if self.globalization == 'filter':
-            self.filter = Filter()
-        elif self.globalization == 'linesearch':
+        # set the type of line-search algorithm
+        self.globalization = get_opt(
+            optns, BackTracking, 'globalization', 'type')
+        if self.globalization not in [BackTracking, Filter, None]:
+            raise BadKonaOption(optns, 'globalization', 'type')
+        if self.globalization == BackTracking:
+            self.line_search = self.globalization({}, self.info_file)
             # set up the merit function
-            self.merit_func = AugmentedLagrangian(
+            merit_func = get_opt(
+                optns, AugmentedLagrangian, 'merit_function', 'type')
+            if merit_func not in [AugmentedLagrangian]:
+                raise BadKonaOption(optns, 'merit_function', 'type')
+            self.merit_func = merit_func(
                 self.primal_factory, self.state_factory, self.dual_factory,
                 {}, self.info_file)
-            # set the type of line-search algorithm
-            self.line_search = BackTracking({}, self.info_file)
-        else:
-            raise TypeError('Wrong globalization method!')
+        elif self.globalization == Filter:
+            self.filter = Filter()
 
         # initialize the KKT matrix definition
         reduced_optns = get_opt(optns, {}, 'reduced')
@@ -297,15 +302,16 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             dLdX.times(-1.)
 
             # implement some globalization method here
-            if self.globalization == 'filter':
-                self.filter_step(
-                    X, state, P, dLdX, krylov_tol,
-                    primal_work[0], state_save, dual_work)
-            elif self.globalization == 'linesearch':
-                # trigger the line search
+            if self.globalization == BackTracking:
+                # trigger back-tracking line search
                 self.backtrack_step(
                     X, state, P, dLdX, adjoint_work,
                     primal_work, state_work, dual_work, feas_tol)
+            elif self.globalization == Filter:
+                # trigger filter
+                self.filter_step(
+                    X, state, P, dLdX, krylov_tol,
+                    primal_work[0], state_save, dual_work)
             else:
                 # no globalization, use FLECS step as-is
                 X.plus(P)

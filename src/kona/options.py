@@ -99,7 +99,7 @@ defaults = {
         'threshold'     : 1e-8
     },
 
-    'line_search' : {
+    'globalization' : {
         # common options
         'type'          : StrongWolfe,
         'max_iter'      : 50,

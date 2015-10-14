@@ -4,6 +4,8 @@ import unittest
 from kona.algorithms import EqualityConstrainedRSNK
 from kona.examples import SimpleConstrained
 from kona.linalg.memory import KonaMemory
+from kona.algorithms.util.linesearch import BackTracking
+from kona.algorithms.util.merit import AugmentedLagrangian
 
 class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
@@ -23,6 +25,14 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
                 'init_radius' : 1.0,
                 'max_radius' : 1.0,
                 'min_radius' : 1.0,
+            },
+
+            'globalization' : {
+                'type' : BackTracking,
+            },
+
+            'merit_function' : {
+                'type' : AugmentedLagrangian
             },
 
             'aug_lag' : {
