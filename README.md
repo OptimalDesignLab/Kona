@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=dev)](https://travis-ci.org/OptimalDesignLab/Kona)
-[![Coverage Status](https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=dev&service=github)](https://coveralls.io/github/OptimalDesignLab/Kona?branch=master)
+[![Coverage Status](https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=dev&service=github)](https://coveralls.io/github/OptimalDesignLab/Kona?branch=dev)
+[![codecov.io](http://codecov.io/github/OptimalDesignLab/Kona/coverage.svg?branch=dev)](http://codecov.io/github/OptimalDesignLab/Kona?branch=dev)
 [![Documentation Status](https://readthedocs.org/projects/kona/badge/?version=latest)](http://kona.readthedocs.org/en/latest/)
 
 # Kona - A Parallel Optimization Framework
