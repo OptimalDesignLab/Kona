@@ -18,7 +18,7 @@ class RosenbrockLBFGSTestCase(unittest.TestCase):
         optns = {
             'max_iter' : 200,
             'primal_tol' : 1e-12,
-            'line_search' : {
+            'globalization' : {
                 'type' : StrongWolfe,
             },
             'quasi_newton' : {
@@ -42,7 +42,7 @@ class RosenbrockLBFGSTestCase(unittest.TestCase):
         optns = {
             'max_iter' : 200,
             'primal_tol' : 1e-12,
-            'line_search' : {
+            'globalization' : {
                 'type' : BackTracking,
             },
             'quasi_newton' : {

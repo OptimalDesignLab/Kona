@@ -162,7 +162,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         A[1][2] = -1.853920290644159
         A[2][1] = A[1][2]
         A[2][2] = 0.640029390050034
-        A = np.matrix(A)
+        A = np.array(A)
         b = np.array([-0.964888535199277,
                       -0.157613081677548,
                       -0.970592781760616])
@@ -196,7 +196,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         A[1][2] = -1.853924726631001
         A[2][1] = A[1][2]
         A[2][2] = 0.640027225520312
-        A = np.matrix(A)
+        A = np.array(A)
         b = np.array([-1e-5, -1e-5, -1e-5])
         radius = 10000.
         x, lamb, pred = solve_trust_reduced(A, b, radius)

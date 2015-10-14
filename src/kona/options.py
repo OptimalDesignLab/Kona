@@ -72,14 +72,15 @@ defaults = {
     },
 
     'trust' : {
-        'init_radius'   : 1.0,
-        'max_radius'    : 100.0,
-        'tol'           : 0.1,
+        'init_radius'   : 0.5,
+        'max_radius'    : 0.5*(2**3),
+        'min_radius'    : 0.5/(2**3),
     },
 
     'aug_lag' : {
-        'mu_init' : 0.1,
+        'mu_init' : 10.0,
         'mu_pow' : 1.0,
+        'mu_max' : 1e5,
     },
 
     'reduced' : {
@@ -99,7 +100,7 @@ defaults = {
         'threshold'     : 1e-8
     },
 
-    'line_search' : {
+    'globalization' : {
         # common options
         'type'          : StrongWolfe,
         'max_iter'      : 50,
@@ -107,7 +108,7 @@ defaults = {
         'alpha_init'    : 1.0,
         # BackTracking options
         'alpha_min'     : 1e-4,
-        'rdtn_factor'   : 0.3,
+        'rdtn_factor'   : 0.5,
         # StrongWolfe options
         'curv_cond'     : 0.9,
         'alpha_max'     : 2.0,

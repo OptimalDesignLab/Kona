@@ -23,10 +23,6 @@ class SimpleConstrained(UserSolver):
         z = at_design.data[2]
         out_vec.data[0] = 2*(x*in_vec.data[0] + y*in_vec.data[1] +
                              z*in_vec.data[2])
-        pass
-
-    def multiply_dCdU(self, at_design, at_state, in_vec, out_vec):
-        out_vec.data[:] = 0.0
 
     def multiply_dCdX_T(self, at_design, at_state, in_vec, out_vec):
         x = at_design.data[0]
@@ -36,16 +32,20 @@ class SimpleConstrained(UserSolver):
         out_vec.data[1] = 2*y*in_vec.data[0]
         out_vec.data[2] = 2*z*in_vec.data[0]
 
-    def multiply_dCdU_T(self, at_design, at_state, in_vec, out_vec):
-        pass
-
     def eval_dFdX(self, at_design, at_state, store_here):
         store_here.data[:] = 1.0
 
     def eval_dFdU(self, at_design, at_state, store_here):
-        pass
+        store_here.data[:] = 0.0
 
     def init_design(self, store_here):
         store_here.data[0] = 0.51
         store_here.data[1] = 0.52
         store_here.data[2] = 0.53
+
+    def current_solution(self, curr_design, curr_state, curr_adj,
+                         curr_dual, num_iter):
+        super(SimpleConstrained, self).current_solution(
+            curr_design, curr_state, curr_adj, curr_dual, num_iter)
+
+        print self.curr_design

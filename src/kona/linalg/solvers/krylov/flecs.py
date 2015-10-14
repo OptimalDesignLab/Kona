@@ -6,7 +6,7 @@ from kona.linalg.vectors.common import PrimalVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
-    solve_tri, solve_trust_reduced, eigen_decomp, mod_gram_schmidt
+    solve_tri, solve_trust_reduced, eigen_decomp, mod_gram_schmidt, EPS
 
 class FLECS(KrylovSolver):
     """
@@ -213,7 +213,7 @@ class FLECS(KrylovSolver):
                 vec_tmp = solve_tri(UTU.T, rhs_tmp, lower=True)
                 Hess_aug[j,:] = vec_tmp[:]
 
-            vec_tmp, lamb, _ = solve_trust_reduced(
+            vec_tmp, lamb, self.pred_aug = solve_trust_reduced(
                 Hess_aug, rhs_aug, radius_aug)
             self.y_aug = solve_tri(UTU, vec_tmp, lower=False)
 
@@ -221,7 +221,7 @@ class FLECS(KrylovSolver):
             # if Cholesky factorization fails, compute a conservative radius
             eig_vals, _ = eigen_decomp(ZtZ_prim_r)
             radius_aug = self.radius/sqrt(eig_vals[self.iters-1])
-            self.y_aug, lamb, _ = solve_trust_reduced(
+            self.y_aug, lamb, self.pred_aug = solve_trust_reduced(
                 Hess_aug, rhs_aug, radius_aug)
 
         # check if the trust-radius constraint is active
@@ -240,15 +240,18 @@ class FLECS(KrylovSolver):
         self.y_mult[:] = y_r[:]
 
         # compute the predicted reductions in the objective
-        # first compute the FGMRES prediction
-        self.pred = -0.5*numpy.inner(y_r, numpy.inner(Hess_red, y_r))
+        self.pred = \
+            -0.5*numpy.inner(y_r, numpy.inner(Hess_red, y_r)) \
+            + self.g[0]*numpy.inner(VtZ_prim_r[0, 0:self.iters], y_r)
+
+        # compute the reduction in the Augmented Lagrangian model
+        Hess_aug = self.mu * H_r.T.dot(VtVH)
+        Hess_aug += Hess_red
+        rhs_aug = numpy.zeros(self.iters)
         for k in xrange(self.iters):
-            self.pred += self.g[0]*VtZ_prim_r[0, k]*y_r[k]
-        # now compute the FLECS prediction
-        self.pred_aug = -0.5*numpy.inner(
-            self.y_aug, numpy.inner(Hess_red, self.y_aug))
-        for k in xrange(self.iters):
-            self.pred_aug += self.g[0]*VtZ_prim_r[0, k]*self.y_aug[k]
+            rhs_aug[k] = -self.g[0]*(self.VtZ_prim[0, k] + self.mu*VtVH[0, k])
+        self.reconstructed_pred = \
+            -self.y_aug.dot(0.5*numpy.inner(Hess_aug, self.y_aug) + rhs_aug)
 
         # determine if negative curvature may be present
         self.neg_curv = False
@@ -384,6 +387,7 @@ class FLECS(KrylovSolver):
 
         #########################################
         # finished looping over search directions
+
         if self.neg_curv:
             self.out_file.write('# negative curvature suspected\n')
         if self.trust_active:

@@ -3,16 +3,26 @@ from numpy import sqrt
 
 from kona.options import BadKonaOption, get_opt
 
-from kona.linalg import current_solution, objective_value, factor_linear_system
+from kona.linalg import current_solution, factor_linear_system, objective_value
+
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.matrices.common import IdentityMatrix
-from kona.linalg.matrices.hessian import ReducedKKTMatrix, \
-    IneqCnstrReducedKKTMatrix
-from kona.linalg.matrices.preconds import \
-    ReducedSchurPreconditioner, NestedKKTPreconditioner
+
+from kona.linalg.matrices.common import dCdU, dCdX, dRdU, dRdX
+from kona.linalg.matrices.common import IdentityMatrix, ActiveSetMatrix
+
+from kona.linalg.matrices.hessian import IneqCnstrReducedKKTMatrix
+from kona.linalg.matrices.hessian import ReducedKKTMatrix
+
+from kona.linalg.matrices.preconds import NestedKKTPreconditioner
+from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
+
 from kona.linalg.solvers.krylov import FLECS
-from kona.algorithms.util import Filter
+
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
+
+from kona.algorithms.util import Filter
+from kona.algorithms.util.linesearch import BackTracking
+from kona.algorithms.util.merit import AugmentedLagrangian
 
 class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
@@ -23,16 +33,17 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         )
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(8)
-        self.state_factory.request_num_vectors(8)
+        self.primal_factory.request_num_vectors(7)
+        self.state_factory.request_num_vectors(5)
         self.dual_factory.request_num_vectors(5)
 
         # get other options
-        self.radius = get_opt(optns, 0.1, 'trust', 'init_radius')
-        self.max_radius = get_opt(optns, 1.0, 'trust', 'max_radius')
-        self.trust_tol = get_opt(optns, 0.1, 'trust', 'tol')
-        self.mu_init = get_opt(optns, 0.1, 'aug_lag', 'mu_init')
-        self.mu_pow = get_opt(optns, 1, 'aug_lag', 'mu_pow')
+        self.radius = get_opt(optns, 0.5, 'trust', 'init_radius')
+        self.min_radius = get_opt(optns, 0.5/(2**3), 'trust', 'min_radius')
+        self.max_radius = get_opt(optns, 0.5*(2**3), 'trust', 'max_radius')
+        self.mu_init = get_opt(optns, 1.0, 'aug_lag', 'mu_init')
+        self.mu_pow = get_opt(optns, 0.5, 'aug_lag', 'mu_pow')
+        self.mu_max = get_opt(optns, 1e5, 'aug_lag', 'mu_max')
         self.ceq_tol = get_opt(optns, 1e-8, 'constraint_tol')
         self.nu = get_opt(optns, 0.95, 'reduced', 'nu')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
@@ -47,12 +58,23 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             self.krylov = krylov(
                 [self.primal_factory, self.dual_factory],
                 krylov_optns)
-        except:
+        except Exception:
             raise BadKonaOption(optns, 'krylov', 'solver')
 
-        # create the filter
+        # penalty parameter data
+        self.mu = self.mu_init
+        self.eta = 1./(self.mu**0.1)
+
+        # initialize the globalization method
         # NOTE: Latest C++ source has the filter disabled entirely!!!
-        self.filter = Filter()
+        # set the type of line-search algorithm
+        merit_func = get_opt(
+            optns, AugmentedLagrangian, 'merit_function', 'type')
+        if merit_func not in [AugmentedLagrangian]:
+            raise BadKonaOption(optns, 'merit_function', 'type')
+        self.merit_func = merit_func(
+            self.primal_factory, self.state_factory, self.dual_factory,
+            {}, self.info_file)
 
         # initialize the KKT matrix definition
         reduced_optns = get_opt(optns, {}, 'reduced')
@@ -103,17 +125,19 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             'optimality  ' + ' '*5 +
             'feasibility ' + ' '*5 +
             'objective   ' + ' '*5 +
-            'mu param    ' + '\n'
+            'mu param    ' + ' '*5 +
+            'radius      ' + '\n'
         )
 
-    def _write_history(self, opt, feas, obj, mu):
+    def _write_history(self, opt, feas, obj):
         self.hist_file.write(
             '%7i'%self.iter + ' '*5 +
             '%7i'%self.primal_factory._memory.cost + ' '*5 +
             '%11e'%opt + ' '*5 +
             '%11e'%feas + ' '*5 +
             '%11e'%obj + ' '*5 +
-            '%11e'%mu + '\n'
+            '%11e'%self.mu + ' '*5 +
+            '%11e'%self.radius + '\n'
         )
 
     def _generate_KKT_vector(self):
@@ -138,23 +162,21 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         # generate primal vectors
         init_design = self.primal_factory.generate()
         primal_work = []
-        for i in xrange(3):
+        for i in xrange(2):
             primal_work.append(self.primal_factory.generate())
 
         # generate state vectors
         state = self.state_factory.generate()
         state_save = self.state_factory.generate()
         adjoint = self.state_factory.generate()
-        state_work = []
-        for i in xrange(5):
-            state_work.append(self.state_factory.generate())
+        state_work = self.state_factory.generate()
+        adjoint_work = self.state_factory.generate()
 
         # generate dual vectors
         dual_work = self.dual_factory.generate()
 
         # initialize basic data for outer iterations
         converged = False
-        mu = self.mu_init
         self.iter = 0
 
         # evaluate the initial design before starting outer iterations
@@ -163,7 +185,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         state.equals_primal_solution(init_design)
         if self.factor_matrices and self.iter < self.max_iter:
             factor_linear_system(X._primal, state)
-        adjoint.equals_adjoint_solution(init_design, state, state_work[0])
+        adjoint.equals_adjoint_solution(init_design, state, state_work)
         current_solution(init_design, state, adjoint, X._dual, self.iter)
 
         # BEGIN BIG LOOP HERE
@@ -198,14 +220,12 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 # calculate convergence tolerances
                 grad_tol = self.primal_tol
                 feas_tol = self.ceq_tol * max(feas_norm0, 1e-8)
-                mu = self.mu_init
             else:
                 # calculate current norms
                 grad_norm = dLdX._primal.norm2
                 feas_norm = dLdX._dual.norm2
                 kkt_norm = sqrt(feas_norm**2 + grad_norm**2)
                 # update the augmented Lagrangian penalty
-                mu = max(mu, self.mu_init)*((feas_norm/feas_norm0)**self.mu_pow)
                 self.info_file.write(
                     'grad_norm = %e (%e <-- tolerance)\n'%(
                         grad_norm, grad_tol) +
@@ -217,7 +237,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # write convergence history
             obj_val = objective_value(X._primal, state)
-            self._write_history(grad_norm, feas_norm, obj_val, mu)
+            self._write_history(grad_norm, feas_norm, obj_val)
 
             # check for convergence
             if (grad_norm < grad_tol) and (feas_norm < feas_tol):
@@ -244,7 +264,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             self.KKT_matrix.lamb = 0.0
             self.krylov.rel_tol = krylov_tol
             self.krylov.radius = self.radius
-            self.krylov.mu = mu
+            self.krylov.mu = self.mu
 
             self.krylov.out_file.write(
                 '#-------------------------------------------------\n' +
@@ -254,7 +274,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             P.equals(0.0)
 
             # move dL/dX to right hand side
-            dLdX.times(-1)
+            dLdX.times(-1.)
 
             # linearize the KKT matrix
             self.KKT_matrix.linearize(X, state, adjoint)
@@ -264,106 +284,13 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             # trigger the krylov solution
             self.krylov.solve(self.mat_vec, dLdX, P, self.precond)
 
-            use_filter = False
-            if use_filter:
-                # START FILTER LOOP
-                ######################
-                filter_success = False
-                max_filter_iter = 3
-                for j in xrange(max_filter_iter):
-                    # save old design and state before updating
-                    primal_work[0].equals(X._primal)
-                    state_save.equals(state)
-                    # update design
-                    X._primal.plus(P._primal)
-                    # update state
-                    if state.equals_primal_solution(X._primal):
-                        # state equation solution was successful
-                        # try the filter
-                        obj = objective_value(X._primal, state)
-                        dual_work.equals_constraints(X._primal, state)
-                        cnstr_norm = dual_work.norm2
-                        # if the new (obj, cnstr) point is acceptable
-                        if self.filter.accepts(obj, cnstr_norm):
-                            # flag filter success
-                            filter_success = True
-                            # increase radius if the trust region is active
-                            if (j == 0) and self.krylov.trust_active:
-                                self.radius = \
-                                    min(2.*self.radius, self.max_radius)
-                            # break out of filter loop
-                            break
+            # move dL/dX back to left hand side
+            dLdX.times(-1.)
 
-                    # if we get here it means the filter did not accept point
-                    if (j == 0):
-                        # on the first iteration, try a second-order correction
-                        self.info_file.write(
-                            'attempting a second-order correction...')
-                        # reset step size...this is where SOC step is stored
-                        P.equals(0.0)
-                        # set in solution parameters
-                        self.krylov.rel_tol = krylov_tol
-                        self.krylov.mu = self.mu_init
-                        # write in new tolerances
-                        # grad_tol = 0.9*grad_norm
-                        # feas_tol = 0.9*feas_norm
-                        # apply the correction
-                        self.krylov.out_file.write(
-                            '#---------------------------------------------\n' +
-                            '# Second-order correction (iter = %i)\n'%self.iter)
-                        dual_work.times(-1)
-                        self.krylov.apply_correction(dual_work, P)
-                        # apply the SOC step
-                        X._primal.plus(P._primal)
-                        # update states
-                        if state.equals_primal_solution(X._primal):
-                            # state equation solution was successful
-                            # try the filter
-                            obj = objective_value(X._primal, state)
-                            dual_work.equals_constraints(X._primal, state)
-                            cnstr_norm = dual_work.norm2
-                            # if the corrected (obj, cnstr) point is acceptable
-                            if self.filter.accepts(obj, cnstr_norm):
-                                # flag filter success
-                                filter_success = True
-                                # print correction success
-                                self.info_file.write('successful\n')
-                                # break out of filter loop
-                                break
-                            # otherwise print correction failure
-                            self.info_file.write('unsuccessful\n')
-
-                    # if we get here, filter dominated the point and the
-                    # second order correction did not help
-
-                    # reset the primal step and shrink radius
-                    X._primal.equals(primal_work[0])
-                    state.equals(state_save)
-                    self.radius *= 0.25
-
-                    # perform a re-solve at new radius only if there are more
-                    # filter iteations left to perform
-                    if (j < max_filter_iter-1):
-                        self.info_file.write(
-                            're-solving with new radius: %f\n'%self.radius)
-                        self.krylov.radius = self.radius
-                        self.krylov.rel_tol = krylov_tol
-                        self.krylov.mu = mu
-                        self.krylov.re_solve(dLdX, P)
-
-                ###########################
-                # END FILTER LOOP
-
-                # if filter succeeded, then update multipliers
-                if filter_success:
-                    self.info_file.write(
-                        'filter worked with %i iterations\n'%(j+1))
-                    X._dual.plus(P._dual)
-                else:
-                    self.info_file.write('filter failed!\n')
-            else:
-                X.plus(P)
-                state.equals_primal_solution(X._primal)
+            # use a trust region algorithm for globalization
+            self.trust_step(
+                X, state, P, dLdX, krylov_tol, feas_tol,
+                primal_work, state_work, adjoint_work, dual_work)
 
             # if this is a matrix-based problem, tell the solver to factor
             # some important matrices to be used in the next iteration
@@ -371,7 +298,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 factor_linear_system(X._primal, state)
 
             # solve for adjoint
-            adjoint.equals_adjoint_solution(X._primal, state, state_work[0])
+            adjoint.equals_adjoint_solution(X._primal, state, state_work)
 
             # write current solution
             current_solution(X._primal, state, adjoint, X._dual, self.iter)
@@ -388,6 +315,75 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n'%self.iter)
 
+    def trust_step(self, X, state, P, dLdX, krylov_tol, feas_tol,
+                   primal_work, state_work, adjoint_work, dual_work):
+        # first we have to compute the total derivative of the
+        # augmented Lagrangian merit function
+        # to do this, we have to solve a special adjoint system
+        # STEP 1: define the RHS for the system
+        dual_work.equals(dLdX._dual)
+        dCdU(X._primal, state).T.product(dual_work, state_work)
+        state_work.times(-self.mu)
+        # STEP 2: solve the adjoint system
+        dRdU(X._primal, state).T.solve(state_work, adjoint_work)
+        # STEP 3: with the adjoint, we assemble the gradient
+        dCdX(X._primal, state).T.product(dual_work, primal_work[0])
+        primal_work[0].times(self.mu)
+        dRdX(X._primal, state).T.product(
+            adjoint_work, primal_work[1])
+        primal_work[0].plus(primal_work[1])
+        primal_work[0].plus(dLdX._primal)
+
+        # move dL/dX to RHS for re-solves
+        dLdX.times(-1)
+        # start trust region loop
+        max_iter = 10
+        iters = 0
+        while iters <= max_iter:
+            iters += 1
+            # reset merit function at new step
+            p_dot_grad = primal_work[0].inner(P._primal)
+            self.merit_func.reset(X, state, P, p_dot_grad, self.mu)
+            # evaluate the quality of the FLECS model
+            merit_init = self.merit_func.func_val
+            merit_next = self.merit_func.eval_func(1.)
+            rho = (merit_init - merit_next)/self.krylov.pred_aug
+            self.info_file.write(
+                'Trust Region : iter %i\n'%iters +
+                '   merit_init = %f\n'%merit_init +
+                '   merit_next = %f\n'%merit_next +
+                '   pred_aug = %f\n'%self.krylov.pred_aug +
+                '   rho = %f\n'%rho)
+
+            # modify radius based on model quality
+            if rho < 0.01:
+                # model is bad -- shrink radius and re-solve
+                self.radius = max(0.5*self.radius, self.min_radius)
+                self.info_file.write(
+                    '   Re-solving with new radius -> %f\n'%self.radius)
+                self.krylov.radius = self.radius
+                self.krylov.re_solve(dLdX, P)
+            else:
+                # model is okay -- accept step
+                self.info_file.write('Step accepted!\n')
+                X.plus(P)
+                state.equals_primal_solution(X._primal)
+                if rho > 0.75 and self.krylov.trust_active:
+                    # model is exceptionally good -- increase radius
+                    self.radius = min(2*self.radius, self.max_radius)
+                    self.info_file.write(
+                        '   Radius increased -> %f\n'%self.radius)
+                # update the penalty parameter
+                dual_work.equals_constraints(X._primal, state)
+                cnstr_norm = dual_work.norm2
+                if cnstr_norm > self.eta:
+                    self.mu = min(10.**self.mu_pow, self.mu_max)
+                    self.eta = 1./(self.mu**0.1)
+                    self.info_file.write('   New mu = %1.2e\n'%self.mu)
+                else:
+                    if cnstr_norm > feas_tol:
+                        self.eta = self.eta/(self.mu**0.9)
+                break
 
 class InequalityConstrainedRSNK(EqualityConstrainedRSNK):
 
@@ -400,4 +396,11 @@ class InequalityConstrainedRSNK(EqualityConstrainedRSNK):
         self.mat_vec = self.KKT_matrix.product
 
         if get_opt(optns, None, 'reduced', 'precond') == 'nested':
-            self.nested.KKT_matrix = self.modified_matrix
+            self.nested.KKT_matrix = self.KKT_matrix
+
+    def trust_step(self, X, state, P, dLdX, krylov_tol, feas_tol,
+                   primal_work, state_work, adjoint_work, dual_work):
+        ActiveSetMatrix(dLdX._dual).product(dLdX._dual, dLdX._dual)
+        super(InequalityConstrainedRSNK, self).trust_step(
+            X, state, P, dLdX, krylov_tol, feas_tol,
+            primal_work, state_work, adjoint_work, dual_work)

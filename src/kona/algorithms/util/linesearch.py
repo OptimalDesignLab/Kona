@@ -129,7 +129,7 @@ class BackTracking(LineSearch):
         super(BackTracking, self).__init__(optns, out_file)
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
         self.alpha_min = get_opt(optns, 1e-4, 'alpha_min')
-        self.rdtn_factor = get_opt(optns, .3, 'rdtn_factor')
+        self.rdtn_factor = get_opt(optns, 0.5, 'rdtn_factor')
         self.p_dot_dfdx = 0.0
 
     def _validate_options(self):
@@ -153,20 +153,19 @@ class BackTracking(LineSearch):
             raise ValueError('search direction is not a descent direction')
 
         alpha = self.alpha_init
-        f_init = merit.eval_func(alpha)
-        f = merit.eval_func(alpha)
+        self.f_init = merit.eval_func(alpha)
 
         n_iter = 0
         while (alpha > self.alpha_min) and (n_iter < self.max_iter):
-            f_sufficient = f_init + self.decr_cond*alpha*self.p_dot_dfdx
-            if f <= f_sufficient:
+            f_sufficient = self.f_init + self.decr_cond*alpha*self.p_dot_dfdx
+            self.f = merit.eval_func(alpha)
+            if self.f <= f_sufficient:
                 return alpha, n_iter
-            alpha *= self.rdtn_factor
-            f = merit.eval_func(alpha)
+            else:
+                alpha *= self.rdtn_factor
             n_iter += 1
 
-        # if we get here, we didn't find a step
-        # return alpha_init
+        # if we got here, linesearch failed
         return self.alpha_init, n_iter
 
 ################################################################################

@@ -67,7 +67,7 @@ class QuasiNewtonTestCase(unittest.TestCase):
         except BadKonaOption as err:
             self.assertEqual(
                 str(err),
-                "Invalid Kona option: optns['line_search']['type'] = None")
+                "Invalid Kona option: optns['globalization']['type'] = None")
 
 class HessianApproxTestCase(unittest.TestCase):
     '''Test case for quasi-Newton classes'''

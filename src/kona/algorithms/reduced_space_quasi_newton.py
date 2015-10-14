@@ -52,11 +52,11 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
 
         # set the type of line-search algorithm
         try:
-            line_search_alg = get_opt(optns, StrongWolfe, 'line_search', 'type')
-            line_search_opt = get_opt(optns, {}, 'line_search')
+            line_search_alg = get_opt(optns, StrongWolfe, 'globalization', 'type')
+            line_search_opt = get_opt(optns, {}, 'globalization')
             self.line_search = line_search_alg(line_search_opt, self.info_file)
         except:
-            raise BadKonaOption(optns, 'line_search', 'type')
+            raise BadKonaOption(optns, 'globalization', 'type')
 
     def _write_header(self):
         self.hist_file.write(
@@ -144,5 +144,5 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             self.info_file.write('Optimization successful!\n')
         else:
             self.info_file.write('Failed to converge!\n')
-            
+
         info.write('Total number of nonlinear iterations: %i\n'%self.iter)

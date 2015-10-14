@@ -157,15 +157,15 @@ class dRdU(KonaMatrix):
 
     def precond(self, in_vec, out_vec):
         if not self._transposed:
-            cost = self._solver.apply_precond(
+            self._solver.apply_precond(
                 self._primal._data, self._state._data,
                 in_vec._data, out_vec._data)
         else:
-            cost = self._solver.apply_precond_T(
+            self._solver.apply_precond_T(
                 self._primal._data, self._state._data,
                 in_vec._data, out_vec._data)
 
-        self._memory.cost += cost
+        self._memory.cost += 1
 
 class dCdX(KonaMatrix):
     """

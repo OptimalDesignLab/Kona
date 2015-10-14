@@ -9,7 +9,7 @@ class TotalConstraintJacobian(BaseHessian):
 
     Uses the same 2nd order adjoint formulation as ReducedKKTMatrix, but only
     for the off-diagonal total contraint jacobian blocks,
-    :math:`\\frac{dC}{dXd\\lambda}`.
+    :math:`\\frac{dL}{dXd\\lambda}`.
 
     Parameters
     ----------
