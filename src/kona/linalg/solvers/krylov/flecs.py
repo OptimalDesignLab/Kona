@@ -109,6 +109,7 @@ class FLECS(KrylovSolver):
 
     def _write_header(self, norm0, grad0, feas0):
         self.out_file.write(
+            '#-------------------------------------------------\n' +
             '# FLECS convergence history\n' +
             '# residual tolerance target = %e\n'%self.rel_tol +
             '# initial residual norm     = %e\n'%norm0 +
@@ -466,7 +467,9 @@ class FLECS(KrylovSolver):
         res_norm = sqrt(max(res_norm, 0.0))
 
         # write into solution history
-        self.out_file.write('# FLECS resolving at new radius\n')
+        self.out_file.write(
+            '#-------------------------------------------------\n' +
+            '# FLECS resolving at new radius\n')
         self._write_history(
             res_norm/norm0,
             self.omega/(self.grad_scale*grad0),

@@ -260,10 +260,6 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             self.krylov.radius = self.radius
             self.krylov.mu = self.mu
 
-            self.krylov.out_file.write(
-                '#-------------------------------------------------\n' +
-                '# primal solve\n')
-
             # reset the primal-dual step vector
             P.equals(0.0)
 

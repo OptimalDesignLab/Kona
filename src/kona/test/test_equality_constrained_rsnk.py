@@ -4,7 +4,6 @@ import unittest
 from kona.algorithms import EqualityConstrainedRSNK
 from kona.examples import SimpleConstrained
 from kona.linalg.memory import KonaMemory
-from kona.algorithms.util.linesearch import BackTracking
 from kona.algorithms.util.merit import AugmentedLagrangian
 
 class EqualityConstrainedRSNKTestCase(unittest.TestCase):
@@ -12,7 +11,6 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
     def test_with_simple_constrained(self):
 
         solver = SimpleConstrained()
-        # solver = Constrained2x2()
         km = KonaMemory(solver)
 
         optns = {
@@ -48,7 +46,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
             'krylov' : {
                 'out_file'      : 'kona_krylov.dat',
-                'max_iter'      : 3,
+                'max_iter'      : 10,
                 'rel_tol'       : 0.0095,
                 'check_res'     : True,
             },
