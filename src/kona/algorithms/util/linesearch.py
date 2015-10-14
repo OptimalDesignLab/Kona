@@ -129,7 +129,7 @@ class BackTracking(LineSearch):
         super(BackTracking, self).__init__(optns, out_file)
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
         self.alpha_min = get_opt(optns, 1e-4, 'alpha_min')
-        self.rdtn_factor = get_opt(optns, .3, 'rdtn_factor')
+        self.rdtn_factor = get_opt(optns, 0.5, 'rdtn_factor')
         self.p_dot_dfdx = 0.0
 
     def _validate_options(self):
@@ -154,20 +154,19 @@ class BackTracking(LineSearch):
 
         alpha = self.alpha_init
         self.f_init = merit.eval_func(alpha)
-        self.f = merit.eval_func(alpha)
 
         n_iter = 0
         while (alpha > self.alpha_min) and (n_iter < self.max_iter):
+            n_iter += 1
             f_sufficient = self.f_init + self.decr_cond*alpha*self.p_dot_dfdx
+            self.f = merit.eval_func(alpha)
             if self.f <= f_sufficient:
                 return alpha, n_iter
-            alpha *= self.rdtn_factor
-            self.f = merit.eval_func(alpha)
-            n_iter += 1
+            else:
+                alpha *= self.rdtn_factor
 
         # if we get here, we didn't find a step
-        # return alpha_init
-        return self.alpha_init, n_iter
+        return self.alpha_init, self.max_iter+1
 
 ################################################################################
 #                           Strong Wolfe Line-Search                           #

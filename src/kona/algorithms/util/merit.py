@@ -2,7 +2,7 @@ import sys
 
 from kona.linalg import objective_value
 from kona.linalg.solvers.util import EPS
-from kona.linalg.matrices.common import dRdX
+from kona.linalg.matrices.common import ActiveSetMatrix, dRdX
 
 class MeritFunction(object):
     """
@@ -204,8 +204,8 @@ class AugmentedLagrangian(MeritFunction):
         # store information for the new point the merit function is reset at
         self.search_dir = search_dir
         self.x_trial.equals(kkt_start._primal)
-        self.dual_frozen.equals(kkt_start._dual)
         self.u_trial.equals(u_start)
+        self.dual_frozen.equals(kkt_start._dual)
         self.p_dot_grad = p_dot_grad
         self.mu = mu
         # evaluate the function value

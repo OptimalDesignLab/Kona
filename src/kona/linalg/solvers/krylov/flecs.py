@@ -6,7 +6,7 @@ from kona.linalg.vectors.common import PrimalVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
-    solve_tri, solve_trust_reduced, eigen_decomp, mod_gram_schmidt
+    solve_tri, solve_trust_reduced, eigen_decomp, mod_gram_schmidt, EPS
 
 class FLECS(KrylovSolver):
     """
@@ -243,8 +243,15 @@ class FLECS(KrylovSolver):
         self.pred = \
             -0.5*numpy.inner(y_r, numpy.inner(Hess_red, y_r)) \
             + self.g[0]*numpy.inner(VtZ_prim_r[0, 0:self.iters], y_r)
-        # self.pred_aug = \
-        #     -self.y_aug.dot(0.5*numpy.inner(Hess_aug, self.y_aug) + rhs_aug)
+
+        # compute the reduction in the Augmented Lagrangian model
+        Hess_aug = self.mu * H_r.T.dot(VtVH)
+        Hess_aug += Hess_red
+        rhs_aug = numpy.zeros(self.iters)
+        for k in xrange(self.iters):
+            rhs_aug[k] = -self.g[0]*(self.VtZ_prim[0, k] + self.mu*VtVH[0, k])
+        self.reconstructed_pred = \
+            -self.y_aug.dot(0.5*numpy.inner(Hess_aug, self.y_aug) + rhs_aug)
 
         # determine if negative curvature may be present
         self.neg_curv = False
