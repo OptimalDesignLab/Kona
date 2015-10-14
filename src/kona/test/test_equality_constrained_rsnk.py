@@ -27,10 +27,6 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             #     'min_radius' : 0.1,
             # },
 
-            'globalization' : {
-                'type' : None,
-            },
-
             'merit_function' : {
                 'type' : AugmentedLagrangian
             },
