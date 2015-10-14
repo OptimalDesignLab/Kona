@@ -1,9 +1,9 @@
-import unittest
 import numpy
+import unittest
 
-from kona.linalg.memory import KonaMemory
 from kona.algorithms import EqualityConstrainedRSNK
 from kona.examples import SimpleConstrained
+from kona.linalg.memory import KonaMemory
 
 class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
@@ -21,8 +21,8 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
             'trust' : {
                 'init_radius' : 1.0,
-                'max_radius' : 20.0,
-                'min_radius' : 1e-2,
+                'max_radius' : 1.0,
+                'min_radius' : 1.0,
             },
 
             'aug_lag' : {

@@ -1,21 +1,34 @@
 import copy
 from numpy import sqrt
 
-from kona.options import BadKonaOption, get_opt
+from kona.options import BadKonaOption
+from kona.options import get_opt
 
-from kona.linalg import current_solution, objective_value, factor_linear_system
+from kona.linalg import current_solution
+from kona.linalg import factor_linear_system
+from kona.linalg import objective_value
+
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.matrices.common import IdentityMatrix, dRdX, dRdU, dCdX, dCdU
-from kona.linalg.matrices.hessian import ReducedKKTMatrix, \
-    IneqCnstrReducedKKTMatrix
-from kona.linalg.matrices.preconds import \
-    ReducedSchurPreconditioner, NestedKKTPreconditioner
+
+from kona.linalg.matrices.common import dCdU
+from kona.linalg.matrices.common import dCdX
+from kona.linalg.matrices.common import dRdU
+from kona.linalg.matrices.common import dRdX
+from kona.linalg.matrices.common import IdentityMatrix
+
+from kona.linalg.matrices.hessian import IneqCnstrReducedKKTMatrix
+from kona.linalg.matrices.hessian import ReducedKKTMatrix
+
+from kona.linalg.matrices.preconds import NestedKKTPreconditioner
+from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
+
 from kona.linalg.solvers.krylov import FLECS
-from kona.linalg.solvers.util import EPS
+
+from kona.algorithms.base_algorithm import OptimizationAlgorithm
+
 from kona.algorithms.util import Filter
 from kona.algorithms.util.linesearch import BackTracking
 from kona.algorithms.util.merit import AugmentedLagrangian
-from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
@@ -41,7 +54,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         self.ceq_tol = get_opt(optns, 1e-8, 'constraint_tol')
         self.nu = get_opt(optns, 0.95, 'reduced', 'nu')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
-        self.eta = None
+        self.eta = 1./(self.mu_init**0.1)
 
         # set the krylov solver
         acceptable_solvers = [FLECS]
@@ -53,7 +66,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             self.krylov = krylov(
                 [self.primal_factory, self.dual_factory],
                 krylov_optns)
-        except:
+        except Exception:
             raise BadKonaOption(optns, 'krylov', 'solver')
 
         # initialize the globalization method
@@ -349,49 +362,57 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         alpha, n_iter = self.line_search.find_step_length(self.merit_func)
         # print success/failure info
         if n_iter == self.line_search.max_iter:
-            self.info_file.write('Linesearch failed!\n')
             merit_next = self.line_search.f_init
             success = False
         else:
-            self.info_file.write('Linesearch succeeded! alpha = %f\n'%alpha)
             merit_next = self.line_search.f
             success = True
+        # evaluate how the FLECS model compares
+        rho = (merit_init - merit_next)/self.krylov.pred_aug
+        self.info_file.write(
+            '   merit_init = %f\n'%merit_init +
+            '   merit_next = %f\n'%merit_next +
+            '   pred_aug = %f\n'%self.krylov.pred_aug +
+            '   rho = %f\n'%rho)
 
-        # if line search is successful, apply the step
         if success:
+            self.info_file.write('Linesearch succeeded with alpha = %f\n'%alpha)
+            # accept step
             X._primal.equals_ax_p_by(1., X._primal, alpha, P._primal)
-            X._dual.equals_ax_p_by(1., X._dual, alpha, P._dual)
             state.equals_primal_solution(X._primal)
-            # evaluate how the FLECS model compares
-            rho = (merit_init - merit_next)/self.krylov.pred_aug
-            self.info_file.write(
-                'merit_init = %f\n'%merit_init +
-                'merit_next = %f\n'%merit_next +
-                'pred_aug = %f\n'%self.krylov.pred_aug +
-                'rho = %f\n'%rho)
-            # deal with the trust radius
-            # if rho < 0.25:
-            #     # FLECS model is bad -- shrink radius for next iteration
-            #     self.radius = max(0.25*self.radius, self.min_radius)
-            #     self.info_file.write('New trust radius = %f\n'%self.radius)
-            # elif rho > 0.75:
-            #     # FLECS model is good -- increase radius if trust region active
-            #     if self.krylov.trust_active:
-            #         self.radius = min(2*self.radius, self.max_radius)
-            #         self.info_file.write('New trust radius = %f\n'%self.radius)
-            # deal with the penalty parameter
-            if self.eta is None:
-                self.eta = 1./(mu**0.1)
+            X._dual.equals_ax_p_by(1., X._dual, alpha, P._dual)
+
+            # update penalty parameter
             dual_work.equals_constraints(X._primal, state)
             cnstr_norm = dual_work.norm2
             if cnstr_norm > self.eta:
                 mu = min((10.**self.mu_pow)*mu, self.mu_max)
                 self.eta = 1./(mu**0.1)
-                self.info_file.write('New mu = %e\n'%mu)
+                self.info_file.write('   New mu = %1.2e\n'%mu)
             else:
                 if cnstr_norm > feas_tol:
                     self.eta = self.eta/(mu**0.9)
 
+            # evaluate FLECS model
+            if rho < 0.1:
+                # model is bad -- shrink radius
+                self.radius = max(0.25*self.radius, self.min_radius)
+                self.info_file.write(
+                    'FLECS model is bad: Shrink radius.\n' +
+                    '   New radius = %f\n'%self.radius)
+            elif rho > 0.75:
+                # model is good -- update radius if we hit boundary
+                self.info_file.write(
+                    'FLECS model is good: Testing radius.\n')
+                if alpha == 1 and self.krylov.trust_active:
+                    self.radius = min(2*self.radius, self.max_radius)
+                    self.info_file.write('   New radius = %f\n'%self.radius)
+        else:
+            # line search failed -- reject step and shrink radius
+            self.radius = max(0.25*self.radius, self.min_radius)
+            self.info_file.write(
+                'Line search failed: Reject step and shrink radius.\n' +
+                '   New radius = %f\n'%self.radius)
 
         return success, mu
 
