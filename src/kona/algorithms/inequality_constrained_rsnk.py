@@ -2,30 +2,24 @@ import copy
 from numpy import sqrt
 
 from kona.options import BadKonaOption, get_opt
-
 from kona.linalg import current_solution, factor_linear_system, objective_value
-
 from kona.linalg.vectors.composite import ReducedKKTVector
-
 from kona.linalg.matrices.common import dCdU, dCdX, dRdU, dRdX
-from kona.linalg.matrices.common import IdentityMatrix
-
+from kona.linalg.matrices.common import IdentityMatrix, ActiveSetMatrix
+from kona.linalg.matrices.hessian import IneqCnstrReducedKKTMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
-
 from kona.linalg.solvers.krylov import FLECS
-
+from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
+from kona.algorithms.util.merit import AugmentedLagrangianInequality
 
-from kona.algorithms.util.merit import AugmentedLagrangian
-
-class EqualityConstrainedRSNK(OptimizationAlgorithm):
+class InequalityConstrainedRSNK(OptimizationAlgorithm):
 
     def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
-        super(EqualityConstrainedRSNK, self).__init__(
+        super(InequalityConstrainedRSNK, self).__init__(
             primal_factory, state_factory, dual_factory, optns
         )
 
@@ -65,16 +59,17 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
         # initialize the globalization method
         # NOTE: Latest C++ source has the filter disabled entirely!!!
         # set the type of line-search algorithm
-        self.merit_func = AugmentedLagrangian(
+        self.merit_func = AugmentedLagrangianInequality(
             self.primal_factory, self.state_factory, self.dual_factory,
             {}, self.info_file)
 
         # initialize the KKT matrix definition
         reduced_optns = get_opt(optns, {}, 'reduced')
         reduced_optns['out_file'] = self.info_file
-        self.KKT_matrix = ReducedKKTMatrix(
+        self.base_matrix = ReducedKKTMatrix(
             [self.primal_factory, self.state_factory, self.dual_factory],
             reduced_optns)
+        self.KKT_matrix = IneqCnstrReducedKKTMatrix(self.base_matrix)
         self.mat_vec = self.KKT_matrix.product
 
         # initialize the preconditioner for the KKT matrix
@@ -195,11 +190,13 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # evaluate optimality, feasibility and KKT norms
             dLdX.equals_KKT_conditions(X, state, adjoint, primal_work[0])
+            dual_work.equals_constraints(X._primal, state)
+            ActiveSetMatrix(dual_work).product(dLdX._dual, dLdX._dual)
             state_save.equals(state)
             if self.iter == 1:
                 # calculate initial norms
                 grad_norm0 = dLdX._primal.norm2
-                feas_norm0 = dLdX._dual.norm2
+                feas_norm0 = max(dLdX._dual.norm2, EPS)
                 kkt_norm0 = sqrt(feas_norm0**2 + grad_norm0**2)
                 # set current norms to initial
                 kkt_norm = kkt_norm0
@@ -216,7 +213,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             else:
                 # calculate current norms
                 grad_norm = dLdX._primal.norm2
-                feas_norm = dLdX._dual.norm2
+                feas_norm = max(dLdX._dual.norm2, EPS)
                 kkt_norm = sqrt(feas_norm**2 + grad_norm**2)
                 # update the augmented Lagrangian penalty
                 self.info_file.write(
@@ -272,6 +269,9 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # trigger the krylov solution
             self.krylov.solve(self.mat_vec, dLdX, P, self.precond)
+
+            # X.plus(P)
+            # state.equals_primal_solution(X._primal)
 
             # move dL/dX back to left hand side
             dLdX.times(-1.)
@@ -358,7 +358,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 X.plus(P)
                 state.equals_primal_solution(X._primal)
                 if rho > 0.75 and self.krylov.trust_active:
-                    # model is great -- increase radius
+                    # model is exceptionally good -- increase radius
                     self.radius = min(2*self.radius, self.max_radius)
                     self.info_file.write(
                         '   Radius increased -> %f\n'%self.radius)

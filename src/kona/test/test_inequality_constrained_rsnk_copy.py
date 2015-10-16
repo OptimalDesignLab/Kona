@@ -1,16 +1,16 @@
 import numpy
 import unittest
 
-from kona.algorithms import EqualityConstrainedRSNK
+from kona.algorithms import InequalityConstrainedRSNK
 from kona.examples import SimpleConstrained
 from kona.linalg.memory import KonaMemory
 from kona.algorithms.util.merit import AugmentedLagrangian
 
-class EqualityConstrainedRSNKTestCase(unittest.TestCase):
+class InequalityConstrainedRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        solver = SimpleConstrained()
+        solver = SimpleConstrained(ineq=True)
         km = KonaMemory(solver)
 
         optns = {
@@ -24,6 +24,10 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             #     'max_radius' : 4.0,
             #     'min_radius' : 0.1,
             # },
+
+            'merit_function' : {
+                'type' : AugmentedLagrangian
+            },
 
             # 'aug_lag' : {
             #     'mu_init' : 1.0,
@@ -48,7 +52,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = EqualityConstrainedRSNK(
+        algorithm = InequalityConstrainedRSNK(
             km.primal_factory, km.state_factory, km.dual_factory, optns)
         km.allocate_memory()
         algorithm.solve()
