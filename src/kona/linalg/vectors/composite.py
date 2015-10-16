@@ -1,6 +1,7 @@
 import numpy as np
 
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+from kona.linalg.matrices.common import ActiveSetMatrix
 
 class CompositeVector(object):
     """

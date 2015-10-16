@@ -2,8 +2,9 @@ from kona.user import UserSolver
 
 class SimpleConstrained(UserSolver):
 
-    def __init__(self):
+    def __init__(self, ineq=False):
         super(SimpleConstrained, self).__init__(3, 0, 1)
+        self.ineq = ineq
 
     def eval_obj(self, at_design, at_state):
         return at_design.data[0] + at_design.data[1] + at_design.data[2]
@@ -48,4 +49,13 @@ class SimpleConstrained(UserSolver):
         super(SimpleConstrained, self).current_solution(
             curr_design, curr_state, curr_adj, curr_dual, num_iter)
 
-        print self.curr_design
+        # print self.curr_design
+
+    def apply_active_set(self, at_cnstr, in_vec, out_vec):
+        if self.ineq:
+            if at_cnstr.data[0] >= 0.:
+                out_vec.data[:] = in_vec.data[:]
+            else:
+                out_vec.data[:] = 0.
+        else:
+            out_vec.data[:] = in_vec.data[:]

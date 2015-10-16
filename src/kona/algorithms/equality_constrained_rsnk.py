@@ -8,9 +8,8 @@ from kona.linalg import current_solution, factor_linear_system, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 
 from kona.linalg.matrices.common import dCdU, dCdX, dRdU, dRdX
-from kona.linalg.matrices.common import IdentityMatrix, ActiveSetMatrix
+from kona.linalg.matrices.common import IdentityMatrix
 
-from kona.linalg.matrices.hessian import IneqCnstrReducedKKTMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
@@ -213,7 +212,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                 )
                 # calculate convergence tolerances
                 grad_tol = self.primal_tol
-                feas_tol = self.ceq_tol * max(feas_norm0, 1e-8)
+                feas_tol = self.ceq_tol * max(feas_norm0, 1e-3)
             else:
                 # calculate current norms
                 grad_norm = dLdX._primal.norm2
@@ -374,23 +373,3 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                     if cnstr_norm > feas_tol:
                         self.eta = self.eta/(self.mu**0.9)
                 break
-
-class InequalityConstrainedRSNK(EqualityConstrainedRSNK):
-
-    def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
-        super(InequalityConstrainedRSNK, self).__init__(
-            primal_factory, state_factory, dual_factory, optns
-        )
-
-        self.KKT_matrix = IneqCnstrReducedKKTMatrix(self.KKT_matrix)
-        self.mat_vec = self.KKT_matrix.product
-
-        if get_opt(optns, None, 'reduced', 'precond') == 'nested':
-            self.nested.KKT_matrix = self.KKT_matrix
-
-    def trust_step(self, X, state, P, dLdX, krylov_tol, feas_tol,
-                   primal_work, state_work, adjoint_work, dual_work):
-        ActiveSetMatrix(dLdX._dual).product(dLdX._dual, dLdX._dual)
-        super(InequalityConstrainedRSNK, self).trust_step(
-            X, state, P, dLdX, krylov_tol, feas_tol,
-            primal_work, state_work, adjoint_work, dual_work)

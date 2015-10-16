@@ -285,7 +285,7 @@ class FLECS(KrylovSolver):
 
         # calculate norm of rhs vector
         grad0 = b._primal.norm2
-        feas0 = b._dual.norm2
+        feas0 = max(b._dual.norm2, EPS)
         norm0 = b.norm2
 
         # calculate initial (negative) residual and compute its norm
@@ -386,6 +386,10 @@ class FLECS(KrylovSolver):
                     (self.omega < self.rel_tol*self.grad_scale*grad0):
                 break
 
+            # check for breakdown
+            if self.lin_depend:
+                break
+
         #########################################
         # finished looping over search directions
 
@@ -450,7 +454,7 @@ class FLECS(KrylovSolver):
     def re_solve(self, b, x):
         # calculate norms for the RHS vector
         grad0 = b._primal.norm2
-        feas0 = b._dual.norm2
+        feas0 = max(b._dual.norm2, EPS)
         norm0 = sqrt(grad0**2 + feas0**2)
 
         # reset some prior data and re-solve the subspace problem

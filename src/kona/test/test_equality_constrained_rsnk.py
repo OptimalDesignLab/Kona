@@ -57,7 +57,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
         km.allocate_memory()
         algorithm.solve()
 
-        # print solver.curr_design
+        print solver.curr_design
 
         expected = -1.*numpy.ones(solver.num_primal)
         diff = abs(solver.curr_design - expected)

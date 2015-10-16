@@ -567,6 +567,7 @@ class UserSolver(object):
         """
         converged = True
         cost = 1
+        result.data[:] = 0.
         if converged:
             # You can return the number of preconditioner calls here.
             # This is used by Kona to track computational cost.
@@ -615,6 +616,8 @@ class UserSolver(object):
         int
             Number of preconditioner calls required for the solution.
         """
+        if rhs_vec.data == 0.:
+            result.data[:] = 0.
         return 0
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, tol, result):
@@ -655,6 +658,8 @@ class UserSolver(object):
         int
             Number of preconditioner calls required for the solution.
         """
+        if rhs_vec.data == 0.:
+            result.data[:] = 0.
         return 0
 
     def current_solution(self, curr_design, curr_state, curr_adj,
