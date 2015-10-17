@@ -8,7 +8,7 @@ from kona.linalg import current_solution, factor_linear_system, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 
 from kona.linalg.matrices.common import dCdU, dCdX, dRdU, dRdX
-from kona.linalg.matrices.common import IdentityMatrix
+from kona.linalg.matrices.common import IdentityMatrix, ActiveSetMatrix
 
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 
@@ -16,16 +16,17 @@ from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 
 from kona.linalg.solvers.krylov import FLECS
+from kona.linalg.solvers.util import EPS
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 from kona.algorithms.util.merit import AugmentedLagrangian
 
-class EqualityConstrainedRSNK(OptimizationAlgorithm):
+class ConstrainedRSNK(OptimizationAlgorithm):
 
     def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
-        super(EqualityConstrainedRSNK, self).__init__(
+        super(ConstrainedRSNK, self).__init__(
             primal_factory, state_factory, dual_factory, optns
         )
 
@@ -195,11 +196,13 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
 
             # evaluate optimality, feasibility and KKT norms
             dLdX.equals_KKT_conditions(X, state, adjoint, primal_work[0])
+            dual_work.equals_constraints(X._primal, state)
+            ActiveSetMatrix(dual_work).product(dLdX._dual, dLdX._dual)
             state_save.equals(state)
             if self.iter == 1:
                 # calculate initial norms
                 grad_norm0 = dLdX._primal.norm2
-                feas_norm0 = dLdX._dual.norm2
+                feas_norm0 = max(dLdX._dual.norm2, EPS)
                 kkt_norm0 = sqrt(feas_norm0**2 + grad_norm0**2)
                 # set current norms to initial
                 kkt_norm = kkt_norm0
@@ -216,7 +219,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
             else:
                 # calculate current norms
                 grad_norm = dLdX._primal.norm2
-                feas_norm = dLdX._dual.norm2
+                feas_norm = max(dLdX._dual.norm2, EPS)
                 kkt_norm = sqrt(feas_norm**2 + grad_norm**2)
                 # update the augmented Lagrangian penalty
                 self.info_file.write(
@@ -364,6 +367,7 @@ class EqualityConstrainedRSNK(OptimizationAlgorithm):
                         '   Radius increased -> %f\n'%self.radius)
                 # update the penalty parameter
                 dual_work.equals_constraints(X._primal, state)
+                # ActiveSetMatrix(dual_work).product(dual_work, dual_work)
                 cnstr_norm = dual_work.norm2
                 if cnstr_norm > self.eta:
                     self.mu = min(10.**self.mu_pow, self.mu_max)

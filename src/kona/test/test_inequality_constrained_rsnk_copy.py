@@ -1,7 +1,7 @@
 import numpy
 import unittest
 
-from kona.algorithms import InequalityConstrainedRSNK
+from kona.algorithms import ConstrainedRSNK
 from kona.examples import SimpleConstrained
 from kona.linalg.memory import KonaMemory
 from kona.algorithms.util.merit import AugmentedLagrangian
@@ -10,7 +10,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        solver = SimpleConstrained(ineq=True)
+        solver = SimpleConstrained(init_x=[0.51, 0.52, 0.53], ineq=True)
         km = KonaMemory(solver)
 
         optns = {
@@ -52,7 +52,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = InequalityConstrainedRSNK(
+        algorithm = ConstrainedRSNK(
             km.primal_factory, km.state_factory, km.dual_factory, optns)
         km.allocate_memory()
         algorithm.solve()

@@ -1,7 +1,7 @@
 import numpy
 import unittest
 
-from kona.algorithms import EqualityConstrainedRSNK
+from kona.algorithms import ConstrainedRSNK
 from kona.examples import SimpleConstrained
 from kona.linalg.memory import KonaMemory
 from kona.algorithms.util.merit import AugmentedLagrangian
@@ -48,7 +48,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = EqualityConstrainedRSNK(
+        algorithm = ConstrainedRSNK(
             km.primal_factory, km.state_factory, km.dual_factory, optns)
         km.allocate_memory()
         algorithm.solve()

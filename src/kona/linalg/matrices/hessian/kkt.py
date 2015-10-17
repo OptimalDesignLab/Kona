@@ -77,9 +77,9 @@ class ReducedKKTMatrix(BaseHessian):
         self._allocated = False
 
         # request vector memory for future allocation
-        self.primal_factory.request_num_vectors(3)
+        self.primal_factory.request_num_vectors(4)
         self.state_factory.request_num_vectors(6)
-        self.dual_factory.request_num_vectors(1)
+        self.dual_factory.request_num_vectors(3)
 
         # initialize abtract jacobians
         self.dRdX = dRdX()
@@ -148,14 +148,6 @@ class ReducedKKTMatrix(BaseHessian):
         at_adjoint : StateVector
             1st order adjoint variables at which the product is evaluated.
         """
-        # store the linearization point
-        self.at_design = at_kkt._primal
-        self.primal_norm = self.at_design.norm2
-        self.at_state = at_state
-        self.state_norm = self.at_state.norm2
-        self.at_dual = at_kkt._dual
-        self.at_adjoint = at_adjoint
-
         # if this is the first ever linearization...
         if not self._allocated:
 
@@ -173,9 +165,24 @@ class ReducedKKTMatrix(BaseHessian):
             self.primal_work = self.primal_factory.generate()
 
             # generate dual vectors
+            self.at_dual = self.dual_factory.generate()
             self.dual_work = self.dual_factory.generate()
 
+            # generate a KKT work vector
+            self.kkt_work = ReducedKKTVector(
+                self.primal_factory.generate(), self.dual_factory.generate())
+
             self._allocated = True
+
+        # store the linearization point
+        self.at_design = at_kkt._primal
+        self.primal_norm = self.at_design.norm2
+        self.at_state = at_state
+        self.state_norm = self.at_state.norm2
+        self.at_adjoint = at_adjoint
+        self.at_dual.equals(at_kkt._dual)
+        self.dual_work.equals_constraints(self.at_design, self.at_state)
+        ActiveSetMatrix(self.dual_work).product(self.at_dual, self.at_dual)
 
         # compute adjoint residual at the linearization
         self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
@@ -215,6 +222,11 @@ class ReducedKKTMatrix(BaseHessian):
 
         # clear output vector
         out_vec.equals(0.0)
+
+        # modify the in_vec for inequality constraints
+        self.kkt_work.equals(in_vec)
+        self.dual_work.equals_constraints(self.at_design, self.at_state)
+        ActiveSetMatrix(self.dual_work).product(in_vec._dual, in_vec._dual)
 
         # calculate appropriate FD perturbation for design
         epsilon_fd = calc_epsilon(self.primal_norm, in_vec._primal.norm2)
@@ -307,6 +319,13 @@ class ReducedKKTMatrix(BaseHessian):
         if self.lamb > EPS:
             out_vec._primal.equals_ax_p_by(
                 1., out_vec._primal, self.lamb*self.scale, in_vec._primal)
+
+        # modify out_vec for inequality constraints
+        self.dual_work.equals_constraints(self.at_design, self.at_state)
+        ActiveSetMatrix(self.dual_work).product(out_vec._dual, out_vec._dual)
+
+        # revert in_vec to original data
+        in_vec.equals(self.kkt_work)
 
         # if this is a single product, we reset the approximation flag
         if self._reset_approx:

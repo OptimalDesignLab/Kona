@@ -210,54 +210,6 @@ class AugmentedLagrangian(MeritFunction):
         self.mu = mu
         # evaluate the function value
         self.dual_work.equals_constraints(self.x_trial, self.u_trial)
-        self.func_val = \
-            objective_value(self.x_trial, self.u_trial) \
-            + self.dual_frozen.inner(self.dual_work) \
-            + 0.5*self.mu*(self.dual_work.norm2**2)
-        self.last_func_alpha = 0.0
-
-    def eval_func(self, alpha):
-        if abs(alpha - self.last_func_alpha) > EPS:
-            self.x_trial.equals_ax_p_by(
-                1., self.x_trial, alpha, self.search_dir._primal)
-            self.u_trial.equals_primal_solution(self.x_trial)
-            self.dual_work.equals_constraints(self.x_trial, self.u_trial)
-            self.func_val = \
-                objective_value(self.x_trial, self.u_trial) \
-                + self.dual_frozen.inner(self.dual_work) \
-                + 0.5*self.mu*(self.dual_work.norm2**2)
-            self.last_func_alpha = alpha
-
-        return self.func_val
-
-class AugmentedLagrangianInequality(MeritFunction):
-
-    def __init__(self, primal_factory, state_factory, dual_factory,
-                 optns={}, out_file=sys.stdout):
-        super(AugmentedLagrangianInequality, self).__init__(
-            primal_factory, state_factory, optns, out_file)
-        self.dual_factory = dual_factory
-        self.primal_factory.request_num_vectors(1)
-        self.state_factory.request_num_vectors(1)
-        self.dual_factory.request_num_vectors(2)
-
-    def reset(self, kkt_start, u_start, search_dir, p_dot_grad, mu):
-        # if the internal vectors are not allocated, do it now
-        if not self._allocated:
-            self.x_trial = self.primal_factory.generate()
-            self.u_trial = self.state_factory.generate()
-            self.dual_frozen = self.dual_factory.generate()
-            self.dual_work = self.dual_factory.generate()
-            self._allocated = True
-        # store information for the new point the merit function is reset at
-        self.search_dir = search_dir
-        self.x_trial.equals(kkt_start._primal)
-        self.u_trial.equals(u_start)
-        self.dual_frozen.equals(kkt_start._dual)
-        self.p_dot_grad = p_dot_grad
-        self.mu = mu
-        # evaluate the function value
-        self.dual_work.equals_constraints(self.x_trial, self.u_trial)
         ActiveSetMatrix(self.dual_work).product(
             self.dual_work, self.dual_work)
         self.func_val = \
