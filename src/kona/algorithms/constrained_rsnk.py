@@ -359,7 +359,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                         '   Radius increased -> %f\n'%self.radius)
                 # update the penalty parameter
                 dual_work.equals_constraints(X._primal, state)
-                # ActiveSetMatrix(dual_work).product(dual_work, dual_work)
+                ActiveSetMatrix(dual_work).product(dual_work, dual_work)
                 cnstr_norm = dual_work.norm2
                 if cnstr_norm > self.eta:
                     self.mu = min(10.**self.mu_pow, self.mu_max)
