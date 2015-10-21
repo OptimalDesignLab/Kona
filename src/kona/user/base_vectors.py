@@ -31,7 +31,7 @@ class BaseVector(object):
             self.data = np.array(val)
         else:
             raise ValueError(
-                'val must be a scalar or array like, ' + 
+                'val must be a scalar or array like, ' +
                 'but was given as type %s'%(type(val)))
 
     def plus(self, vector):
@@ -45,16 +45,26 @@ class BaseVector(object):
         """
         self.data += vector.data
 
-    def times(self, value):
+    def times_scalar(self, value):
         """
         Multiply all elements of this vector with the given scalar.
+
+        Parameters
+        ----------
+        value: float
+        """
+        self.data *= value
+
+    def times_vector(self, vector):
+        """
+        Perform element-wise multiplication between vectors.
 
         Parameters
         ----------
         vector : BaseVector
             Incoming vector for in-place operation.
         """
-        self.data *= value
+        self.data *= vector.data
 
     def equals_value(self, value):
         """
@@ -117,6 +127,28 @@ class BaseVector(object):
         else:
             return np.inner(self.data, vector.data)
 
+    def exp(self, vector):
+        """
+        Calculate element-wise exponential operation on the vector.
+
+        Parameters
+        ----------
+        vector : BaseVector
+            Incoming vector for in-place operation.
+        """
+        self.data = np.exp(self.vector.data)
+
+    def log(self):
+        """
+        Calculate element-wise natural log operation on the vector.
+
+        Parameters
+        ----------
+        vector : BaseVector
+            Incoming vector for in-place operation.
+        """
+        self.data = np.log(self.vector.data)
+
 class BaseAllocator(object):
     """
     Allocator object that handles the generation of vectors within the
@@ -128,7 +160,7 @@ class BaseAllocator(object):
         Primal space size.
     num_state : int
         State space size.
-    num_ceq : int
+    num_dual : int
         Dual space size.
 
     Attributes
@@ -137,13 +169,13 @@ class BaseAllocator(object):
         Primal space size.
     num_state : int
         State space size.
-    num_ceq : int
+    num_dual : int
         Dual space size.
     """
-    def __init__(self, num_primal, num_state, num_ceq):
+    def __init__(self, num_primal, num_state, num_dual):
         self.num_primal = num_primal
         self.num_state = num_state
-        self.num_dual = num_ceq
+        self.num_dual = num_dual
 
     def alloc_primal(self, count):
         out = []
