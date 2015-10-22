@@ -1,50 +1,14 @@
 import numpy as np
 
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
-from kona.linalg.matrices.common import ActiveSetMatrix
+from kona.linalg.vectors.common import PrimalVector, DualVector
 
 class CompositeVector(object):
     """
-    Base class for all composite vectors.
-
-    Parameters
-    ----------
-    memory : KonaMemory
-    primal_vec : PrimalVector, optional
-    state_vec : StateVector, optional
-    dual_vec : DualVector, optional
-
-    Attributes
-    ----------
-    _memory : KonaMemory
-        All-knowing Kona memory manager.
-    _primal : PrimalVector or None
-        Primal component of the composite vector.
-    _state : StateVector or None
-        State component of the composite vector.
-    _dual_vec : DualVector or None
-        Dual component of the composite vector.
+    Base class shell for all composite vectors.
     """
-    def __init__(self, primal_vec, dual_vec, state_vec=None):
-
-        if isinstance(primal_vec, PrimalVector):
-            self._primal = primal_vec
-            self._memory = self._primal._memory
-        else:
-            raise TypeError('CompositeVector() >> ' +
-                            'Unidentified design vector.')
-
-        if isinstance(state_vec, StateVector) or state_vec is None:
-            self._state = state_vec
-        else:
-            raise TypeError('CompositeVector() >> ' +
-                            'Unidentified state vector.')
-
-        if isinstance(dual_vec, DualVector):
-            self._dual = dual_vec
-        else:
-            raise TypeError('CompositeVector() >> ' +
-                            'Unidentified dual vector.')
+    def __init__(self, vectors):
+        self._vectors = vectors
+        self._memory = self._vectors[0]._memory
 
     def _check_type(self, vec):
         if not isinstance(vec, type(self)):
@@ -66,20 +30,12 @@ class CompositeVector(object):
         """
         if isinstance(rhs,
                       (float, int, np.float64, np.int64, np.float32, np.int32)):
-            if self._primal is not None:
-                self._primal.equals(rhs)
-            if self._state is not None:
-                self._state.equals(rhs)
-            if self._dual is not None:
-                self._dual.equals(rhs)
+            for i in xrange(len(self._vectors)):
+                self._vectors[i].equals(rhs)
         else:
             self._check_type(rhs)
-            if self._primal is not None:
-                self._primal.equals(rhs._primal)
-            if self._state is not None:
-                self._state.equals(rhs._state)
-            if self._dual is not None:
-                self._dual.equals(rhs._dual)
+            for i in xrange(len(self._vectors)):
+                self._vectors[i].equals(rhs._vectors[i])
 
     def plus(self, vector):
         """
@@ -93,12 +49,8 @@ class CompositeVector(object):
             Vector to be added.
         """
         self._check_type(vector)
-        if self._primal is not None:
-            self._primal.plus(vector._primal)
-        if self._state is not None:
-            self._state.plus(vector._state)
-        if self._dual is not None:
-            self._dual.plus(vector._dual)
+        for i in xrange(len(self._vectors)):
+            self._vectors[i].plus(vector._vectors[i])
 
     def minus(self, vector):
         """
@@ -112,35 +64,28 @@ class CompositeVector(object):
             Vector to be subtracted.
         """
         self._check_type(vector)
-        if self._primal is not None:
-            self._primal.minus(vector._primal)
-        if self._state is not None:
-            self._state.minus(vector._state)
-        if self._dual is not None:
-            self._dual.minus(vector._dual)
+        for i in xrange(len(self._vectors)):
+            self._vectors[i].minus(vector._vectors[i])
 
-    def times(self, value):
+    def times(self, factor):
         """
         Used as the multiplication operator.
 
-        Multiplies the vector by the given scalar value.
+        Can multiply with scalars or element-wise with vectors.
 
         Parameters
         ----------
-        value : float
-            Vector to be added.
+        factor : float or CompositeVector
+            Scalar or vector-valued multiplication factor.
         """
-        if isinstance(value,
+        if isinstance(factor,
                       (float, int, np.float64, np.int64, np.float32, np.int32)):
-            if self._primal is not None:
-                self._primal.times(value)
-            if self._state is not None:
-                self._state.times(value)
-            if self._dual is not None:
-                self._dual.times(value)
+            for i in xrange(len(self._vectors)):
+                self._vectors[i].times(factor)
         else:
-            raise TypeError('CompositeVector.times() >> ' +
-                            'Wrong argument type. Must be FLOAT.')
+            self._check_type(factor)
+            for i in xrange(len(self._vectors)):
+                self._vectors[i].times(factor._vectors[i])
 
     def divide_by(self, value):
         """
@@ -153,7 +98,13 @@ class CompositeVector(object):
         value : float
             Vector to be added.
         """
-        self.times(1./value)
+        if isinstance(value,
+                      (float, int, np.float64, np.int64, np.float32, np.int32)):
+            for i in xrange(len(self._vectors)):
+                self._vectors[i].divide_by(value)
+        else:
+            raise TypeError(
+                'CompositeVector.divide_by() >> Value not a scalar!')
 
     def equals_ax_p_by(self, a, x, b, y):
         """
@@ -169,12 +120,8 @@ class CompositeVector(object):
         """
         self._check_type(x)
         self._check_type(y)
-        if self._primal is not None:
-            self._primal.equals_ax_p_by(a, x._primal, b, y._primal)
-        if self._state is not None:
-            self._state.equals_ax_p_by(a, x._state, b, y._state)
-        if self._dual is not None:
-            self._dual.equals_ax_p_by(a, x._dual, b, y._dual)
+        for i in xrange(len(self._vectors)):
+            self._vectors[i].equals_ax_p_by(a, x._vectors[i], b, y._vectors[i])
 
     def inner(self, vector):
         """
@@ -185,13 +132,9 @@ class CompositeVector(object):
         float : Inner product.
         """
         self._check_type(vector)
-        total_prod = 0
-        if self._primal is not None:
-            total_prod += self._primal.inner(vector._primal)
-        if self._state is not None:
-            total_prod += self._state.inner(vector._state)
-        if self._dual is not None:
-            total_prod += self._dual.inner(vector._dual)
+        total_prod = 0.
+        for i in xrange(len(self._vectors)):
+            total_prod += self._vectors[i].inner(vector._vectors[i])
         return total_prod
 
     @property
@@ -218,11 +161,27 @@ class ReducedKKTVector(CompositeVector):
     ----------
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    _design : PrimalVector
+    _primal : PrimalVector
         Design component of the composite vector.
     _dual : DualVector
         Dual components of the composite vector.
     """
+
+    def __init__(self, primal_vec, dual_vec):
+        if (isinstance(primal_vec, PrimalVector)
+                or isinstance(primal_vec, DesignSlackComposite)):
+            self._primal = primal_vec
+        else:
+            raise TypeError('CompositeVector() >> ' +
+                            'Unidentified primal vector.')
+
+        if isinstance(dual_vec, DualVector):
+            self._dual = dual_vec
+        else:
+            raise TypeError('CompositeVector() >> ' +
+                            'Unidentified dual vector.')
+
+        super(ReducedKKTVector, self).__init__([primal_vec, dual_vec])
 
     def equals_init_guess(self):
         """
@@ -265,3 +224,41 @@ class ReducedKKTVector(CompositeVector):
             x._primal, state, x._dual, adjoint, primal_work)
         # evaluate constraints at the design/state point
         self._dual.equals_constraints(x._primal, state)
+
+class DesignSlackComposite(CompositeVector):
+
+    def __init__(self, design, slack):
+
+        if isinstance(design, isinstance(design, PrimalVector)):
+            self._design = design
+            self._memory = self._design._memory
+        else:
+            raise TypeError('CompositeVector() >> ' +
+                            'Unidentified design vector.')
+
+        if isinstance(slack, DualVector):
+            self._slack = slack
+        else:
+            raise TypeError('CompositeVector() >> ' +
+                            'Unidentified dual vector.')
+
+        super(DesignSlackComposite, self).__init__([design, slack])
+
+    def equals_init_design(self):
+        self._design.equals_init_design()
+        self._slack.equals(0.0)
+
+    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
+                                         at_adjoint, primal_work):
+        at_design = at_primal._design
+        at_slack = at_primal._slack
+        # compute the derivative of the lagrangian w.r.t. design variables
+        self._design.equals_lagrangian_total_gradient(
+            at_design, at_state, at_dual, at_adjoint, primal_work)
+        # compute the derivative of the Lagrangian w.r.t. slack variables
+        self._slack.equals(at_slack)
+        self._slack.restrict()
+        self._slack.exp(self._slack)
+        self._slack.times(at_dual)
+        self._slack.times(-1.)
+        self._slack.restrict()

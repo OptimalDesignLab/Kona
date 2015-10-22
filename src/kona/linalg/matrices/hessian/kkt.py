@@ -1,6 +1,6 @@
 from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
-from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import ReducedKKTVector, DesignSlackComposite
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix, \
     ActiveSetMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian, QuasiNewtonApprox
@@ -77,9 +77,9 @@ class ReducedKKTMatrix(BaseHessian):
         self._allocated = False
 
         # request vector memory for future allocation
-        self.primal_factory.request_num_vectors(4)
+        self.primal_factory.request_num_vectors(3)
         self.state_factory.request_num_vectors(6)
-        self.dual_factory.request_num_vectors(3)
+        self.dual_factory.request_num_vectors(4)
 
         # initialize abtract jacobians
         self.dRdX = dRdX()
@@ -167,22 +167,23 @@ class ReducedKKTMatrix(BaseHessian):
             # generate dual vectors
             self.at_dual = self.dual_factory.generate()
             self.dual_work = self.dual_factory.generate()
-
-            # generate a KKT work vector
-            self.kkt_work = ReducedKKTVector(
-                self.primal_factory.generate(), self.dual_factory.generate())
+            self.slack_work = self.dual_factory.generate()
 
             self._allocated = True
 
         # store the linearization point
-        self.at_design = at_kkt._primal
+        if isinstance(at_kkt._primal, DesignSlackComposite):
+            self.at_design = at_kkt._primal._design
+            self.at_slack = at_kkt._primal._slack
+        else:
+            self.at_design = at_kkt._primal
+            self.at_slack = None
         self.primal_norm = self.at_design.norm2
         self.at_state = at_state
         self.state_norm = self.at_state.norm2
         self.at_adjoint = at_adjoint
         self.at_dual.equals(at_kkt._dual)
         self.dual_work.equals_constraints(self.at_design, self.at_state)
-        ActiveSetMatrix(self.dual_work).product(self.at_dual, self.at_dual)
 
         # compute adjoint residual at the linearization
         self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
@@ -223,17 +224,29 @@ class ReducedKKTMatrix(BaseHessian):
         # clear output vector
         out_vec.equals(0.0)
 
+        # do some aliasing to make the code cleanier
+        if isinstance(in_vec._primal, DesignSlackComposite):
+            in_design = in_vec._primal._design
+            in_slack = in_vec._primal._slack
+            out_design = out_vec._primal._design
+            out_slack = out_vec._primal._slack
+        else:
+            in_design = in_vec._primal
+            in_slack = None
+            out_design = out_vec._primal
+            out_slack = None
+        in_dual = in_vec._dual
+        out_dual = out_vec._dual
+
         # modify the in_vec for inequality constraints
-        self.kkt_work.equals(in_vec)
         self.dual_work.equals_constraints(self.at_design, self.at_state)
-        ActiveSetMatrix(self.dual_work).product(in_vec._dual, in_vec._dual)
 
         # calculate appropriate FD perturbation for design
-        epsilon_fd = calc_epsilon(self.primal_norm, in_vec._primal.norm2)
+        epsilon_fd = calc_epsilon(self.primal_norm, in_design.norm2)
 
         # assemble RHS for first adjoint system
         self.dRdX.linearize(self.at_design, self.at_state)
-        self.dRdX.product(in_vec._primal, self.state_work[0])
+        self.dRdX.product(in_design, self.state_work[0])
         self.state_work[0].times(-1.0)
 
         # perform the adjoint solution
@@ -244,7 +257,7 @@ class ReducedKKTMatrix(BaseHessian):
 
         # find the adjoint perturbation by solving the linearized dual equation
         self.pert_design.equals_ax_p_by(
-            1.0, self.at_design, epsilon_fd, in_vec._primal)
+            1.0, self.at_design, epsilon_fd, in_design)
         self.state_work[2].equals_ax_p_by(
             1.0, self.at_state, epsilon_fd, self.w_adj)
 
@@ -270,7 +283,7 @@ class ReducedKKTMatrix(BaseHessian):
 
         # second part of LHS: (dC/dU) * in_vec._dual
         self.dCdU.linearize(self.at_design, self.at_state)
-        self.dCdU.T.product(in_vec._dual, self.state_work[1])
+        self.dCdU.T.product(in_dual, self.state_work[1])
 
         # assemble final RHS
         self.state_work[0].minus(self.state_work[1])
@@ -288,44 +301,69 @@ class ReducedKKTMatrix(BaseHessian):
         self.state_work[1].equals_ax_p_by(
             1.0, self.at_adjoint, epsilon_fd, self.lambda_adj)
         pert_adjoint = self.state_work[1] # aliasing for readability
-        out_vec._primal.equals_objective_partial(self.pert_design, pert_state)
+        out_design.equals_objective_partial(self.pert_design, pert_state)
         self.dRdX.linearize(self.pert_design, pert_state)
         self.dRdX.T.product(pert_adjoint, self.primal_work)
-        out_vec._primal.plus(self.primal_work)
+        out_design.plus(self.primal_work)
         self.dCdX.linearize(self.pert_design, pert_state)
         self.dCdX.T.product(self.at_dual, self.primal_work)
-        out_vec._primal.plus(self.primal_work)
+        out_design.plus(self.primal_work)
 
         # take difference with unperturbed conditions
-        out_vec._primal.times(self.grad_scale)
-        out_vec._primal.minus(self.reduced_grad)
-        out_vec._primal.divide_by(epsilon_fd)
+        out_design.times(self.grad_scale)
+        out_design.minus(self.reduced_grad)
+        out_design.divide_by(epsilon_fd)
 
         # the dual part needs no FD
         self.dCdX.linearize(self.at_design, self.at_state)
-        self.dCdX.T.product(in_vec._dual, self.primal_work)
-        out_vec._primal.plus(self.primal_work)
+        self.dCdX.T.product(in_dual, self.primal_work)
+        out_design.plus(self.primal_work)
 
         # evaluate dual part of product:
         # C = dC/dX*in_vec + dC/dU*w_adj
         self.dCdX.linearize(self.at_design, self.at_state)
-        self.dCdX.product(in_vec._primal, out_vec._dual)
+        self.dCdX.product(in_design, out_vec._dual)
         self.dCdU.linearize(self.at_design, self.at_state)
         self.dCdU.product(self.w_adj, self.dual_work)
-        out_vec._dual.plus(self.dual_work)
-        out_vec._dual.times(self.ceq_scale)
+        out_dual.plus(self.dual_work)
+        out_dual.times(self.ceq_scale)
 
         # add globalization if necessary
         if self.lamb > EPS:
-            out_vec._primal.equals_ax_p_by(
-                1., out_vec._primal, self.lamb*self.scale, in_vec._primal)
+            out_design.equals_ax_p_by(
+                1., out_design, self.lamb*self.scale, in_design)
 
         # modify out_vec for inequality constraints
         self.dual_work.equals_constraints(self.at_design, self.at_state)
-        ActiveSetMatrix(self.dual_work).product(out_vec._dual, out_vec._dual)
 
-        # revert in_vec to original data
-        in_vec.equals(self.kkt_work)
+        # now start working on slack variable equations
+        if in_slack is not None:
+            # start by evaluating diag(e^s)
+            self.slack_work.exp(self.at_slack)
+            self.slack_work.restrict()
+
+            # now calculate diag(-lambda * diag(e^s))
+            out_slack.equals(self.at_dual)
+            out_slack.times(-1)
+            out_slack.times(self.slack_work)
+
+            # evaluate diag(-lambda * diag(e^s)) * V_slack
+            out_slack.times(in_slack)
+
+            # evaluate diag(e^s) * V_dual
+            self.slack_work.times(in_dual)
+
+            # assemble the final slack product
+            # diag(-lambda * diag(e^s))*V_slack - diag(e^s)*V_dual
+            out_slack.minus(self.slack_work)
+
+            # evaluate diag(e^s) * V_slack
+            self.slack_work.exp(self.at_slack)
+            self.slack_work.restrict()
+            self.slack_work.times(in_slack)
+
+            # add slack term to dual update
+            out_dual.minus(self.slack_work)
 
         # if this is a single product, we reset the approximation flag
         if self._reset_approx:

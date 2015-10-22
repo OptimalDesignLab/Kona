@@ -52,11 +52,8 @@ class SimpleConstrained(UserSolver):
 
         # print self.curr_design
 
-    def apply_active_set(self, at_cnstr, in_vec, out_vec):
+    def restrict_dual(self, dual_vector):
         if self.ineq:
-            if at_cnstr.data[0] >= 0.:
-                out_vec.data[0] = in_vec.data[0]
-            else:
-                out_vec.data[0] = 0.
+            dual_vector.data[:] = 0.
         else:
-            out_vec.equals_vector(in_vec)
+            pass

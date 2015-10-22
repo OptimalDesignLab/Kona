@@ -83,9 +83,9 @@ class KonaVector(object):
             self.equals(0)
 
         self._check_type(vector)
-        self._data.times(-1.)
+        self._data.times_scalar(-1.)
         self._data.plus(vector._data)
-        self._data.times(-1.)
+        self._data.times_scalar(-1.)
 
     def times(self, factor):
         """
@@ -103,7 +103,7 @@ class KonaVector(object):
             self._data.times_scalar(factor)
         else:
             self._check_type(factor)
-            self._data.times_vector(factor)
+            self._data.times_vector(factor._data)
 
     def divide_by(self, val):
         """

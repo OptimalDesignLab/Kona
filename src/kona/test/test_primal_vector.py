@@ -83,17 +83,24 @@ class PrimalVectorTestCase(unittest.TestCase):
         self.pv.times(5.0)
         self.assertEqual(self.pv.inner(self.pv), 1000.0)
 
-        try:
-            self.pv.times(self.pv)
-        except TypeError as err:
-            self.assertEqual(str(err), 'Argument must be a float.')
-        else:
-            self.fail('TypeError expected')
+        self.pv.equals(2.0)
+        self.pv.times(self.pv)
+        self.assertEqual(self.pv.inner(self.pv), 160.0)
 
     def test_divide_by(self):
         self.pv.equals(10)
         self.pv.divide_by(5)
         self.assertEqual(self.pv.inner(self.pv), 40)
+
+    def test_exp(self):
+        self.pv.equals(0.)
+        self.pv.exp(self.pv)
+        self.assertEqual(self.pv.inner(self.pv), 10.0)
+
+    def test_log(self):
+        self.pv.equals(1.)
+        self.pv.log(self.pv)
+        self.assertEqual(self.pv.inner(self.pv), 0.0)
 
     def test_equals_ax_p_by(self):
         self.pv.equals(1)

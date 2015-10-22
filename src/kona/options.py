@@ -118,7 +118,7 @@ defaults = {
         'out_file'      : 'kona_krylov.dat',
         'type'          : STCG,
         'max_iter'      : 10,
-        'rel_tol'       : 1e-8,
+        'rel_tol'       : 0.05,
         'check_res'     : True,
         'proj_cg'       : False, # STCG
         'grad_scale'    : 1.0, # FLECS

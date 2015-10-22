@@ -43,7 +43,7 @@ class BaseVector(object):
         vector : BaseVector
             Incoming vector for in-place operation.
         """
-        self.data += vector.data
+        self.data = self.data + vector.data
 
     def times_scalar(self, value):
         """
@@ -53,7 +53,7 @@ class BaseVector(object):
         ----------
         value: float
         """
-        self.data *= value
+        self.data = value*self.data
 
     def times_vector(self, vector):
         """
@@ -64,7 +64,7 @@ class BaseVector(object):
         vector : BaseVector
             Incoming vector for in-place operation.
         """
-        self.data *= vector.data
+        self.data = self.data*vector.data
 
     def equals_value(self, value):
         """
@@ -136,9 +136,9 @@ class BaseVector(object):
         vector : BaseVector
             Incoming vector for in-place operation.
         """
-        self.data = np.exp(self.vector.data)
+        self.data = np.exp(vector.data)
 
-    def log(self):
+    def log(self, vector):
         """
         Calculate element-wise natural log operation on the vector.
 
@@ -147,7 +147,7 @@ class BaseVector(object):
         vector : BaseVector
             Incoming vector for in-place operation.
         """
-        self.data = np.log(self.vector.data)
+        self.data = np.log(vector.data)
 
 class BaseAllocator(object):
     """

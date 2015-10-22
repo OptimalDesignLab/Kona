@@ -21,29 +21,34 @@ class AbsVectorTestCase(unittest.TestCase):
     def test_inner_product(self):
         '''BaseVector.inner()'''
         val = self.x_vec.inner(self.x_vec)
-        self.assertEquals(val, 10)
+        self.assertEqual(val, 10)
 
         val = self.x_vec.inner(self.y_vec)
-        self.assertEquals(val, 20)
+        self.assertEqual(val, 20)
 
-    def test_times_equals(self):
-        '''BaseVector.times()'''
-        self.x_vec.times(3)
-        self.assertEquals(self.x_vec.inner(self.x_vec), 90)
+    def test_times_scalar_equals(self):
+        '''BaseVector.times_scalar()'''
+        self.x_vec.times_scalar(3)
+        self.assertEqual(self.x_vec.inner(self.x_vec), 90)
+
+    def test_times_vector_equals(self):
+        '''BaseVector.times_vector()'''
+        self.x_vec.times_vector(self.y_vec)
+        self.assertEqual(self.x_vec.inner(self.x_vec), 40)
 
     def test_plus_equals(self):
         '''BaseVector.plus()'''
         self.x_vec.plus(self.y_vec)
-        self.assertEquals(self.x_vec.inner(self.x_vec), 90)
+        self.assertEqual(self.x_vec.inner(self.x_vec), 90)
 
     def test_assignment(self):
         '''BaseVector.equals_value() and BaseVector.equals_vector()'''
         self.z_vec.equals_value(15)
-        self.assertEquals(self.z_vec.inner(self.z_vec), 2250)
+        self.assertEqual(self.z_vec.inner(self.z_vec), 2250)
 
         self.z_vec.equals_vector(self.x_vec)
-        self.z_vec.times(2)
-        self.assertEquals(self.z_vec.inner(self.z_vec), 40)
+        self.z_vec.times_scalar(2)
+        self.assertEqual(self.z_vec.inner(self.z_vec), 40)
 
         self.z_vec.equals_ax_p_by(2, self.x_vec, 3, self.y_vec)
 

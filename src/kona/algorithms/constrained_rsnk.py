@@ -5,7 +5,7 @@ from kona.options import BadKonaOption, get_opt
 from kona.linalg import current_solution, factor_linear_system, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import dCdU, dCdX, dRdU, dRdX
-from kona.linalg.matrices.common import IdentityMatrix, ActiveSetMatrix
+from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
@@ -189,7 +189,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             # evaluate optimality, feasibility and KKT norms
             dLdX.equals_KKT_conditions(X, state, adjoint, primal_work[0])
             dual_work.equals_constraints(X._primal, state)
-            ActiveSetMatrix(dual_work).product(dLdX._dual, dLdX._dual)
             state_save.equals(state)
             if self.iter == 1:
                 # calculate initial norms
@@ -359,7 +358,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                         '   Radius increased -> %f\n'%self.radius)
                 # update the penalty parameter
                 dual_work.equals_constraints(X._primal, state)
-                ActiveSetMatrix(dual_work).product(dual_work, dual_work)
                 cnstr_norm = dual_work.norm2
                 if cnstr_norm > self.eta:
                     self.mu = min(10.**self.mu_pow, self.mu_max)
