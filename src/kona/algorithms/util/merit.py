@@ -3,7 +3,7 @@ import sys
 from kona.linalg import objective_value
 from kona.linalg.vectors.composite import DesignSlackComposite
 from kona.linalg.solvers.util import EPS
-from kona.linalg.matrices.common import ActiveSetMatrix, dRdX
+from kona.linalg.matrices.common import dRdX
 
 class MeritFunction(object):
     """

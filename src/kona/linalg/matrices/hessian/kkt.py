@@ -1,8 +1,7 @@
 from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector, DesignSlackComposite
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix, \
-    ActiveSetMatrix
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian, QuasiNewtonApprox
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import calc_epsilon, EPS
@@ -408,100 +407,3 @@ class ReducedKKTMatrix(BaseHessian):
 
         # make sure that next product will reset the approximation flag
         self._reset_approx = True
-
-
-class IneqCnstrReducedKKTMatrix(BaseHessian):
-    """
-    Inequalyt constrained version of the reduced KKT matrix.
-
-    Attributes
-    ----------
-    base_matrix : ReducedKKTMatrix
-        A fully initialized instance of the equality-constrained KKT matrix
-    primal_factory : VectorFactory
-        Vector factory for PrimalVector
-    dual_factory : VectorFactory
-        Vector factory for DualVector
-    linearized : boolean
-    modified_kkt : ReducedKKTVector
-    modified_invec : ReducedKKTVector
-
-    Parameters
-    ----------
-    KKT_matrix : ReducedKKTMatrix
-    """
-    def __init__(self, KKT_matrix):
-        self.base_matrix = KKT_matrix
-        self.primal_factory = self.base_matrix.primal_factory
-        self.dual_factory = self.base_matrix.dual_factory
-        self.primal_factory.request_num_vectors(2)
-        self.dual_factory.request_num_vectors(3)
-        self._allocated = False
-
-    @property
-    def approx(self):
-        self.base_matrix = self.base_matrix.approx
-        return self
-
-    @property
-    def dynamic_tol(self):
-        return self.base_matrix.dynamic_tol
-
-    @dynamic_tol.setter
-    def dynamic_tol(self, value):
-        self.base_matrix.dynamic_tol = value
-
-    @property
-    def product_fac(self):
-        return self.base_matrix.product_fac
-
-    @product_fac.setter
-    def product_fac(self, value):
-        self.base_matrix.product_fac = value
-
-    def _check_allocation(self):
-        if not self._allocated:
-            raise RuntimeError('IneqCnstrReducedKKTMatrix is not allocated!!')
-
-    def set_krylov_solver(self, krylov_solver):
-        self.base_matrix.set_krylov_solver(krylov_solver)
-
-    def linearize(self, at_kkt, at_state, at_adjoint):
-        # if this is the first ever linearization, create some work vectors
-        if not self._allocated:
-            self.modified_kkt = ReducedKKTVector(
-                self.primal_factory.generate(), self.dual_factory.generate())
-            self.modified_invec = ReducedKKTVector(
-                self.primal_factory.generate(), self.dual_factory.generate())
-            self.constraints = self.dual_factory.generate()
-            self._allocated = True
-
-        # modify the dual variables using the active-set matrix
-        # this will zero out dual variables for all inactive constraints
-        self.modified_kkt.equals(at_kkt)
-        self.constraints.equals_constraints(at_kkt._primal, at_state)
-        ActiveSetMatrix(self.constraints).product(
-            at_kkt._dual, self.modified_kkt._dual)
-
-        # store references to some useful vectors
-        self.at_state = at_state
-        self.at_adjoint = at_adjoint
-
-        # linearize the base matrix with the modified dual variables
-        self.base_matrix.linearize(
-            self.modified_kkt, self.at_state, self.at_adjoint)
-
-    def product(self, in_vec, out_vec):
-        # preserve the primal variables in the incoming vector
-        self.modified_invec.equals(in_vec)
-        # zero out the dual variables corresponding to inactive constraints
-        ActiveSetMatrix(self.constraints).product(
-            in_vec._dual, self.modified_invec._dual)
-        # perform the product on the modified incoming vector
-        self.base_matrix.product(self.modified_invec, out_vec)
-        # zero out the necessary dual variables again, this time in the result
-        ActiveSetMatrix(self.constraints).product(
-            out_vec._dual, out_vec._dual)
-
-    def solve(self, rhs, solution, rel_tol=None):
-        self.base_matrix.solve(rhs, solution, rel_tol=rel_tol)
