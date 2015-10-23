@@ -36,7 +36,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         try:
             self.rkkt_vec1._check_type(self.pv1)
         except TypeError as err:
-            self.assertEquals(
+            self.assertEqual(
                 str(err),
                 "CompositeVector() >> Wrong vector type. Must be " +
                 "<class 'kona.linalg.vectors.composite.ReducedKKTVector'>")
@@ -50,7 +50,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         except TypeError as err:
             self.assertEqual(
                 str(err),
-                'CompositeVector() >> Unidentified design vector.')
+                'CompositeVector() >> Unidentified primal vector.')
         else:
             self.fail('TypeError expected')
 
@@ -67,86 +67,81 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.rkkt_vec2.equals(self.rkkt_vec1)
 
         err = self.dv2._data.data - self.dv1._data.data
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.pv2._data.data - self.pv1._data.data
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
     def test_plus(self):
         self.rkkt_vec2.plus(self.rkkt_vec1)
 
         err = self.pv2._data.data - 4*np.ones(10)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - 5*np.ones(5)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
     def test_minus(self):
         self.rkkt_vec2.minus(self.rkkt_vec1)
 
         err = self.pv2._data.data - 0*np.ones(10)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - -1*np.ones(5)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
-    def test_times(self):
-        try:
-            self.rkkt_vec2.times(self.rkkt_vec1)
-        except TypeError as err:
-            self.assertEquals(
-                str(err),
-                'CompositeVector.times() >> ' +
-                'Wrong argument type. Must be FLOAT.')
+    def test_times_vector(self):
+        self.rkkt_vec2.times(self.rkkt_vec1)
+        self.assertEqual(self.rkkt_vec2.inner(self.rkkt_vec2), 340.)
 
+    def test_times_scalar(self):
         self.rkkt_vec2.times(3)
         err = self.pv2._data.data - 6*np.ones(10)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - 6*np.ones(5)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         self.rkkt_vec1.times(3.0)
         err = self.pv1._data.data - 6*np.ones(10)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.dv1._data.data - 9*np.ones(5)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
     def test_divide_by(self):
-
         self.rkkt_vec2.divide_by(2)
         err = self.pv2._data.data - 1*np.ones(10)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - 1*np.ones(5)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
     def test_equals_ax_p_by(self):
         self.rkkt_vec2.equals_ax_p_by(2, self.rkkt_vec1, 2, self.rkkt_vec2)
 
         err = self.pv2._data.data - 8*np.ones(10)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - 10*np.ones(5)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
     def test_inner(self):
         ip = self.rkkt_vec2.inner(self.rkkt_vec1)
-        self.assertEquals(ip, 70)
+        self.assertEqual(ip, 70)
 
     def test_norm2(self):
         ip = self.rkkt_vec2.norm2
-        self.assertEquals(ip, 60**.5)
+        self.assertEqual(ip, 60**.5)
 
     def test_equals_initial_guess(self):
         self.rkkt_vec2.equals_init_guess()
 
         err = self.pv2._data.data - 10*np.ones(10)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.dv2._data.data - 0*np.ones(5)
-        self.assertEquals(np.linalg.norm(err), 0)
+        self.assertEqual(np.linalg.norm(err), 0)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ class RosenbrockLBFGSTestCase(unittest.TestCase):
         km = KonaMemory(solver)
 
         optns = {
+            'info_file' : 'kona_info.dat',
             'max_iter' : 200,
             'primal_tol' : 1e-12,
             'globalization' : {
@@ -40,6 +41,7 @@ class RosenbrockLBFGSTestCase(unittest.TestCase):
         km = KonaMemory(solver)
 
         optns = {
+            'info_file' : 'kona_info.dat',
             'max_iter' : 200,
             'primal_tol' : 1e-12,
             'globalization' : {

@@ -449,33 +449,19 @@ class UserSolver(object):
         """
         out_vec.data[:] = 0.0
 
-    def apply_active_set(self, at_constraints, in_vec, out_vec):
+    def restrict_dual(self, dual_vector):
         """
-        This is a method used only for inequality constrained problems.
+        Set all dual variables corresponding to equality constraints to zero.
 
-        The active-set "matrix" is mathematically defined as a modified
-        identity matrix with matching dimensions to the constraint vector.
-        The diagonal entries of this matrix corresponding to inactive
-        inequality constraints are set to zero.
-
-        The user solver should parse the data in the given constraint vector,
-        ``at_constraints``, evaluate feasibility, and then zero out the
-        appropriate values for the given input vector, ``in_vec``. The result
-        of the operation should be stored in ``out_vec``.
-
-        .. note::
-
-            The user should only evaluate feasibility for inequality
-            constraints. No work should be done regarding any equality
-            constraints.
+        If the problem has no inequality constraints, this should produce a
+        zero vector.
 
         Parameters
         ----------
-        at_constraints : BaseVector
-        in_vec : BaseVector
-        out_vec : BaseVector
+        dual_vector : BaseVector
+            Dual vector to be operated on.
         """
-        out_vec.data[:] = in_vec.data[:]
+        dual_vector.data[:] = 0.
 
     def eval_dFdX(self, at_design, at_state, store_here):
         """

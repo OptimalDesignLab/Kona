@@ -14,6 +14,7 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
         km = KonaMemory(solver)
 
         optns = {
+            'info_file' : 'kona_info.dat',
             'max_iter' : 50,
             'primal_tol' : 1e-12,
 
@@ -48,6 +49,7 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
         km.state_factory.request_num_vectors(4)
 
         optns = {
+            'info_file' : 'kona_info.dat',
             'max_iter' : 50,
             'primal_tol' : 1e-8,
 

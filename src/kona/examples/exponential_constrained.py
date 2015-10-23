@@ -48,8 +48,5 @@ class ExponentialConstrained(UserSolver):
 
         # print self.curr_design
 
-    def apply_active_set(self, at_cnstr, in_vec, out_vec):
-        if at_cnstr.data[0] >= 0.:
-            out_vec.data[0] = 0.
-        else:
-            out_vec.data[0] = in_vec.data[0]
+    def restrict_dual(self, dual_vector):
+        pass

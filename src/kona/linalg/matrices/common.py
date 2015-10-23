@@ -205,30 +205,6 @@ class dCdU(KonaMatrix):
                 self._primal._data, self._state._data,
                 in_vec._data, out_vec._data)
 
-class ActiveSetMatrix(KonaMatrix):
-    """
-    Augmented identity matrix that determines which constraints are active.
-    """
-    def __init__(self, constraints=None, transposed=False):
-        self._memory = None
-        self._solver = None
-        if constraints is None:
-            self._linearized = False
-        else:
-            self.linearize(constraints)
-        self._transposed = transposed
-
-    def linearize(self, at_constraints):
-        self._constraints = at_constraints
-        self._memory = self._constraints._memory
-        self._solver = self._memory.solver
-        self._linearized = True
-
-    def product(self, in_vec, out_vec):
-        self._check_linearization()
-        self._solver.apply_active_set(
-            self._constraints._data, in_vec._data, out_vec._data)
-
 class IdentityMatrix(KonaMatrix):
     """
     Simple identity matrix abstraction. Like all identity matrices, this one

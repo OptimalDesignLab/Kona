@@ -83,26 +83,27 @@ class KonaVector(object):
             self.equals(0)
 
         self._check_type(vector)
-        self._data.times(-1.)
+        self._data.times_scalar(-1.)
         self._data.plus(vector._data)
-        self._data.times(-1.)
+        self._data.times_scalar(-1.)
 
-    def times(self, value):
+    def times(self, factor):
         """
         Used as the multiplication operator.
 
-        Multiplies the vector by the given scalar value.
+        Can multiply both by scalars or element-wise by vectors.
 
         Parameters
         ----------
-        value : float
-            Vector to be added.
+        factor : float or KonaVector
+            Scalar or vector-valued multiplication factor.
         """
-        if isinstance(value,
+        if isinstance(factor,
                       (float, np.float32, np.float64, int, np.int32, np.int64)):
-            self._data.times(value)
+            self._data.times_scalar(factor)
         else:
-            raise TypeError('Argument must be a float.')
+            self._check_type(factor)
+            self._data.times_vector(factor._data)
 
     def divide_by(self, val):
         """
@@ -136,6 +137,32 @@ class KonaVector(object):
         self._check_type(X)
         self._check_type(Y)
         self._data.equals_ax_p_by(a, X._data, b, Y._data)
+
+    def exp(self, vector):
+        """
+        Performs an element-wise exponential operation on the given vector
+        and stores the result in-place.
+
+        Parameters
+        ----------
+        vector : KonaVector
+            Vector for the operation.
+        """
+        self._check_type(vector)
+        self._data.exp(vector._data)
+
+    def log(self, vector):
+        """
+        Performs an element-wise natural log operation on the given vector
+        and stores the result in-place.
+
+        Parameters
+        ----------
+        vector : KonaVector
+            Vector for the operation.
+        """
+        self._check_type(vector)
+        self._data.log(vector._data)
 
     def inner(self, vector):
         """
@@ -354,6 +381,12 @@ class DualVector(KonaVector):
         """
         self._memory.solver.copy_targstate_to_dual(
             primal_vector._data, self._data)
+
+    def restrict(self):
+        """
+        Sets the dual variables corresponding to equality constraints to zero.
+        """
+        self._memory.solver.restrict_dual(self._data)
 
     def equals_constraints(self, at_primal, at_state):
         """
