@@ -11,28 +11,29 @@ class SimpleConstrained(UserSolver):
         return at_design.data[0] + at_design.data[1] + at_design.data[2]
 
     def eval_residual(self, at_design, at_state, store_here):
-        pass
+        store_here.data[:] = 0.
 
     def eval_constraints(self, at_design, at_state, store_here):
         x = at_design.data[0]
         y = at_design.data[1]
         z = at_design.data[2]
-        store_here.data[0] = x**2 + y**2 + z**2 - 3
+        store_here.data[0] = 3 - (x**2 + y**2 + z**2)
 
     def multiply_dCdX(self, at_design, at_state, in_vec, out_vec):
         x = at_design.data[0]
         y = at_design.data[1]
         z = at_design.data[2]
-        out_vec.data[0] = 2*(x*in_vec.data[0] + y*in_vec.data[1] +
-                             z*in_vec.data[2])
+        out_vec.data[0] = -2*(x*in_vec.data[0] +
+                              y*in_vec.data[1] +
+                              z*in_vec.data[2])
 
     def multiply_dCdX_T(self, at_design, at_state, in_vec, out_vec):
         x = at_design.data[0]
         y = at_design.data[1]
         z = at_design.data[2]
-        out_vec.data[0] = 2*x*in_vec.data[0]
-        out_vec.data[1] = 2*y*in_vec.data[0]
-        out_vec.data[2] = 2*z*in_vec.data[0]
+        out_vec.data[0] = -2*x*in_vec.data[0]
+        out_vec.data[1] = -2*y*in_vec.data[0]
+        out_vec.data[2] = -2*z*in_vec.data[0]
 
     def eval_dFdX(self, at_design, at_state, store_here):
         store_here.data[:] = 1.0
@@ -53,5 +54,7 @@ class SimpleConstrained(UserSolver):
         # print self.curr_design
 
     def restrict_dual(self, dual_vector):
-        if not self.ineq:
+        if self.ineq:
+            pass
+        else:
             dual_vector.data[:] = 0.

@@ -146,7 +146,7 @@ class FLECS(KrylovSolver):
             '%10e'%self.mu + '\n'
         )
 
-    def apply_correction(self, ceq, step):
+    def apply_correction(self, cnstr, step):
         # perform some aliasing to improve readability
         ZtZ_prim_r = self.ZtZ_prim[0:self.iters, 0:self.iters]
         VtV_dual_r = self.VtV_dual[0:self.iters, 0:self.iters+1]
@@ -157,7 +157,7 @@ class FLECS(KrylovSolver):
         A = ZtZ_prim_r + VtVH + VtVH.T
         rhs = numpy.zeros(self.iters)
         for k in xrange(self.iters):
-            rhs[k] = self.V[k]._dual.inner(ceq)
+            rhs[k] = self.V[k]._dual.inner(cnstr)
         self.y = numpy.linalg.solve(A, rhs)
 
         # construct the primal solution, leave the dual solution untouched

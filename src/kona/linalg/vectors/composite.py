@@ -252,7 +252,7 @@ class DesignSlackComposite(CompositeVector):
 
     def equals_init_design(self):
         self._design.equals_init_design()
-        self._slack.equals(0.0)
+        self._slack.equals(-1.0)
 
     def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
                                          at_adjoint, primal_work):

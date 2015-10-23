@@ -160,7 +160,9 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         adjoint_work = self.state_factory.generate()
 
         # generate dual vectors
-        dual_work = self.dual_factory.generate()
+        dual_work = []
+        for i in xrange(2):
+            dual_work.append(self.dual_factory.generate())
         slack_work = self.dual_factory.generate()
 
         # initialize basic data for outer iterations
@@ -172,7 +174,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         init_design.equals(X._primal._design)
         state.equals_primal_solution(init_design)
         if self.factor_matrices and self.iter < self.max_iter:
-            factor_linear_system(X._primal_.design, state)
+            factor_linear_system(X._primal._design, state)
         adjoint.equals_adjoint_solution(init_design, state, state_work)
         current_solution(init_design, state, adjoint, X._dual, self.iter)
 
@@ -190,12 +192,12 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
             # evaluate optimality, feasibility and KKT norms
             dLdX.equals_KKT_conditions(
-                X, state, adjoint, primal_work[0], dual_work)
-            dual_work.equals_constraints(X._primal._design, state)
+                X, state, adjoint, primal_work[0], dual_work[0])
+            dual_work[0].equals_constraints(X._primal._design, state)
             state_save.equals(state)
             if self.iter == 1:
                 # calculate initial norms
-                grad_norm0 = dLdX._primal._design.norm2
+                grad_norm0 = dLdX._primal.norm2
                 feas_norm0 = max(dLdX._dual.norm2, EPS)
                 kkt_norm0 = sqrt(feas_norm0**2 + grad_norm0**2)
                 # set current norms to initial
@@ -212,7 +214,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 feas_tol = self.cnstr_tol * max(feas_norm0, 1e-3)
             else:
                 # calculate current norms
-                grad_norm = dLdX._primal._design.norm2
+                grad_norm = dLdX._primal.norm2
                 feas_norm = max(dLdX._dual.norm2, EPS)
                 kkt_norm = sqrt(feas_norm**2 + grad_norm**2)
                 # update the augmented Lagrangian penalty
@@ -284,7 +286,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             # if this is a matrix-based problem, tell the solver to factor
             # some important matrices to be used in the next iteration
             if self.factor_matrices and self.iter < self.max_iter:
-                factor_linear_system(X._primal, state)
+                factor_linear_system(X._primal._design, state)
 
             # solve for adjoint
             adjoint.equals_adjoint_solution(
@@ -309,55 +311,41 @@ class ConstrainedRSNK(OptimizationAlgorithm):
     def trust_step(self, X, state, P, dLdX, krylov_tol, feas_tol,
                    primal_work, state_work, adjoint_work,
                    dual_work, slack_work):
-        # solve an adjoint system to calculate d(c^T * c)/dx
+        # solve an adjoint system to calculate d(C^T*C)/dX
         # STEP 1: define the RHS for the system
-        dual_work.equals_constraints(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(dual_work, state_work)
+        # RHS = -(C - e^s)^T*dC/dU where dL/dLambda = C - e^s
+        dual_work[0].equals(dLdX._dual)
+        dCdU(X._primal._design, state).T.product(dual_work[0], state_work)
         state_work.times(-1.)
         # STEP 2: solve the adjoint system
+        # (dR/dU)^T*psi = -(C - e^s)^T*dC/dU
         dRdU(X._primal._design, state).T.solve(state_work, adjoint_work)
         # STEP 3: with the adjoint, assemble the contribution
-        dCdX(X._primal._design, state).T.product(dual_work, primal_work[0])
+        # mu*d((C - e^s)^T*(C - e^s))/dX = mu*[(C - e^s)^T*dC/dX + psi^T*dR/dX]
+        dCdX(X._primal._design, state).T.product(dual_work[0], primal_work[0])
         dRdX(X._primal._design, state).T.product(
             adjoint_work, primal_work[1])
         primal_work[0].plus(primal_work[1])
 
-        # repeat the process for d(e^s * c)/dx
-        # STEP 1: define the RHS
-        dual_work.exp(X._primal._slack)
-        dual_work.restrict()
-        dCdU(X._primal._design, state).T.product(dual_work, state_work)
-        state_work.times(-1.)
-        # STEP 2: solve the adjoint system
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint_work)
-        # STEP 3: with the adjoint, assemble the contribution
-        dCdX(X._primal._design, state).T.product(dual_work, primal_work[1])
-        dRdX(X._primal._design, state).T.product(
-            adjoint_work, primal_work[2])
-        primal_work[1].plus(primal_work[2])
-
         # assemble the final design gradient
-        # d(L_aug)/dX = dF/dX + lambda*dC/dX + mu*(d(C^T*C)/dX + d(e^s*C)/dX)
-        primal_work[0].plus(primal_work[1])
+        # d(L_aug)/dX = dL/dX + mu*(d((C - e^s)^T*(C - e^s))/dX)
+        # where dL/dX = dF/dX + lambda^T*dC/dX
         primal_work[0].times(self.mu)
         primal_work[0].plus(dLdX._primal._design)
 
         # now we compute the total slack derivative of the merit function
-        # d(L_aug)/dS = -lambda*e^s + mu*(-C^T*diag(e^s) + e^s)
-        # compute C^T*diag(e^s)
-        dual_work.equals_constraints(X._primal._design, state)
+        # compute (C - e^s)^T*diag(e^s)
         slack_work.exp(X._primal._slack)
         slack_work.restrict()
-        dual_work.times(slack_work)
-        dual_work.times(-1.)
-        # compute 2*e^s
-        slack_work.times(2.)
-        # assemble the gradient
-        slack_work.plus(dual_work)
-        slack_work.times(self.mu)
+        slack_work.times(dual_work[0])
+
+        # assemble the final slack gradient
+        # d(L_aug)/dS = -lambda^T*e^s - mu*(C - e^s)^T*diag(e^s)
+        # where dL/dS = -lambda^T*e^s
+        slack_work.times(-self.mu)
         slack_work.plus(dLdX._primal._slack)
 
-        # compute p_dot_grad for the merit function
+        # compute P^T*[dL/dX, dL/dS] (p_dot_grad) for the merit function
         p_dot_grad = primal_work[0].inner(P._primal._design) \
             + slack_work.inner(P._primal._slack)
 
@@ -365,8 +353,9 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         dLdX.times(-1)
 
         # start trust region loop
-        max_iter = 5
+        max_iter = 10
         iters = 0
+        old_radius = self.radius
         while iters < max_iter:
             iters += 1
             # reset merit function at new step
@@ -384,15 +373,39 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
             # modify radius based on model quality
             if rho < 0.01:
-                # model is bad -- shrink radius and re-solve
-                self.radius = max(0.5*self.radius, self.min_radius)
-                self.info_file.write(
-                    '   Re-solving with new radius -> %f\n'%self.radius)
-                self.krylov.radius = self.radius
-                self.krylov.re_solve(dLdX, P)
-                # recompute p_dot_grad with the new step
-                p_dot_grad = primal_work[0].inner(P._primal._design) \
-                    + slack_work.inner(P._primal._slack)
+                # model is bad!
+                if iters == 1:
+                    # if this is the first iteration
+                    # try a second order correction
+                    self.info_file.write(
+                        '   Performing second-order correction...\n')
+                    # evaluate the constraints at the new point
+                    X.plus(P)
+                    state.equals_primal_solution(X._primal._design)
+                    dual_work[0].equals_constraints(X._primal._design, state)
+                    dual_work[1].exp(X._primal._slack)
+                    dual_work[1].restrict()
+                    dual_work[0].minus(dual_work[1])
+                    # reset the point back
+                    X.minus(P)
+                    # perform correction
+                    self.krylov.apply_correction(dual_work[0], P)
+                else:
+                    # shrink radius and re-solve
+                    old_radius = self.radius
+                    self.radius = max(0.5*self.radius, self.min_radius)
+                    if self.radius == old_radius:
+                        self.info_file.write(
+                            '   Reached minimum radius! ' +
+                            'Exiting globalization...\n')
+                        break
+                    self.info_file.write(
+                        '   Re-solving with new radius -> %f\n'%self.radius)
+                    self.krylov.radius = self.radius
+                    self.krylov.re_solve(dLdX, P)
+                    # recompute p_dot_grad with the new step
+                    p_dot_grad = primal_work[0].inner(P._primal._design) \
+                        + slack_work.inner(P._primal._slack)
             else:
                 # model is okay -- accept step
                 self.info_file.write('Step accepted!\n')
@@ -404,8 +417,11 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     self.info_file.write(
                         '   Radius increased -> %f\n'%self.radius)
                 # update the penalty parameter
-                dual_work.equals_constraints(X._primal._design, state)
-                cnstr_norm = dual_work.norm2
+                dual_work[0].equals_constraints(X._primal._design, state)
+                dual_work[1].exp(X._primal._slack)
+                dual_work[1].restrict()
+                dual_work[0].minus(dual_work[1])
+                cnstr_norm = dual_work[0].norm2
                 if cnstr_norm > self.eta:
                     self.mu = min(10.**self.mu_pow, self.mu_max)
                     self.eta = 1./(self.mu**0.1)
