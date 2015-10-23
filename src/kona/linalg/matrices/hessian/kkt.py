@@ -78,7 +78,7 @@ class ReducedKKTMatrix(BaseHessian):
         # request vector memory for future allocation
         self.primal_factory.request_num_vectors(3)
         self.state_factory.request_num_vectors(6)
-        self.dual_factory.request_num_vectors(4)
+        self.dual_factory.request_num_vectors(3)
 
         # initialize abtract jacobians
         self.dRdX = dRdX()
@@ -164,7 +164,6 @@ class ReducedKKTMatrix(BaseHessian):
             self.primal_work = self.primal_factory.generate()
 
             # generate dual vectors
-            self.at_dual = self.dual_factory.generate()
             self.dual_work = self.dual_factory.generate()
             self.slack_work = self.dual_factory.generate()
 
@@ -181,7 +180,7 @@ class ReducedKKTMatrix(BaseHessian):
         self.at_state = at_state
         self.state_norm = self.at_state.norm2
         self.at_adjoint = at_adjoint
-        self.at_dual.equals(at_kkt._dual)
+        self.at_dual = at_kkt._dual
         self.dual_work.equals_constraints(self.at_design, self.at_state)
 
         # compute adjoint residual at the linearization
@@ -339,7 +338,6 @@ class ReducedKKTMatrix(BaseHessian):
         if in_slack is not None:
             # start by evaluating diag(e^s)
             self.slack_work.exp(self.at_slack)
-            self.slack_work.restrict()
 
             # now calculate diag(-lambda * diag(e^s))
             out_slack.equals(self.at_dual)
@@ -355,6 +353,7 @@ class ReducedKKTMatrix(BaseHessian):
             # assemble the final slack product
             # diag(-lambda * diag(e^s))*V_slack - diag(e^s)*V_dual
             out_slack.minus(self.slack_work)
+            out_slack.restrict()
 
             # evaluate diag(e^s) * V_slack
             self.slack_work.exp(self.at_slack)

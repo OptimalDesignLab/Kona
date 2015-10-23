@@ -190,7 +190,7 @@ class ReducedKKTVector(CompositeVector):
         self._primal.equals_init_design()
         self._dual.equals(0.0)
 
-    def equals_KKT_conditions(self, x, state, adjoint, primal_work):
+    def equals_KKT_conditions(self, x, state, adjoint, primal_work, dual_work):
         """
         Calculates the total derivative of the Lagrangian
         :math:`\\mathcal{L}(x, u) = f(x, u) + \\lambda c(x, u)` with respect to
@@ -223,13 +223,19 @@ class ReducedKKTVector(CompositeVector):
         self._primal.equals_lagrangian_total_gradient(
             x._primal, state, x._dual, adjoint, primal_work)
         # evaluate constraints at the design/state point
-        self._dual.equals_constraints(x._primal, state)
+        if isinstance(self._primal, PrimalVector):
+            self._dual.equals_constraints(x._primal, state)
+        else:
+            self._dual.equals_constraints(x._primal._design, state)
+            dual_work.exp(x._primal._slack)
+            dual_work.restrict()
+            self._dual.minus(dual_work)
 
 class DesignSlackComposite(CompositeVector):
 
     def __init__(self, design, slack):
 
-        if isinstance(design, isinstance(design, PrimalVector)):
+        if isinstance(design, PrimalVector):
             self._design = design
             self._memory = self._design._memory
         else:
@@ -256,9 +262,7 @@ class DesignSlackComposite(CompositeVector):
         self._design.equals_lagrangian_total_gradient(
             at_design, at_state, at_dual, at_adjoint, primal_work)
         # compute the derivative of the Lagrangian w.r.t. slack variables
-        self._slack.equals(at_slack)
-        self._slack.restrict()
-        self._slack.exp(self._slack)
+        self._slack.exp(at_slack)
         self._slack.times(at_dual)
         self._slack.times(-1.)
         self._slack.restrict()

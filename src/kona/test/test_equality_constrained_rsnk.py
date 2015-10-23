@@ -19,17 +19,17 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             'primal_tol' : 1e-6,
             'constraint_tol' : 1e-6,
 
-            # 'trust' : {
-            #     'init_radius' : 1.0,
-            #     'max_radius' : 4.0,
-            #     'min_radius' : 0.1,
-            # },
+            'trust' : {
+                'init_radius' : 1.0,
+                'max_radius' : 4.0,
+                'min_radius' : 1e-5,
+            },
 
-            # 'aug_lag' : {
-            #     'mu_init' : 1.0,
-            #     'mu_pow' : 0.5,
-            #     'mu_max' : 1e5,
-            # },
+            'aug_lag' : {
+                'mu_init' : 10.0,
+                'mu_pow' : 0.5,
+                'mu_max' : 1e5,
+            },
 
             'reduced' : {
                 'precond'       : None,

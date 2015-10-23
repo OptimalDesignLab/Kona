@@ -1,9 +1,10 @@
+import gc
 import numpy
 from numpy import sqrt
 
 from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, DualVector
-from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import ReducedKKTVector, DesignSlackComposite
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
     solve_tri, solve_trust_reduced, eigen_decomp, mod_gram_schmidt, EPS
@@ -73,7 +74,7 @@ class FLECS(KrylovSolver):
 
         # put in memory request
         self.primal_factory.request_num_vectors(2*self.max_iter + 2)
-        self.dual_factory.request_num_vectors(2*self.max_iter + 2)
+        self.dual_factory.request_num_vectors(4*self.max_iter + 4)
 
         # initialize vector holder arrays
         self.V = []
@@ -81,8 +82,9 @@ class FLECS(KrylovSolver):
 
     def _generate_vector(self):
         primal = self.primal_factory.generate()
+        slack = self.dual_factory.generate()
         dual = self.dual_factory.generate()
-        return ReducedKKTVector(primal, dual)
+        return ReducedKKTVector(DesignSlackComposite(primal, slack), dual)
 
     def _validate_options(self):
         super(FLECS, self)._validate_options()
@@ -94,6 +96,8 @@ class FLECS(KrylovSolver):
         # clear out all the vectors stored in V
         # the data goes back to the stack and is used again later
         for vector in self.V:
+            del vector._primal._design
+            del vector._primal._slack
             del vector._primal
             del vector._dual
             del vector
@@ -102,10 +106,15 @@ class FLECS(KrylovSolver):
         # clear out all vectors stored in Z
         # the data goes back to the stack and is used again later
         for vector in self.Z:
+            del vector._primal._design
+            del vector._primal._slack
             del vector._primal
             del vector._dual
             del vector
         self.Z = []
+
+        # force garbage collection
+        gc.collect()
 
     def _write_header(self, norm0, grad0, feas0):
         self.out_file.write(
@@ -410,6 +419,9 @@ class FLECS(KrylovSolver):
         x._primal.times(self.grad_scale)
         x._dual.times(self.feas_scale)
 
+        # restrict the slack variables
+        x._primal._slack.restrict()
+
         # check residual
         if self.check_res:
             # calculate true residual for the solution
@@ -493,3 +505,4 @@ class FLECS(KrylovSolver):
                 1.0, x._dual, self.y_mult[k], self.Z[k]._dual)
         x._primal.times(self.grad_scale)
         x._dual.times(self.feas_scale)
+        x._primal._slack.restrict()

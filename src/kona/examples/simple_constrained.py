@@ -53,7 +53,5 @@ class SimpleConstrained(UserSolver):
         # print self.curr_design
 
     def restrict_dual(self, dual_vector):
-        if self.ineq:
+        if not self.ineq:
             dual_vector.data[:] = 0.
-        else:
-            pass
