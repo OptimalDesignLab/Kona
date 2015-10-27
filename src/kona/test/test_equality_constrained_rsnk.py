@@ -4,7 +4,6 @@ import unittest
 from kona.algorithms import ConstrainedRSNK
 from kona.examples import SimpleConstrained
 from kona.linalg.memory import KonaMemory
-from kona.algorithms.util.merit import AugmentedLagrangian
 
 class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
@@ -21,12 +20,12 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
             'trust' : {
                 'init_radius' : 1.0,
-                'max_radius' : 4.0,
+                'max_radius' : 10.0,
                 'min_radius' : 1e-5,
             },
 
             'aug_lag' : {
-                'mu_init' : 10.0,
+                'mu_init' : 0.5,
                 'mu_pow' : 0.5,
                 'mu_max' : 1e5,
             },

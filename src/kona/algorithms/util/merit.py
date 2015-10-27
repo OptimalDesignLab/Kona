@@ -222,10 +222,10 @@ class AugmentedLagrangian(MeritFunction):
             self.slack_work.exp(self.slack_trial)
             self.slack_work.restrict()
             self.dual_work.minus(self.slack_work)
-        self.func_val = \
-            objective_value(self.x_trial, self.u_trial) \
-            + self.dual_frozen.inner(self.dual_work) \
-            + 0.5*self.mu*(self.dual_work.norm2**2)
+        obj_val = objective_value(self.x_trial, self.u_trial)
+        lambda_cnstr = self.dual_frozen.inner(self.dual_work)
+        penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)
+        self.func_val = obj_val + lambda_cnstr + penalty_term
         self.last_func_alpha = 0.0
 
     def eval_func(self, alpha):
@@ -235,6 +235,7 @@ class AugmentedLagrangian(MeritFunction):
                     1., self.x_trial, alpha, self.search_dir._primal._design)
                 self.slack_trial.equals_ax_p_by(
                     1., self.slack_trial, alpha, self.search_dir._primal._slack)
+                self.slack_trial.restrict()
             else:
                 self.x_trial.equals_ax_p_by(
                     1., self.x_trial, alpha, self.search_dir._primal)
@@ -244,10 +245,10 @@ class AugmentedLagrangian(MeritFunction):
                 self.slack_work.exp(self.slack_trial)
                 self.slack_work.restrict()
                 self.dual_work.minus(self.slack_work)
-            self.func_val = \
-                objective_value(self.x_trial, self.u_trial) \
-                + self.dual_frozen.inner(self.dual_work) \
-                + 0.5*self.mu*(self.dual_work.norm2**2)
+            obj_val = objective_value(self.x_trial, self.u_trial)
+            lambda_cnstr = self.dual_frozen.inner(self.dual_work)
+            penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)
+            self.func_val = obj_val + lambda_cnstr + penalty_term
             self.last_func_alpha = alpha
 
         return self.func_val

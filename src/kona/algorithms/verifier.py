@@ -406,7 +406,7 @@ class Verifier(object):
         rel_error = error/(y_s.norm2 + EPS)
 
         self.out_stream.write(
-            '============================================================\nn' +
+            '============================================================\n' +
             'PDE jacobian-vector product test (design): dR/dX * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %e\n'%prod_norm +
@@ -445,6 +445,7 @@ class Verifier(object):
                 )
 
         v_s.equals(1./EPS)
+        z_s.equals(1.)
         dRdU(u_p, u_s).product(z_s, v_s)
         prod_norm = v_s.norm2
 

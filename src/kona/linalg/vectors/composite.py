@@ -228,8 +228,9 @@ class ReducedKKTVector(CompositeVector):
         else:
             self._dual.equals_constraints(x._primal._design, state)
             dual_work.exp(x._primal._slack)
+            dual_work.times(-1.)
             dual_work.restrict()
-            self._dual.minus(dual_work)
+            self._dual.plus(dual_work)
 
 class DesignSlackComposite(CompositeVector):
 
@@ -252,7 +253,7 @@ class DesignSlackComposite(CompositeVector):
 
     def equals_init_design(self):
         self._design.equals_init_design()
-        self._slack.equals(-1.0)
+        self._slack.equals(0.0)
 
     def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
                                          at_adjoint, primal_work):

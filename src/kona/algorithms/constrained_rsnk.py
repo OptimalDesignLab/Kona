@@ -144,7 +144,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         X = self._generate_KKT_vector()
         P = self._generate_KKT_vector()
         dLdX = self._generate_KKT_vector()
-        dLdX_save = self._generate_KKT_vector()
+        kkt_work = self._generate_KKT_vector()
 
         # generate primal vectors
         init_design = self.primal_factory.generate()
@@ -193,7 +193,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             # evaluate optimality, feasibility and KKT norms
             dLdX.equals_KKT_conditions(
                 X, state, adjoint, primal_work[0], dual_work[0])
-            dual_work[0].equals_constraints(X._primal._design, state)
             state_save.equals(state)
             if self.iter == 1:
                 # calculate initial norms
@@ -206,8 +205,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 feas_norm = feas_norm0
                 # print out convergence norms
                 self.info_file.write(
-                    'grad_norm0 = %e\n'%grad_norm0 +
-                    'feas_norm0 = %e\n'%feas_norm0
+                    'grad_norm0  = %e\n'%grad_norm0 +
+                    'feas_norm0  = %e\n'%feas_norm0
                 )
                 # calculate convergence tolerances
                 grad_tol = self.primal_tol
@@ -219,13 +218,11 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 kkt_norm = sqrt(feas_norm**2 + grad_norm**2)
                 # update the augmented Lagrangian penalty
                 self.info_file.write(
-                    'grad_norm = %e (%e <-- tolerance)\n'%(
+                    'grad_norm   = %e (%e <-- tolerance)\n'%(
                         grad_norm, grad_tol) +
-                    'feas_norm = %e (%e <-- tolerance)\n'%(
+                    'feas_norm   = %e (%e <-- tolerance)\n'%(
                         feas_norm, feas_tol)
                 )
-            # save the current dL/dX
-            dLdX_save.equals(dLdX)
 
             # write convergence history
             obj_val = objective_value(X._primal._design, state)
@@ -278,7 +275,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             # use a trust region algorithm for globalization
             self.trust_step(
                 X, state, P, dLdX, krylov_tol, feas_tol,
-                primal_work, state_work, adjoint_work, dual_work, slack_work)
+                primal_work, state_work, adjoint_work,
+                dual_work, slack_work, kkt_work)
 
             # X.plus(P)
             # state.equals_primal_solution(X._primal._design)
@@ -310,7 +308,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
     def trust_step(self, X, state, P, dLdX, krylov_tol, feas_tol,
                    primal_work, state_work, adjoint_work,
-                   dual_work, slack_work):
+                   dual_work, slack_work, kkt_work):
         # solve an adjoint system to calculate d(C^T*C)/dX
         # STEP 1: define the RHS for the system
         # RHS = -(C - e^s)^T*dC/dU where dL/dLambda = C - e^s
@@ -345,19 +343,22 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         slack_work.times(-self.mu)
         slack_work.plus(dLdX._primal._slack)
 
-        # compute P^T*[dL/dX, dL/dS] (p_dot_grad) for the merit function
-        p_dot_grad = primal_work[0].inner(P._primal._design) \
-            + slack_work.inner(P._primal._slack)
-
         # move dL/dX to RHS for re-solves
         dLdX.times(-1)
 
+        # save old step before any modifications
+        kkt_work.equals(P)
+
         # start trust region loop
-        max_iter = 10
+        max_iter = 5
         iters = 0
-        old_radius = self.radius
+        init_radius = self.radius
+        trust_success = False
         while iters < max_iter:
             iters += 1
+            # recompute p_dot_grad with the new step
+            p_dot_grad = primal_work[0].inner(P._primal._design) \
+                + slack_work.inner(P._primal._slack)
             # reset merit function at new step
             self.merit_func.reset(X, state, P, p_dot_grad, self.mu)
             # evaluate the quality of the FLECS model
@@ -373,42 +374,88 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
             # modify radius based on model quality
             if rho < 0.01:
-                # model is bad!
-                if iters == 1:
-                    # if this is the first iteration
-                    # try a second order correction
+                # evaluate the constraints at the new point
+                # shrink radius and re-solve
+                old_radius = self.radius
+                self.radius = max(0.5*self.radius, self.min_radius)
+                if self.radius == old_radius:
                     self.info_file.write(
-                        '   Performing second-order correction...\n')
-                    # evaluate the constraints at the new point
-                    X.plus(P)
-                    state.equals_primal_solution(X._primal._design)
-                    dual_work[0].equals_constraints(X._primal._design, state)
-                    dual_work[1].exp(X._primal._slack)
-                    dual_work[1].restrict()
-                    dual_work[0].minus(dual_work[1])
-                    # reset the point back
-                    X.minus(P)
-                    # perform correction
-                    self.krylov.apply_correction(dual_work[0], P)
-                else:
-                    # shrink radius and re-solve
-                    old_radius = self.radius
-                    self.radius = max(0.5*self.radius, self.min_radius)
-                    if self.radius == old_radius:
-                        self.info_file.write(
-                            '   Reached minimum radius! ' +
-                            'Exiting globalization...\n')
-                        break
-                    self.info_file.write(
-                        '   Re-solving with new radius -> %f\n'%self.radius)
-                    self.krylov.radius = self.radius
-                    self.krylov.re_solve(dLdX, P)
-                    # recompute p_dot_grad with the new step
-                    p_dot_grad = primal_work[0].inner(P._primal._design) \
-                        + slack_work.inner(P._primal._slack)
+                        '   Reached minimum radius! ' +
+                        'Exiting globalization...\n')
+                    break
+                self.info_file.write(
+                    '   Re-solving with new radius -> %f\n'%self.radius)
+                self.krylov.radius = self.radius
+                self.krylov.re_solve(dLdX, P)
             else:
                 # model is okay -- accept step
                 self.info_file.write('Step accepted!\n')
+                trust_success = True
+                X.plus(P)
+                state.equals_primal_solution(X._primal._design)
+                if rho > 0.75 and self.krylov.trust_active:
+                    # model is great -- increase radius
+                    self.radius = min(2*self.radius, self.max_radius)
+                    self.info_file.write(
+                        '   Radius increased -> %f\n'%self.radius)
+                # update the penalty parameter
+                dual_work[0].equals_constraints(X._primal._design, state)
+                dual_work[1].exp(X._primal._slack)
+                dual_work[1].restrict()
+                dual_work[0].minus(dual_work[1])
+                cnstr_norm = dual_work[0].norm2
+                if cnstr_norm > self.eta:
+                    self.mu = min(self.mu*(10.**self.mu_pow), self.mu_max)
+                    self.eta = 1./(self.mu**0.1)
+                    self.info_file.write('   New mu = %1.2e\n'%self.mu)
+                else:
+                    if cnstr_norm > feas_tol:
+                        self.eta = self.eta/(self.mu**0.9)
+                break
+
+        if not trust_success:
+            self.info_file.write(
+                'Step rejected!\n' +
+                'Attempting second-order correction...\n')
+            # evaluate the constraints at the new point
+            X.plus(kkt_work)
+            state.equals_primal_solution(X._primal._design)
+            dual_work[0].equals_constraints(X._primal._design, state)
+            dual_work[1].exp(X._primal._slack)
+            dual_work[1].restrict()
+            dual_work[0].minus(dual_work[1])
+            # reset the point back
+            X.minus(P)
+            # perform correction
+            old_radius = self.krylov.radius
+            self.krylov.radius = init_radius
+            self.krylov.apply_correction(dual_work[0], P)
+            # recompute p_dot_grad with the new step
+            p_dot_grad = primal_work[0].inner(P._primal._design) \
+                + slack_work.inner(P._primal._slack)
+            # reset merit function at new step
+            self.merit_func.reset(X, state, P, p_dot_grad, self.mu)
+            # evaluate the quality of the FLECS model
+            merit_init = self.merit_func.func_val
+            merit_next = self.merit_func.eval_func(1.)
+            rho = (merit_init - merit_next)/self.krylov.pred_aug
+            self.info_file.write(
+                '   merit_init = %f\n'%merit_init +
+                '   merit_next = %f\n'%merit_next +
+                '   pred_aug = %f\n'%self.krylov.pred_aug +
+                '   rho = %f\n'%rho)
+
+            if rho < 0.01:
+                # the step is still bad!
+                self.info_file.write('FAILED! Backtracking...\n')
+                # recover the state at the old point
+                state.equals_primal_solution(X._primal._design)
+                # go back to the shrunk radius
+                self.krylov.radius = old_radius
+            else:
+                # model is okay -- accept step
+                self.info_file.write('SUCCESS! Step accepted!\n')
+                trust_success = True
                 X.plus(P)
                 state.equals_primal_solution(X._primal._design)
                 if rho > 0.75 and self.krylov.trust_active:
@@ -429,4 +476,3 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 else:
                     if cnstr_norm > feas_tol:
                         self.eta = self.eta/(self.mu**0.9)
-                break
