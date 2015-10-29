@@ -14,10 +14,10 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
     Optimization using a Newton-Krylov approach in the reduced space.
 
     """
-    def __init__(self, primal_factory, state_factory, optns={}):
+    def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
         super(ReducedSpaceNewtonKrylov, self).__init__(
-            primal_factory, state_factory, None, optns
+            primal_factory, state_factory, dual_factory, optns
         )
 
         # number of vectors required in solve() method

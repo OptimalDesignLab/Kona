@@ -71,7 +71,7 @@ class KonaFile(object):
         # only produce a file handle for the root processor
         if rank == 0:
             if isinstance(filename, str):
-                self.file = open(filename, 'w')
+                self.file = open(filename, 'w', 0)
             else:
                 self.file = filename
         else:

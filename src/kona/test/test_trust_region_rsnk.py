@@ -33,7 +33,7 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
             },
         }
         rsnk = ReducedSpaceNewtonKrylov(
-            km.primal_factory, km.state_factory, optns)
+            km.primal_factory, km.state_factory, None, optns)
         km.allocate_memory()
         rsnk.solve()
 
@@ -73,7 +73,7 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
         }
 
         rsnk = ReducedSpaceNewtonKrylov(
-            km.primal_factory, km.state_factory, optns)
+            km.primal_factory, km.state_factory, None, optns)
         km.allocate_memory()
         rsnk.solve()
 

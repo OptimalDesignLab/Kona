@@ -160,7 +160,8 @@ class FLECS(KrylovSolver):
             rhs[k] = self.V[k]._dual.inner(cnstr)
         self.y = numpy.linalg.solve(A, rhs)
 
-        # construct the primal solution, leave the dual solution untouched
+        # construct the design update
+        # leave the dual solution untouched
         step._primal.equals(0.0)
         for k in xrange(self.iters):
             step._primal.equals_ax_p_by(

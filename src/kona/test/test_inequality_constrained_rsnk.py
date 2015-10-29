@@ -69,7 +69,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        feasible = True
+        feasible = False
         if feasible:
             init_x = [0.51, 0.52, 0.53]
         else:

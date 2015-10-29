@@ -26,7 +26,7 @@ class Optimizer(object):
     def __init__(self, solver, algorithm, optns=None):
         # complain if solver or algorithm types are wrong
         if not isinstance(solver, UserSolver):
-            raise TypeError('Kona.Optimizer() >> ' + 
+            raise TypeError('Kona.Optimizer() >> ' +
                             'Unknown solver type!')
         # initialize optimization memory
         self._memory = KonaMemory(solver)
@@ -35,10 +35,7 @@ class Optimizer(object):
         # get vector factories
         primal_factory = self._memory.primal_factory
         state_factory = self._memory.state_factory
-        if solver.num_dual > 0:
-            dual_factory = self._memory.dual_factory
-        else:
-            dual_factory = None
+        dual_factory = self._memory.dual_factory
         # check if this is a verification
         if algorithm is Verifier:
             self._optns['verify']['out_file'] = \
@@ -50,12 +47,8 @@ class Optimizer(object):
                 solver, verifier_optns)
         else:
             # otherwise initialize the optimization algorithm
-            if dual_factory is not None:
-                self._algorithm = algorithm(
-                    primal_factory, state_factory, dual_factory, self._optns)
-            else:
-                self._algorithm = algorithm(
-                    primal_factory, state_factory, self._optns)
+            self._algorithm = algorithm(
+                primal_factory, state_factory, dual_factory, self._optns)
 
     def _read_options(self, optns):
         # get default options

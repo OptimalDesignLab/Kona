@@ -190,15 +190,23 @@ class AugmentedLagrangian(MeritFunction):
         super(AugmentedLagrangian, self).__init__(
             primal_factory, state_factory, optns, out_file)
         self.dual_factory = dual_factory
-        self.primal_factory.request_num_vectors(1)
+        self.primal_factory.request_num_vectors(2)
         self.state_factory.request_num_vectors(1)
-        self.dual_factory.request_num_vectors(4)
+        self.dual_factory.request_num_vectors(5)
 
     def reset(self, kkt_start, u_start, search_dir, p_dot_grad, mu):
         # if the internal vectors are not allocated, do it now
         if not self._allocated:
+            self.x_start = self.primal_factory.generate()
             self.x_trial = self.primal_factory.generate()
-            self.slack_trial = self.dual_factory.generate()
+            if isinstance(kkt_start._primal, DesignSlackComposite):
+                self.slack_vars = True
+                self.slack_start = self.dual_factory.generate()
+                self.slack_trial = self.dual_factory.generate()
+            else:
+                self.slack_vars = False
+                self.slack_start = None
+                self.slack_trial = None
             self.u_trial = self.state_factory.generate()
             self.dual_frozen = self.dual_factory.generate()
             self.dual_work = self.dual_factory.generate()
@@ -206,22 +214,24 @@ class AugmentedLagrangian(MeritFunction):
             self._allocated = True
         # store information for the new point the merit function is reset at
         self.search_dir = search_dir
-        if isinstance(kkt_start._primal, DesignSlackComposite):
-            self.x_trial.equals(kkt_start._primal._design)
-            self.slack_trial.equals(kkt_start._primal._slack)
+        if self.slack_vars:
+            self.x_start.equals(kkt_start._primal._design)
+            self.slack_start.equals(kkt_start._primal._slack)
+            self.slack_trial.equals(self.slack_start)
         else:
-            self.x_trial.equals(kkt_start._primal)
-            self.slack_trial = None
+            self.x_start.equals(kkt_start._primal)
+        self.x_trial.equals(self.x_start)
         self.u_trial.equals(u_start)
         self.dual_frozen.equals(kkt_start._dual)
         self.p_dot_grad = p_dot_grad
         self.mu = mu
         # evaluate the function value
         self.dual_work.equals_constraints(self.x_trial, self.u_trial)
-        if self.slack_trial is not None:
+        if self.slack_vars:
             self.slack_work.exp(self.slack_trial)
+            self.slack_work.times(-1.)
             self.slack_work.restrict()
-            self.dual_work.minus(self.slack_work)
+            self.dual_work.plus(self.slack_work)
         obj_val = objective_value(self.x_trial, self.u_trial)
         lambda_cnstr = self.dual_frozen.inner(self.dual_work)
         penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)
@@ -230,21 +240,22 @@ class AugmentedLagrangian(MeritFunction):
 
     def eval_func(self, alpha):
         if abs(alpha - self.last_func_alpha) > EPS:
+            # update step with alpha
             if self.slack_trial is not None:
                 self.x_trial.equals_ax_p_by(
-                    1., self.x_trial, alpha, self.search_dir._primal._design)
+                    1., self.x_start, alpha, self.search_dir._primal._design)
                 self.slack_trial.equals_ax_p_by(
-                    1., self.slack_trial, alpha, self.search_dir._primal._slack)
-                self.slack_trial.restrict()
+                    1., self.slack_start, alpha, self.search_dir._primal._slack)
             else:
                 self.x_trial.equals_ax_p_by(
                     1., self.x_trial, alpha, self.search_dir._primal)
             self.u_trial.equals_primal_solution(self.x_trial)
             self.dual_work.equals_constraints(self.x_trial, self.u_trial)
-            if self.slack_trial is not None:
+            if self.slack_vars:
                 self.slack_work.exp(self.slack_trial)
+                self.slack_work.times(-1.)
                 self.slack_work.restrict()
-                self.dual_work.minus(self.slack_work)
+                self.dual_work.plus(self.slack_work)
             obj_val = objective_value(self.x_trial, self.u_trial)
             lambda_cnstr = self.dual_frozen.inner(self.dual_work)
             penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)

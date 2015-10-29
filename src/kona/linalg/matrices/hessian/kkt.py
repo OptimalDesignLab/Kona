@@ -41,7 +41,7 @@ class ReducedKKTMatrix(BaseHessian):
     dRdX, dRdU, dCdX, dCdU : KonaMatrix
         Various abstract jacobians used in calculating the mat-vec product.
     """
-    def __init__(self, vector_factories, optns={}, approx=False):
+    def __init__(self, vector_factories, optns={}):
         super(ReducedKKTMatrix, self).__init__(vector_factories, optns)
 
         # read reduced options
@@ -68,10 +68,6 @@ class ReducedKKTMatrix(BaseHessian):
         # set empty solver handle
         self.krylov = None
 
-        # set flag for approximate KKT Matrix
-        self._use_approx = approx
-        self._reset_approx = False
-
         # reset the linearization flag
         self._allocated = False
 
@@ -88,17 +84,11 @@ class ReducedKKTMatrix(BaseHessian):
 
     def _linear_solve(self, rhs_vec, solution, rel_tol=1e-8):
         self.dRdU.linearize(self.at_design, self.at_state)
-        if not self._use_approx:
-            self.dRdU.solve(rhs_vec, solution, rel_tol=rel_tol)
-        else:
-            self.dRdU.precond(rhs_vec, solution)
+        self.dRdU.solve(rhs_vec, solution, rel_tol=rel_tol)
 
     def _adjoint_solve(self, rhs_vec, solution, rel_tol=1e-8):
         self.dRdU.linearize(self.at_design, self.at_state)
-        if not self._use_approx:
-            self.dRdU.T.solve(rhs_vec, solution, rel_tol=rel_tol)
-        else:
-            self.dRdU.T.precond(rhs_vec, solution)
+        self.dRdU.T.solve(rhs_vec, solution, rel_tol=rel_tol)
 
     def set_quasi_newton(self, quasi_newton):
         if isinstance(quasi_newton, QuasiNewtonApprox):
@@ -111,21 +101,6 @@ class ReducedKKTMatrix(BaseHessian):
             self.krylov = krylov_solver
         else:
             raise TypeError('Solver is not a valid KrylovSolver')
-
-    @property
-    def approx(self):
-        """
-        Used to perform approximate products and solves.
-
-        The approximate version of this matrix uses
-        :math:`\\frac{\\partial R}{\\partial u}` preconditioner from the solver
-        to calculate the 2nd order adjoints.
-
-        The approximate solution, `ReducedKKTMatrix.approx.solve()`, can then
-        be used as a "nested" preconditioner during the optimization.
-        """
-        self._use_approx = True
-        return self
 
     def linearize(self, at_kkt, at_state, at_adjoint):
         """
@@ -362,47 +337,3 @@ class ReducedKKTMatrix(BaseHessian):
 
             # add slack term to dual update
             out_dual.minus(self.slack_work)
-
-        # if this is a single product, we reset the approximation flag
-        if self._reset_approx:
-            self._use_approx = False
-
-    def solve(self, rhs, solution, rel_tol=None):
-        """
-        Solve the linear system defined by this matrix using the embedded
-        krylov solver.
-
-        Parameters
-        ----------
-        rhs : PrimalVector
-            Right hand side vector for the system.
-        solution : PrimalVector
-            Solution of the system.
-        rel_tol : float (optional)
-            Relative tolerance for the krylov solver.
-        """
-        # make sure we have a krylov solver
-        if self.krylov is None:
-            raise AttributeError('krylov solver not set')
-
-        # define the preconditioner
-        eye = IdentityMatrix()
-        precond = eye.product
-
-        # update the solution tolerance if necessary
-        if isinstance(rel_tol, float):
-            self.krylov.rel_tol = rel_tol
-
-        # if this is an approximate solve, temporarily prevent the product from
-        # resetting the approximation flag
-        if self._use_approx:
-            self._reset_approx = False
-
-        # trigger the solution
-        self.krylov.solve(self.product, rhs, solution, precond)
-
-        # reset approximate matrix flag
-        self._use_approx = False
-
-        # make sure that next product will reset the approximation flag
-        self._reset_approx = True

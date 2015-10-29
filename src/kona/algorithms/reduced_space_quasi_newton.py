@@ -18,10 +18,10 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     line_search : LineSearch
         Line search object for globalization.
     """
-    def __init__(self, primal_factory, state_factory=None, optns={}):
+    def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
         super(ReducedSpaceQuasiNewton, self).__init__(
-            primal_factory, state_factory, None, optns
+            primal_factory, state_factory, dual_factory, optns
         )
         # number of vectors required in solve() method
         self.primal_factory.request_num_vectors(6)
