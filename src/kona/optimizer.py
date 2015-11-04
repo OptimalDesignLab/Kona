@@ -1,5 +1,3 @@
-import os.path
-
 from kona.user import UserSolver
 from kona.algorithms import Verifier
 from kona.linalg.memory import KonaMemory
