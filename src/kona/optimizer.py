@@ -3,7 +3,6 @@ import os.path
 from kona.user import UserSolver
 from kona.algorithms import Verifier
 from kona.linalg.memory import KonaMemory
-from kona.options import defaults
 
 class Optimizer(object):
     """
@@ -30,8 +29,20 @@ class Optimizer(object):
                             'Unknown solver type!')
         # initialize optimization memory
         self._memory = KonaMemory(solver)
-        # modify defaults either from config file or from given dictionary
-        self._read_options(optns)
+        # set default file handles
+        self._optns = {
+            'info_file' : 'kona_info.dat',
+            'hist_file' : 'kona_hist.dat',
+            'krylov' : {
+                'out_file' : 'kona_krylov.dat',
+            },
+        }
+        # process the final options
+        if optns is None:
+            optns = {}
+        elif not isinstance(optns, dict):
+            raise TypeError('Kona.Optimizer >> Options must be a dictionary!')
+        self._process_options(optns)
         # get vector factories
         primal_factory = self._memory.primal_factory
         state_factory = self._memory.state_factory
@@ -50,21 +61,15 @@ class Optimizer(object):
             self._algorithm = algorithm(
                 primal_factory, state_factory, dual_factory, self._optns)
 
-    def _read_options(self, optns):
-        # get default options
-        self._optns = defaults.copy()
-        # update default options with the given dictionary
-        if isinstance(optns, dict):
-            self._optns.update(optns)
-            self._optns['info_file'] = \
-                self._memory.open_file(self._optns['info_file'])
-            self._optns['hist_file'] = \
-                self._memory.open_file(self._optns['hist_file'])
-            self._optns['krylov']['out_file'] = \
-                self._memory.open_file(self._optns['krylov']['out_file'])
-        else:
-            if os.path.isfile('kona.cfg'):
-                raise NotImplementedError
+    def _process_options(self, optns):
+        # update the file handles
+        self._optns.update(optns)
+        self._optns['info_file'] = \
+            self._memory.open_file(self._optns['info_file'])
+        self._optns['hist_file'] = \
+            self._memory.open_file(self._optns['hist_file'])
+        self._optns['krylov']['out_file'] = \
+            self._memory.open_file(self._optns['krylov']['out_file'])
 
     def solve(self):
         self._memory.allocate_memory()

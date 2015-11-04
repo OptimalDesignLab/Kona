@@ -1,9 +1,10 @@
 import numpy
 import unittest
 
+from kona import Optimizer
 from kona.algorithms import ConstrainedRSNK
 from kona.examples import SimpleConstrained
-from kona.linalg.memory import KonaMemory
+from kona.algorithms.util.merit import L2NormPenalty, AugmentedLagrangian
 
 class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
@@ -13,13 +14,15 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
     def test_with_simple_constrained(self):
 
         solver = SimpleConstrained(ineq=False)
-        km = KonaMemory(solver)
 
         optns = {
             'info_file' : 'kona_info.dat',
             'max_iter' : 50,
             'primal_tol' : 1e-5,
             'constraint_tol' : 1e-5,
+            'globalization' : 'linesearch',
+            # 'globalization' : 'trust',
+            # 'globalization' : None,
 
             'trust' : {
                 'init_radius' : 1.0,
@@ -50,10 +53,9 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = ConstrainedRSNK(
-            km.primal_factory, km.state_factory, km.dual_factory, optns)
-        km.allocate_memory()
-        algorithm.solve()
+        algorithm = ConstrainedRSNK
+        optimizer = Optimizer(solver, algorithm, optns)
+        optimizer.solve()
 
         print solver.curr_design
 

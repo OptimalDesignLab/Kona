@@ -38,6 +38,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         self.cnstr_tol = get_opt(optns, 1e-8, 'constraint_tol')
         self.nu = get_opt(optns, 0.95, 'reduced', 'nu')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
+        self.globalization = get_opt(optns, 'linesearch', 'globalization')
 
         # set the krylov solver
         acceptable_solvers = [FLECS]
@@ -56,11 +57,26 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         self.eta = 1./(self.mu**0.1)
 
         # initialize the globalization method
-        # NOTE: Latest C++ source has the filter disabled entirely!!!
-        # set the type of line-search algorithm
-        self.merit_func = AugmentedLagrangian(
-            self.primal_factory, self.state_factory, self.dual_factory,
-            {}, self.info_file)
+        if self.globalization is None:
+            self.linesearch = False
+            self.trust_region = False
+            self.merit_func = None
+
+        elif self.globalization == 'linesearch':
+            self.linesearch = True
+            self.trust_region = False
+
+        elif self.globalization == 'trust':
+            self.linesearch = False
+            self.trust_region = True
+            self.merit_func = AugmentedLagrangian(
+                self.primal_factory, self.state_factory, self.dual_factory,
+                {}, self.info_file)
+        else:
+            raise TypeError(
+                'Invalid globalization! ' +
+                'Can only use \'linesearch\' or \'trust\'. ' +
+                'If you want to skip globalization, set to None.')
 
         # initialize the KKT matrix definition
         reduced_optns = get_opt(optns, {}, 'reduced')
@@ -325,16 +341,13 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             self.krylov.solve(self.mat_vec, kkt_rhs, P, self.precond)
 
             # apply globalization
-            linesearch = True
-            trust_region = False
-
             old_flag = min_radius_active
-            if linesearch:
+            if self.linesearch:
                 success, min_radius_active = self.backtracking_step(
                     X, state, P, dLdX, primal_trial, slack_trial,
                     primal_work, state_work, adjoint_work,
                     dual_work, slack_work, feas_tol)
-            elif trust_region:
+            elif self.trust_region:
                 success, min_radius_active = self.trust_step(
                     X, state, P, kkt_rhs, krylov_tol, feas_tol,
                     state_work, dual_work, slack_work, kkt_work)

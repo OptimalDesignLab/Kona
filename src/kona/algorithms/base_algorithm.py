@@ -52,12 +52,14 @@ class OptimizationAlgorithm(object):
         # set up the info file
         self.info_file = get_opt(optns, sys.stdout, 'info_file')
         if isinstance(self.info_file, str):
-            self.info_file = open(self.info_file,'w')
+            self.info_file = self.primal_factory._memory.open_file(
+                self.info_file)
 
         # set up the hist file
         self.hist_file = get_opt(optns, 'kona_hist.dat', 'hist_file')
         if isinstance(self.hist_file, str):
-            self.hist_file = open(self.hist_file, 'w')
+            self.hist_file = self.primal_factory._memory.open_file(
+                self.hist_file)
 
     def solve(self):
         """

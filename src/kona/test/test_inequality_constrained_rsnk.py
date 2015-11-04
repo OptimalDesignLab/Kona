@@ -1,9 +1,10 @@
 import numpy
 import unittest
 
+from kona import Optimizer
 from kona.algorithms import ConstrainedRSNK
 from kona.examples import SimpleConstrained, ExponentialConstrained
-from kona import Optimizer
+from kona.algorithms.util.merit import L2NormPenalty, AugmentedLagrangian
 
 class InequalityConstrainedRSNKTestCase(unittest.TestCase):
 
@@ -85,11 +86,14 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             'max_iter' : 50,
             'primal_tol' : 1e-5,
             'constraint_tol' : 1e-5,
+            'globalization' : 'linesearch',
+            # 'globalization' : 'trust',
+            # 'globalization' : None,
 
             'trust' : {
-                'init_radius' : 4.0,
+                'init_radius' : 1.0,
                 'max_radius' : 10.0,
-                'min_radius' : 1e-3,
+                'min_radius' : 1e-4,
             },
 
             'aug_lag' : {

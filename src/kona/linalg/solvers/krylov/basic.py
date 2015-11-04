@@ -30,7 +30,11 @@ class KrylovSolver(object):
         # set up the info file
         self.out_file = get_opt(optns, 'kona_krylov.dat', 'out_file')
         if isinstance(self.out_file, str):
-            self.out_file = open(self.out_file,'w')
+            try:
+                _memory = self.vec_fac._memory
+            except Exception:
+                _memory = self.vec_fac[0]._memory
+            self.out_file = _memory.open_file(self.out_file)
 
     def _validate_options(self):
         if self.max_iter < 1:
