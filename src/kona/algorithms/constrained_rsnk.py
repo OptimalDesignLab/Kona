@@ -159,6 +159,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         P = self._generate_KKT_vector()
         dLdX = self._generate_KKT_vector()
         kkt_rhs = self._generate_KKT_vector()
+        kkt_work = self._generate_KKT_vector()
 
         # generate primal vectors
         primal_work = self.primal_factory.generate()
@@ -323,11 +324,24 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             # trigger the krylov solution
             self.krylov.solve(self.mat_vec, kkt_rhs, P, self.precond)
 
+            # apply globalization
+            linesearch = True
+            trust_region = False
+
             old_flag = min_radius_active
-            linesearch_success, min_radius_active = self.backtracking_step(
-                X, state, P, dLdX, primal_trial, slack_trial,
-                primal_work, state_work, adjoint_work,
-                dual_work, slack_work, feas_tol)
+            if linesearch:
+                success, min_radius_active = self.backtracking_step(
+                    X, state, P, dLdX, primal_trial, slack_trial,
+                    primal_work, state_work, adjoint_work,
+                    dual_work, slack_work, feas_tol)
+            elif trust_region:
+                success, min_radius_active = self.trust_step(
+                    X, state, P, kkt_rhs, krylov_tol, feas_tol,
+                    state_work, dual_work, slack_work, kkt_work)
+            else:
+                X._primal.plus(P._primal)
+                X._dual.equals(P._dual)
+                state.equals_primal_solution(X._primal._design)
 
             # watchdog on trust region failures
             if min_radius_active and old_flag:
@@ -463,8 +477,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             self.info_file.write(
                 '   Iteration  %i :\n'%iters +
                 '      alpha       = %e\n'%alpha +
-                '      merit_next  = %e\n'%f_trial +
-                '      merit_suff  = %e\n'%f_sufficient)
+                '      merit_suff  = %e\n'%f_sufficient +
+                '      merit_next  = %e\n'%f_trial)
 
             if f_trial <= f_sufficient:
                 # sufficient decrease satisdied, accept step!
@@ -526,8 +540,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
         return converged, min_radius_active
 
-    def trust_step(self, X, state, slack_vars, P, slack_step,
-                   kkt_rhs, krylov_tol, feas_tol,
+    def trust_step(self, X, state, P, kkt_rhs, krylov_tol, feas_tol,
                    state_work, dual_work, slack_work, kkt_work):
         # start trust region loop
         max_iter = 6
@@ -539,8 +552,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             iters += 1
             # reset merit function at new step
             self.merit_func.reset(
-                X, state, P, 0.0, self.mu,
-                slack_vars, slack_step)
+                X, state, P, 0.0, self.mu)
             # evaluate the merit ats the current step
             merit_init = self.merit_func.func_val
             # evaluate the merit at the next step
@@ -556,8 +568,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
             self.info_file.write(
                 'Trust Region Step : iter %i\n'%iters +
-                '   primal_step    = %e\n'%P._primal.norm2 +
-                '   slack_step     = %e\n'%slack_step.norm2 +
+                '   design_step    = %e\n'%P._primal._design.norm2 +
+                '   slack_step     = %e\n'%P._primal._slack.norm2 +
                 '   new lambda     = %e\n'%P._dual.norm2 +
                 '\n' +
                 '   merit_init     = %e\n'%merit_init +
@@ -574,16 +586,15 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     state_work.equals(state)
                     # evaluate the constraints at the new point
                     X._primal.plus(P._primal)
-                    state.equals_primal_solution(X._primal)
-                    dual_work.equals_constraints(X._primal, state)
-                    slack_vars.plus(slack_step)
-                    slack_work.exp(slack_vars)
+                    X._dual.equals(P._dual)
+                    state.equals_primal_solution(X._primal._design)
+                    dual_work.equals_constraints(X._primal._design, state)
+                    slack_work.exp(X._primal._slack)
                     slack_work.times(-1.)
                     slack_work.restrict()
                     dual_work.plus(slack_work)
                     # reset the point back and save the step for later
                     X.equals(kkt_work)
-                    slack_vars.minus(slack_step)
                     state.equals(state_work)
                     kkt_work.equals(P)
                     # attempt a 2nd order correction
@@ -597,7 +608,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                         '   Correction failed! Resetting step...\n')
                     P.equals(kkt_work)
                 else:
-                    self.info_file.write('   Model is inaccurate...\n')
                     self.radius = max(0.5*self.radius, self.min_radius)
                     if self.radius == self.min_radius:
                         self.info_file.write(
@@ -607,7 +617,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                         break
                     else:
                         self.info_file.write(
-                            '      Re-solving with smaller radius -> ' +
+                            '   Re-solving with smaller radius -> ' +
                             '%f\n'%self.radius)
                         self.krylov.radius = self.radius
                         self.krylov.re_solve(kkt_rhs, P)
@@ -620,12 +630,11 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 self.info_file.write('\nStep accepted!\n')
                 X._primal.plus(P._primal)
                 X._dual.equals(P._dual)
-                slack_vars.plus(slack_step)
-                state.equals_primal_solution(X._primal)
+                state.equals_primal_solution(X._primal._design)
 
                 # evaluate constraints at the new point
-                dual_work.equals_constraints(X._primal, state)
-                slack_work.exp(slack_vars)
+                dual_work.equals_constraints(X._primal._design, state)
+                slack_work.exp(X._primal._slack)
                 slack_work.times(-1.)
                 slack_work.restrict()
                 dual_work.plus(slack_work)
