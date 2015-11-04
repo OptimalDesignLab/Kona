@@ -137,6 +137,20 @@ class CompositeVector(object):
             total_prod += self._vectors[i].inner(vector._vectors[i])
         return total_prod
 
+    def exp(self, vector):
+        self._check_type(vector)
+        for i in xrange(len(self._vectors)):
+            self._vectors[i].exp(vector)
+
+    def log(self, vector):
+        self._check_type(vector)
+        for i in xrange(len(self._vectors)):
+            self._vectors[i].log(vector)
+
+    def pow(self, power):
+        for i in xrange(len(self._vectors)):
+            self._vectors[i].pow(power)
+
     @property
     def norm2(self):
         """
@@ -153,23 +167,30 @@ class CompositeVector(object):
         else:
             return np.sqrt(prod)
 
+    @property
+    def infty(self):
+        norms = []
+        for i in xrange(len(self._vectors)):
+            norms.append(self._vectors[i].infty)
+        return max(norms)
+
 class ReducedKKTVector(CompositeVector):
     """
-    A composite vector representing a combined design and dual vectors.
+    A composite vector representing a combined primal and dual vectors.
 
     Parameters
     ----------
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    _primal : PrimalVector
-        Design component of the composite vector.
+    _primal : PrimalVector or CompositePrimalVector
+        Primal component of the composite vector.
     _dual : DualVector
         Dual components of the composite vector.
     """
 
     def __init__(self, primal_vec, dual_vec):
-        if (isinstance(primal_vec, PrimalVector)
-                or isinstance(primal_vec, DesignSlackComposite)):
+        if isinstance(primal_vec, PrimalVector) or \
+           isinstance(primal_vec, CompositePrimalVector):
             self._primal = primal_vec
         else:
             raise TypeError('CompositeVector() >> ' +
@@ -188,25 +209,26 @@ class ReducedKKTVector(CompositeVector):
         Sets the KKT vector to the initial guess, using the initial design.
         """
         self._primal.equals_init_design()
-        self._dual.equals(0.0)
+        self._dual.equals(-1.0)
 
     def equals_KKT_conditions(self, x, state, adjoint, primal_work, dual_work):
         """
         Calculates the total derivative of the Lagrangian
-        :math:`\\mathcal{L}(x, u) = f(x, u) + \\lambda c(x, u)` with respect to
-        :math:`\\begin{pmatrix}x & \\lambda\\end{pmatrix}^T`. This total
-        derivative represents the Karush-Kuhn-Tucker (KKT) convergence
-        conditions for the optimization problem defined by
-        :math:`\\mathcal{L}(x, u)`.
+        :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda^T (c(x, u) - e^s)` with
+        respect to :math:`\\begin{pmatrix}x & s & \\lambda\\end{pmatrix}^T`.
+        This total derivative represents the Karush-Kuhn-Tucker (KKT)
+        convergence conditions for the optimization problem defined by
+        :math:`\\mathcal{L}(x, s, u(x), \\lambda)`.
 
         The full expression of the KKT conditions are:
 
         .. math::
             \\begin{pmatrix}
-            g(x, u, \lambda, \psi) \\
-            c(x, u) \\end{pmatrix}
+            \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\
+            -\\lambda^T e^s \\
+            c(x, u) - e^s \\end{pmatrix}
             =
-            \\begin{pmatrix}\\end{pmatrix}
+            \\begin{pmatrix} 0 \\ 0\\end{pmatrix}
 
         Parameters
         ----------
@@ -216,53 +238,66 @@ class ReducedKKTVector(CompositeVector):
             Evaluate KKT conditions at this state point.
         adjoint : StateVector
             Evaluate KKT conditions using this adjoint vector.
+        slack : DualVector
+            Evaluate KKT conditions using these slack variables.
         primal_work : PrimalVector
             Work vector for intermediate calculations.
         """
-        # evaluate lagrangian total derivative
+        # evaluate primal component
         self._primal.equals_lagrangian_total_gradient(
             x._primal, state, x._dual, adjoint, primal_work)
-        # evaluate constraints at the design/state point
-        if isinstance(self._primal, PrimalVector):
-            self._dual.equals_constraints(x._primal, state)
-        else:
+        # evaluate multiplier component
+        if isinstance(self._primal, CompositePrimalVector):
             self._dual.equals_constraints(x._primal._design, state)
             dual_work.exp(x._primal._slack)
             dual_work.times(-1.)
             dual_work.restrict()
             self._dual.plus(dual_work)
+        else:
+            self._dual.equals_constraints(x._primal, state)
 
-class DesignSlackComposite(CompositeVector):
+class CompositePrimalVector(CompositeVector):
+    """
+    A composite vector representing a combined design and slack vectors..
 
-    def __init__(self, design, slack):
+    Parameters
+    ----------
+    _memory : KonaMemory
+        All-knowing Kona memory manager.
+    _primal : PrimalVector
+        Design component of the composite vector.
+    _slack : DualVector
+        Slack components of the composite vector.
+    """
 
-        if isinstance(design, PrimalVector):
-            self._design = design
-            self._memory = self._design._memory
+    def __init__(self, primal_vec, dual_vec):
+        if isinstance(primal_vec, PrimalVector):
+            self._design = primal_vec
         else:
             raise TypeError('CompositeVector() >> ' +
-                            'Unidentified design vector.')
+                            'Unidentified primal vector.')
 
-        if isinstance(slack, DualVector):
-            self._slack = slack
+        if isinstance(dual_vec, DualVector):
+            self._slack = dual_vec
         else:
             raise TypeError('CompositeVector() >> ' +
                             'Unidentified dual vector.')
 
-        super(DesignSlackComposite, self).__init__([design, slack])
+        super(CompositePrimalVector, self).__init__([primal_vec, dual_vec])
 
     def equals_init_design(self):
         self._design.equals_init_design()
         self._slack.equals(0.0)
 
-    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
-                                         at_adjoint, primal_work):
+    def equals_lagrangian_total_gradient(self, at_primal, at_state,
+                                         at_dual, at_adjoint, primal_work):
+        # do some aliasing
         at_design = at_primal._design
         at_slack = at_primal._slack
-        # compute the derivative of the lagrangian w.r.t. design variables
+        # compute the design derivative of the lagrangian
         self._design.equals_lagrangian_total_gradient(
             at_design, at_state, at_dual, at_adjoint, primal_work)
-        # compute the derivative of the Lagrangian w.r.t. slack variables
+        # compute the slack derivative of the lagrangian
         self._slack.exp(at_slack)
         self._slack.times(at_dual)
         self._slack.times(-1.)

@@ -37,10 +37,13 @@ def objective_value(at_design, at_state):
     """
     Evaluate the objective value the given Primal and State point.
 
+    If the primal vector is a design/slack composite, this function evaluates
+    the log-barrier term and adds it to the objective function.
+
     Parameters
     ----------
     at_design : PrimalVector
-        Current primal point.
+        Current design point.
     at_state : StateVector
         Current state point.
 
@@ -49,6 +52,7 @@ def objective_value(at_design, at_state):
     float
         Objective function value.
     """
+
     solver = at_design._memory.solver
 
     if solver != at_state._memory.solver:

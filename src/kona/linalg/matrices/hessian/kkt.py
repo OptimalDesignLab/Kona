@@ -1,7 +1,8 @@
 from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
-from kona.linalg.vectors.composite import ReducedKKTVector, DesignSlackComposite
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian.basic import BaseHessian, QuasiNewtonApprox
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import calc_epsilon, EPS
@@ -121,6 +122,8 @@ class ReducedKKTMatrix(BaseHessian):
             Lagrange multipliers at which the product is evaluated.
         at_adjoint : StateVector
             1st order adjoint variables at which the product is evaluated.
+        barrer : float
+            Log-barrier parameter used for slack equations.
         """
         # if this is the first ever linearization...
         if not self._allocated:
@@ -145,20 +148,20 @@ class ReducedKKTMatrix(BaseHessian):
             self._allocated = True
 
         # store the linearization point
-        if isinstance(at_kkt._primal, DesignSlackComposite):
+        if isinstance(at_kkt._primal, CompositePrimalVector):
             self.at_design = at_kkt._primal._design
             self.at_slack = at_kkt._primal._slack
         else:
             self.at_design = at_kkt._primal
             self.at_slack = None
-        self.primal_norm = self.at_design.norm2
+        self.design_norm = self.at_design.norm2
         self.at_state = at_state
         self.state_norm = self.at_state.norm2
         self.at_adjoint = at_adjoint
         self.at_dual = at_kkt._dual
-        self.dual_work.equals_constraints(self.at_design, self.at_state)
 
         # compute adjoint residual at the linearization
+        self.dual_work.equals_constraints(self.at_design, self.at_state)
         self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[0])
@@ -198,7 +201,9 @@ class ReducedKKTMatrix(BaseHessian):
         out_vec.equals(0.0)
 
         # do some aliasing to make the code cleanier
-        if isinstance(in_vec._primal, DesignSlackComposite):
+        if isinstance(in_vec._primal, CompositePrimalVector):
+            if self.at_slack is None:
+                raise TypeError('No slack variables defined!')
             in_design = in_vec._primal._design
             in_slack = in_vec._primal._slack
             out_design = out_vec._primal._design
@@ -215,7 +220,7 @@ class ReducedKKTMatrix(BaseHessian):
         self.dual_work.equals_constraints(self.at_design, self.at_state)
 
         # calculate appropriate FD perturbation for design
-        epsilon_fd = calc_epsilon(self.primal_norm, in_design.norm2)
+        epsilon_fd = calc_epsilon(self.design_norm, in_design.norm2)
 
         # assemble RHS for first adjoint system
         self.dRdX.linearize(self.at_design, self.at_state)
@@ -306,34 +311,25 @@ class ReducedKKTMatrix(BaseHessian):
             out_design.equals_ax_p_by(
                 1., out_design, self.lamb*self.scale, in_design)
 
-        # modify out_vec for inequality constraints
-        self.dual_work.equals_constraints(self.at_design, self.at_state)
-
-        # now start working on slack variable equations
+        # add the slack term to the dual component
         if in_slack is not None:
-            # start by evaluating diag(e^s)
+            # compute slack term (-e^s)
             self.slack_work.exp(self.at_slack)
-
-            # now calculate diag(-lambda * diag(e^s))
-            out_slack.equals(self.at_dual)
-            out_slack.times(-1)
-            out_slack.times(self.slack_work)
-
-            # evaluate diag(-lambda * diag(e^s)) * V_slack
-            out_slack.times(in_slack)
-
-            # evaluate diag(e^s) * V_dual
-            self.slack_work.times(in_dual)
-
-            # assemble the final slack product
-            # diag(-lambda * diag(e^s))*V_slack - diag(e^s)*V_dual
-            out_slack.minus(self.slack_work)
-            out_slack.restrict()
-
-            # evaluate diag(e^s) * V_slack
-            self.slack_work.exp(self.at_slack)
+            self.slack_work.times(-1.)
             self.slack_work.restrict()
-            self.slack_work.times(in_slack)
+            # set slack output
+            # out_slack = (-e^s * delta_lambda)
+            out_slack.equals(in_dual)
+            out_slack.times(self.slack_work)
+            # add the slack contribution
+            # out_slack += (-e^s * lambda * delta_slack)
+            self.dual_work.equals(self.at_dual)
+            self.dual_work.times(self.slack_work)
+            self.dual_work.times(in_slack)
+            out_slack.plus(self.dual_work)
 
-            # add slack term to dual update
-            out_dual.minus(self.slack_work)
+            # add the slack contribution to dual component
+            # out_dual += (-e^s * delta_slack)
+            self.dual_work.equals(in_slack)
+            self.dual_work.times(self.slack_work)
+            out_dual.plus(self.dual_work)

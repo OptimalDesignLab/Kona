@@ -4,7 +4,8 @@ from numpy import sqrt
 
 from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, DualVector
-from kona.linalg.vectors.composite import ReducedKKTVector, DesignSlackComposite
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
     solve_tri, solve_trust_reduced, eigen_decomp, mod_gram_schmidt, EPS
@@ -74,17 +75,18 @@ class FLECS(KrylovSolver):
 
         # put in memory request
         self.primal_factory.request_num_vectors(2*self.max_iter + 2)
-        self.dual_factory.request_num_vectors(4*self.max_iter + 4)
+        self.dual_factory.request_num_vectors(2*(self.max_iter + 2))
 
         # initialize vector holder arrays
         self.V = []
         self.Z = []
 
     def _generate_vector(self):
-        primal = self.primal_factory.generate()
+        design = self.primal_factory.generate()
         slack = self.dual_factory.generate()
+        primal = CompositePrimalVector(design, slack)
         dual = self.dual_factory.generate()
-        return ReducedKKTVector(DesignSlackComposite(primal, slack), dual)
+        return ReducedKKTVector(primal, dual)
 
     def _validate_options(self):
         super(FLECS, self)._validate_options()
@@ -96,8 +98,6 @@ class FLECS(KrylovSolver):
         # clear out all the vectors stored in V
         # the data goes back to the stack and is used again later
         for vector in self.V:
-            del vector._primal._design
-            del vector._primal._slack
             del vector._primal
             del vector._dual
             del vector
@@ -106,8 +106,6 @@ class FLECS(KrylovSolver):
         # clear out all vectors stored in Z
         # the data goes back to the stack and is used again later
         for vector in self.Z:
-            del vector._primal._design
-            del vector._primal._slack
             del vector._primal
             del vector._dual
             del vector
@@ -166,6 +164,15 @@ class FLECS(KrylovSolver):
         for k in xrange(self.iters):
             step._primal.equals_ax_p_by(
                 1.0, step._primal, self.y[k], self.Z[k]._primal)
+
+        # trust radius check
+        # NOTE: THIS IS TEMPORARY
+        if step._primal.norm2 > 0.5*self.radius:
+            step._primal.times(
+                0.5*self.radius/step._primal.norm2)
+
+        # compute a new predicted reduction associated with this step
+        # self.pred_aug = -self.y.dot(0.5*numpy.array(A.dot(self.y)) + rhs)
 
     def solve_subspace_problems(self):
         # extract some work arrays
@@ -254,15 +261,6 @@ class FLECS(KrylovSolver):
         self.pred = \
             -0.5*numpy.inner(y_r, numpy.inner(Hess_red, y_r)) \
             + self.g[0]*numpy.inner(VtZ_prim_r[0, 0:self.iters], y_r)
-
-        # compute the reduction in the Augmented Lagrangian model
-        Hess_aug = self.mu * H_r.T.dot(VtVH)
-        Hess_aug += Hess_red
-        rhs_aug = numpy.zeros(self.iters)
-        for k in xrange(self.iters):
-            rhs_aug[k] = -self.g[0]*(self.VtZ_prim[0, k] + self.mu*VtVH[0, k])
-        self.reconstructed_pred = \
-            -self.y_aug.dot(0.5*numpy.inner(Hess_aug, self.y_aug) + rhs_aug)
 
         # determine if negative curvature may be present
         self.neg_curv = False
@@ -420,9 +418,6 @@ class FLECS(KrylovSolver):
         x._primal.times(self.grad_scale)
         x._dual.times(self.feas_scale)
 
-        # restrict the slack variables
-        x._primal._slack.restrict()
-
         # check residual
         if self.check_res:
             # calculate true residual for the solution
@@ -506,4 +501,3 @@ class FLECS(KrylovSolver):
                 1.0, x._dual, self.y_mult[k], self.Z[k]._dual)
         x._primal.times(self.grad_scale)
         x._dual.times(self.feas_scale)
-        x._primal._slack.restrict()

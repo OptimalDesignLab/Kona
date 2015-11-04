@@ -9,23 +9,23 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        solver = SimpleConstrained()
+        solver = SimpleConstrained(ineq=False)
         km = KonaMemory(solver)
 
         optns = {
             'info_file' : 'kona_info.dat',
-            'max_iter' : 30,
-            'primal_tol' : 1e-6,
-            'constraint_tol' : 1e-6,
+            'max_iter' : 50,
+            'primal_tol' : 1e-5,
+            'constraint_tol' : 1e-5,
 
             'trust' : {
                 'init_radius' : 1.0,
                 'max_radius' : 10.0,
-                'min_radius' : 1e-5,
+                'min_radius' : 1e-3,
             },
 
             'aug_lag' : {
-                'mu_init' : 0.5,
+                'mu_init' : 1.0,
                 'mu_pow' : 0.5,
                 'mu_max' : 1e5,
             },
@@ -42,7 +42,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             'krylov' : {
                 'out_file'      : 'kona_krylov.dat',
                 'max_iter'      : 10,
-                'rel_tol'       : 0.0095,
+                'rel_tol'       : 0.00095,
                 'check_res'     : True,
             },
         }
@@ -56,7 +56,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
         expected = -1.*numpy.ones(solver.num_primal)
         diff = abs(solver.curr_design - expected)
-        self.assertTrue(max(diff) < 1e-5)
+        self.assertTrue(max(diff) < 1e-4)
 
 if __name__ == "__main__":
     unittest.main()

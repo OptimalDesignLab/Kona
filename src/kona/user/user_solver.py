@@ -1,4 +1,4 @@
-from base_vectors import BaseAllocator
+from kona.user import BaseAllocator
 
 class UserSolver(object):
     """Base class for Kona objective functions, designed to be a template for

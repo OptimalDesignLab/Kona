@@ -164,6 +164,16 @@ class KonaVector(object):
         self._check_type(vector)
         self._data.log(vector._data)
 
+    def pow(self, power):
+        """
+        Performs an element-wise power operation in-place.
+
+        Parameters
+        ----------
+        power : float
+        """
+        self._data.pow(power)
+
     def inner(self, vector):
         """
         Computes an inner product with another vector.
@@ -188,6 +198,10 @@ class KonaVector(object):
         """
         prod = self.inner(self)
         return np.sqrt(prod)
+
+    @property
+    def infty(self):
+        return self._data.infty
 
 class PrimalVector(KonaVector):
     """
@@ -264,9 +278,9 @@ class PrimalVector(KonaVector):
             Temporary work vector of Primal type.
         """
         # first compute the objective partial
-        primal_work.equals_objective_partial(at_primal, at_state)
+        self.equals_objective_partial(at_primal, at_state)
         # multiply the adjoint variables with the jacobian
-        dRdX(at_primal, at_state).T.product(at_adjoint, self)
+        dRdX(at_primal, at_state).T.product(at_adjoint, primal_work)
         # add it to the objective partial
         self.plus(primal_work)
 
@@ -284,7 +298,7 @@ class PrimalVector(KonaVector):
         at_dual : DualVector
             Current lagrange multipliers.
         at_adjoint : StateVector
-            Current adjoint variables.
+            Current adjoint variables for the Lagrangian (rhs = - dL/dU)
         primal_work : PrimalVector
             Temporary work vector of Primal type.
         """
@@ -292,7 +306,7 @@ class PrimalVector(KonaVector):
         self.equals_total_gradient(at_primal, at_state, at_adjoint, primal_work)
         # multiply the lagrange multipliers by the constraint jacobian
         dCdX(at_primal, at_state).T.product(at_dual, primal_work)
-        # add it to the total objective derivative
+        # subtract it from to the total objective derivative
         self.plus(primal_work)
 
 class StateVector(KonaVector):

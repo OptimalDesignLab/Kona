@@ -123,9 +123,16 @@ class BaseVector(object):
             Result of the operation.
         """
         if len(self.data) == 0:
-            return 0
+            return 0.
         else:
             return np.inner(self.data, vector.data)
+
+    @property
+    def infty(self):
+        if len(self.data) == 0:
+            return 0.
+        else:
+            return max(abs(self.data))
 
     def exp(self, vector):
         """
@@ -148,6 +155,16 @@ class BaseVector(object):
             Incoming vector for in-place operation.
         """
         self.data = np.log(vector.data)
+
+    def pow(self, power):
+        """
+        Calculate element-wise power operation on the vector.
+
+        Parameters
+        ----------
+        power : float
+        """
+        self.data = self.data**power
 
 class BaseAllocator(object):
     """
