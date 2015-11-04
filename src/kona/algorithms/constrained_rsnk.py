@@ -446,6 +446,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         # start backtracking line search
         min_radius_active = False
         converged = False
+        # design_trial.equals(design_vars)
+        # slack_trial.equals(slack_vars)
         self.info_file.write(
             '\nEntering Line-search...\n' +
             '   design_step    = %e\n'%design_step.norm2 +
