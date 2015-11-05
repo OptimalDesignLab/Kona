@@ -75,7 +75,7 @@ class FLECS(KrylovSolver):
 
         # put in memory request
         self.primal_factory.request_num_vectors(2*self.max_iter + 2)
-        self.dual_factory.request_num_vectors(2*(self.max_iter + 2))
+        self.dual_factory.request_num_vectors(2*(2*self.max_iter + 2))
 
         # initialize vector holder arrays
         self.V = []
@@ -98,6 +98,8 @@ class FLECS(KrylovSolver):
         # clear out all the vectors stored in V
         # the data goes back to the stack and is used again later
         for vector in self.V:
+            del vector._primal._design
+            del vector._primal._slack
             del vector._primal
             del vector._dual
             del vector
@@ -106,6 +108,8 @@ class FLECS(KrylovSolver):
         # clear out all vectors stored in Z
         # the data goes back to the stack and is used again later
         for vector in self.Z:
+            del vector._primal._design
+            del vector._primal._slack
             del vector._primal
             del vector._dual
             del vector

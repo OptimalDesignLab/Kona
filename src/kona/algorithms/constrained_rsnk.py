@@ -1,19 +1,18 @@
 import copy
-import warnings
 import numpy as np
 
 from kona.options import BadKonaOption, get_opt
 from kona.linalg import current_solution, factor_linear_system, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.matrices.common import dCdX, dCdU, dRdX, dRdU, IdentityMatrix
+from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS, FGMRES
 from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
-from kona.algorithms.util.merit import AugmentedLagrangian
+# from kona.algorithms.util.merit import AugmentedLagrangian
 
 class ConstrainedRSNK(OptimizationAlgorithm):
 
@@ -24,9 +23,9 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         )
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(6)
-        self.state_factory.request_num_vectors(4)
-        self.dual_factory.request_num_vectors(11)
+        self.primal_factory.request_num_vectors(7)
+        self.state_factory.request_num_vectors(3)
+        self.dual_factory.request_num_vectors(14)
 
         # get other options
         self.radius = get_opt(optns, 0.5, 'trust', 'init_radius')
@@ -38,7 +37,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         self.cnstr_tol = get_opt(optns, 1e-8, 'constraint_tol')
         self.nu = get_opt(optns, 0.95, 'reduced', 'nu')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
-        self.globalization = get_opt(optns, 'linesearch', 'globalization')
+        self.globalization = get_opt(optns, 'trust', 'globalization')
 
         # set the krylov solver
         acceptable_solvers = [FLECS]
@@ -58,20 +57,14 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
         # initialize the globalization method
         if self.globalization is None:
-            self.linesearch = False
             self.trust_region = False
             self.merit_func = None
 
-        elif self.globalization == 'linesearch':
-            self.linesearch = True
-            self.trust_region = False
-
         elif self.globalization == 'trust':
-            self.linesearch = False
             self.trust_region = True
-            self.merit_func = AugmentedLagrangian(
-                self.primal_factory, self.state_factory, self.dual_factory,
-                {}, self.info_file)
+            # self.merit_func = AugmentedLagrangian(
+            #     self.primal_factory, self.state_factory, self.dual_factory,
+            #     {}, self.info_file)
         else:
             raise TypeError(
                 'Invalid globalization! ' +
@@ -175,22 +168,20 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         P = self._generate_KKT_vector()
         dLdX = self._generate_KKT_vector()
         kkt_rhs = self._generate_KKT_vector()
+        kkt_save = self._generate_KKT_vector()
         kkt_work = self._generate_KKT_vector()
 
         # generate primal vectors
         primal_work = self.primal_factory.generate()
-        primal_trial = self.primal_factory.generate()
 
         # generate state vectors
         state = self.state_factory.generate()
         state_work = self.state_factory.generate()
         adjoint = self.state_factory.generate()
-        adjoint_work = self.state_factory.generate()
 
         # generate dual vectors
         dual_work = self.dual_factory.generate()
         slack_work = self.dual_factory.generate()
-        slack_trial = self.dual_factory.generate()
 
         # initialize basic data for outer iterations
         converged = False
@@ -210,8 +201,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         # send initial point info to the user
         solver_info = current_solution(
             X._primal._design, state, adjoint, X._dual, self.iter)
-        if solver_info is not None:
-            self.info_file.write(solver_info)
+        if isinstance(solver_info, str):
+            self.info_file.write(solver_info + '\n')
 
         # BEGIN NEWTON LOOP HERE
         ###############################
@@ -319,19 +310,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             if self.nested is not None:
                 self.nested.linearize(X, state, adjoint)
 
-            # form the RHS vector for the KKT system
-            # the primal component is equal to the objective derivative
-            state_work.equals_objective_partial(X._primal._design, state)
-            state_work.times(-1.)
-            dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-            kkt_rhs._primal._design.equals_total_gradient(
-                X._primal._design, state, adjoint, primal_work)
-            # the slack component of the RHS vector is zero
-            kkt_rhs._primal._slack.equals(0.0)
-            # the dual component is equal to the KKT condition (c - e^s)
-            kkt_rhs._dual.equals(dLdX._dual)
-
             # move the vector to the RHS
+            kkt_rhs.equals(dLdX)
             kkt_rhs.times(-1.)
 
             # reset the primal-dual step vector
@@ -342,18 +322,14 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
             # apply globalization
             old_flag = min_radius_active
-            if self.linesearch:
-                success, min_radius_active = self.backtracking_step(
-                    X, state, P, dLdX, primal_trial, slack_trial,
-                    primal_work, state_work, adjoint_work,
-                    dual_work, slack_work, feas_tol)
-            elif self.trust_region:
+            if self.trust_region:
                 success, min_radius_active = self.trust_step(
-                    X, state, P, kkt_rhs, krylov_tol, feas_tol,
-                    state_work, dual_work, slack_work, kkt_work)
+                    X, state, adjoint, P, kkt_rhs, krylov_tol, feas_tol,
+                    primal_work, state_work, dual_work, slack_work,
+                    kkt_work, kkt_save)
             else:
                 X._primal.plus(P._primal)
-                X._dual.equals(P._dual)
+                X._dual.plus(P._dual)
                 state.equals_primal_solution(X._primal._design)
 
             # watchdog on trust region failures
@@ -367,18 +343,11 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             if self.factor_matrices and self.iter < self.max_iter:
                 factor_linear_system(X._primal._design, state)
 
-            # perform an adjoint solution for the Lagrangian
-            state_work.equals_objective_partial(X._primal._design, state)
-            dCdU(X._primal._design, state).T.product(X._dual, adjoint)
-            state_work.plus(adjoint)
-            state_work.times(-1.)
-            dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-
             # send current solution info to the user
             solver_info = current_solution(
                 X._primal._design, state, adjoint, X._dual, self.iter)
-            if solver_info is not None:
-                self.info_file.write(solver_info)
+            if isinstance(solver_info, str):
+                self.info_file.write(solver_info + '\n')
 
         ############################
         # END OF NEWTON LOOP
@@ -391,172 +360,9 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n\n'%self.iter)
 
-    def backtracking_step(self, X, state, P, dLdX, design_trial, slack_trial,
-                          primal_work, state_work, adjoint_work,
-                          dual_work, slack_work, feas_tol):
-        # do some aliasing to make the code cleanier
-        design_vars = X._primal._design
-        design_step = P._primal._design
-        slack_vars = X._primal._slack
-        slack_step = P._primal._slack
-
-        # first we have to compute the total derivative of the
-        # merit function w.r.t. design variables
-        # STEP 1: evaluate the total derivative of the objective function
-        state_work.equals_objective_partial(design_vars, state)
-        state_work.times(-1.)
-        dRdU(design_vars, state).T.solve(state_work, adjoint_work)
-        primal_work.equals_total_gradient(
-            design_vars, state, adjoint_work, design_trial)
-        # STEP 2: evaluate the total derivative of the penalty term
-        dual_work.equals_constraints(design_vars, state)
-        slack_work.exp(slack_vars)
-        slack_work.times(-1.)
-        slack_work.restrict()
-        dual_work.plus(slack_work)
-        dCdU(design_vars, state).T.product(dual_work, state_work)
-        state_work.times(-self.mu)
-        dRdU(design_vars, state).T.solve(state_work, adjoint_work)
-        dCdX(design_vars, state).T.product(dual_work, design_trial)
-        design_trial.times(self.mu)
-        primal_work.plus(design_trial)
-        dRdX(design_vars, state).T.product(
-            adjoint_work, design_trial)
-        primal_work.plus(design_trial)
-
-        # now compute the slack derivative of the merit function
-        dual_work.equals_constraints(design_vars, state)
-        slack_work.exp(slack_vars)
-        dual_work.times(slack_work)
-        dual_work.times(-1.)
-        dual_work.plus(slack_work)
-        dual_work.times(self.mu)
-        dual_work.restrict()
-
-        # calculate scalar gradient in the descent direction
-        p_dot_grad = \
-            primal_work.inner(design_step) + dual_work.inner(slack_step)
-        if p_dot_grad > 0.:
-            raise ValueError('FLECS step is not a descent direction!')
-
-        # calculate initial merit function
-        dual_work.equals_constraints(design_vars, state)
-        slack_work.exp(slack_vars)
-        slack_work.times(-1.)
-        slack_work.restrict()
-        dual_work.plus(slack_work)
-        f_init = objective_value(design_vars, state)
-        f_init += 0.5*self.mu*(dual_work.norm2**2)
-
-        # set some line search parameters
-        alpha = 1.
-        alpha_min = 1e-4
-        rdtn_factor = 0.5
-        dec_cond = 1e-4
-        max_iter = 10
-        iters = 0
-
-        # start backtracking line search
-        min_radius_active = False
-        converged = False
-        # design_trial.equals(design_vars)
-        # slack_trial.equals(slack_vars)
-        self.info_file.write(
-            '\nEntering Line-search...\n' +
-            '   design_step    = %e\n'%design_step.norm2 +
-            '   slack_step     = %e\n'%slack_step.norm2 +
-            '   new lambda     = %e\n'%P._dual.norm2 +
-            '   merit_init     = %e\n'%f_init)
-        while iters < max_iter:
-            iters += 1
-
-            # take a design step
-            design_trial.equals_ax_p_by(1., design_vars, alpha, design_step)
-            # take a scaled slack step
-            slack_trial.equals_ax_p_by(1., slack_vars, alpha, slack_work)
-            # solve for states
-            state_work.equals_primal_solution(design_trial)
-
-            # calculate the constraint term
-            dual_work.equals_constraints(design_trial, state_work)
-            slack_work.exp(slack_trial)
-            slack_work.times(-1.)
-            slack_work.restrict()
-            dual_work.plus(slack_work)
-
-            f_trial = objective_value(design_trial, state_work)
-            f_trial += 0.5*self.mu*(dual_work.norm2**2)
-
-            f_sufficient = f_init + dec_cond*alpha*p_dot_grad
-
-            self.info_file.write(
-                '   Iteration  %i :\n'%iters +
-                '      alpha       = %e\n'%alpha +
-                '      merit_suff  = %e\n'%f_sufficient +
-                '      merit_next  = %e\n'%f_trial)
-
-            if f_trial <= f_sufficient:
-                # sufficient decrease satisdied, accept step!
-                self.info_file.write(
-                    '\nStep accepted!\n')
-                X._primal._design.equals(design_trial)
-                X._primal._slack.plus(slack_step)
-                X._dual.equals(P._dual)
-
-                # evaluate constraints at the new point
-                dual_work.equals_constraints(X._primal._design, state)
-                slack_work.exp(X._primal._slack)
-                slack_work.times(-1.)
-                slack_work.restrict()
-                dual_work.plus(slack_work)
-                feas_norm = dual_work.norm2
-
-                # update the penalty coefficient
-                if feas_norm <= feas_tol:
-                    self.info_file.write('Feasibility satisfied!')
-                else:
-                    if feas_norm <= self.eta:
-                        # constraints are good, tighten tolerance
-                        self.eta = self.eta/(self.mu**0.9)
-                    else:
-                        # constraints are bad, increase the penalty parameter
-                        self.mu = min(self.mu*(10.**self.mu_pow), self.mu_max)
-                        self.eta = 1./(self.mu**0.1)
-                        self.info_file.write(
-                            '   Mu increased -> %1.2e\n'%self.mu)
-
-                # increase radius
-                if self.krylov.trust_active:
-                    self.radius = min(2*alpha*self.radius, self.max_radius)
-                    self.info_file.write(
-                        '   New radius -> %f\n'%self.radius)
-
-                # flag convergence and break loop
-                converged = True
-                break
-
-            else:
-                # sufficient decrease not satisifed, shrink alpha
-                if alpha == alpha_min:
-                    self.info_file.write(
-                        '\nMinimum alpha reached! Terminating...\n')
-                    break
-                else:
-                    alpha = max(alpha*rdtn_factor, alpha_min)
-
-        # if line-search failed, shrink the trust radius for FLECS
-        if not converged:
-            self.radius = max(self.radius/2, self.min_radius)
-            self.info_file.write(
-                'Line search failed...\n' +
-                '   Radius shrunk -> %f\n'%self.radius)
-            if self.radius == self.min_radius:
-                min_radius_active = True
-
-        return converged, min_radius_active
-
-    def trust_step(self, X, state, P, kkt_rhs, krylov_tol, feas_tol,
-                   state_work, dual_work, slack_work, kkt_work):
+    def trust_step(self, X, state, adjoint, P, kkt_rhs, krylov_tol, feas_tol,
+                   primal_work, state_work, dual_work, slack_work,
+                   kkt_work, kkt_save):
         # start trust region loop
         max_iter = 6
         iters = 0
@@ -565,19 +371,30 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         self.info_file.write('\n')
         while iters <= max_iter:
             iters += 1
-            # reset merit function at new step
-            self.merit_func.reset(
-                X, state, P, 0.0, self.mu)
-            # evaluate the merit ats the current step
-            merit_init = self.merit_func.func_val
-            # evaluate the merit at the next step
-            merit_failed = False
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                try:
-                    merit_next = self.merit_func.eval_func(1.)
-                except Exception:
-                    merit_failed = True
+            # evaluate the constraint term at the current step
+            dual_work.equals_constraints(X._primal._design, state)
+            slack_work.exp(X._primal._slack)
+            slack_work.times(-1.)
+            slack_work.restrict()
+            dual_work.plus(slack_work)
+            # compute the merit value at the current step
+            merit_init = objective_value(X._primal._design, state) \
+                + X._dual.inner(dual_work) \
+                + 0.5*self.mu*(dual_work.norm2**2)
+            # add the FLECS step
+            kkt_work.equals_ax_p_by(1., X, 1., P)
+            # solve states at the new step
+            state_work.equals_primal_solution(kkt_work._primal._design)
+            # evaluate the constraint terms at the new step
+            dual_work.equals_constraints(kkt_work._primal._design, state_work)
+            slack_work.exp(kkt_work._primal._slack)
+            slack_work.times(-1.)
+            slack_work.restrict()
+            dual_work.plus(slack_work)
+            # compute the merit value at the next step
+            merit_next = objective_value(kkt_work._primal._design, state) \
+                + X._dual.inner(dual_work) \
+                + 0.5*self.mu*(dual_work.norm2**2)
             # evaluate the quality of the FLECS model
             rho = (merit_init - merit_next)/max(self.krylov.pred_aug, EPS)
 
@@ -593,25 +410,11 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 '   rho            = %f\n'%rho)
 
             # modify radius based on model quality
-            if rho <= 0.01 or np.isnan(rho) or merit_failed:
+            if rho <= 0.01 or np.isnan(rho):
                 # model is bad! -- first we try a 2nd order correction
                 if iters == 1:
-                    # save old design and state points
-                    kkt_work.equals(X)
-                    state_work.equals(state)
-                    # evaluate the constraints at the new point
-                    X._primal.plus(P._primal)
-                    X._dual.equals(P._dual)
-                    state.equals_primal_solution(X._primal._design)
-                    dual_work.equals_constraints(X._primal._design, state)
-                    slack_work.exp(X._primal._slack)
-                    slack_work.times(-1.)
-                    slack_work.restrict()
-                    dual_work.plus(slack_work)
-                    # reset the point back and save the step for later
-                    X.equals(kkt_work)
-                    state.equals(state_work)
-                    kkt_work.equals(P)
+                    # save the old step in case correction fails
+                    kkt_save.equals(P)
                     # attempt a 2nd order correction
                     self.info_file.write(
                         '   Attempting a second order correction...\n')
@@ -621,7 +424,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     # reject step
                     self.info_file.write(
                         '   Correction failed! Resetting step...\n')
-                    P.equals(kkt_work)
+                    P.equals(kkt_save)
                 else:
                     self.radius = max(0.5*self.radius, self.min_radius)
                     if self.radius == self.min_radius:
@@ -642,23 +445,38 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     self.info_file.write('   Correction worked!\n')
 
                 # model is okay -- accept primal step
-                self.info_file.write('\nStep accepted!\n')
-                X._primal.plus(P._primal)
-                X._dual.equals(P._dual)
+                self.info_file.write('\nPrimal step accepted!\n')
+
+                # save the old step
+                kkt_save.equals(X)
+
+                # accept the new step entirely
+                X.plus(P)
                 state.equals_primal_solution(X._primal._design)
 
-                # evaluate constraints at the new point
-                dual_work.equals_constraints(X._primal._design, state)
-                slack_work.exp(X._primal._slack)
-                slack_work.times(-1.)
-                slack_work.restrict()
-                dual_work.plus(slack_work)
-                feas_norm = dual_work.norm2
+                # perform an adjoint solution for the Lagrangian
+                state_work.equals_objective_partial(X._primal._design, state)
+                dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+                state_work.plus(adjoint)
+                state_work.times(-1.)
+                dRdU(X._primal._design, state).T.solve(state_work, adjoint)
+
+                # evaluate the KKT conditions
+                kkt_work.equals_KKT_conditions(
+                    X, state, adjoint, primal_work, dual_work)
+
+                # decide if we wanna accept the multiplier update
+                if kkt_work._primal.norm2 <= kkt_rhs._primal.norm2:
+                    # primal optimality improved, accept multipliers
+                    self.info_file.write('Dual step accepted!\n')
+                else:
+                    self.info_file.write('Dual step rejected...\n')
+                    # primal optimality got worse, so reject multipliers
+                    X._dual.equals(kkt_save._dual)
 
                 # update the penalty coefficient
-                if feas_norm < feas_tol:
-                    self.info_file.write('Feasibility satisfied!')
-                else:
+                feas_norm = kkt_work._dual.norm2
+                if feas_norm > feas_tol:
                     if feas_norm <= self.eta:
                         # constraints are good, tighten tolerance
                         self.eta = self.eta/(self.mu**0.9)

@@ -323,7 +323,7 @@ class AugmentedLagrangian(L2NormPenalty):
             self._child_allocated = True
 
         # save the frozen Lagrange multipliers
-        self.dual_frozen.equals(search_dir._dual)
+        self.dual_frozen.equals(kkt_start._dual)
 
         # add the multiplier term on top of the parent merit value
         lambda_cnstr = self.dual_frozen.inner(self.dual_work)

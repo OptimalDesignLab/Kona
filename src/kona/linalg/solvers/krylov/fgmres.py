@@ -23,7 +23,7 @@ class FGMRES(KrylovSolver):
         self.vec_fac.request_num_vectors(2*self.max_iter + 1)
         self.dual_fac = dual_factory
         if self.dual_fac is not None:
-            self.dual_fac.request_num_vectors(2*(2*self.max_iter + 1))
+            self.dual_fac.request_num_vectors(4*self.max_iter + 2)
 
     def _generate_vector(self):
         if self.dual_fac is None:

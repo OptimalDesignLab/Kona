@@ -30,7 +30,7 @@ def current_solution(curr_design, curr_state=None, curr_adj=None,
     if curr_dual is not None:
         curr_dual = curr_dual._data
 
-    solver.current_solution(
+    return solver.current_solution(
         curr_design, curr_state, curr_adj, curr_dual, num_iter)
 
 def objective_value(at_design, at_state):
