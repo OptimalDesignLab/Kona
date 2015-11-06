@@ -29,10 +29,10 @@ class FGMRES(KrylovSolver):
         if self.dual_fac is None:
             return self.vec_fac.generate()
         else:
-            design = self.primal_factory.generate()
-            slack = self.dual_factory.generate()
+            design = self.vec_fac.generate()
+            slack = self.dual_fac.generate()
             primal = CompositePrimalVector(design, slack)
-            dual = self.dual_factory.generate()
+            dual = self.dual_fac.generate()
             return ReducedKKTVector(primal, dual)
 
     def solve(self, mat_vec, b, x, precond):

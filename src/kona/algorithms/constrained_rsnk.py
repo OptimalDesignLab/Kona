@@ -97,7 +97,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             embedded_out.file = self.primal_factory._memory.open_file(
                 'kona_nested.dat')
             krylov_optns['out_file'] = embedded_out
-            krylov_optns['max_iter'] = 100
+            krylov_optns['max_iter'] = 162
             # embedded_krylov = krylov(
             #     [self.primal_factory, self.dual_factory],
             #     krylov_optns)
@@ -192,17 +192,19 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         state.equals_primal_solution(X._primal._design)
         if self.factor_matrices and self.iter < self.max_iter:
             factor_linear_system(X._primal._design, state)
+
         # perform an adjoint solution for the Lagrangian
         state_work.equals_objective_partial(X._primal._design, state)
         dCdU(X._primal._design, state).T.product(X._dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
         dRdU(X._primal._design, state).T.solve(state_work, adjoint)
+
         # send initial point info to the user
         solver_info = current_solution(
             X._primal._design, state, adjoint, X._dual, self.iter)
         if isinstance(solver_info, str):
-            self.info_file.write(solver_info + '\n')
+            self.info_file.write('\n' + solver_info + '\n')
 
         # BEGIN NEWTON LOOP HERE
         ###############################
@@ -234,22 +236,25 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 slack_norm0 = dLdX._primal._slack.norm2
                 feas_norm0 = max(dLdX._dual.norm2, EPS)
                 kkt_norm0 = np.sqrt(feas_norm0**2 + grad_norm0**2)
+
                 # set current norms to initial
                 kkt_norm = kkt_norm0
                 grad_norm = grad_norm0
                 design_norm = design_norm0
                 slack_norm = slack_norm0
                 feas_norm = feas_norm0
+
                 # print out convergence norms
                 self.info_file.write(
                     'grad_norm0         = %e\n'%grad_norm0 +
                     '   design_norm0    = %e\n'%design_norm0 +
                     '   slack_norm0     = %e\n'%slack_norm0 +
-                    'feas_norm0         = %e\n'%feas_norm0
-                )
+                    'feas_norm0         = %e\n'%feas_norm0)
+
                 # calculate convergence tolerances
                 grad_tol = self.primal_tol * max(grad_norm0, 1e-3)
                 feas_tol = self.cnstr_tol * max(feas_norm0, 1e-3)
+
             else:
                 # calculate current norms
                 grad_norm = dLdX._primal.norm2
@@ -257,6 +262,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 slack_norm = dLdX._primal._slack.norm2
                 feas_norm = max(dLdX._dual.norm2, EPS)
                 kkt_norm = np.sqrt(feas_norm**2 + grad_norm**2)
+
                 # update the augmented Lagrangian penalty
                 self.info_file.write(
                     'grad_norm          = %e (%e <-- tolerance)\n'%(
@@ -264,8 +270,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     '   design_norm     = %e\n'%design_norm +
                     '   slack_norm      = %e\n'%slack_norm +
                     'feas_norm          = %e (%e <-- tolerance)\n'%(
-                        feas_norm, feas_tol)
-                )
+                        feas_norm, feas_tol))
 
             # write convergence history
             obj_val = objective_value(X._primal._design, state)
@@ -308,6 +313,12 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 self.idf_schur.linearize(X, state)
 
             if self.nested is not None:
+                # self.nested.lamb = 0.0
+                # self.nested.product_fac *= \
+                #     krylov_tol/self.nested.krylov.max_iter
+                # self.nested.krylov.rel_tol = krylov_tol
+                # self.nested.krylov.radius = self.radius
+                # self.nested.krylov.mu = self.mu
                 self.nested.linearize(X, state, adjoint)
 
             # move the vector to the RHS
@@ -347,7 +358,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             solver_info = current_solution(
                 X._primal._design, state, adjoint, X._dual, self.iter)
             if isinstance(solver_info, str):
-                self.info_file.write(solver_info + '\n')
+                self.info_file.write('\n' + solver_info + '\n')
 
         ############################
         # END OF NEWTON LOOP
@@ -402,7 +413,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 'Trust Region Step : iter %i\n'%iters +
                 '   design_step    = %e\n'%P._primal._design.norm2 +
                 '   slack_step     = %e\n'%P._primal._slack.norm2 +
-                '   new lambda     = %e\n'%P._dual.norm2 +
+                '   lambda_step    = %e\n'%P._dual.norm2 +
                 '\n' +
                 '   merit_init     = %e\n'%merit_init +
                 '   merit_next     = %e\n'%merit_next +
@@ -426,7 +437,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                         '   Correction failed! Resetting step...\n')
                     P.equals(kkt_save)
                 else:
-                    self.radius = max(0.5*self.radius, self.min_radius)
+                    self.radius = max(0.5*P._primal.norm2, self.min_radius)
                     if self.radius == self.min_radius:
                         self.info_file.write(
                             '      Reached minimum radius! ' +
@@ -492,8 +503,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     # if active, decide if we want to increase it
                     self.info_file.write('Trust radius active...\n')
                     if rho > 0.5:
-                        # model is good -- increase radius
-                        self.radius = min(2.*self.radius, self.max_radius)
+                        # model is good enough -- increase radius
+                        self.radius = min(2.*P._primal.norm2, self.max_radius)
                         self.info_file.write(
                             '   Radius increased -> %f\n'%self.radius)
                         min_radius_active = False
