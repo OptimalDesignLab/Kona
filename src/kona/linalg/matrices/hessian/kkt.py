@@ -21,8 +21,8 @@ class ReducedKKTMatrix(BaseHessian):
         \\nabla_x c && -diag(e^s) && 0
         \\end{bmatrix}
         \\begin{bmatrix}
-        \\Delta x \\
-        \\Delta s \\
+        \\Delta x \\\\
+        \\Delta s \\\\
         \\Delta \\lambda
         \\end{bmatrix}
         =

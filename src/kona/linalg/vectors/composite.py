@@ -259,8 +259,6 @@ class ReducedKKTVector(CompositeVector):
             \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\\\
             -\\lambda^T e^s \\\\
             c(x, u) - e^s \\end{bmatrix}
-            =
-            \\begin{bmatrix} 0 \\\\ 0 \\end{bmatrix}
 
         Parameters
         ----------
