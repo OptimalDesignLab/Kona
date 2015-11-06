@@ -14,7 +14,7 @@ class ReducedHessian(BaseHessian):
 
     .. note::
 
-        Insert paper reference here
+        Insert inexact-Hessian paper reference here
 
     Attributes
     ----------

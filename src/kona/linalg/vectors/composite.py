@@ -321,6 +321,30 @@ class CompositePrimalVector(CompositeVector):
 
     def equals_lagrangian_total_gradient(self, at_primal, at_state,
                                          at_dual, at_adjoint, primal_work):
+        """
+        Computes the total primal derivative of the Lagrangian.
+
+        In this case, the primal derivative includes the slack derivative.
+
+        .. math::
+            \\begin{pmatrix}
+            \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\
+            -\\lambda^T e^s \\
+            \\end{pmatrix}
+
+        Parameters
+        ----------
+        at_primal : CompositePrimalVector
+            The design/slack vector at which the derivative is computed.
+        at_state : StateVector
+            State variables at which the derivative is computed.
+        at_dual : DualVector
+            Lagrange multipliers at which the derivative is computed.
+        at_adjoint : StateVector
+            Pre-computed adjoint variables for the Lagrangian.
+        primal_work : PrimalVector
+            Work vector in the primal space.
+        """
         # do some aliasing
         at_design = at_primal._design
         at_slack = at_primal._slack

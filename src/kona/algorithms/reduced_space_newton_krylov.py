@@ -11,10 +11,28 @@ from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
     """
-    Optimization using a Newton-Krylov approach in the reduced space.
+    A reduced-space Newton-Krylov optimization algorithm for PDE-governed
+    unconstrained problems.
 
+    This algorithm uses a novel 2nd order adjoint formulation of the KKT
+    matrix-vector product, in conjunction with a novel Krylov-method called
+    FLECS for non-convex saddle point problems.
+
+    The step produced by FLECS is globalized using a trust region approach.
+
+    .. note::
+
+        Insert inexact-Hessian paper reference here.
+
+    Parameters
+    ----------
+    primal_factory : VectorFactory
+    state_factory : VectorFactory
+    dual_factory : VectorFactory (optional) (unused)
+    optns : dict (optional)
     """
-    def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
+    def __init__(self, primal_factory, state_factory,
+                 dual_factory=None, optns={}):
         # trigger base class initialization
         super(ReducedSpaceNewtonKrylov, self).__init__(
             primal_factory, state_factory, dual_factory, optns

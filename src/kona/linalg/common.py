@@ -37,9 +37,6 @@ def objective_value(at_design, at_state):
     """
     Evaluate the objective value the given Primal and State point.
 
-    If the primal vector is a design/slack composite, this function evaluates
-    the log-barrier term and adds it to the objective function.
-
     Parameters
     ----------
     at_design : PrimalVector

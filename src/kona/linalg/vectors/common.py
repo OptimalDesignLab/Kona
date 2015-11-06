@@ -189,7 +189,7 @@ class KonaVector(object):
     @property
     def norm2(self): # this takes the L2 norm of the vector
         """
-        Computes the L2 norm of the vector.
+        Computes the L2 (Euclidian) norm of the vector.
 
         Returns
         -------
@@ -201,6 +201,14 @@ class KonaVector(object):
 
     @property
     def infty(self):
+        """
+        Computes the infinity norm of the vector
+
+        Returns
+        -------
+        float
+            Infinity norm.
+        """
         return self._data.infty
 
 class PrimalVector(KonaVector):
