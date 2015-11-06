@@ -15,7 +15,34 @@ from kona.algorithms.base_algorithm import OptimizationAlgorithm
 # from kona.algorithms.util.merit import AugmentedLagrangian
 
 class ConstrainedRSNK(OptimizationAlgorithm):
+    """
+    A reduced-space Newton-Krylov optimization algorithm for PDE-governed
+    (in)equality constrained problems.
 
+    This algorithm uses a novel 2nd order adjoint formulation of the KKT
+    matrix-vector product, in conjunction with a novel Krylov-method called
+    FLECS for non-convex saddle point problems.
+
+    Inequality constraints are converted to equality constraints using slack
+    terms of the form :math:`e^s` where `s` are the slack variables.
+
+    The KKT system is then preconditioned using a nested solver operating on
+    an approximation of the KKT matrix-vector product. This approximation is
+    assembled using the PDE preconditioner on 2nd order adjoing solves.
+
+    The step produced by FLECS is globalized using a trust region approach.
+
+    .. note::
+
+        Insert RSNK paper reference here.
+
+    Parameters
+    ----------
+    primal_factory : VectorFactory
+    state_factory : VectorFactory
+    dual_factory : VectorFactory
+    optns : dict (optional)
+    """
     def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
         super(ConstrainedRSNK, self).__init__(
@@ -154,7 +181,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         return ReducedKKTVector(primal, dual)
 
     def solve(self):
-
         self._write_header()
         self.info_file.write(
             '\n' +

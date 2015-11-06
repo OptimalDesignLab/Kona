@@ -12,13 +12,11 @@ from kona.linalg.solvers.util import \
 
 class FLECS(KrylovSolver):
     """
-    NOTE: Nocedal pg 440 (Maratos Effect) to end of chapter.
-
-    FLexible Equality-Constrained Subproblem Krylov iterative methods.
+    FLexible Equality-Constrained Subproblem Krylov iterative solver.
 
     .. note::
 
-        Insert SIAM reference here.
+        Insert FLECS paper reference here.
 
     Attributes
     ----------

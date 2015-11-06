@@ -138,16 +138,39 @@ class CompositeVector(object):
         return total_prod
 
     def exp(self, vector):
+        """
+        Computes the element-wise exponential of the given vector and stores it
+        in place.
+
+        Parameters
+        ----------
+        vector : CompositeVector
+        """
         self._check_type(vector)
         for i in xrange(len(self._vectors)):
             self._vectors[i].exp(vector)
 
     def log(self, vector):
+        """
+        Computes the element-wise natural log of the given vector and stores it
+        in place.
+
+        Parameters
+        ----------
+        vector : CompositeVector
+        """
         self._check_type(vector)
         for i in xrange(len(self._vectors)):
             self._vectors[i].log(vector)
 
     def pow(self, power):
+        """
+        Computes the element-wise power of the in-place vector.
+
+        Parameters
+        ----------
+        power : float
+        """
         for i in xrange(len(self._vectors)):
             self._vectors[i].pow(power)
 
@@ -169,6 +192,13 @@ class CompositeVector(object):
 
     @property
     def infty(self):
+        """
+        Infinity norm of the composite vector.
+
+        Returns
+        -------
+        float : Infinity norm.
+        """
         norms = []
         for i in xrange(len(self._vectors)):
             norms.append(self._vectors[i].infty)

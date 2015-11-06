@@ -10,7 +10,7 @@ from kona.linalg.solvers.util import \
 
 class FGMRES(KrylovSolver):
     """
-    Fexible Generalized Minimum Residual solver.
+    Flexible Generalized Minimum RESidual solver.
     """
 
     def __init__(self, vector_factory, optns={}, dual_factory=None):

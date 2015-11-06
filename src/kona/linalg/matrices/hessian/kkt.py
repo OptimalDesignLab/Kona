@@ -15,15 +15,34 @@ class ReducedKKTMatrix(BaseHessian):
     The KKT system is defined as:
 
     .. math::
-        \\begin{pmatrix}\\frac{d^2\\mathcal{L}}{dx^2} && \\frac{d^2C}{dx
-        d\\lambda} \\ \\frac{d^2C}{d\\lambda dx} && 0 \\end{pmatrix}
-        \\begin{pmatrix} \\delta x \\ \\delta \\lambda \\end{pmatrix} =
-        \\begin{pmatrix} \\nambla_x \\mathcal{L} \\ C \\end{pmatrix}
+        \\begin{pmatrix}
+        \\nabla_x^2 \\mathcal{L} && 0 && \\nabla_x c^T \\
+        0 && -\\lambda^T diag(e^s) && -diag(e^s) \\
+        \\nabla_x c && -diag(e^s) && 0
+        \\end{pmatrix}
+        \\begin{pmatrix}
+        \\Delta x \\
+        \\Delta s \\
+        \\Delta \\lambda
+        \\end{pmatrix}
+        =
+        \\begin{pmatrix}
+        -\\nabla_x \\mathcal{f} - \\lambda^T \\nabla_x c \\
+        \\lambda^T e^s \\
+        - c + e^s
+        \\end{pmatrix}
 
     where :math:`\\mathcal{L}` is the Lagrangian defined as:
 
     .. math::
-        \\mathcal{L}(x, u(x), \lambda) = F(x, u(X)) + \\lambda C(x, u(x))
+        \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) +
+        \\lambda (c(x, u(x)) - e^s)
+
+    Inequality constrained are handled via the slack variables :math:`s` and
+    the slack terms :math:`e^s` enforcing non-negativity. A restrict operator
+    in the user's `UserSolver` implementation sets the slack terms to zero for
+    equality constraints, such that this formulation can be exactly used for
+    equality constrained or mixed constrained problems.
 
     .. note::
         Insert paper reference describing the 2nd order adjoint formulation.

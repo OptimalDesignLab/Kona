@@ -9,6 +9,11 @@ class UserSolver(object):
     different data types. In these cases, the user must redefine the
     mathematical operation methods for these non-standard data types.
 
+    This solver wrapper is not initialized by Kona. The user must initialize it
+    before handing it over to Kona's optimizer. Therefore the intialization
+    implementation details are left up to the user entirely. Below is just an
+    example used by Kona's own test problems.
+
     Parameters
     ----------
     num_primal : int, optional
@@ -651,9 +656,9 @@ class UserSolver(object):
     def current_solution(self, curr_design, curr_state, curr_adj,
                          curr_dual, num_iter):
         """
-        Kona will evaluate this method at every outer optimization iteration.
-        It can be used to print out useful information to monitor the process,
-        or to save design points of the intermediate iterations.
+        Kona will evaluate this method at every outer/nonlinear optimization
+        iteration. It can be used to print out useful information to monitor
+        the process, or to save design points of the intermediate iterations.
 
         The current design vector, current state vector and current adjoint
         vector have been made available to the user via the arguments.
@@ -665,11 +670,16 @@ class UserSolver(object):
         curr_state : BaseVector
             Current state variables.
         curr_adj : BaseVector
-            Currently adjoint variables for the objective.
+            Currently adjoint variables for the Lagrangian.
         curr_dual : BaseVector
-            Current dual vector in storage. (This might be unnecessary!)
+            Current Lagrange multipliers.
         num_iter : int
-            Current outer iteration number.
+            Current outer/nonlinear iteration number.
+
+        Returns
+        -------
+        string (optional)
+            A string that that Kona will write into its info file.
         """
         self.curr_design = curr_design.data
         self.num_iter = num_iter
@@ -682,6 +692,8 @@ class UserSolver(object):
 
         if curr_dual is not None:
             self.curr_dual = curr_dual.data
+
+        return None
 
 class UserSolverIDF(UserSolver):
     """
