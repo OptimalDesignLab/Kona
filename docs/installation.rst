@@ -9,7 +9,8 @@ Kona can be installed just like any other Python module, using the standard
     python setup.py install
 
 Below is a simple example script that performs gradient-based optimization on
-a multidimensional Rosenbrock problem using the L-BFGS algorithm.
+a multidimensional Rosenbrock problem using the reduced-space Newton-Krylov
+(RSNK) algorithm.
 
 .. code:: python
 
