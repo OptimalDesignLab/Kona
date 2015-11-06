@@ -190,10 +190,10 @@ class L2NormPenalty(MeritFunction):
 
     The merit function is defined as:
 
-    ..math::
+    .. math::
 
         \\mathcal(M)(x, s) = f(x, u(x)) +
-        \\frac{1}{2}\\mu (c(x, u(x)) - e^s)^T (c(x, u(x)) - e^s)
+        \\frac{1}{2} \\mu || c(x, u(x)) - e^s ||^2
     """
     def __init__(self, primal_factory, state_factory, dual_factory,
                  optns={}, out_file=sys.stdout):
@@ -290,10 +290,11 @@ class AugmentedLagrangian(L2NormPenalty):
 
     The augmented Lagrangian is defined as:
 
-    ..math::
+    .. math::
 
-        \\hat{\\mathcal{L}}(x, s) = f(x, u(x)) + \\lambda^T (c(x, u(x)) - e^s)
-        + \\frac{1}{2} \\mu (c(x, u(x)) - e^s)^T (c(x, u(x)) - e^s)
+        \\hat{\\mathcal{L}}(x, s) = f(x, u(x)) +
+        \\lambda^T \\left[c(x, u(x)) - e^s\\right]
+        + \\frac{1}{2} \\mu || c(x, u(x)) - e^s ||^2
 
     Unlike the traditional augmented Lagrangian, the Kona version has the
     Lagrange multipliers and the slack variables fozen. This is done to make
