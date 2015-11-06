@@ -1,5 +1,5 @@
-ReducedSpaceNewtonKrylov
-========================
+ReducedSpaceNewtonKrylov (RSNK)
+===============================
 
 .. autoclass:: kona.algorithms.ReducedSpaceNewtonKrylov
     :members:

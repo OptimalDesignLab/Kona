@@ -16,3 +16,5 @@ Package contents
 
     kona.algorithms.OptimizationAlgorithm
     kona.algorithms.ReducedSpaceQuasiNewton
+    kona.algorithms.ReducedSpaceNewtonKrylov
+    kona.algorithms.ConstrainedRSNK
