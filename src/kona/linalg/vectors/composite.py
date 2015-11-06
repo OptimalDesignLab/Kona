@@ -245,20 +245,22 @@ class ReducedKKTVector(CompositeVector):
         """
         Calculates the total derivative of the Lagrangian
         :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda^T (c(x, u) - e^s)` with
-        respect to :math:`\\begin{pmatrix}x & s & \\lambda\\end{pmatrix}^T`.
+        respect to :math:`\\begin{pmatrix}x && s && \\lambda\\end{pmatrix}^T`.
         This total derivative represents the Karush-Kuhn-Tucker (KKT)
         convergence conditions for the optimization problem defined by
-        :math:`\\mathcal{L}(x, s, u(x), \\lambda)`.
+        :math:`\\mathcal{L}(x, s, \\lambda)` where the stat variables
+        :math:`u(x)` are treated as implicit functions of the design.
 
         The full expression of the KKT conditions are:
 
         .. math::
-            \\begin{pmatrix}
-            \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\
-            -\\lambda^T e^s \\
-            c(x, u) - e^s \\end{pmatrix}
+            \\nabla \\mathcal{L} =
+            \\begin{bmatrix}
+            \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\\\
+            -\\lambda^T e^s \\\\
+            c(x, u) - e^s \\end{bmatrix}
             =
-            \\begin{pmatrix} 0 \\ 0\\end{pmatrix}
+            \\begin{bmatrix} 0 \\\\ 0 \\end{bmatrix}
 
         Parameters
         ----------
@@ -327,10 +329,11 @@ class CompositePrimalVector(CompositeVector):
         In this case, the primal derivative includes the slack derivative.
 
         .. math::
-            \\begin{pmatrix}
-            \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\
-            -\\lambda^T e^s \\
-            \\end{pmatrix}
+            \\nabla_{primal} \\mathcal{L} =
+            \\begin{bmatrix}
+            \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\\\
+            -\\lambda^T e^s
+            \\end{bmatrix}
 
         Parameters
         ----------

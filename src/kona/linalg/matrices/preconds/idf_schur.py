@@ -15,7 +15,7 @@ class ReducedSchurPreconditioner(BaseHessian):
     The preconditioner solves a system defined by the matrix:
 
     .. math::
-        \\begin{pmatrix} I & A^T \\ A & 0 \\end{pmatrix}
+        \\begin{bmatrix} I && A^T \\\\ A && 0 \\end{bmatrix}
 
     This solution is used as the preconditioner to the complete KKT system.
 

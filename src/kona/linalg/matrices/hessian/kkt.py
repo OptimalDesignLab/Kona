@@ -15,28 +15,28 @@ class ReducedKKTMatrix(BaseHessian):
     The KKT system is defined as:
 
     .. math::
-        \\begin{pmatrix}
-        \\nabla_x^2 \\mathcal{L} && 0 && \\nabla_x c^T \\
-        0 && -\\lambda^T diag(e^s) && -diag(e^s) \\
+        \\begin{bmatrix}
+        \\nabla_x^2 \\mathcal{L} && 0 && \\nabla_x c^T \\\\
+        0 && -\\lambda^T diag(e^s) && -diag(e^s) \\\\
         \\nabla_x c && -diag(e^s) && 0
-        \\end{pmatrix}
-        \\begin{pmatrix}
+        \\end{bmatrix}
+        \\begin{bmatrix}
         \\Delta x \\
         \\Delta s \\
         \\Delta \\lambda
-        \\end{pmatrix}
+        \\end{bmatrix}
         =
-        \\begin{pmatrix}
-        -\\nabla_x \\mathcal{f} - \\lambda^T \\nabla_x c \\
-        \\lambda^T e^s \\
+        \\begin{bmatrix}
+        -\\nabla_x \\mathcal{f} - \\lambda^T \\nabla_x c \\\\
+        \\lambda^T e^s \\\\
         - c + e^s
-        \\end{pmatrix}
+        \\end{bmatrix}
 
     where :math:`\\mathcal{L}` is the Lagrangian defined as:
 
     .. math::
         \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) +
-        \\lambda (c(x, u(x)) - e^s)
+        \\lambda^T \\left[c(x, u(x)) - e^s\\right]
 
     Inequality constrained are handled via the slack variables :math:`s` and
     the slack terms :math:`e^s` enforcing non-negativity. A restrict operator
