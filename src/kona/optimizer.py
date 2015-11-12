@@ -22,9 +22,9 @@ class Optimizer(object):
     """
     def __init__(self, solver, algorithm, optns=None):
         # complain if solver or algorithm types are wrong
-        if not isinstance(solver, UserSolver):
-            raise TypeError('Kona.Optimizer() >> ' +
-                            'Unknown solver type!')
+        # if not isinstance(solver, UserSolver):
+        #     raise TypeError('Kona.Optimizer() >> ' +
+        #                     'Unknown solver type!')
         # initialize optimization memory
         self._memory = KonaMemory(solver)
         # set default file handles

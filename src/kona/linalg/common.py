@@ -64,8 +64,8 @@ def objective_value(at_design, at_state):
     elif isinstance(result, float):
         return result
     else:
-        raise TypeError('objective_value() >> solver.eval_obj() returned ' +
-                        'unrecognized data type')
+        raise TypeError('objective_value() >> solver.eval_obj() expected 2-tuple or float ' +
+                        'but was given %s'%type(result))
 
 def factor_linear_system(at_design, at_state):
     """
