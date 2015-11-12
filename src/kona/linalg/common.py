@@ -30,7 +30,7 @@ def current_solution(curr_design, curr_state=None, curr_adj=None,
     if curr_dual is not None:
         curr_dual = curr_dual._data
 
-    solver.current_solution(
+    return solver.current_solution(
         curr_design, curr_state, curr_adj, curr_dual, num_iter)
 
 def objective_value(at_design, at_state):
@@ -40,7 +40,7 @@ def objective_value(at_design, at_state):
     Parameters
     ----------
     at_design : PrimalVector
-        Current primal point.
+        Current design point.
     at_state : StateVector
         Current state point.
 
@@ -49,6 +49,7 @@ def objective_value(at_design, at_state):
     float
         Objective function value.
     """
+
     solver = at_design._memory.solver
 
     if solver != at_state._memory.solver:

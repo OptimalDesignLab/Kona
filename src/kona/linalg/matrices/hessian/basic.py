@@ -22,13 +22,12 @@ class BaseHessian(object):
     def __init__(self, vector_factory, optns={}):
         self.vec_fac = vector_factory
         self.out_file = get_opt(optns, sys.stdout, 'out_file')
-        try:
-            _memory = self.vec_fac._memory
-        except:
-            _memory = self.vec_fac[0]._memory
-        self.out_file = _memory.open_file(self.out_file)
         if isinstance(self.out_file, str):
-            self.out_file = open(self.out_file, 'w')
+            try:
+                _memory = self.vec_fac._memory
+            except Exception:
+                _memory = self.vec_fac[0]._memory
+            self.out_file = _memory.open_file(self.out_file)
 
     def product(self, in_vec, out_vec):
         """

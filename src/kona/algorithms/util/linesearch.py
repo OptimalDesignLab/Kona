@@ -26,7 +26,7 @@ def quadratic_step(alpha_low, alpha_hi, f_low, f_hi,
         Function value at upper bound.
     df_low : float
         Function derivative at lower bound.
-    out : file object (optional)
+    out : file object, optional
         File/data stream to write outputs.
 
     Returns

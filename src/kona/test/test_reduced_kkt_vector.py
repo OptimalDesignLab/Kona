@@ -140,7 +140,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         err = self.pv2._data.data - 10*np.ones(10)
         self.assertEqual(np.linalg.norm(err), 0)
 
-        err = self.dv2._data.data - 0*np.ones(5)
+        err = self.dv2._data.data - (np.ones(5))
         self.assertEqual(np.linalg.norm(err), 0)
 
 

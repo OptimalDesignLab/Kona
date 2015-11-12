@@ -14,7 +14,7 @@ class ReducedHessian(BaseHessian):
 
     .. note::
 
-        Insert paper reference here
+        Insert inexact-Hessian paper reference here
 
     Attributes
     ----------
@@ -250,7 +250,7 @@ class ReducedHessian(BaseHessian):
             Right hand side vector for the system.
         solution : PrimalVector
             Solution of the system.
-        rel_tol : float (optional)
+        rel_tol : float, optional
             Relative tolerance for the krylov solver.
         """
         # make sure we have a krylov solver

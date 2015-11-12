@@ -78,6 +78,7 @@ defaults = {
     },
 
     'aug_lag' : {
+        'barrier_init' : 1000.0,
         'mu_init' : 10.0,
         'mu_pow' : 1.0,
         'mu_max' : 1e5,

@@ -1,4 +1,4 @@
-from base_vectors import BaseAllocator
+from kona.user import BaseAllocator
 
 class UserSolver(object):
     """Base class for Kona objective functions, designed to be a template for
@@ -8,6 +8,11 @@ class UserSolver(object):
     arrays and operators. However, attributes of the derived classes can have
     different data types. In these cases, the user must redefine the
     mathematical operation methods for these non-standard data types.
+
+    This solver wrapper is not initialized by Kona. The user must initialize it
+    before handing it over to Kona's optimizer. Therefore the intialization
+    implementation details are left up to the user entirely. Below is just an
+    example used by Kona's own test problems.
 
     Parameters
     ----------
@@ -651,9 +656,9 @@ class UserSolver(object):
     def current_solution(self, curr_design, curr_state, curr_adj,
                          curr_dual, num_iter):
         """
-        Kona will evaluate this method at every outer optimization iteration.
-        It can be used to print out useful information to monitor the process,
-        or to save design points of the intermediate iterations.
+        Kona will evaluate this method at every outer/nonlinear optimization
+        iteration. It can be used to print out useful information to monitor
+        the process, or to save design points of the intermediate iterations.
 
         The current design vector, current state vector and current adjoint
         vector have been made available to the user via the arguments.
@@ -665,11 +670,16 @@ class UserSolver(object):
         curr_state : BaseVector
             Current state variables.
         curr_adj : BaseVector
-            Currently adjoint variables for the objective.
+            Currently adjoint variables for the Lagrangian.
         curr_dual : BaseVector
-            Current dual vector in storage. (This might be unnecessary!)
+            Current Lagrange multipliers.
         num_iter : int
-            Current outer iteration number.
+            Current outer/nonlinear iteration number.
+
+        Returns
+        -------
+        string
+            A string that that Kona will write into its info file.
         """
         self.curr_design = curr_design.data
         self.num_iter = num_iter
@@ -683,6 +693,8 @@ class UserSolver(object):
         if curr_dual is not None:
             self.curr_dual = curr_dual.data
 
+        return None
+
 class UserSolverIDF(UserSolver):
     """
     A modified base class for multidisciplinary problems that adopt the
@@ -695,7 +707,7 @@ class UserSolverIDF(UserSolver):
         Size of the design space, NOT including target state variables
     num_state : int
         Number of state variables
-    num_real_ceq : int (optional)
+    num_real_ceq : int
         Number of equality constraints, NOT including IDF constraints
 
     Attributes

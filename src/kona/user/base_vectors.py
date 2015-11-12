@@ -6,6 +6,12 @@ class BaseVector(object):
 
     Any user defined data container must implement all the methods below.
 
+    These vectors are initialized by the user-created `BaseAllocator` object.
+    Therefore, the initialization implementation does not need to exactly
+    follow the example below. The user is free to initialize these vector
+    objects any which way they like, as long as it is in sync with the
+    `BaseAllocator` implementation.
+
     Parameters
     ----------
     size: int
@@ -123,9 +129,24 @@ class BaseVector(object):
             Result of the operation.
         """
         if len(self.data) == 0:
-            return 0
+            return 0.
         else:
             return np.inner(self.data, vector.data)
+
+    @property
+    def infty(self):
+        """
+        Infinity norm of the vector.
+
+        Returns
+        -------
+        float
+            Infinity norm.
+        """
+        if len(self.data) == 0:
+            return 0.
+        else:
+            return max(abs(self.data))
 
     def exp(self, vector):
         """
@@ -142,12 +163,28 @@ class BaseVector(object):
         """
         Calculate element-wise natural log operation on the vector.
 
+        Kona will never call this on zero-valued vectors. No special handling
+        of zero values necessary.
+
         Parameters
         ----------
         vector : BaseVector
             Incoming vector for in-place operation.
         """
         self.data = np.log(vector.data)
+
+    def pow(self, power):
+        """
+        Calculate element-wise power operation on the vector.
+
+        Kona will never call a negative power on zero-valued vectors. No
+        special handling of zero values necessary.
+
+        Parameters
+        ----------
+        power : float
+        """
+        self.data = self.data**power
 
 class BaseAllocator(object):
     """
@@ -178,18 +215,63 @@ class BaseAllocator(object):
         self.num_dual = num_dual
 
     def alloc_primal(self, count):
+        """
+        Initialize as many instances of the "primal" vector space object as
+        Kona requested.
+
+        Parameters
+        ----------
+        count : int
+            Number of vectors requested in the primal-space.
+
+        Returns
+        -------
+        list
+            A standard Python array containing the reuqested number of
+            instances of the user's primal-space `BaseVector` implementation.
+        """
         out = []
         for i in xrange(count):
             out.append(BaseVector(self.num_primal))
         return out
 
     def alloc_state(self, count):
+        """
+        Initialize as many instances of the "state" vector space object as
+        Kona requested.
+
+        Parameters
+        ----------
+        count : int
+            Number of vectors requested in the state-space.
+
+        Returns
+        -------
+        list
+            A standard Python array containing the reuqested number of
+            instances of the user's state-space `BaseVector` implementation.
+        """
         out = []
         for i in xrange(count):
             out.append(BaseVector(self.num_state))
         return out
 
     def alloc_dual(self, count):
+        """
+        Initialize as many instances of the "dual" vector space object as
+        Kona requested.
+
+        Parameters
+        ----------
+        count : int
+            Number of vectors requested in the dual-space.
+
+        Returns
+        -------
+        list
+            A standard Python array containing the reuqested number of
+            instances of the user's dual-space `BaseVector` implementation.
+        """
         out = []
         for i in xrange(count):
             out.append(BaseVector(self.num_dual))

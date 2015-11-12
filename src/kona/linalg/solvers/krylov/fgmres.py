@@ -1,6 +1,8 @@
 import numpy
 
 from kona.options import get_opt
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
     EPS, write_header, write_history, \
@@ -8,10 +10,10 @@ from kona.linalg.solvers.util import \
 
 class FGMRES(KrylovSolver):
     """
-    Fexible Generalized Minimum Residual solver.
+    Flexible Generalized Minimum RESidual solver.
     """
 
-    def __init__(self, vector_factory, optns={}):
+    def __init__(self, vector_factory, optns={}, dual_factory=None):
         super(FGMRES, self).__init__(vector_factory, optns)
 
         # get relative tolerance
@@ -19,6 +21,19 @@ class FGMRES(KrylovSolver):
 
         # put in memory request
         self.vec_fac.request_num_vectors(2*self.max_iter + 1)
+        self.dual_fac = dual_factory
+        if self.dual_fac is not None:
+            self.dual_fac.request_num_vectors(4*self.max_iter + 2)
+
+    def _generate_vector(self):
+        if self.dual_fac is None:
+            return self.vec_fac.generate()
+        else:
+            design = self.vec_fac.generate()
+            slack = self.dual_fac.generate()
+            primal = CompositePrimalVector(design, slack)
+            dual = self.dual_fac.generate()
+            return ReducedKKTVector(primal, dual)
 
     def solve(self, mat_vec, b, x, precond):
         # validate solver options
@@ -38,7 +53,7 @@ class FGMRES(KrylovSolver):
         norm0 = b.norm2
 
         # calculate and store the initial residual
-        W.append(self.vec_fac.generate())
+        W.append(self._generate_vector())
         mat_vec(x, W[0])
         W[0].minus(b)
         beta = W[0].norm2
@@ -76,11 +91,11 @@ class FGMRES(KrylovSolver):
             iters += 1
 
             # precondition W[i] and store result in Z[i]
-            Z.append(self.vec_fac.generate())
+            Z.append(self._generate_vector())
             precond(W[i], Z[i])
 
             # add to krylov subspace
-            W.append(self.vec_fac.generate())
+            W.append(self._generate_vector())
             mat_vec(Z[i], W[i+1])
 
             # try modified Gram-Schmidt orthogonalization
@@ -124,7 +139,7 @@ class FGMRES(KrylovSolver):
             if abs(true_res - beta) > 0.01*self.rel_tol*norm0:
                 self.out_file.write(
                     '# WARNING in FGMRES: true residual norm and ' +
-                    'calculated residual norm do not agree.\n' + 
+                    'calculated residual norm do not agree.\n' +
                     '# (res - beta)/res0 = %e\n'%((true_res - beta)/norm0)
                 )
             return iters, true_res

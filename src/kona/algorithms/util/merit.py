@@ -1,9 +1,9 @@
 import sys
 
 from kona.linalg import objective_value
-from kona.linalg.vectors.composite import DesignSlackComposite
 from kona.linalg.solvers.util import EPS
 from kona.linalg.matrices.common import dRdX
+from kona.linalg.vectors.composite import CompositePrimalVector
 
 class MeritFunction(object):
     """
@@ -48,7 +48,7 @@ class MeritFunction(object):
             Initial primal vector.
         u_start : StateVector
             State vector corresponding to ``x_start``.
-        p_dot_grad : float (optional)
+        p_dot_grad : float, optional
             Value of :math:`\\langle p, \\nabla f \\rangle` at ``x_start``.
         """
         raise NotImplementedError # pragma: no cover
@@ -183,83 +183,160 @@ class ObjectiveMerit(MeritFunction):
 
         return self.p_dot_grad
 
-class AugmentedLagrangian(MeritFunction):
+class L2NormPenalty(MeritFunction):
+    """
+    A merit function with L2 constraint norm pernalty term, used for
+    constrained RSNK problems.
 
+    The merit function is defined as:
+
+    .. math::
+
+        \\mathcal(M)(x, s) = f(x, u(x)) +
+        \\frac{1}{2} \\mu || c(x, u(x)) - e^s ||^2
+    """
     def __init__(self, primal_factory, state_factory, dual_factory,
                  optns={}, out_file=sys.stdout):
-        super(AugmentedLagrangian, self).__init__(
+        # trigger the base class initialization
+        super(L2NormPenalty, self).__init__(
             primal_factory, state_factory, optns, out_file)
+
+        # store a pointer to the dual factory
         self.dual_factory = dual_factory
-        self.primal_factory.request_num_vectors(2)
+
+        # request all necessary vectors
+        self.primal_factory.request_num_vectors(1)
         self.state_factory.request_num_vectors(1)
-        self.dual_factory.request_num_vectors(5)
+        self.dual_factory.request_num_vectors(3)
 
     def reset(self, kkt_start, u_start, search_dir, p_dot_grad, mu):
         # if the internal vectors are not allocated, do it now
         if not self._allocated:
-            self.x_start = self.primal_factory.generate()
             self.x_trial = self.primal_factory.generate()
-            if isinstance(kkt_start._primal, DesignSlackComposite):
-                self.slack_vars = True
-                self.slack_start = self.dual_factory.generate()
-                self.slack_trial = self.dual_factory.generate()
-            else:
-                self.slack_vars = False
-                self.slack_start = None
-                self.slack_trial = None
             self.u_trial = self.state_factory.generate()
-            self.dual_frozen = self.dual_factory.generate()
             self.dual_work = self.dual_factory.generate()
+            self.slack_trial = self.dual_factory.generate()
             self.slack_work = self.dual_factory.generate()
             self._allocated = True
+
         # store information for the new point the merit function is reset at
-        self.search_dir = search_dir
-        if self.slack_vars:
-            self.x_start.equals(kkt_start._primal._design)
-            self.slack_start.equals(kkt_start._primal._slack)
-            self.slack_trial.equals(self.slack_start)
-        else:
-            self.x_start.equals(kkt_start._primal)
-        self.x_trial.equals(self.x_start)
-        self.u_trial.equals(u_start)
-        self.dual_frozen.equals(kkt_start._dual)
         self.p_dot_grad = p_dot_grad
         self.mu = mu
-        # evaluate the function value
+        self.u_start = u_start
+        if isinstance(kkt_start._primal, CompositePrimalVector):
+            self.x_start = kkt_start._primal._design
+            self.design_step = search_dir._primal._design
+            self.slack_start = kkt_start._primal._slack
+            self.slack_step = search_dir._primal._slack
+        else:
+            self.x_start = kkt_start._primal
+            self.design_step = search_dir._primal
+            self.slack_start = None
+            self.slack_step = None
+
+        # compute trial point
+        self.x_trial.equals(self.x_start)
+        self.u_trial.equals(self.u_start)
+        if self.slack_start is not None:
+            self.slack_trial.exp(self.slack_start)
+            self.slack_trial.restrict()
+        else:
+            self.slack_trial = None
+
+        # evaluate constraints at the trial point
         self.dual_work.equals_constraints(self.x_trial, self.u_trial)
-        if self.slack_vars:
+        if self.slack_trial is not None:
             self.slack_work.exp(self.slack_trial)
             self.slack_work.times(-1.)
             self.slack_work.restrict()
             self.dual_work.plus(self.slack_work)
+
+        # evaluate merit function value
         obj_val = objective_value(self.x_trial, self.u_trial)
-        lambda_cnstr = self.dual_frozen.inner(self.dual_work)
         penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)
-        self.func_val = obj_val + lambda_cnstr + penalty_term
+        self.func_val = obj_val + penalty_term
         self.last_func_alpha = 0.0
 
     def eval_func(self, alpha):
         if abs(alpha - self.last_func_alpha) > EPS:
-            # update step with alpha
-            if self.slack_trial is not None:
-                self.x_trial.equals_ax_p_by(
-                    1., self.x_start, alpha, self.search_dir._primal._design)
-                self.slack_trial.equals_ax_p_by(
-                    1., self.slack_start, alpha, self.search_dir._primal._slack)
-            else:
-                self.x_trial.equals_ax_p_by(
-                    1., self.x_trial, alpha, self.search_dir._primal)
+            # compute trial point
+            self.x_trial.equals_ax_p_by(
+                1., self.x_start, alpha, self.design_step)
             self.u_trial.equals_primal_solution(self.x_trial)
+            if self.slack_trial is not None:
+                self.slack_trial.equals_ax_p_by(
+                    1., self.slack_start, alpha, self.slack_step)
+                self.slack_trial.restrict()
+
+            # evaluate constraints at the trial point
             self.dual_work.equals_constraints(self.x_trial, self.u_trial)
-            if self.slack_vars:
+            if self.slack_trial is not None:
                 self.slack_work.exp(self.slack_trial)
                 self.slack_work.times(-1.)
                 self.slack_work.restrict()
                 self.dual_work.plus(self.slack_work)
+
+            # evaluate merit function value
             obj_val = objective_value(self.x_trial, self.u_trial)
-            lambda_cnstr = self.dual_frozen.inner(self.dual_work)
             penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)
-            self.func_val = obj_val + lambda_cnstr + penalty_term
+            self.func_val = obj_val + penalty_term
             self.last_func_alpha = alpha
+
+        return self.func_val
+
+class AugmentedLagrangian(L2NormPenalty):
+    """
+    An augmented Lagrangian merit function for constrained RSNK problems.
+
+    The augmented Lagrangian is defined as:
+
+    .. math::
+
+        \\hat{\\mathcal{L}}(x, s) = f(x, u(x)) +
+        \\lambda^T \\left[c(x, u(x)) - e^s\\right]
+        + \\frac{1}{2} \\mu || c(x, u(x)) - e^s ||^2
+
+    Unlike the traditional augmented Lagrangian, the Kona version has the
+    Lagrange multipliers and the slack variables fozen. This is done to make
+    the merit function comparable to the predicted decrease produced by the
+    FLECS solver.
+    """
+    def __init__(self, primal_factory, state_factory, dual_factory,
+                 optns={}, out_file=sys.stdout):
+        # initialize the parent merit function
+        super(AugmentedLagrangian, self).__init__(
+            primal_factory, state_factory, dual_factory, optns, out_file)
+
+        # request an additional dual vector
+        self.dual_factory.request_num_vectors(1)
+
+        # child allocation flag
+        self._child_allocated = False
+
+    def reset(self, kkt_start, u_start, search_dir, p_dot_grad, mu):
+        # allocate the parent merit function
+        super(AugmentedLagrangian, self).reset(
+            kkt_start, u_start, search_dir, p_dot_grad, mu)
+
+        # if the internal vectors are not allocated, do it now
+        if not self._child_allocated:
+            self.dual_frozen = self.dual_factory.generate()
+            self._child_allocated = True
+
+        # save the frozen Lagrange multipliers
+        self.dual_frozen.equals(kkt_start._dual)
+
+        # add the multiplier term on top of the parent merit value
+        lambda_cnstr = self.dual_frozen.inner(self.dual_work)
+        self.func_val += lambda_cnstr
+
+    def eval_func(self, alpha):
+        # evaluate the parent merit function value
+        self.func_val = super(AugmentedLagrangian, self).eval_func(alpha)
+
+        # add the multiplier term on top of the parent merit value
+        if abs(alpha - self.last_func_alpha) > EPS:
+            lambda_cnstr = self.dual_frozen.inner(self.dual_work)
+            self.func_val += lambda_cnstr
 
         return self.func_val

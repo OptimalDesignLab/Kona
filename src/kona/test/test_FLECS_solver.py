@@ -3,7 +3,8 @@ import unittest
 import numpy
 
 from kona.linalg.solvers.krylov import FLECS
-from kona.linalg.vectors.composite import ReducedKKTVector, DesignSlackComposite
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.user import UserSolver
 from kona.linalg.memory import KonaMemory
@@ -24,29 +25,31 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.krylov = FLECS([self.pf, self.df], optns)
         self.km.allocate_memory()
 
-        self.x_prim = self.pf.generate()
-        self.x_slack = self.df.generate()
+        x_design = self.pf.generate()
+        x_slack = self.df.generate()
+        self.x_prim = CompositePrimalVector(x_design, x_slack)
         self.x_dual = self.df.generate()
         self.x = ReducedKKTVector(
-            DesignSlackComposite(self.x_prim, self.x_slack), self.x_dual)
-        self.b_prim = self.pf.generate()
-        self.b_slack = self.df.generate()
+            self.x_prim, self.x_dual)
+        b_design = self.pf.generate()
+        b_slack = self.df.generate()
+        self.b_prim = CompositePrimalVector(b_design, b_slack)
         self.b_dual = self.df.generate()
         self.b = ReducedKKTVector(
-            DesignSlackComposite(self.b_prim, self.b_slack), self.b_dual)
+            self.b_prim, self.b_dual)
         self.A = numpy.array([[4, 3, 0, 1],
                               [3, 4, 0, 2],
-                              [0, 0, 3, 4],
-                              [1, 2, 4, 0]])
+                              [0, 0, 3, 1],
+                              [1, 2, 1, 0]])
 
         self.precond = IdentityMatrix()
 
     def mat_vec(self, in_vec, out_vec):
-        in_prim = in_vec._primal._design._data.data
+        in_design = in_vec._primal._design._data.data
         in_slack = in_vec._primal._slack._data.data
         in_dual = in_vec._dual._data.data
         tmp = numpy.zeros(4)
-        tmp[0:2] = in_prim[:]
+        tmp[0:2] = in_design[:]
         tmp[2] = in_slack[:]
         tmp[3] = in_dual[:]
         out_data = self.A.dot(tmp)
@@ -83,7 +86,6 @@ class FLECSSolverTestCase(unittest.TestCase):
         rhs[2] = self.b._primal._slack._data.data[:]
         rhs[3] = self.b._dual._data.data[:]
         expected = numpy.linalg.solve(self.A, rhs)
-        expected[2] = 0.
         # compare actual result to expected
         total_data = numpy.zeros(4)
         total_data[0:2] = self.x._primal._design._data.data[:]
@@ -98,11 +100,14 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.x.equals(0)
         self.b.equals(1)
         # solve the system with FLECS
-        self.krylov.radius = 0.1
+        self.krylov.radius = 1e-3
         self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
         # compare actual result to expected
         exp_norm = self.krylov.radius
         actual_norm = self.x._primal.norm2
+        print exp_norm
+        print actual_norm
+        print self.krylov.trust_active
         self.assertTrue(
             (exp_norm - actual_norm) <= 1e-1 and self.krylov.trust_active)
 
