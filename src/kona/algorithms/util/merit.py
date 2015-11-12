@@ -48,7 +48,7 @@ class MeritFunction(object):
             Initial primal vector.
         u_start : StateVector
             State vector corresponding to ``x_start``.
-        p_dot_grad : float (optional)
+        p_dot_grad : float, optional
             Value of :math:`\\langle p, \\nabla f \\rangle` at ``x_start``.
         """
         raise NotImplementedError # pragma: no cover

@@ -248,8 +248,9 @@ class ReducedKKTMatrix(BaseHessian):
 
         # perform the adjoint solution
         self.w_adj.equals(0.0)
-        # rel_tol = self.product_tol*self.product_fac/self.state_work[0].norm2
-        rel_tol = 1e-8
+        rel_tol = self.product_tol * \
+            self.product_fac/max(self.state_work[0].norm2, EPS)
+        # rel_tol = 1e-12
         self._linear_solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
 
         # find the adjoint perturbation by solving the linearized dual equation
@@ -287,8 +288,9 @@ class ReducedKKTMatrix(BaseHessian):
 
         # perform the adjoint solution
         self.lambda_adj.equals(0.0)
-        # rel_tol = self.product_tol*self.product_fac/self.state_work[0].norm2
-        rel_tol = 1e-8
+        rel_tol = self.product_tol * \
+            self.product_fac/max(self.state_work[0].norm2, EPS)
+        # rel_tol = 1e-12
         self._adjoint_solve(
             self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
 

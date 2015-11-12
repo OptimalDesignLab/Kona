@@ -56,7 +56,7 @@ class Filter(object):
 
         Parameters
         ----------
-        fout : file object (optional)
+        fout : file object, optional
         """
         fout.write('Filter contents:\n')
         for index, point in enumerate(self.point_list):

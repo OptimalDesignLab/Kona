@@ -28,8 +28,8 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
     ----------
     primal_factory : VectorFactory
     state_factory : VectorFactory
-    dual_factory : VectorFactory (optional) (unused)
-    optns : dict (optional)
+    dual_factory : VectorFactory, optional
+    optns : dict, optional
     """
     def __init__(self, primal_factory, state_factory,
                  dual_factory=None, optns={}):

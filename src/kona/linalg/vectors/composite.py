@@ -1,6 +1,6 @@
 import numpy as np
 
-from kona.linalg.vectors.common import PrimalVector, DualVector
+from kona.linalg.vectors.common import KonaVector, PrimalVector, DualVector
 
 class CompositeVector(object):
     """
@@ -239,7 +239,7 @@ class ReducedKKTVector(CompositeVector):
         Sets the KKT vector to the initial guess, using the initial design.
         """
         self._primal.equals_init_design()
-        self._dual.equals(-1.0)
+        self._dual.equals(1.0)
 
     def equals_KKT_conditions(self, x, state, adjoint, primal_work, dual_work):
         """

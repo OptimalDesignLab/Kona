@@ -678,7 +678,7 @@ class UserSolver(object):
 
         Returns
         -------
-        string (optional)
+        string
             A string that that Kona will write into its info file.
         """
         self.curr_design = curr_design.data
@@ -707,7 +707,7 @@ class UserSolverIDF(UserSolver):
         Size of the design space, NOT including target state variables
     num_state : int
         Number of state variables
-    num_real_ceq : int (optional)
+    num_real_ceq : int
         Number of equality constraints, NOT including IDF constraints
 
     Attributes

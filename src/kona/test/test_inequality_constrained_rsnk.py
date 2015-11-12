@@ -89,14 +89,14 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             # 'globalization' : None,
 
             'trust' : {
-                'init_radius' : 1.0,
-                'max_radius' : 10.0,
+                'init_radius' : 0.5,
+                'max_radius' : 20.0,
                 'min_radius' : 1e-4,
             },
 
             'aug_lag' : {
                 'mu_init' : 0.1,
-                'mu_pow' : 0.5,
+                'mu_pow' : 0.1,
                 'mu_max' : 1e5,
             },
 

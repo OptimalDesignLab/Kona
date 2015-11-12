@@ -3,9 +3,8 @@ import numpy as np
 try:
     from scipy.linalg import solve_triangular
     scipy_exists = True
-except:
+except Exception:
     scipy_exists = False
-
 
 EPS = np.finfo(float).eps
 
@@ -145,6 +144,81 @@ def generate_givens(dx, dy):
     dy = 0.0
 
     return dx, dy, s, c
+
+def lanczos(fwd_mat_vec, Q, q_work,
+            rev_mat_vec, P, p_work,
+            Q_init=False):
+    """
+    Uses the bi-orthogonal Lanczos algorithm to bidiagonalize a matrix.
+
+    Since this is based on the Arnoldi's method, we only require a
+    matrix-vector product for the matrix of interest, and not the full explicit
+    matrix itself.
+
+    Parameters
+    ----------
+    fwd_mat_vec : function
+        Forward matrix-vector product for the matrix of interest
+    Q : List[KonaVector]
+        Pre-allocated subspace array containing KonaVectors matching the
+        vector-type of the forward product
+    q_work : KonaVector
+        Work vector matching the KonaVector-type of the forward product
+    rev_mat_vec : function
+        Reverse (transpose) matrix-vector product for the matrix of interest
+    P : List[KonaVector]
+        Pre-allocated subspace array containing KonaVectors matching the
+        vector-type of the reverse (transpose) product
+    p_work : KonaVector
+        Work vector matching the KonaVector-type of the reverse product
+    Q_init : boolean
+        If `True`, start the V-subspace with the Q[0] already stored.
+        If 'False', generate a vector of ones in Q[0] to start with.
+
+    Returns
+    -------
+    B : array_like
+        Truncated bi-diagonalization of the matrix
+    """
+    # do a bunch of checks and raise errors
+    if len(P) < 1:
+        raise ValueError('Subspace container P too small!')
+    if len(Q) < 1:
+        raise ValueError('Subspace container Q too small!')
+    if len(P) != len(Q):
+        raise ValueError('Subspace containers have different sizes!')
+
+    # size up the problem
+    subspace_size = len(P)
+    B = np.zeros((subspace_size, subspace_size))
+
+    # initialize the first subspace vector for V
+    if not Q_init:
+        Q[0].equals(1.0)
+        Q[0].divide_by(Q[0].norm2)
+
+    for j in xrange(subspace_size):
+        if j > 0:
+            p_work.equals(P[j-1])
+            p_work.times(-B[j-1, j])
+        else:
+            p_work.equals(0.0)
+        fwd_mat_vec(Q[j], P[j])
+        P[j].plus(p_work)
+        B[j, j] = P[j].norm2 # alpha
+        P[j].divide_by(B[j, j])
+
+        if j == subspace_size-1:
+            # break here to prevent the calculation of Q[n+1]
+            break
+
+        rev_mat_vec(P[j], Q[j+1])
+        H = np.zeros((j+2, j+1))
+        mod_gram_schmidt(j, H, Q)
+        B[j, j+1] = Q[j+1].norm2 # beta
+        Q[j+1].divide_by(B[j, j+1])
+
+    return B
 
 def solve_tri(A, b, lower=False):
     """

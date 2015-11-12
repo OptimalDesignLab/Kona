@@ -215,29 +215,33 @@ class FLECS(KrylovSolver):
 
         lamb = 0.0
         radius_aug = self.radius
+        self.trust_active = False
         try:
             # compute the transformation to apply trust-radius directly
             rhs_tmp = numpy.copy(rhs_aug)
             # NOTE: Numpy Cholesky always returns a lower triangular matrix
             # Since UTU is presumed upper triangular, we transpose it here
-            UTU = numpy.linalg.cholesky(ZtZ_prim_r).T
-            rhs_aug = solve_tri(UTU.T, rhs_tmp, lower=True)
+            L = numpy.linalg.cholesky(ZtZ_prim_r)
+            rhs_aug = solve_tri(L, rhs_tmp, lower=True)
+            # print numpy.inner(L, L.T) - ZtZ_prim_r
+            # print ' '
 
             for j in xrange(self.iters):
                 rhs_tmp[:] = Hess_aug[:,j]
-                vec_tmp = solve_tri(UTU.T, rhs_tmp, lower=True)
+                vec_tmp = solve_tri(L, rhs_tmp, lower=True)
                 Hess_aug[:, j] = vec_tmp[:]
 
             for j in xrange(self.iters):
                 rhs_tmp[:] = Hess_aug[j,:]
-                vec_tmp = solve_tri(UTU.T, rhs_tmp, lower=True)
+                vec_tmp = solve_tri(L, rhs_tmp, lower=True)
                 Hess_aug[j,:] = vec_tmp[:]
 
             vec_tmp, lamb, self.pred_aug = solve_trust_reduced(
                 Hess_aug, rhs_aug, radius_aug)
-            self.y_aug = solve_tri(UTU, vec_tmp, lower=False)
+            self.y_aug = solve_tri(L.T, vec_tmp, lower=False)
 
         except numpy.linalg.LinAlgError:
+            # print 'Cholesky failed!'
             # if Cholesky factorization fails, compute a conservative radius
             eig_vals, _ = eigen_decomp(ZtZ_prim_r)
             radius_aug = self.radius/sqrt(eig_vals[self.iters-1])

@@ -100,11 +100,14 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.x.equals(0)
         self.b.equals(1)
         # solve the system with FLECS
-        self.krylov.radius = 0.1
+        self.krylov.radius = 1e-3
         self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
         # compare actual result to expected
         exp_norm = self.krylov.radius
         actual_norm = self.x._primal.norm2
+        print exp_norm
+        print actual_norm
+        print self.krylov.trust_active
         self.assertTrue(
             (exp_norm - actual_norm) <= 1e-1 and self.krylov.trust_active)
 

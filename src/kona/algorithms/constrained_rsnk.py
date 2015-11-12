@@ -41,7 +41,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
     primal_factory : VectorFactory
     state_factory : VectorFactory
     dual_factory : VectorFactory
-    optns : dict (optional)
+    optns : dict, optional
     """
     def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
@@ -358,27 +358,37 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             self.krylov.solve(self.mat_vec, kkt_rhs, P, self.precond)
 
             # apply globalization
-            old_flag = min_radius_active
             if self.trust_region:
+                old_flag = min_radius_active
                 success, min_radius_active = self.trust_step(
                     X, state, adjoint, P, kkt_rhs, krylov_tol, feas_tol,
                     primal_work, state_work, dual_work, slack_work,
                     kkt_work, kkt_save)
+
+                # watchdog on trust region failures
+                if min_radius_active and old_flag:
+                    self.info_file.write(
+                        'Trust radius breakdown! Terminating...\n')
+                    break
             else:
+                # accept step
                 X._primal.plus(P._primal)
                 X._dual.plus(P._dual)
+
+                # calculate states
                 state.equals_primal_solution(X._primal._design)
 
-            # watchdog on trust region failures
-            if min_radius_active and old_flag:
-                self.info_file.write(
-                    'Trust radius breakdown! Terminating...\n')
-                break
+                # if this is a matrix-based problem, tell the solver to factor
+                # some important matrices to be used in the next iteration
+                if self.factor_matrices and self.iter < self.max_iter:
+                    factor_linear_system(X._primal._design, state)
 
-            # if this is a matrix-based problem, tell the solver to factor
-            # some important matrices to be used in the next iteration
-            if self.factor_matrices and self.iter < self.max_iter:
-                factor_linear_system(X._primal._design, state)
+                # perform an adjoint solution for the Lagrangian
+                state_work.equals_objective_partial(X._primal._design, state)
+                dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+                state_work.plus(adjoint)
+                state_work.times(-1.)
+                dRdU(X._primal._design, state).T.solve(state_work, adjoint)
 
             # send current solution info to the user
             solver_info = current_solution(
@@ -405,6 +415,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         iters = 0
         min_radius_active = False
         converged = False
+        shrunk = False
         self.info_file.write('\n')
         while iters <= max_iter:
             iters += 1
@@ -464,6 +475,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     P.equals(kkt_save)
                 else:
                     self.radius = max(0.5*P._primal.norm2, self.min_radius)
+                    shrunk = True
                     if self.radius == self.min_radius:
                         self.info_file.write(
                             '      Reached minimum radius! ' +
@@ -491,6 +503,11 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 X.plus(P)
                 state.equals_primal_solution(X._primal._design)
 
+                # if this is a matrix-based problem, tell the solver to factor
+                # some important matrices to be used in the next iteration
+                if self.factor_matrices and self.iter < self.max_iter:
+                    factor_linear_system(X._primal._design, state)
+
                 # perform an adjoint solution for the Lagrangian
                 state_work.equals_objective_partial(X._primal._design, state)
                 dCdU(X._primal._design, state).T.product(X._dual, adjoint)
@@ -502,14 +519,14 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 kkt_work.equals_KKT_conditions(
                     X, state, adjoint, primal_work, dual_work)
 
-                # decide if we wanna accept the multiplier update
-                if kkt_work._primal.norm2 <= kkt_rhs._primal.norm2:
-                    # primal optimality improved, accept multipliers
-                    self.info_file.write('Dual step accepted!\n')
-                else:
-                    self.info_file.write('Dual step rejected...\n')
-                    # primal optimality got worse, so reject multipliers
-                    X._dual.equals(kkt_save._dual)
+                # # decide if we wanna accept the multiplier update
+                # if kkt_work._primal.norm2 <= kkt_rhs._primal.norm2:
+                #     # primal optimality improved, accept multipliers
+                #     self.info_file.write('Dual step accepted!\n')
+                # else:
+                #     self.info_file.write('Dual step rejected...\n')
+                #     # primal optimality got worse, so reject multipliers
+                #     X._dual.equals(kkt_save._dual)
 
                 # update the penalty coefficient
                 feas_norm = kkt_work._dual.norm2
@@ -528,9 +545,10 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 if self.krylov.trust_active:
                     # if active, decide if we want to increase it
                     self.info_file.write('Trust radius active...\n')
-                    if rho > 0.5:
+                    if not shrunk:
                         # model is good enough -- increase radius
-                        self.radius = min(2.*P._primal.norm2, self.max_radius)
+                        # self.radius = min(2.*P._primal.norm2, self.max_radius)
+                        self.radius = min(2.*self.radius, self.max_radius)
                         self.info_file.write(
                             '   Radius increased -> %f\n'%self.radius)
                         min_radius_active = False
