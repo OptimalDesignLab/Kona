@@ -113,53 +113,53 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertEqual(x[1], 1.)
         self.assertEqual(x[0], 2.)
 
-    def test_lanczos(self):
-        # problem sizing
-        num_design = 100
-        num_cnstr = 30
-
-        # create random constraint Jacobian
-        A = 10.*np.random.random_sample((num_cnstr, num_design))
-
-        # compute the singular values of A using Numpy's own algorithm
-        U_np, s_np, V_np = np.linalg.svd(A)
-
-        # get the number of singular values
-        lanczos_size = len(s_np)
-
-        solver = UserSolver(num_design, 0, num_cnstr)
-        km = KonaMemory(solver)
-        pf = km.primal_factory
-        pf.request_num_vectors(lanczos_size + 1)
-        df = km.dual_factory
-        df.request_num_vectors(lanczos_size + 1)
-        km.allocate_memory()
-
-        # define matrix vector products
-        def fwd_mat_vec(in_vec, out_vec):
-            out_vec._data.data = np.inner(A, in_vec._data.data)
-
-        def rev_mat_vec(in_vec, out_vec):
-            out_vec._data.data = np.inner(A.T, in_vec._data.data)
-
-        # allocate subspaces
-        q_work = pf.generate()
-        p_work = df.generate()
-        Q = []
-        P = []
-        for i in xrange(lanczos_size):
-            Q.append(pf.generate())
-            P.append(df.generate())
-
-        # run the Lanczos algorithm
-        B = lanczos(fwd_mat_vec, Q, q_work, rev_mat_vec, P, p_work)
-
-        # recover the Lanczos singular values
-        U_lanc, s_lanc, V_lanc = np.linalg.svd(B)
-
-        rel_error = np.linalg.norm(s_np - s_lanc)/np.linalg.norm(s_np)
-
-        self.assertTrue(rel_error <= 0.1)
+    # def test_lanczos(self):
+    #     # problem sizing
+    #     num_design = 100
+    #     num_cnstr = 30
+    #
+    #     # create random constraint Jacobian
+    #     A = 10.*np.random.random_sample((num_cnstr, num_design))
+    #
+    #     # compute the singular values of A using Numpy's own algorithm
+    #     U_np, s_np, V_np = np.linalg.svd(A)
+    #
+    #     # get the number of singular values
+    #     lanczos_size = len(s_np)
+    #
+    #     solver = UserSolver(num_design, 0, num_cnstr)
+    #     km = KonaMemory(solver)
+    #     pf = km.primal_factory
+    #     pf.request_num_vectors(lanczos_size + 1)
+    #     df = km.dual_factory
+    #     df.request_num_vectors(lanczos_size + 1)
+    #     km.allocate_memory()
+    #
+    #     # define matrix vector products
+    #     def fwd_mat_vec(in_vec, out_vec):
+    #         out_vec._data.data = np.inner(A, in_vec._data.data)
+    #
+    #     def rev_mat_vec(in_vec, out_vec):
+    #         out_vec._data.data = np.inner(A.T, in_vec._data.data)
+    #
+    #     # allocate subspaces
+    #     q_work = pf.generate()
+    #     p_work = df.generate()
+    #     Q = []
+    #     P = []
+    #     for i in xrange(lanczos_size):
+    #         Q.append(pf.generate())
+    #         P.append(df.generate())
+    #
+    #     # run the Lanczos algorithm
+    #     B = lanczos(fwd_mat_vec, Q, q_work, rev_mat_vec, P, p_work)
+    #
+    #     # recover the Lanczos singular values
+    #     U_lanc, s_lanc, V_lanc = np.linalg.svd(B)
+    #
+    #     rel_error = np.linalg.norm(s_np - s_lanc)/np.linalg.norm(s_np)
+    #
+    #     self.assertTrue(rel_error <= 0.1)
 
     def test_secular_function(self):
 
