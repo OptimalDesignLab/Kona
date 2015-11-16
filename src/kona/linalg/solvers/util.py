@@ -183,40 +183,34 @@ def lanczos(fwd_mat_vec, Q, q_work,
     # do a bunch of checks and raise errors
     if len(P) < 1:
         raise ValueError('Subspace container P too small!')
-    if len(Q) < 1:
+    if len(Q) < 2:
         raise ValueError('Subspace container Q too small!')
-    if len(P) != len(Q):
+    if len(P) != len(Q) - 1:
         raise ValueError('Subspace containers have different sizes!')
 
     # size up the problem
     subspace_size = len(P)
-    B = np.zeros((subspace_size, subspace_size))
+    B = np.zeros((subspace_size, subspace_size+1))
 
-    # initialize the first subspace vector for V
     if not Q_init:
         Q[0].equals(1.0)
         Q[0].divide_by(Q[0].norm2)
 
     for j in xrange(subspace_size):
+        fwd_mat_vec(Q[j], P[j])
         if j > 0:
             p_work.equals(P[j-1])
             p_work.times(-B[j-1, j])
         else:
             p_work.equals(0.0)
-        fwd_mat_vec(Q[j], P[j])
         P[j].plus(p_work)
         B[j, j] = P[j].norm2 # alpha
         P[j].divide_by(B[j, j])
 
-        if j == subspace_size-1:
-            # break here to prevent the calculation of Q[n+1]
-            break
-
         rev_mat_vec(P[j], Q[j+1])
         H = np.zeros((j+2, j+1))
         mod_gram_schmidt(j, H, Q)
-        B[j, j+1] = Q[j+1].norm2 # beta
-        Q[j+1].divide_by(B[j, j+1])
+        B[j, j+1] = H[-1, -1] # beta
 
     return B
 

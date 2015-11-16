@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 
 from kona.options import BadKonaOption, get_opt
@@ -7,9 +6,10 @@ from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
+from kona.linalg.matrices.preconds import CompositeStepSVD
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
-from kona.linalg.solvers.krylov import FLECS, FGMRES
+from kona.linalg.solvers.krylov import FLECS
 from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 # from kona.algorithms.util.merit import AugmentedLagrangian
@@ -89,9 +89,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
         elif self.globalization == 'trust':
             self.trust_region = True
-            # self.merit_func = AugmentedLagrangian(
-            #     self.primal_factory, self.state_factory, self.dual_factory,
-            #     {}, self.info_file)
         else:
             raise TypeError(
                 'Invalid globalization! ' +
@@ -109,6 +106,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         # initialize the preconditioner for the KKT matrix
         self.precond = get_opt(optns, None, 'reduced', 'precond')
         self.idf_schur = None
+        self.svd = None
         self.nested = None
 
         if self.precond is None:
@@ -116,29 +114,17 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
 
+        elif self.precond is 'svd':
+            # low-rank SVD preconditioner
+            self.svd = CompositeStepSVD(
+                [self.primal_factory, self.state_factory, self.dual_factory])
+            self.precond = self.svd.product
+
         elif self.precond == 'nested':
-            # for the nested preconditioner we need a new FLECS solver
-            # we want this embedded solver to be "silent", therefore we modify
-            # the output file location accordingly
-            embedded_out = copy.deepcopy(self.info_file)
-            embedded_out.file = self.primal_factory._memory.open_file(
-                'kona_nested.dat')
-            krylov_optns['out_file'] = embedded_out
-            krylov_optns['max_iter'] = 162
-            # embedded_krylov = krylov(
-            #     [self.primal_factory, self.dual_factory],
-            #     krylov_optns)
-            embedded_krylov = FGMRES(
-                self.primal_factory,
-                optns=krylov_optns,
-                dual_factory=self.dual_factory)
             # initialize the nested preconditioner
             self.nested = NestedKKTPreconditioner(
                 [self.primal_factory, self.state_factory, self.dual_factory],
                 reduced_optns)
-            # set in the krylov object for the nested solve
-            self.nested.set_krylov_solver(embedded_krylov)
-            self.nested.krylov.rel_tol = 1e-12
             # define preconditioner as a nested solution of the approximate KKT
             self.precond = self.nested.solve
 
@@ -335,17 +321,14 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             self.KKT_matrix.linearize(X, state, adjoint)
 
             # propagate options through the preconditioners
-            if self.idf_schur is not None:
-                self.idf_schur.linearize(X, state)
+            if self.svd is not None:
+                self.svd.linearize(X._primal._design, state)
 
             if self.nested is not None:
-                # self.nested.lamb = 0.0
-                # self.nested.product_fac *= \
-                #     krylov_tol/self.nested.krylov.max_iter
-                # self.nested.krylov.rel_tol = krylov_tol
-                # self.nested.krylov.radius = self.radius
-                # self.nested.krylov.mu = self.mu
                 self.nested.linearize(X, state, adjoint)
+
+            if self.idf_schur is not None:
+                self.idf_schur.linearize(X, state)
 
             # move the vector to the RHS
             kkt_rhs.equals(dLdX)
@@ -527,6 +510,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 #     self.info_file.write('Dual step rejected...\n')
                 #     # primal optimality got worse, so reject multipliers
                 #     X._dual.equals(kkt_save._dual)
+                #     kkt_work.equals_KKT_conditions(
+                #         X, state, adjoint, primal_work, dual_work)
 
                 # update the penalty coefficient
                 feas_norm = kkt_work._dual.norm2

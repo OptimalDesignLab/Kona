@@ -20,10 +20,10 @@ class FGMRES(KrylovSolver):
         self.rel_tol = get_opt(optns, 0.5, 'rel_tol')
 
         # put in memory request
-        self.vec_fac.request_num_vectors(2*self.max_iter + 1)
+        self.vec_fac.request_num_vectors(2*self.max_iter + 2)
         self.dual_fac = dual_factory
         if self.dual_fac is not None:
-            self.dual_fac.request_num_vectors(4*self.max_iter + 2)
+            self.dual_fac.request_num_vectors(4*self.max_iter + 4)
 
     def _generate_vector(self):
         if self.dual_fac is None:
@@ -58,7 +58,7 @@ class FGMRES(KrylovSolver):
         W[0].minus(b)
         beta = W[0].norm2
 
-        if (beta < self.rel_tol*norm0) or (beta < EPS):
+        if (beta <= self.rel_tol*norm0) or (beta < EPS):
             # system is already solved
             self.out_file.write('FMGRES system solved by initial guess.\n')
             return iters, beta

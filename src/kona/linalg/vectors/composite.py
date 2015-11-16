@@ -241,7 +241,7 @@ class ReducedKKTVector(CompositeVector):
         self._primal.equals_init_design()
         self._dual.equals(1.0)
 
-    def equals_KKT_conditions(self, x, state, adjoint, primal_work, dual_work):
+    def equals_KKT_conditions(self, x, state, adjoint, design_work, dual_work):
         """
         Calculates the total derivative of the Lagrangian
         :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda^T (c(x, u) - e^s)` with
@@ -270,12 +270,12 @@ class ReducedKKTVector(CompositeVector):
             Evaluate KKT conditions using this adjoint vector.
         slack : DualVector
             Evaluate KKT conditions using these slack variables.
-        primal_work : PrimalVector
+        design_work : PrimalVector
             Work vector for intermediate calculations.
         """
         # evaluate primal component
         self._primal.equals_lagrangian_total_gradient(
-            x._primal, state, x._dual, adjoint, primal_work)
+            x._primal, state, x._dual, adjoint, design_work)
         # evaluate multiplier component
         if isinstance(self._primal, CompositePrimalVector):
             self._dual.equals_constraints(x._primal._design, state)
@@ -320,7 +320,7 @@ class CompositePrimalVector(CompositeVector):
         self._slack.equals(0.0)
 
     def equals_lagrangian_total_gradient(self, at_primal, at_state,
-                                         at_dual, at_adjoint, primal_work):
+                                         at_dual, at_adjoint, design_work):
         """
         Computes the total primal derivative of the Lagrangian.
 
@@ -343,15 +343,15 @@ class CompositePrimalVector(CompositeVector):
             Lagrange multipliers at which the derivative is computed.
         at_adjoint : StateVector
             Pre-computed adjoint variables for the Lagrangian.
-        primal_work : PrimalVector
-            Work vector in the primal space.
+        design_work : PrimalVector
+            Work vector in the design space.
         """
         # do some aliasing
         at_design = at_primal._design
         at_slack = at_primal._slack
         # compute the design derivative of the lagrangian
         self._design.equals_lagrangian_total_gradient(
-            at_design, at_state, at_dual, at_adjoint, primal_work)
+            at_design, at_state, at_dual, at_adjoint, design_work)
         # compute the slack derivative of the lagrangian
         self._slack.exp(at_slack)
         self._slack.times(at_dual)

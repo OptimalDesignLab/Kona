@@ -1,74 +1,113 @@
+import sys
 import numpy
 import unittest
 
 from kona import Optimizer
-from kona.algorithms import ConstrainedRSNK
-from kona.examples import SimpleConstrained, ExponentialConstrained
+from kona.algorithms import ConstrainedRSNK, Verifier
+from kona.examples import SimpleConstrained, ExponentialConstrained, Sellar
 
 class InequalityConstrainedRSNKTestCase(unittest.TestCase):
 
-    # def test_dummy(self):
-    #     self.failUnless('Untested.')
+    def test_sellar(self):
 
-    # def test_exponential_constrained(self):
-    #
-    #     feasible = True
-    #     if feasible:
-    #         init_x = [1., 1.]
-    #     else:
-    #         init_x = [-1., -1.]
-    #
-    #     solver = ExponentialConstrained(init_x=init_x)
-    #
-    #     optns = {
-    #         'info_file' : 'kona_info.dat',
-    #         'max_iter' : 30,
-    #         'primal_tol' : 1e-5,
-    #         'constraint_tol' : 1e-5,
-    #
-    #         'trust' : {
-    #             'init_radius' : 1.0,
-    #             'max_radius' : 20.0,
-    #             'min_radius' : 1e-4,
-    #         },
-    #
-    #         'merit_function' : {
-    #             'type' : AugmentedLagrangian
-    #         },
-    #
-    #         'aug_lag' : {
-    #             'barrier_init' : 1000.0,
-    #             'mu_init' : 0.1,
-    #             'mu_pow' : 0.5,
-    #             'mu_max' : 1e5,
-    #         },
-    #
-    #         'reduced' : {
-    #             'precond'       : None,
-    #             'product_fac'   : 0.001,
-    #             'lambda'        : 0.0,
-    #             'scale'         : 0.0,
-    #             'nu'            : 0.95,
-    #             'dynamic_tol'   : False,
-    #         },
-    #
-    #         'krylov' : {
-    #             'out_file'      : 'kona_krylov.dat',
-    #             'max_iter'      : 10,
-    #             'rel_tol'       : 0.0095,
-    #             'check_res'     : True,
-    #         },
-    #     }
-    #
-    #     algorithm = ConstrainedRSNK
-    #     optimizer = Optimizer(solver, algorithm, optns)
-    #     optimizer.solve()
-    #
-    #     print solver.curr_design
-    #
-    #     expected = numpy.zeros(solver.num_primal)
-    #     diff = abs(solver.curr_design - expected)
-    #     self.assertTrue(max(diff) < 1e-4)
+        solver = Sellar()
+
+        optns = {
+            'info_file' : 'kona_info.dat',
+            'max_iter' : 50,
+            'primal_tol' : 1e-5,
+            'constraint_tol' : 1e-5,
+
+            'verify'            : {
+                'primal_vec'    : True,
+                'state_vec'     : True,
+                'dual_vec'      : True,
+                'gradients'     : True,
+                'pde_jac'       : True,
+                'cnstr_jac'     : True,
+                'red_grad'      : True,
+                'lin_solve'     : True,
+                'out_file'      : sys.stdout, # 'kona_verify.dat',
+            },
+
+            'trust' : {
+                'init_radius' : 0.1,
+                'max_radius' : 4.0,
+                'min_radius' : 1e-4,
+            },
+
+            'aug_lag' : {
+                'mu_init' : 1000.0,
+                'mu_pow' : 0.0,
+                'mu_max' : 1e5,
+            },
+        }
+
+        # algorithm = Verifier
+        algorithm = ConstrainedRSNK
+        optimizer = Optimizer(solver, algorithm, optns)
+        optimizer.solve()
+
+        print solver.curr_design
+
+        expected = numpy.array([1.977, 0., 0.])
+        diff = abs(solver.curr_design - expected)
+        self.assertTrue(max(diff) < 1e-2)
+
+    def test_exponential_constrained(self):
+
+        feasible = True
+        if feasible:
+            init_x = [1., 1.]
+        else:
+            init_x = [-1., -1.]
+
+        solver = ExponentialConstrained(init_x=init_x)
+
+        optns = {
+            'info_file' : 'kona_info.dat',
+            'max_iter' : 30,
+            'primal_tol' : 1e-5,
+            'constraint_tol' : 1e-5,
+
+            'trust' : {
+                'init_radius' : 1.0,
+                'max_radius' : 20.0,
+                'min_radius' : 1e-4,
+            },
+
+            'aug_lag' : {
+                'mu_init' : 0.1,
+                'mu_pow' : 0.5,
+                'mu_max' : 1e5,
+            },
+
+            'reduced' : {
+                'precond'       : None,
+                'product_fac'   : 0.001,
+                'lambda'        : 0.0,
+                'scale'         : 0.0,
+                'nu'            : 0.95,
+                'dynamic_tol'   : False,
+            },
+
+            'krylov' : {
+                'out_file'      : 'kona_krylov.dat',
+                'max_iter'      : 10,
+                'rel_tol'       : 0.0095,
+                'check_res'     : True,
+            },
+        }
+
+        algorithm = ConstrainedRSNK
+        optimizer = Optimizer(solver, algorithm, optns)
+        optimizer.solve()
+
+        print solver.curr_design
+
+        expected = numpy.zeros(solver.num_primal)
+        diff = abs(solver.curr_design - expected)
+        self.assertTrue(max(diff) < 1e-4)
 
     def test_with_simple_constrained(self):
 
@@ -98,22 +137,6 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
                 'mu_init' : 0.1,
                 'mu_pow' : 0.1,
                 'mu_max' : 1e5,
-            },
-
-            'reduced' : {
-                'precond'       : None,
-                'product_fac'   : 0.001,
-                'lambda'        : 0.0,
-                'scale'         : 0.0,
-                'nu'            : 0.95,
-                'dynamic_tol'   : False,
-            },
-
-            'krylov' : {
-                'out_file'      : 'kona_krylov.dat',
-                'max_iter'      : 10,
-                'rel_tol'       : 0.00095,
-                'check_res'     : True,
             },
         }
 

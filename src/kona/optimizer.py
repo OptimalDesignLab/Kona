@@ -50,7 +50,11 @@ class Optimizer(object):
             self._optns['verify']['out_file'] = \
                 self._memory.open_file(self._optns['verify']['out_file'])
             verifier_optns = self._optns['verify']
-            verifier_optns['matrix_explicit'] = self._optns['matrix_explicit']
+            try:
+                verifier_optns['matrix_explicit'] = \
+                    self._optns['matrix_explicit']
+            except Exception:
+                verifier_optns['matrix_explicit'] = False
             self._algorithm = Verifier(
                 [primal_factory, state_factory, dual_factory],
                 solver, verifier_optns)
