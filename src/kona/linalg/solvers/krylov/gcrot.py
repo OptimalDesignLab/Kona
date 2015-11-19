@@ -6,7 +6,7 @@ from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
-    EPS, write_header, write_history, \
+    EPS, write_header, write_history, solve_tri, \
     generate_givens, apply_givens, mod_gram_schmidt, mod_GS_normalize
 
 class GCROT(KrylovSolver):
@@ -87,14 +87,14 @@ class GCROT(KrylovSolver):
         res = self._generate_vector()
         iters = 0
 
-        # calculate norm of rhs vector
-        norm0 = b.norm2
-
         # calculate and store the initial residual
         mat_vec(x, res)
         res.minus(b)
         res.times(-1.0) # ALP: I am assuming the residual is r = b - Ax
         beta = res.norm2
+
+        # calculate norm of rhs vector
+        norm0 = beta
 
         if (beta <= self.rel_tol*norm0) or (beta < EPS):
             # system is already solved
@@ -119,9 +119,9 @@ class GCROT(KrylovSolver):
             y = numpy.zeros(fgmres_iter)
             sn = numpy.zeros(fgmres_iter + 1)
             cn = numpy.zeros(fgmres_iter + 1)
-            H = numpy.matrix(numpy.zeros((fgmres_iter + 1, fgmres_iter)))
+            H = numpy.zeros((fgmres_iter + 1, fgmres_iter))
             g = numpy.zeros(fgmres_iter+1)
-            B = numpy.zeros((self.num_stored, self.num_stored))
+            B = numpy.zeros((self.num_stored, fgmres_iter))
 
             # normalize residual to get W[0]
             W.append(self._generate_vector())
@@ -185,26 +185,19 @@ class GCROT(KrylovSolver):
 
             # calculate U_new = (Z - U B)R^{-1} g
             # first, solve to get y = R^{-1} g
-            y[:i] = numpy.linalg.solve(H[:i, :i], g[:i])
-            # y[:i] = g[:i]
-            # for k in xrange(i-1,-1,-1):
-            #    y[k] /= self.H[k,k]
-            #    for k2 in xrange(i-2,-1,-1):
-            #        y[k] -= self.H[k2,k]*y[k]
+            y[:i] = solve_tri(H[:i, :i], g[:i], lower=False)
             U_new.equals(0.0)
             for k in xrange(i):
                 U_new.equals_ax_p_by(1.0, U_new, y[k], Z[k])
             # update U_new -= U * B
             for k in xrange(self.num_stored):
-                tmp = 0.0
-                for k2 in xrange(i):
-                    tmp += self.B[k,k2]*y[k2]
+                tmp = numpy.dot(B[k, :i], y[:i])
                 U_new.equals_ax_p_by(1.0, U_new, -tmp, self.U[k])
 
             # finished with g, so undo rotations to find C_new
             y[:i] = g[:i]
             y[i] = 0.0
-            for k in xrange(i-1,-1,-1):
+            for k in xrange(i-1, -1, -1):
                 y[k], y[k+1] = apply_givens(-sn[k], cn[k], y[k], y[k+1])
             C_new.equals(0.0)
             for k in xrange(i+1):
@@ -212,8 +205,8 @@ class GCROT(KrylovSolver):
 
             # normalize and scale new vectors and update solution and res
             alpha = 1.0/C_new.norm2
-            C_new.divide_by(alpha)
-            U_new.divide_by(alpha)
+            C_new.times(alpha)
+            U_new.times(alpha)
             alpha = C_new.inner(res)
             res.equals_ax_p_by(1.0, res, -alpha, C_new)
             x.equals_ax_p_by(1.0, x, alpha, U_new)
@@ -234,6 +227,8 @@ class GCROT(KrylovSolver):
 
             # get new residual norm
             # this should be the same as the last iter in FGMRES
+            print '||res|| =', res.norm2
+            print 'beta - ||res|| =', beta - res.norm2
             beta = res.norm2
 
             if beta < self.rel_tol*norm0 or iters >= self.max_krylov:

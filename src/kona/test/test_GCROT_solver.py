@@ -18,7 +18,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         optns = {
             'max_iter' : 10,
             'max_recycle' : 10,
-            'max_outer' : 100,
+            'max_outer' : 10,
             'max_krylov' : 100, # this should be hit first
             'rel_tol' : 1e-15,
         }
@@ -89,7 +89,7 @@ class GCROTSolverTestCase(unittest.TestCase):
     #     # compare actual result to expected
     #     diff = abs(self.x._data.data - expected)
     #     diff = max(diff)
-    #     self.assertTrue(diff < 1.e-12)
+    #     self.assertTrue(diff < 1.e-4)
 
 if __name__ == "__main__":
 

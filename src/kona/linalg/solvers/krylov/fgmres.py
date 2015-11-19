@@ -5,7 +5,7 @@ from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
-    EPS, write_header, write_history, \
+    EPS, write_header, write_history, solve_tri, \
     generate_givens, apply_givens, mod_GS_normalize
 
 class FGMRES(KrylovSolver):
@@ -46,7 +46,7 @@ class FGMRES(KrylovSolver):
         g = numpy.zeros(self.max_iter + 1)
         sn = numpy.zeros(self.max_iter + 1)
         cn = numpy.zeros(self.max_iter + 1)
-        H = numpy.matrix(numpy.zeros((self.max_iter + 1, self.max_iter)))
+        H = numpy.zeros((self.max_iter + 1, self.max_iter))
         iters = 0
 
         # calculate norm of rhs vector
@@ -55,7 +55,8 @@ class FGMRES(KrylovSolver):
         # calculate and store the initial residual
         W.append(self._generate_vector())
         mat_vec(x, W[0])
-        W[0].minus(b)
+        W[0].times(-1.)
+        W[0].plus(b)
         beta = W[0].norm2
 
         if (beta <= self.rel_tol*norm0) or (beta < EPS):
@@ -123,7 +124,7 @@ class FGMRES(KrylovSolver):
         # END BIG LOOP
 
         # solve the least squares system
-        y[:i] = numpy.linalg.solve(H[:i, :i], -g[:i])
+        y[:i] = solve_tri(H[:i, :i], g[:i], lower=False)
         for k in xrange(i):
             x.equals_ax_p_by(1.0, x, y[k], Z[k])
 
