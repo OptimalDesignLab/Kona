@@ -529,6 +529,55 @@ def mod_gram_schmidt(i, Hsbg, w):
         w[i+1].divide_by(nrm)
         return
 
+def mod_gram_schmidt(i, B, C, w):
+    # this version does not normalize w, it just makes w orthogonal to the
+    # vectors in C, and stores the coefficients in the ith column of B
+    if len(C) <= 0:
+        # nothing to do, exit
+        return
+
+    # get the norm of the vector being orthogonalized, and find the
+    # threshold for re-orthogonalization
+    reorth = 0.98
+    nrm = w.inner(w)
+    thr = nrm*reorth
+    if abs(nrm) <= EPS:
+        # norm of w is effectively zero; it is linearly dependent
+        # raise a LinAlgError to catch later
+        raise np.linalg.LinAlgError
+    elif nrm < -EPS:
+        # the norm of w < 0.0
+        raise ValueError('mod_gram_schmidt failed : w.inner(w) < 0.0')
+    elif np.isnan(nrm):
+        raise ValueError('mod_gram_schmidt failed : w = NaN')
+
+    # begin main Gram-Schmidt loop
+    for k in xrange(len(C)):
+        prod = w.inner(C[k])
+        B[k, i] = prod
+        w.equals_ax_p_by(1.0, w, -prod, C[k])
+
+        # check if reorthogonalization is necessary
+        if (prod**2 > thr):
+            prod = w.inner(C[k])
+            B[k, i] += prod
+            w.equals_ax_p_by(1.0, w, -prod, C[k])
+
+        # update norm and check size
+        nrm -= B[k, i]**2
+        if (nrm < 0.0):
+            nrm = 0.0
+            thr = nrm*reorth
+
+    # test the resulting vector
+    nrm = w.norm2
+    if (nrm <= 0.0):
+        # norm of w is effectively zero; it is linearly dependent
+        # raise a LinAlgError to catch later
+        raise np.linalg.LinAlgError
+    else:
+        return
+
 def write_header(out_file, solver_name, res_tol, res_init):
     """
     Writes krylov solver data file header text.
