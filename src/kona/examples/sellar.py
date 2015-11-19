@@ -137,6 +137,7 @@ class Sellar(UserSolver):
         u[1] = 24.
         R = np.zeros(2)
         abs_tol = 1e-6
+        du = 0
         while iters < max_iter:
             y1 = u[0]
             y2 = u[1]
