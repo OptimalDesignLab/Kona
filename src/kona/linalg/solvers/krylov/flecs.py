@@ -8,7 +8,7 @@ from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
-    solve_tri, solve_trust_reduced, eigen_decomp, mod_gram_schmidt, EPS
+    solve_tri, solve_trust_reduced, eigen_decomp, mod_GS_normalize, EPS
 
 class FLECS(KrylovSolver):
     """
@@ -354,9 +354,9 @@ class FLECS(KrylovSolver):
             self.V[i+1]._primal.times(self.grad_scale)
             self.V[i+1]._dual.times(self.feas_scale)
 
-            # modified Gram-Schmidt orthonogalization
+            # modified Gram-Schmidt orthonormalization
             try:
-                mod_gram_schmidt(i, self.H, self.V)
+                mod_GS_normalize(i, self.H, self.V)
             except numpy.linalg.LinAlgError:
                 self.lin_depend = True
 

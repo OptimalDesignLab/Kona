@@ -1,3 +1,4 @@
+import gc
 import numpy
 
 from kona.options import get_opt
@@ -6,7 +7,7 @@ from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
     EPS, write_header, write_history, \
-    generate_givens, apply_givens, mod_gram_schmidt
+    generate_givens, apply_givens, mod_gram_schmidt, mod_GS_normalize
 
 class GCROT(KrylovSolver):
     """
@@ -27,10 +28,16 @@ class GCROT(KrylovSolver):
         self.max_krylov = get_opt(optns, 50, 'max_krylov')
 
         # put in memory request
-        self.vec_fac.request_num_vectors(2*self.max_iter + 2*self.max_recycle + 3)
+        self.vec_fac.request_num_vectors(
+            2*self.max_iter + 2*self.max_recycle + 3)
         self.dual_fac = dual_factory
         if self.dual_fac is not None:
-            self.dual_fac.request_num_vectors(4*self.max_iter + 4*self.max_recycle + 6)
+            self.dual_fac.request_num_vectors(
+                4*self.max_iter + 4*self.max_recycle + 6)
+
+        # set empty subpaces
+        self.C = []
+        self.U = []
 
     def _generate_vector(self):
         if self.dual_fac is None:
@@ -75,8 +82,8 @@ class GCROT(KrylovSolver):
         self._validate_options()
 
         # initialize some work data for the outer GCRO method
-        Cnew = self._generate_vector()
-        Unew = self._generate_vector()
+        C_new = self._generate_vector()
+        U_new = self._generate_vector()
         res = self._generate_vector()
         iters = 0
 
@@ -114,7 +121,7 @@ class GCROT(KrylovSolver):
             cn = numpy.zeros(fgmres_iter + 1)
             H = numpy.matrix(numpy.zeros((fgmres_iter + 1, fgmres_iter)))
             g = numpy.zeros(fgmres_iter+1)
-            B = numpy.matrix(self.num_stored, self.num_stored)
+            B = numpy.zeros((self.num_stored, self.num_stored))
 
             # normalize residual to get W[0]
             W.append(self._generate_vector())
@@ -148,13 +155,13 @@ class GCROT(KrylovSolver):
 
                 # orthogonalize W[i+1] against the recycled subspace C[:]
                 try:
-                    mod_gram_schmidt(i, B, C, W[i+1])
+                    mod_gram_schmidt(i, B, self.C, W[i+1])
                 except numpy.linalg.LinAlgError:
                     self.lin_depend = True
 
-                # now orthogonalize W[i+1] against the W[:i]
+                # now orthonormalize W[i+1] against the W[:i]
                 try:
-                    mod_gram_schmidt(i, H, W)
+                    mod_GS_normalize(i, H, W)
                 except numpy.linalg.LinAlgError:
                     self.lin_depend = True
 
@@ -163,13 +170,13 @@ class GCROT(KrylovSolver):
                 # to the last two elements of H[i, :] and g
                 for k in xrange(i):
                     H[k, i], H[k+1, i] = apply_givens(
-                    sn[k], cn[k], H[k, i], H[k+1, i])
+                        sn[k], cn[k], H[k, i], H[k+1, i])
 
                 H[i, i], H[i+1, i], sn[i], cn[i] = generate_givens(
                     H[i, i], H[i+1, i])
                 g[i], g[i+1] = apply_givens(sn[i], cn[i], g[i], g[i+1])
 
-                # set L2 norm of residual and output relative residual if necessary
+                # set L2 norm of residual and output relative residual
                 beta = abs(g[i+1])
                 write_history(self.out_file, iters, beta, norm0)
 
@@ -179,8 +186,8 @@ class GCROT(KrylovSolver):
             # calculate U_new = (Z - U B)R^{-1} g
             # first, solve to get y = R^{-1} g
             y[:i] = numpy.linalg.solve(H[:i, :i], g[:i])
-            #y[:i] = g[:i]
-            #for k in xrange(i-1,-1,-1):
+            # y[:i] = g[:i]
+            # for k in xrange(i-1,-1,-1):
             #    y[k] /= self.H[k,k]
             #    for k2 in xrange(i-2,-1,-1):
             #        y[k] -= self.H[k2,k]*y[k]
@@ -204,7 +211,7 @@ class GCROT(KrylovSolver):
                 C_new.equals_ax_p_by(1.0, C_new, y[k], W[k])
 
             # normalize and scale new vectors and update solution and res
-            alpha = 1.0/C_new.norm2()
+            alpha = 1.0/C_new.norm2
             C_new.divide_by(alpha)
             U_new.divide_by(alpha)
             alpha = C_new.inner(res)
@@ -222,10 +229,11 @@ class GCROT(KrylovSolver):
                 if self.max_recycle > 0:
                     self.ptr = (self.ptr+1) % self.num_stored
             if self.max_recycle != 0:
-                self.C[ptr] = C_new
-                self.U[ptr] = U_new
+                self.C[self.ptr].equals(C_new)
+                self.U[self.ptr].equals(U_new)
 
-            # get new residual norm; should be the same as the last iter in FGMRES
+            # get new residual norm
+            # this should be the same as the last iter in FGMRES
             beta = res.norm2
 
             if beta < self.rel_tol*norm0 or iters >= self.max_krylov:

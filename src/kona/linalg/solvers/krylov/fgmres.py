@@ -6,7 +6,7 @@ from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import \
     EPS, write_header, write_history, \
-    generate_givens, apply_givens, mod_gram_schmidt
+    generate_givens, apply_givens, mod_GS_normalize
 
 class FGMRES(KrylovSolver):
     """
@@ -100,7 +100,7 @@ class FGMRES(KrylovSolver):
 
             # try modified Gram-Schmidt orthogonalization
             try:
-                mod_gram_schmidt(i, H, W)
+                mod_GS_normalize(i, H, W)
             except numpy.linalg.LinAlgError:
                 self.lin_depend = True
 

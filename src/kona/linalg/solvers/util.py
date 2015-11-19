@@ -186,7 +186,7 @@ def lanczos_tridiag(mat_vec, Q, Q_init=False):
         mat_vec(Q[i], Q[i+1])
         # orthogonalize the new vector
         H = np.zeros((i+2, i+1))
-        mod_gram_schmidt(i, H, Q)
+        mod_GS_normalize(i, H, Q)
         # extract alpha from the orthonogalization
         T[i, i] = H[i, i]
         # extract beta from the orthonogalization
@@ -260,7 +260,7 @@ def lanczos_bidiag(fwd_mat_vec, Q, q_work,
 
         rev_mat_vec(P[j], Q[j+1])
         H = np.zeros((j+2, j+1))
-        mod_gram_schmidt(j, H, Q)
+        mod_GS_normalize(j, H, Q)
         B[j, j+1] = H[-1, -1] # beta
 
     return B
@@ -476,7 +476,7 @@ def secular_function(H, g, lam, radius):
 
     return y, fnc, dfnc
 
-def mod_gram_schmidt(i, Hsbg, w):
+def mod_GS_normalize(i, Hsbg, w):
 
     reorth = 0.98
 
@@ -529,7 +529,7 @@ def mod_gram_schmidt(i, Hsbg, w):
         w[i+1].divide_by(nrm)
         return
 
-def mod_gram_schmidt(i, B, C, w):
+def mod_gram_schmidt(i, B, C, w, normalize=False):
     # this version does not normalize w, it just makes w orthogonal to the
     # vectors in C, and stores the coefficients in the ith column of B
     if len(C) <= 0:
@@ -576,6 +576,8 @@ def mod_gram_schmidt(i, B, C, w):
         # raise a LinAlgError to catch later
         raise np.linalg.LinAlgError
     else:
+        if normalize:
+            w.divide_by(nrm)
         return
 
 def write_header(out_file, solver_name, res_tol, res_init):
