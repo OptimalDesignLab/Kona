@@ -1,9 +1,8 @@
-import sys
 import numpy
 import unittest
 
 from kona import Optimizer
-from kona.algorithms import ConstrainedRSNK, Verifier
+from kona.algorithms import ConstrainedRSNK
 from kona.examples import SimpleConstrained, ExponentialConstrained, Sellar
 
 class InequalityConstrainedRSNKTestCase(unittest.TestCase):
@@ -17,18 +16,6 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             'max_iter' : 50,
             'primal_tol' : 1e-5,
             'constraint_tol' : 1e-5,
-
-            'verify'            : {
-                'primal_vec'    : True,
-                'state_vec'     : True,
-                'dual_vec'      : True,
-                'gradients'     : True,
-                'pde_jac'       : True,
-                'cnstr_jac'     : True,
-                'red_grad'      : True,
-                'lin_solve'     : True,
-                'out_file'      : sys.stdout, # 'kona_verify.dat',
-            },
 
             'trust' : {
                 'init_radius' : 0.1,
@@ -52,7 +39,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
 
         expected = numpy.array([1.977, 0., 0.])
         diff = abs(solver.curr_design - expected)
-        self.assertTrue(max(diff) < 1e-2)
+        self.assertTrue(max(diff) < 5e-2)
 
     def test_exponential_constrained(self):
 
@@ -72,12 +59,12 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
 
             'trust' : {
                 'init_radius' : 1.0,
-                'max_radius' : 20.0,
+                'max_radius' : 10.0,
                 'min_radius' : 1e-4,
             },
 
             'aug_lag' : {
-                'mu_init' : 0.1,
+                'mu_init' : 1.0,
                 'mu_pow' : 0.5,
                 'mu_max' : 1e5,
             },

@@ -6,7 +6,7 @@ from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.matrices.preconds import CompositeStepSVD
+from kona.linalg.matrices.preconds import LowRankSVD
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS
@@ -116,7 +116,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
         elif self.precond is 'svd':
             # low-rank SVD preconditioner
-            self.svd = CompositeStepSVD(
+            self.svd = LowRankSVD(
                 [self.primal_factory, self.state_factory, self.dual_factory])
             self.precond = self.svd.product
 
@@ -233,13 +233,13 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 '==========================================================\n' +
                 'Beginning Major Iteration %i\n\n'%self.iter)
             self.info_file.write(
-                'primal vars        = %e\n'%X._primal.norm2)
+                'primal vars        = %e\n'%X._primal.infty)
             self.info_file.write(
-                '   design vars     = %e\n'%X._primal._design.norm2)
+                '   design vars     = %e\n'%X._primal._design.infty)
             self.info_file.write(
-                '   slack vars      = %e\n'%X._primal._slack.norm2)
+                '   slack vars      = %e\n'%X._primal._slack.infty)
             self.info_file.write(
-                'multipliers        = %e\n\n'%X._dual.norm2)
+                'multipliers        = %e\n\n'%X._dual.infty)
 
             if self.iter == 1:
                 # calculate initial norms
@@ -322,7 +322,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
             # propagate options through the preconditioners
             if self.svd is not None:
-                self.svd.linearize(X._primal._design, state)
+                self.svd.linearize(X, state, adjoint)
 
             if self.nested is not None:
                 self.nested.linearize(X, state, adjoint)
@@ -484,6 +484,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
                 # accept the new step entirely
                 X.plus(P)
+                X._primal._slack.restrict()
                 state.equals_primal_solution(X._primal._design)
 
                 # if this is a matrix-based problem, tell the solver to factor

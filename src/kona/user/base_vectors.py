@@ -146,7 +146,7 @@ class BaseVector(object):
         if len(self.data) == 0:
             return 0.
         else:
-            return max(abs(self.data))
+            return np.linalg.norm(self.data, np.inf)
 
     def exp(self, vector):
         """

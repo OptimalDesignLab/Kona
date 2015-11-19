@@ -1,6 +1,6 @@
 import numpy as np
 
-from kona.linalg.vectors.common import KonaVector, PrimalVector, DualVector
+from kona.linalg.vectors.common import PrimalVector, DualVector
 
 class CompositeVector(object):
     """
@@ -218,6 +218,8 @@ class ReducedKKTVector(CompositeVector):
         Dual components of the composite vector.
     """
 
+    init_dual = -0.01
+
     def __init__(self, primal_vec, dual_vec):
         if isinstance(primal_vec, PrimalVector) or \
            isinstance(primal_vec, CompositePrimalVector):
@@ -239,7 +241,7 @@ class ReducedKKTVector(CompositeVector):
         Sets the KKT vector to the initial guess, using the initial design.
         """
         self._primal.equals_init_design()
-        self._dual.equals(1.0)
+        self._dual.equals(self.init_dual)
 
     def equals_KKT_conditions(self, x, state, adjoint, design_work, dual_work):
         """
@@ -300,6 +302,8 @@ class CompositePrimalVector(CompositeVector):
         Slack components of the composite vector.
     """
 
+    init_slack = 0.0
+
     def __init__(self, primal_vec, dual_vec):
         if isinstance(primal_vec, PrimalVector):
             self._design = primal_vec
@@ -317,7 +321,7 @@ class CompositePrimalVector(CompositeVector):
 
     def equals_init_design(self):
         self._design.equals_init_design()
-        self._slack.equals(0.0)
+        self._slack.equals(self.init_slack)
 
     def equals_lagrangian_total_gradient(self, at_primal, at_state,
                                          at_dual, at_adjoint, design_work):

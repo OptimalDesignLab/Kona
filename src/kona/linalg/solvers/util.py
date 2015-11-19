@@ -145,9 +145,60 @@ def generate_givens(dx, dy):
 
     return dx, dy, s, c
 
-def lanczos(fwd_mat_vec, Q, q_work,
-            rev_mat_vec, P, p_work,
-            Q_init=False):
+def lanczos_tridiag(mat_vec, Q, Q_init=False):
+    """
+    Uses the traditional Lanczos algorithm to compute a tridiagonalization.
+
+    Since this is based on the Arnoldi's method, we only require a
+    matrix-vector product for the matrix of interest, and not the full explicit
+    matrix itself.
+
+    Parameters
+    ----------
+    mat_vec : function
+        Matrix-vector product for a symmetric matrix.
+    Q : List[KonaVector]
+        Pre-allocated subspace array containing KonaVectors matching the
+        vector-type of the product
+    Q_init : boolean
+        If `True`, start the V-subspace with the Q[0] already stored.
+        If 'False', generate a vector of ones in Q[0] to start with.
+
+    Returns
+    -------
+    T : array_like
+        Tri-diagonalization of the matrix
+    """
+    # do a bunch of checks and raise errors
+    if len(Q) < 1:
+        raise ValueError('Subspace container Q too small!')
+
+    # size up the problem
+    subspace_size = len(Q)
+    T = np.zeros((subspace_size-1, subspace_size))
+
+    if not Q_init:
+        Q[0].equals(1.0)
+        Q[0].divide_by(Q[0].norm2)
+
+    for i in xrange(subspace_size-1):
+        # perform the matrix vector product
+        mat_vec(Q[i], Q[i+1])
+        # orthogonalize the new vector
+        H = np.zeros((i+2, i+1))
+        mod_gram_schmidt(i, H, Q)
+        # extract alpha from the orthonogalization
+        T[i, i] = H[i, i]
+        # extract beta from the orthonogalization
+        T[i, i+1] = H[i+1, i]
+        if i < subspace_size - 2:
+            T[i+1, i] = H[i+1, i]
+
+    return T
+
+def lanczos_bidiag(fwd_mat_vec, Q, q_work,
+                   rev_mat_vec, P, p_work,
+                   Q_init=False):
     """
     Uses the bi-orthogonal Lanczos algorithm to bidiagonalize a matrix.
 

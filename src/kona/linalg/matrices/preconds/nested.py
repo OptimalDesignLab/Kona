@@ -42,7 +42,7 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
 
         krylov_optns = {
             'out_file' : 'kona_nested_krylov.dat',
-            'max_iter' : 200,
+            'max_iter' : 50,
             'rel_tol'  : 1e-4,
         }
         self.krylov = FGMRES(
@@ -111,6 +111,7 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
         self.rhs_work._primal._slack.equals(0.0)
 
         # solve the system
+        solution.equals(0.0)
         self.krylov.solve(self.product, self.rhs_work, solution, precond)
 
         # back out the slack solutions
