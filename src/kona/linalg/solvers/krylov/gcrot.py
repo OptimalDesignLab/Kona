@@ -24,6 +24,7 @@ class GCROT(KrylovSolver):
         self.num_stored = 0
         self.ptr = 0 # index of oldest vector in recycled subspace
         self.max_outer = get_opt(optns, 10, 'max_outer')
+        self.max_krylov = get_opt(optns, 50, 'max_krylov')
 
         # put in memory request
         self.vec_fac.request_num_vectors(2*self.max_iter + 2*self.max_recycle + 3)
@@ -132,7 +133,7 @@ class GCROT(KrylovSolver):
                         'GCROT: Arnoldi process breakdown: ' +
                         'H(%i, %i) = %e, however '%(i+1, i, H[i+1, i]) +
                         '||res|| = %e\n'%beta)
-                elif beta < self.rel_tol*norm0:
+                elif beta < self.rel_tol*norm0 or iters >= self.max_krylov:
                     break
 
                 iters += 1
@@ -227,7 +228,7 @@ class GCROT(KrylovSolver):
             # get new residual norm; should be the same as the last iter in FGMRES
             beta = res.norm2
 
-            if beta < self.rel_tol*norm0:
+            if beta < self.rel_tol*norm0 or iters >= self.max_krylov:
                 break
 
         # end GCRO loop
