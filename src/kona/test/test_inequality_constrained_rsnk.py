@@ -24,7 +24,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             },
 
             'aug_lag' : {
-                'mu_init' : 1000.0,
+                'mu_init' : 10000.0,
                 'mu_pow' : 0.0,
                 'mu_max' : 1e5,
             },
