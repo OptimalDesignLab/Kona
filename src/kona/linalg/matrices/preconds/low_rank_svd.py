@@ -2,9 +2,8 @@ import numpy as np
 
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, IdentityMatrix
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian.basic import BaseHessian
-from kona.linalg.solvers.krylov import FGMRES
 from kona.linalg.solvers.util import lanczos_bidiag, lanczos_tridiag
 from kona.linalg.solvers.util import calc_epsilon
 
@@ -75,25 +74,6 @@ class LowRankSVD(BaseHessian):
         self.primal_factory.request_num_vectors(5 + 2*self.subspace_size)
         self.state_factory.request_num_vectors(6)
         self.dual_factory.request_num_vectors(3 + 2*self.subspace_size)
-
-        krylov_design_optns = {
-            'out_file' : 'kona_nested_design.dat',
-            'max_iter' : 20,
-            'rel_tol'  : 1e-4,
-        }
-
-        self.krylov_design = FGMRES(
-            self.primal_factory,
-            optns=krylov_design_optns)
-
-        krylov_dual_optns = {
-            'out_file' : 'kona_nested_dual.dat',
-            'max_iter' : 5,
-            'rel_tol'  : 1e-4,
-        }
-        self.krylov_dual = FGMRES(
-            self.dual_factory,
-            optns=krylov_dual_optns)
 
     def linearize(self, at_kkt, at_state, at_adjoint):
 
@@ -329,7 +309,7 @@ class LowRankSVD(BaseHessian):
             self.adjoint_work, self.design_work)
         out_vec.plus(self.design_work)
 
-    def mult_W_approx(self, in_vec, out_vec):
+    def approx_W_prod(self, in_vec, out_vec):
         QT_in = np.zeros(len(self.Q))
         for i in xrange(len(self.Q)):
             QT_in[i] = self.Q[i].inner(in_vec)
@@ -338,105 +318,22 @@ class LowRankSVD(BaseHessian):
         TQT_in = np.dot(self.E_left, gamma_E_right_T_QT_in)
         out_vec.equals(0.0)
         for i in xrange(len(self.Q[:-1])):
-            self.q_work.equals(self.Q[i])
-            self.q_work.times(TQT_in[i])
-            out_vec.plus(self.q_work)
+            out_vec.equals_ax_p_by(1., out_vec, TQT_in[i], self.Q[i])
 
-    def product(self, in_vec, out_vec):
-        # do some aliasing
-        if self.at_slack is not None:
-            in_design = in_vec._primal._design
-            in_slack = in_vec._primal._slack
-            in_slack.restrict()
-            out_design = out_vec._primal._design
-            out_slack = out_vec._primal._slack
-        else:
-            in_design = in_vec._primal
-            in_slack = None
-            out_design = out_vec._primal
-            out_slack = None
-        in_dual = in_vec._dual
-        out_dual = out_vec._dual
-
-        # define the preconditioner for the solves
-        eye = IdentityMatrix()
-        precond = eye.product
-
-        # compute dual_hat
-        # U S^-2 U^T (-Lambda*in_dual + in_slack + USV^T*in_design)
+    def approx_A_prod(self, in_vec, out_vec):
         VT_in = np.zeros(len(self.V))
         for i in xrange(len(self.V)):
-            VT_in[i] = self.V[i].inner(in_design)
+            VT_in[i] = self.V[i].inner(in_vec)
         SVT_in = np.dot(self.S, VT_in)
-        self.dual_work.equals(0.0)
+        out_vec.equals(0.0)
         for i in xrange(len(self.U)):
-            self.p_work.equals(self.U[i])
-            self.p_work.times(SVT_in[i])
-            self.dual_work.plus(self.p_work)
-        if in_slack is not None:
-            self.dual_work.plus(in_slack)
-        out_dual.equals(in_dual)
-        out_dual.times(self.at_dual)
-        out_dual.times(-1.)
-        self.dual_work.plus(out_dual)
-        UT_vec = np.zeros(len(self.U))
-        for i in xrange(len(self.U)):
-            UT_vec[i] = self.U[i].inner(self.dual_work)
-        S2_inv_UT_vec = np.dot(self.S2_inv, UT_vec)
-        out_dual.equals(0.0)
-        for i in xrange(len(self.U)):
-            self.p_work.equals(self.U[i])
-            self.p_work.times(S2_inv_UT_vec[i])
-            out_dual.plus(self.p_work)
+            out_vec.equals_ax_p_by(1., out_vec, SVT_in[i], self.U[i])
 
-        # compute out_design
-        # assemble RHS = (in_primal - VSU^T*dual_hat)
+    def approx_AT_prod(self, in_vec, out_vec):
         UT_vec = np.zeros(len(self.U))
         for i in xrange(len(self.U)):
-            UT_vec[i] = self.U[i].inner(out_dual)
+            UT_vec[i] = self.U[i].inner(in_vec)
         SUT_vec = np.dot(self.S, UT_vec)
-        self.design_work.equals(0.0)
+        out_vec.equals(0.0)
         for i in xrange(len(self.V)):
-            self.q_work.equals(self.V[i])
-            self.q_work.times(SUT_vec[i])
-            self.design_work.plus(self.q_work)
-        self.design_work.times(-1.)
-        self.design_work.plus(in_design)
-
-        # solve the Hessian block
-
-        # self.krylov_design.solve(
-        #     self.mult_W_approx, self.design_work, out_design, precond)
-
-        QT_vec = np.zeros(len(self.Q[:-1]))
-        for i in xrange(len(self.Q[:-1])):
-            QT_vec[i] = self.Q[i].inner(self.design_work)
-        E_left_T_QT_vec = np.dot(self.E_left.T, QT_vec)
-        gamma_inv_E_left_T_QT_vec = np.dot(self.gamma_inv, E_left_T_QT_vec)
-        T_inv_QT_vec = np.dot(self.E_right, gamma_inv_E_left_T_QT_vec)
-        out_design.equals(0.0)
-        for i in xrange(len(self.Q)):
-            self.design_work.equals(self.Q[i])
-            self.design_work.times(T_inv_QT_vec[i])
-            out_design.plus(self.design_work)
-
-        # iteratively solve for the slacks
-        if self.at_slack is not None:
-            # define a matrix-vector product
-            def slack_mat_vec(in_vec, out_vec):
-                out_vec.equals(in_vec)
-                out_vec.times(self.slack_term)
-                out_vec.times(self.at_dual)
-                out_vec.times(-1.)
-            # assemble the RHS vector for the system
-            self.dual_work.equals(out_dual)
-            self.dual_work.times(self.at_dual)
-            self.dual_work.times(self.slack_term)
-            self.dual_work.plus(in_slack)
-            self.dual_work.restrict()
-            # trigger the solution
-            self.krylov_dual.solve(
-                slack_mat_vec, self.dual_work, out_slack, precond)
-
-        # finally recover the actual dual solution
-        out_dual.times(self.at_dual)
+            out_vec.equals_ax_p_by(1., out_vec, SUT_vec[i], self.V[i])

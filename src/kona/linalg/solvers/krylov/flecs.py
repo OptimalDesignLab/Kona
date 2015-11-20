@@ -169,9 +169,9 @@ class FLECS(KrylovSolver):
 
         # trust radius check
         # NOTE: THIS IS TEMPORARY
-        if step._primal.norm2 > 0.5*self.radius:
-            step._primal.times(
-                0.5*self.radius/step._primal.norm2)
+        if step._primal.norm2 > self.radius:
+            self.trust_active = True
+            step._primal.times(self.radius/step._primal.norm2)
 
         # compute a new predicted reduction associated with this step
         # self.pred_aug = -self.y.dot(0.5*numpy.array(A.dot(self.y)) + rhs)
@@ -251,6 +251,7 @@ class FLECS(KrylovSolver):
         # check if the trust-radius constraint is active
         self.trust_active = False
         if lamb > 0.0:
+            self.radius = radius_aug
             self.trust_active = True
 
         # compute residual norms for the augmented Lagrangian solution

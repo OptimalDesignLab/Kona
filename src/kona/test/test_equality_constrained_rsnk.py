@@ -20,7 +20,6 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             'primal_tol' : 1e-5,
             'constraint_tol' : 1e-5,
             'globalization' : 'trust',
-            # 'globalization' : None,
 
             'trust' : {
                 'init_radius' : 0.5,
@@ -29,25 +28,9 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             },
 
             'aug_lag' : {
-                'mu_init' : 0.1,
-                'mu_pow' : 0.1,
+                'mu_init' : 0.5,
+                'mu_pow' : 0.5,
                 'mu_max' : 1e5,
-            },
-
-            'reduced' : {
-                'precond'       : None,
-                'product_fac'   : 0.001,
-                'lambda'        : 0.0,
-                'scale'         : 0.0,
-                'nu'            : 0.95,
-                'dynamic_tol'   : False,
-            },
-
-            'krylov' : {
-                'out_file'      : 'kona_krylov.dat',
-                'max_iter'      : 10,
-                'rel_tol'       : 0.00095,
-                'check_res'     : True,
             },
         }
 

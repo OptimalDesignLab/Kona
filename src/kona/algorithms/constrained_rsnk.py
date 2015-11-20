@@ -6,7 +6,7 @@ from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.matrices.preconds import LowRankSVD
+from kona.linalg.matrices.preconds import SSORwithSVD
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS
@@ -50,9 +50,9 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         )
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(7)
+        self.primal_factory.request_num_vectors(6 + 1)
         self.state_factory.request_num_vectors(3)
-        self.dual_factory.request_num_vectors(14)
+        self.dual_factory.request_num_vectors(12 + 2)
 
         # get other options
         self.radius = get_opt(optns, 0.5, 'trust', 'init_radius')
@@ -106,7 +106,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         # initialize the preconditioner for the KKT matrix
         self.precond = get_opt(optns, None, 'reduced', 'precond')
         self.idf_schur = None
-        self.svd = None
+        self.ssor = None
         self.nested = None
 
         if self.precond is None:
@@ -114,11 +114,11 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
 
-        elif self.precond is 'svd':
-            # low-rank SVD preconditioner
-            self.svd = LowRankSVD(
+        elif self.precond == 'ssor':
+            # Symmetric Successive Over-Relaxation
+            self.ssor = SSORwithSVD(
                 [self.primal_factory, self.state_factory, self.dual_factory])
-            self.precond = self.svd.product
+            self.precond = self.ssor.product
 
         elif self.precond == 'nested':
             # initialize the nested preconditioner
@@ -321,8 +321,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             self.KKT_matrix.linearize(X, state, adjoint)
 
             # propagate options through the preconditioners
-            if self.svd is not None:
-                self.svd.linearize(X, state, adjoint)
+            if self.ssor is not None:
+                self.ssor.linearize(X, state, adjoint)
 
             if self.nested is not None:
                 self.nested.linearize(X, state, adjoint)
@@ -339,6 +339,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
             # trigger the krylov solution
             self.krylov.solve(self.mat_vec, kkt_rhs, P, self.precond)
+            self.radius = self.krylov.radius
 
             # apply globalization
             if self.trust_region:
@@ -398,7 +399,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         iters = 0
         min_radius_active = False
         converged = False
-        shrunk = False
         self.info_file.write('\n')
         while iters <= max_iter:
             iters += 1
@@ -427,12 +427,13 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 + X._dual.inner(dual_work) \
                 + 0.5*self.mu*(dual_work.norm2**2)
             # evaluate the quality of the FLECS model
-            rho = (merit_init - merit_next)/max(self.krylov.pred_aug, EPS)
+            rho = (merit_init - merit_next)/self.krylov.pred_aug
 
             self.info_file.write(
                 'Trust Region Step : iter %i\n'%iters +
-                '   design_step    = %e\n'%P._primal._design.norm2 +
-                '   slack_step     = %e\n'%P._primal._slack.norm2 +
+                '   primal_step    = %e\n'%P._primal.norm2 +
+                '      design_step = %e\n'%P._primal._design.norm2 +
+                '      slack_step  = %e\n'%P._primal._slack.norm2 +
                 '   lambda_step    = %e\n'%P._dual.norm2 +
                 '\n' +
                 '   merit_init     = %e\n'%merit_init +
@@ -458,7 +459,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     P.equals(kkt_save)
                 else:
                     self.radius = max(0.5*P._primal.norm2, self.min_radius)
-                    shrunk = True
                     if self.radius == self.min_radius:
                         self.info_file.write(
                             '      Reached minimum radius! ' +
@@ -471,16 +471,14 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                             '%f\n'%self.radius)
                         self.krylov.radius = self.radius
                         self.krylov.re_solve(kkt_rhs, P)
+                        self.radius = self.krylov.radius
             else:
                 if iters == 2:
                     # 2nd order correction worked -- yay!
                     self.info_file.write('   Correction worked!\n')
 
                 # model is okay -- accept primal step
-                self.info_file.write('\nPrimal step accepted!\n')
-
-                # save the old step
-                kkt_save.equals(X)
+                self.info_file.write('\nStep accepted!\n')
 
                 # accept the new step entirely
                 X.plus(P)
@@ -492,6 +490,27 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 if self.factor_matrices and self.iter < self.max_iter:
                     factor_linear_system(X._primal._design, state)
 
+                # evaluate constraints
+                dual_work.equals_constraints(X._primal._design, state)
+                slack_work.exp(X._primal._slack)
+                slack_work.times(-1.)
+                dual_work.plus(slack_work)
+
+                # update the penalty coefficient
+                feas_norm = dual_work.norm2
+                if feas_norm > feas_tol:
+                    if feas_norm <= self.eta:
+                        # constraints are good
+                        # tighten tolerances
+                        self.eta = self.eta/(self.mu**0.9)
+                    else:
+                        # constraints are bad
+                        # increase penalty if we haven't met feasibility
+                        self.mu = min(self.mu*(10.**self.mu_pow), self.mu_max)
+                        self.eta = 1./(self.mu**0.1)
+                        self.info_file.write(
+                            '   Mu increased -> %1.2e\n'%self.mu)
+
                 # perform an adjoint solution for the Lagrangian
                 state_work.equals_objective_partial(X._primal._design, state)
                 dCdU(X._primal._design, state).T.product(X._dual, adjoint)
@@ -499,39 +518,11 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 state_work.times(-1.)
                 dRdU(X._primal._design, state).T.solve(state_work, adjoint)
 
-                # evaluate the KKT conditions
-                kkt_work.equals_KKT_conditions(
-                    X, state, adjoint, primal_work, dual_work)
-
-                # # decide if we wanna accept the multiplier update
-                # if kkt_work._primal.norm2 <= kkt_rhs._primal.norm2:
-                #     # primal optimality improved, accept multipliers
-                #     self.info_file.write('Dual step accepted!\n')
-                # else:
-                #     self.info_file.write('Dual step rejected...\n')
-                #     # primal optimality got worse, so reject multipliers
-                #     X._dual.equals(kkt_save._dual)
-                #     kkt_work.equals_KKT_conditions(
-                #         X, state, adjoint, primal_work, dual_work)
-
-                # update the penalty coefficient
-                feas_norm = kkt_work._dual.norm2
-                if feas_norm > feas_tol:
-                    if feas_norm <= self.eta:
-                        # constraints are good, tighten tolerance
-                        self.eta = self.eta/(self.mu**0.9)
-                    else:
-                        # constraints are bad, increase the penalty parameter
-                        self.mu = min(self.mu*(10.**self.mu_pow), self.mu_max)
-                        self.eta = 1./(self.mu**0.1)
-                        self.info_file.write(
-                            '   Mu increased -> %1.2e\n'%self.mu)
-
                 # check the trust radius
                 if self.krylov.trust_active:
                     # if active, decide if we want to increase it
                     self.info_file.write('Trust radius active...\n')
-                    if not shrunk:
+                    if rho >= 0.75:
                         # model is good enough -- increase radius
                         # self.radius = min(2.*P._primal.norm2, self.max_radius)
                         self.radius = min(2.*self.radius, self.max_radius)
