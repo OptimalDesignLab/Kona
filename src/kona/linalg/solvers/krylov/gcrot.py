@@ -49,11 +49,10 @@ class GCROT(KrylovSolver):
             dual = self.dual_fac.generate()
             return ReducedKKTVector(primal, dual)
 
-    def clear_subpace(self):
+    def clear_subspace(self):
         self.num_stored = 0
         self.ptr = 0
 
-        # ALP!!!! please check this
         # clear out all the vectors stored in C
         # the data goes back to the stack and is used again later
         for vector in self.C:
@@ -90,7 +89,7 @@ class GCROT(KrylovSolver):
         # calculate and store the initial residual
         mat_vec(x, res)
         res.minus(b)
-        res.times(-1.0) # ALP: I am assuming the residual is r = b - Ax
+        res.times(-1.0)
         beta = res.norm2
 
         # calculate norm of rhs vector
@@ -116,7 +115,7 @@ class GCROT(KrylovSolver):
             # initialize some work data for FGMRES
             W = []
             Z = []
-            y = numpy.zeros(fgmres_iter)
+            y = numpy.zeros(fgmres_iter + 1)
             sn = numpy.zeros(fgmres_iter + 1)
             cn = numpy.zeros(fgmres_iter + 1)
             H = numpy.zeros((fgmres_iter + 1, fgmres_iter))
@@ -130,7 +129,7 @@ class GCROT(KrylovSolver):
 
             # initialize the RHS of the reduced system
             g[0] = beta
-
+            inner_iters = 0
             lin_depend = False
             for i in xrange(fgmres_iter):
 
@@ -142,7 +141,7 @@ class GCROT(KrylovSolver):
                         '||res|| = %e\n'%beta)
                 elif beta < self.rel_tol*norm0 or iters >= self.max_krylov:
                     break
-
+                inner_iters += 1
                 iters += 1
 
                 # precondition W[i] and store result in Z[i]
@@ -182,6 +181,7 @@ class GCROT(KrylovSolver):
 
             # end nested FGMRES
             ###################
+            i = inner_iters
 
             # calculate U_new = (Z - U B)R^{-1} g
             # first, solve to get y = R^{-1} g
@@ -227,8 +227,7 @@ class GCROT(KrylovSolver):
 
             # get new residual norm
             # this should be the same as the last iter in FGMRES
-            print '||res|| =', res.norm2
-            print 'beta - ||res|| =', beta - res.norm2
+            # print 'beta - ||res|| =', beta - res.norm2
             beta = res.norm2
 
             if beta < self.rel_tol*norm0 or iters >= self.max_krylov:
