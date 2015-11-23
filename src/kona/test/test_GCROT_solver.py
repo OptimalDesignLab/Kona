@@ -95,7 +95,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         # clear the recycled subspace
         self.krylov.clear_subspace()
 
-        # change some parameters; Alp, is there a better way?
+        # change some parameters
         self.krylov.max_recycle = 2
         self.krylov.max_iter = 3
         self.krylov.max_outer = 100
@@ -146,6 +146,28 @@ class GCROTSolverTestCase(unittest.TestCase):
         diff = abs(self.x._data.data - expected)
         diff = max(diff)
         self.assertTrue(diff < 1.e-12)
+
+    def test_solve_underdetermined(self):
+        N = 100
+        # try solving a consistent underdetermined problem
+        self.A[10:N+1,:] = numpy.zeros((N+1-10,N+1))
+        self.b._data.data[10:N+1] = numpy.zeros(N+1-10)
+
+        # clear the recycled subspace
+        self.krylov.clear_subspace()
+
+        # change some parameters
+        self.krylov.max_recycle = 10
+        self.krylov.max_iter = 6
+        self.krylov.max_outer = 100
+        self.krylov.max_krylov = 100
+
+        # reset the solution vector
+        self.x.equals(0)
+        # solve the system with FGMRES
+        iters, beta, = self.krylov.solve(self.mat_vec, self.b, self.x,
+                                         self.precond.product)
+        self.assertTrue(iters == 10)
 
 if __name__ == "__main__":
 
