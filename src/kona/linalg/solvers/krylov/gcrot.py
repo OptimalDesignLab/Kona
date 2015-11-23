@@ -155,13 +155,13 @@ class GCROT(KrylovSolver):
                 try:
                     mod_gram_schmidt(i, B, self.C, W[i+1])
                 except numpy.linalg.LinAlgError:
-                    self.lin_depend = True
+                    lin_depend = True
 
                 # now orthonormalize W[i+1] against the W[:i]
                 try:
                     mod_GS_normalize(i, H, W)
                 except numpy.linalg.LinAlgError:
-                    self.lin_depend = True
+                    lin_depend = True
 
                 # apply old Givens rotations to new column of the Hessenberg
                 # matrix then generate new Givens rotation matrix and apply it

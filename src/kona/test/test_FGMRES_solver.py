@@ -16,14 +16,15 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.pf.request_num_vectors(7)
         optns = {
             'max_iter' : 30,
-            'rel_tol' : 1e-3,
+            'rel_tol' : 1e-15,
         }
         self.krylov = FGMRES(self.pf, optns)
         self.km.allocate_memory()
 
         self.x = self.pf.generate()
         self.b = self.pf.generate()
-        self.b.equals(1)
+        self.b.equals(1.)
+        self.b._data.data[0] = 2.0
         self.A = numpy.array([[4, 3, 2, 1],
                               [3, 4, 3, 2],
                               [2, 3, 4, 3],
@@ -47,6 +48,20 @@ class FLECSSolverTestCase(unittest.TestCase):
         diff = abs(self.x._data.data - expected)
         diff = max(diff)
         self.assertTrue(diff < 1.e-6)
+
+    def test_solve_underdetermined(self):
+        # try solving a consistent underdetermined problem
+        self.A = numpy.array([[4, 3, 2, 1],
+                              [3, 4, 3, 2],
+                              [2, 3, 4, 3],
+                              [0, 0, 0, 0]])
+        self.b._data.data[3] = 0.0
+        # reset the solution vector
+        self.x.equals(0)
+        # solve the system with FGMRES
+        iters, beta, = self.krylov.solve(self.mat_vec, self.b, self.x,
+                                         self.precond.product)
+        self.assertTrue(iters == 3)
 
 if __name__ == "__main__":
 
