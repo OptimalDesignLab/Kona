@@ -325,10 +325,7 @@ class Verifier(object):
         dir_deriv_fd = (J_pert - J)/epsilon_fd
         dir_deriv = v_p.inner(z_p)
         abs_error = abs(dir_deriv - dir_deriv_fd)
-        if abs_error < EPS:
-            rel_error = 0.0
-        else:
-            rel_error = abs_error/max(EPS, abs(dir_deriv))
+        rel_error = abs_error/max(EPS, abs(dir_deriv))
 
         self.out_stream.write(
             '============================================================\n' +
@@ -336,7 +333,7 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical dir_deriv : %f\n'%dir_deriv +
             '   finite-difference    : %f\n'%dir_deriv_fd +
-            '   absolute error       : %f\n'%abs_error +
+            '   absolute error       : %e\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -357,10 +354,7 @@ class Verifier(object):
         dir_deriv_fd = (J_pert - J)/epsilon_fd
         dir_deriv = v_s.inner(z_s)
         abs_error = abs(dir_deriv - dir_deriv_fd)
-        if abs_error < EPS:
-            rel_error = 0.0
-        else:
-            rel_error = abs_error/max(EPS, abs(dir_deriv))
+        rel_error = abs_error/max(EPS, abs(dir_deriv))
 
         self.out_stream.write(
             '============================================================\n' +
@@ -368,7 +362,7 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical dir_deriv : %f\n'%dir_deriv +
             '   finite-difference    : %f\n'%dir_deriv_fd +
-            '   absolute error       : %f\n'%abs_error +
+            '   absolute error       : %e\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -415,17 +409,14 @@ class Verifier(object):
         prod_norm_fd = y_s.inner(z_s)
         v_s.minus(y_s)
         error = abs(v_s.inner(z_s))
-        if error < EPS:
-            rel_error = 0.0
-        else:
-            rel_error = abs(error)/max(abs(prod_norm_fd), EPS)
+        rel_error = error/max(abs(prod_norm_fd), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
             'PDE jacobian-vector product test (design): dR/dX * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
-            '   analytical product   : %e\n'%prod_norm +
-            '   FD product           : %e\n'%prod_norm_fd +
+            '   analytical product   : %f\n'%prod_norm +
+            '   FD product           : %f\n'%prod_norm_fd +
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
@@ -439,10 +430,7 @@ class Verifier(object):
         dRdX(u_p, u_s).T.product(z_s, v_p)
         prod_rev = v_p.inner(z_p)
         abs_error = abs(prod_fwd - prod_rev)
-        if abs_error < EPS:
-            rel_error = 0.0
-        else:
-            rel_error = abs_error/max(abs(prod_fwd), EPS)
+        rel_error = abs_error/max(abs(prod_fwd), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -450,7 +438,7 @@ class Verifier(object):
             '1^{T} dR/dX * 1\n' +
             '   forward product      : %f\n'%prod_fwd +
             '   reverse product      : %f\n'%prod_rev +
-            '   absolute error       : %f\n'%abs_error +
+            '   absolute error       : %e\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -480,17 +468,14 @@ class Verifier(object):
         prod_norm_fd = prod_fd
         v_s.minus(y_s)
         error = abs(v_s.inner(z_s))
-        if error < EPS:
-            rel_error = 0.0
-        else:
-            rel_error = error/max(abs(prod_norm_fd), EPS)
+        rel_error = error/max(abs(prod_norm_fd), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
             'PDE jacobian-vector product test (state): dR/dU * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
-            '   analytical product   : %e\n'%prod_norm +
-            '   FD product           : %e\n'%prod_norm_fd +
+            '   analytical product   : %f\n'%prod_norm +
+            '   FD product           : %f\n'%prod_norm_fd +
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
@@ -506,10 +491,7 @@ class Verifier(object):
         dRdU(u_p, u_s).T.product(z_s, v_s)
         prod = v_s.inner(z_s)
         abs_error = abs(prod - prod_fd)
-        if abs_error == 0.0:
-            rel_error = 0.0
-        else:
-            rel_error = abs_error/max(abs(prod), EPS)
+        rel_error = abs_error/max(abs(prod), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -518,7 +500,7 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
-            '   absolute error       : %f\n'%abs_error +
+            '   absolute error       : %e\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -571,18 +553,15 @@ class Verifier(object):
         prod_norm_fd = y_d.inner(z_d)
         v_d.minus(y_d)
         error = abs(v_d.inner(z_d))
-        if error < EPS:
-            rel_error = 0.0
-        else:
-            rel_error = error/max(abs(prod_norm), EPS)
+        rel_error = error/max(abs(prod_norm), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
             'Constraint jacobian-vector product test (design):\n' +
             'dC/dX * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
-            '   analytical product   : %e\n'%prod_norm +
-            '   FD product           : %e\n'%prod_norm_fd +
+            '   analytical product   : %f\n'%prod_norm +
+            '   FD product           : %f\n'%prod_norm_fd +
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
@@ -600,10 +579,7 @@ class Verifier(object):
         prod = v_p.inner(z_p)
         prod_fd = y_d.inner(z_d)
         abs_error = abs(prod - prod_fd)
-        if abs_error == 0.0:
-            rel_error = 0.0
-        else:
-            rel_error = abs_error/max(abs(prod), EPS)
+        rel_error = abs_error/max(abs(prod), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -612,7 +588,7 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
-            '   absolute error       : %f\n'%abs_error +
+            '   absolute error       : %e\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -641,18 +617,15 @@ class Verifier(object):
         prod_norm_fd = y_d.inner(z_d)
         v_d.minus(y_d)
         error = abs(v_d.inner(z_d))
-        if error < EPS:
-            rel_error == 0.0
-        else:
-            rel_error = error/max(abs(prod_norm), EPS)
+        rel_error = error/max(abs(prod_norm), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
             'Constraint jacobian-vector product test (state):\n' +
             'dC/dU * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
-            '   analytical product   : %e\n'%prod_norm +
-            '   FD product           : %e\n'%prod_norm_fd +
+            '   analytical product   : %f\n'%prod_norm +
+            '   FD product           : %f\n'%prod_norm_fd +
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
@@ -669,10 +642,7 @@ class Verifier(object):
         prod = v_s.inner(z_s)
         prod_fd = y_d.inner(z_d)
         abs_error = abs(prod - prod_fd)
-        if abs_error == 0.0:
-            rel_error = 0.0
-        else:
-            rel_error = abs_error/max(abs(prod), EPS)
+        rel_error = abs_error/max(abs(prod), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -681,7 +651,7 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
-            '   absolute error       : %f\n'%abs_error +
+            '   absolute error       : %e\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
@@ -728,10 +698,7 @@ class Verifier(object):
         J_pert = objective_value(w_p, w_s)
         prod_fd = (J_pert - J)/epsilon_fd
         abs_error = abs(prod - prod_fd)
-        if abs_error < EPS:
-            rel_error = 0.0
-        else:
-            rel_error = abs_error/max(abs(prod), EPS)
+        rel_error = abs_error/max(abs(prod), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -740,7 +707,7 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
-            '   absolute error       : %f\n'%abs_error +
+            '   absolute error       : %e\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 

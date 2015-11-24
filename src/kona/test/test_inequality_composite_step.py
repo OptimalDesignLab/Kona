@@ -1,8 +1,8 @@
-import numpy
+import numpy, sys
 import unittest
 
 from kona import Optimizer
-from kona.algorithms import CompositeStep
+from kona.algorithms import CompositeStep, Verifier
 from kona.examples import SimpleConstrained, ExponentialConstrained, Sellar
 
 class InequalityCompositeStepTestCase(unittest.TestCase):
@@ -49,9 +49,22 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
                     'rel_tol'       : 1e-8,
                 }
             },
+
+            'verify' : {
+                'primal_vec'    : True,
+                'state_vec'     : True,
+                'dual_vec'      : True,
+                'gradients'     : True,
+                'pde_jac'       : True,
+                'cnstr_jac'     : True,
+                'red_grad'      : True,
+                'lin_solve'     : True,
+                'out_file'      : sys.stdout,
+            },
         }
 
         algorithm = CompositeStep
+        # algorithm = Verifier
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 
