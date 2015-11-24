@@ -182,6 +182,16 @@ class CompositeStep(OptimizationAlgorithm):
             self.info_file.write(
                 'multipliers        = %e\n\n'%X._dual.norm2)
 
+            # print 'design =', X._primal._design._data.data.x
+            # print 'slack:',
+            # print '   lower =', X._primal._slack._data.x_lower.x
+            # print '   upper =', X._primal._slack._data.x_upper.x
+            # print '   stress =', X._primal._slack._data.stress.x
+            # print 'dual:',
+            # print '   lower =', X._dual._data.x_lower.x
+            # print '   upper =', X._dual._data.x_upper.x
+            # print '   stress =', X._dual._data.stress.x
+
             if self.iter == 1:
                 # calculate initial norms
                 grad_norm0 = dLdX._primal.norm2
@@ -318,6 +328,8 @@ class CompositeStep(OptimizationAlgorithm):
                 X._primal.plus(P._primal)
                 X._primal._slack.restrict()
                 X._dual.plus(P._dual)
+                # X._primal.plus(normal_step._primal)
+                # X._primal._slack.restrict()
 
                 # calculate states
                 state.equals_primal_solution(X._primal._design)

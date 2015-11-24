@@ -125,3 +125,9 @@ class TangentKKTMatrix(BaseHessian):
         solution.equals(0.0)
         self.pred, self.trust_active = \
             self.krylov.solve(self.product, rhs, solution, self.precond)
+
+        # # # check the steepest descent against trust radius
+        # self.precond(rhs, solution)
+        # solution_norm = solution.norm2
+        # if solution_norm > self.radius:
+        #     solution.times(self.radius/solution_norm)

@@ -234,7 +234,7 @@ class GCROT(KrylovSolver):
 
             # get new residual norm
             # this should be the same as the last iter in FGMRES
-            #print 'beta - ||res|| =', beta - res.norm2
+            # print 'beta - ||res|| =', beta - res.norm2
             beta = res.norm2
 
             if beta < self.rel_tol*norm0 or iters >= self.max_krylov:
