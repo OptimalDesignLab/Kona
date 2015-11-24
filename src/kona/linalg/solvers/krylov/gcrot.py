@@ -55,20 +55,22 @@ class GCROT(KrylovSolver):
         # clear out all the vectors stored in C
         # the data goes back to the stack and is used again later
         for vector in self.C:
-            del vector._primal._design
-            del vector._primal._slack
-            del vector._primal
-            del vector._dual
+            if self.dual_fac is not None:
+                del vector._primal._design
+                del vector._primal._slack
+                del vector._primal
+                del vector._dual
             del vector
         self.C = []
 
         # clear out all vectors stored in U
         # the data goes back to the stack and is used again later
         for vector in self.U:
-            del vector._primal._design
-            del vector._primal._slack
-            del vector._primal
-            del vector._dual
+            if self.dual_fac is not None:
+                del vector._primal._design
+                del vector._primal._slack
+                del vector._primal
+                del vector._dual
             del vector
         self.U = []
 
