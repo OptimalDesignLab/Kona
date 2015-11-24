@@ -159,6 +159,8 @@ class GCROTSolverTestCase(unittest.TestCase):
         for k in xrange(20):
             self.x.equals(0.0)
             self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
+            if k % 5 == 0:
+                self.krylov.clear_subspace()
 
     def test_clear_subsapce(self):
         # clear the recycled subspace
