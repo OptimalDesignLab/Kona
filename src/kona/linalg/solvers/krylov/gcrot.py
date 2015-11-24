@@ -92,6 +92,11 @@ class GCROT(KrylovSolver):
         mat_vec(x, res)
         res.minus(b)
         res.times(-1.0)
+        # find initial guess from recycled subspace
+        for k in xrange(self.num_stored):
+            alpha = res.inner(self.C[k])
+            x.equals_ax_p_by(1.0, x, alpha, self.U[k])
+            res.equals_ax_p_by(1.0, res, -alpha, self.C[k])
         beta = res.norm2
 
         # calculate norm of rhs vector
@@ -229,7 +234,7 @@ class GCROT(KrylovSolver):
 
             # get new residual norm
             # this should be the same as the last iter in FGMRES
-            # print 'beta - ||res|| =', beta - res.norm2
+            #print 'beta - ||res|| =', beta - res.norm2
             beta = res.norm2
 
             if beta < self.rel_tol*norm0 or iters >= self.max_krylov:
