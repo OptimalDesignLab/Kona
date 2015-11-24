@@ -77,6 +77,9 @@ class GCROT(KrylovSolver):
         # force garbage collection
         gc.collect()
 
+        # print into krylov file
+        self.out_file.write('# Subspace cleared!\n')
+
     def solve(self, mat_vec, b, x, precond):
         # validate solver options
         self._validate_options()
@@ -233,7 +236,7 @@ class GCROT(KrylovSolver):
 
             # get new residual norm
             # this should be the same as the last iter in FGMRES
-            #print 'beta - ||res|| =', beta - res.norm2
+            # print 'beta - ||res|| =', beta - res.norm2
             beta = res.norm2
 
             if beta < self.rel_tol*norm0 or iters >= self.max_krylov:

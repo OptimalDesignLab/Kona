@@ -4,12 +4,10 @@ from kona.options import get_opt
 from kona.linalg import current_solution, factor_linear_system, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.matrices.common import dCdX, dCdU, dRdX, dRdU
+from kona.linalg.matrices.common import dCdU, dRdU
 from kona.linalg.matrices.hessian import NormalKKTMatrix, TangentKKTMatrix
 from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
-from kona.algorithms.util.merit import QuadraticPenalty
-from kona.algorithms.util.linesearch import BackTracking
 
 class CompositeStep(OptimizationAlgorithm):
     """
@@ -35,9 +33,9 @@ class CompositeStep(OptimizationAlgorithm):
             primal_factory, state_factory, dual_factory, optns)
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(5 + 2 + 2)
-        self.state_factory.request_num_vectors(5)
-        self.dual_factory.request_num_vectors(10 + 2 + 3)
+        self.primal_factory.request_num_vectors(8)
+        self.state_factory.request_num_vectors(3)
+        self.dual_factory.request_num_vectors(14)
 
         # get general options
         self.cnstr_tol = get_opt(optns, 1e-8, 'feas_tol')
@@ -51,21 +49,7 @@ class CompositeStep(OptimizationAlgorithm):
         # get globalization type
         self.globalization = get_opt(optns, 'trust', 'globalization')
 
-        if self.globalization == 'linesearch':
-            # get penalty parameter options for the merit function
-            self.mu = get_opt(optns, 1.0, 'penalty', 'mu_init')
-            self.mu_max = get_opt(optns, 1e5, 'penalty', 'mu_max')
-            # if we're doing linesearch, initialize some objects
-            merit_func = get_opt(optns, QuadraticPenalty, 'merit_function')
-            self.merit_func = merit_func(
-                self.primal_factory, self.state_factory, self.dual_factory,
-                out_file=self.info_file)
-            line_search = get_opt(optns, BackTracking, 'linsearch', 'type')
-            line_search_opt = get_opt(optns, {}, 'linesearch')
-            self.line_search = line_search(
-                line_search_opt, out_file=self.info_file)
-
-        elif self.globalization == 'trust':
+        if self.globalization == 'trust':
             # get penalty parameter options for the augmented Lagrangian
             self.mu = get_opt(optns, 1.0, 'penalty', 'mu_init')
             self.mu_pow = get_opt(optns, 0.5, 'penalty', 'mu_pow')
@@ -141,19 +125,15 @@ class CompositeStep(OptimizationAlgorithm):
 
         # generate primal vectors
         design_work = self.primal_factory.generate()
-        x_trial = self.primal_factory.generate()
 
         # generate state vectors
         state = self.state_factory.generate()
         state_work = self.state_factory.generate()
-        u_trial = self.state_factory.generate()
         adjoint = self.state_factory.generate()
-        adjoint_work = self.state_factory.generate()
 
         # generate dual vectors
         dual_work = self.dual_factory.generate()
         slack_work = self.dual_factory.generate()
-        s_trial = self.dual_factory.generate()
 
         # initialize basic data for outer iterations
         converged = False
@@ -201,6 +181,16 @@ class CompositeStep(OptimizationAlgorithm):
                 '   slack vars      = %e\n'%X._primal._slack.norm2)
             self.info_file.write(
                 'multipliers        = %e\n\n'%X._dual.norm2)
+
+            # print 'design =', X._primal._design._data.data.x
+            # print 'slack:',
+            # print '   lower =', X._primal._slack._data.x_lower.x
+            # print '   upper =', X._primal._slack._data.x_upper.x
+            # print '   stress =', X._primal._slack._data.stress.x
+            # print 'dual:',
+            # print '   lower =', X._dual._data.x_lower.x
+            # print '   upper =', X._dual._data.x_upper.x
+            # print '   stress =', X._dual._data.stress.x
 
             if self.iter == 1:
                 # calculate initial norms
@@ -333,23 +323,13 @@ class CompositeStep(OptimizationAlgorithm):
                     self.info_file.write(
                         'Trust radius breakdown! Terminating...\n')
                     break
-            elif self.globalization == 'linesearch':
-                old_flag = min_radius_active
-                success, min_radius_active = self.linesearch_step(
-                    X, state, adjoint, P,
-                    design_work, x_trial, state_work, u_trial, adjoint_work,
-                    dual_work, slack_work, s_trial)
-
-                # watchdog on trust region failures
-                if min_radius_active and old_flag:
-                    self.info_file.write(
-                        'Trust radius breakdown! Terminating...\n')
-                    break
             elif self.globalization is None:
                 # accept step
                 X._primal.plus(P._primal)
                 X._primal._slack.restrict()
                 X._dual.plus(P._dual)
+                # X._primal.plus(normal_step._primal)
+                # X._primal._slack.restrict()
 
                 # calculate states
                 state.equals_primal_solution(X._primal._design)
@@ -382,134 +362,6 @@ class CompositeStep(OptimizationAlgorithm):
 
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n\n'%self.iter)
-
-    def linesearch_step(self, X, at_state, at_adjoint, P,
-                        design_work, x_trial, state_work, u_trial, adjoint_work,
-                        dual_work, slack_work, s_trial):
-        # do some aliasing
-        at_design = X._primal._design
-        at_slack = X._primal._slack
-
-        # get the partial objective
-        design_work.equals_objective_partial(at_design, at_state)
-        # compute costraint vector
-        dual_work.equals_constraints(at_design, at_state)
-        # subtract slack term
-        slack_work.exp(at_slack)
-        slack_work.restrict()
-        dual_work.minus(slack_work)
-        # update the penalty parameter
-        dual_work.equals_constraints(X._primal._design, at_state)
-        slack_work.exp(X._primal._slack)
-        slack_work.restrict()
-        dual_work.minus(slack_work)
-
-        # adjust the penalty perameter
-        s_trial.equals_ax_p_by(1., X._dual, 1., P._dual)
-        old_mu = self.mu
-        self.mu = max(self.mu, s_trial.norm2/(2.*dual_work.norm2))
-        if self.mu != old_mu:
-            self.info_file.write('Mu updated -> %e\n'%self.mu)
-
-        # compute and add constraint partial contribution
-        dCdX(at_design, at_state).T.product(dual_work, x_trial)
-        x_trial.times(self.mu)
-        design_work.plus(x_trial)
-
-        # assemble the adjoint equation RHS
-        # get the objective partial
-        state_work.equals_objective_partial(at_design, at_state)
-        # add contribution from (c^T c) -- this includes slacks already
-        dCdU(at_design, at_state).T.product(dual_work, adjoint_work)
-        state_work.plus(adjoint_work)
-        # move the vector to RHS
-        state_work.times(-1.)
-        # solve the adjoint
-        dRdU(at_design, at_state).T.solve(state_work, adjoint_work)
-
-        # add the state contribution
-        dRdX(at_design, at_state).T.product(adjoint_work, x_trial)
-        x_trial.times(self.mu)
-        design_work.plus(x_trial)
-
-        # calculate the directional derivative
-        p_dot_grad = \
-            design_work.inner(P._primal._design) + \
-            slack_work.inner(P._primal._slack)
-        if p_dot_grad >= 0:
-            raise ValueError('Search direction is not a descent direction!')
-
-        # calculate the initial merit value
-        f_init = objective_value(at_design, at_state) \
-            + self.mu*(dual_work.norm2**2)
-
-        # start linesearch iterations
-        max_iter = 10
-        n_iter = 0
-        min_alpha = 1e-4
-        alpha = 1
-        decr_cond = 1e-4
-        rdtn_factor = 0.5
-        success = False
-        while alpha > min_alpha and n_iter < max_iter:
-            f_suff = f_init + alpha*decr_cond*p_dot_grad
-            x_trial.equals_ax_p_by(1., at_design, alpha, P._primal._design)
-            s_trial.equals_ax_p_by(1., at_slack, alpha, P._primal._slack)
-            u_trial.equals_primal_solution(x_trial)
-            dual_work.equals_constraints(x_trial, u_trial)
-            slack_work.exp(s_trial)
-            slack_work.restrict()
-            dual_work.minus(slack_work)
-            f = objective_value(x_trial, u_trial) \
-                + self.mu*(dual_work.norm2**2)
-            if f <= f_suff:
-                success = True
-                break
-            else:
-                alpha *= rdtn_factor
-
-        min_radius_active = False
-        if success:
-            self.info_file.write(
-                'Line search succeeded with alpha = %f\n'%alpha)
-
-            # apply the step
-            X._primal.equals_ax_p_by(1., X._primal, alpha, P._primal)
-            X._primal._slack.restrict()
-            X._dual.plus(P._dual)
-
-            # calculate states
-            at_state.equals_primal_solution(X._primal._design)
-
-            # if this is a matrix-based problem, tell the solver to factor
-            # some important matrices to be used in the next iteration
-            if self.factor_matrices and self.iter < self.max_iter:
-                factor_linear_system(X._primal._design, at_state)
-
-            # perform an adjoint solution for the Lagrangian
-            state_work.equals_objective_partial(X._primal._design, at_state)
-            dCdU(X._primal._design, at_state).T.product(X._dual, at_adjoint)
-            state_work.plus(at_adjoint)
-            state_work.times(-1.)
-            dRdU(X._primal._design, at_state).T.solve(state_work, at_adjoint)
-
-            # handle the trust radius
-            if self.tangent_KKT.trust_active and alpha == 1:
-                self.info_file.write('Trust radius active...\n')
-                if self.radius < self.max_radius:
-                    self.radius = min(2.*P._primal.norm2, self.max_radius)
-                    self.info_file.write(
-                        '   Radius increased -> %f\n'%self.radius)
-        else:
-            self.info_file.write('Line search failed!\n')
-            if self.radius > self.min_radius:
-                self.radius = max(0.5*P._primal.norm2, self.min_radius)
-                self.info_file.write('   Radius shrunk -> %f\n'%self.radius)
-            else:
-                min_radius_active = True
-
-        # return some flags
-        return success, min_radius_active
 
     def trust_step(self):
         success = False
