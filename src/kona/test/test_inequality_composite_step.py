@@ -51,7 +51,6 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
             },
         }
 
-        # algorithm = Verifier
         algorithm = CompositeStep
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()

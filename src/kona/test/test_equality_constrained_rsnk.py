@@ -23,7 +23,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
             'trust' : {
                 'init_radius' : 0.5,
-                'max_radius' : 20.0,
+                'max_radius' : 10.0,
                 'min_radius' : 1e-4,
             },
 

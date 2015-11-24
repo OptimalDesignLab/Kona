@@ -1,10 +1,12 @@
-import sys
+import numpy, sys
 
 from kona.options import get_opt
 from kona.linalg import objective_value, factor_linear_system
-from kona.linalg.solvers.util import EPS, calc_epsilon
+from kona.linalg.solvers.util import calc_epsilon
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+
+EPS = numpy.finfo(numpy.float32).eps
 
 class Verifier(object):
     """
@@ -322,7 +324,11 @@ class Verifier(object):
         J_pert = objective_value(w_p, u_s)
         dir_deriv_fd = (J_pert - J)/epsilon_fd
         dir_deriv = v_p.inner(z_p)
-        rel_error = abs(dir_deriv - dir_deriv_fd)/(EPS + abs(dir_deriv))
+        abs_error = abs(dir_deriv - dir_deriv_fd)
+        if abs_error < EPS:
+            rel_error = 0.0
+        else:
+            rel_error = abs_error/max(EPS, abs(dir_deriv))
 
         self.out_stream.write(
             '============================================================\n' +
@@ -330,10 +336,11 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical dir_deriv : %f\n'%dir_deriv +
             '   finite-difference    : %f\n'%dir_deriv_fd +
+            '   absolute error       : %f\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
-        if abs(dir_deriv - dir_deriv_fd) > (abs(dir_deriv) + EPS)*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['gradients']['eval_dFdX'] = True
             self.out_stream.write(
                 'WARNING: eval_dFdX() or eval_obj() may be inaccurate!\n'
@@ -349,7 +356,11 @@ class Verifier(object):
         J_pert = objective_value(u_p, w_s)
         dir_deriv_fd = (J_pert - J)/epsilon_fd
         dir_deriv = v_s.inner(z_s)
-        rel_error = abs(dir_deriv - dir_deriv_fd)/(EPS + abs(dir_deriv))
+        abs_error = abs(dir_deriv - dir_deriv_fd)
+        if abs_error < EPS:
+            rel_error = 0.0
+        else:
+            rel_error = abs_error/max(EPS, abs(dir_deriv))
 
         self.out_stream.write(
             '============================================================\n' +
@@ -357,10 +368,11 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical dir_deriv : %f\n'%dir_deriv +
             '   finite-difference    : %f\n'%dir_deriv_fd +
+            '   absolute error       : %f\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
-        if abs(dir_deriv - dir_deriv_fd) > (abs(dir_deriv) + EPS)*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['gradients']['eval_dFdU'] = True
             self.out_stream.write(
                 'WARNING: eval_dFdU() or eval_obj() may be inaccurate!\n')
@@ -402,8 +414,11 @@ class Verifier(object):
         y_s.divide_by(epsilon_fd)
         prod_norm_fd = y_s.inner(z_s)
         v_s.minus(y_s)
-        error = v_s.norm2
-        rel_error = error/(y_s.norm2 + EPS)
+        error = abs(v_s.inner(z_s))
+        if error < EPS:
+            rel_error = 0.0
+        else:
+            rel_error = abs(error)/max(abs(prod_norm_fd), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -411,10 +426,10 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %e\n'%prod_norm +
             '   FD product           : %e\n'%prod_norm_fd +
-            '   absolute error norm  : %e\n'%error +
-            '   relative error norm  : %e\n'%rel_error
+            '   absolute error       : %e\n'%error +
+            '   relative error       : %e\n'%rel_error
         )
-        if error > prod_norm*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['pde_jac']['multiply_dRdX'] = True
             self.out_stream.write(
                 'WARNING: multiply_dRdX or eval_residual may be inaccurate!\n'
@@ -423,7 +438,11 @@ class Verifier(object):
         v_p.equals(1./EPS)
         dRdX(u_p, u_s).T.product(z_s, v_p)
         prod_rev = v_p.inner(z_p)
-        rel_error = abs(prod_fwd - prod_rev)/(abs(prod_fwd) + EPS)
+        abs_error = abs(prod_fwd - prod_rev)
+        if abs_error < EPS:
+            rel_error = 0.0
+        else:
+            rel_error = abs_error/max(abs(prod_fwd), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -431,10 +450,11 @@ class Verifier(object):
             '1^{T} dR/dX * 1\n' +
             '   forward product      : %f\n'%prod_fwd +
             '   reverse product      : %f\n'%prod_rev +
-            '   relative error norm  : %e\n'%rel_error
+            '   absolute error       : %f\n'%abs_error +
+            '   relative error       : %e\n'%rel_error
         )
 
-        if abs(prod_fwd - prod_rev) > abs(prod_fwd)*EPS:
+        if rel_error > epsilon_fd:
             self.failures['pde_jac']['multiply_dRdX_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dRdX_T() may be inaccurate!\n'
@@ -459,8 +479,11 @@ class Verifier(object):
         prod_fd = y_s.inner(z_s)
         prod_norm_fd = prod_fd
         v_s.minus(y_s)
-        error = v_s.norm2
-        rel_error = error/(prod_norm_fd + EPS)
+        error = abs(v_s.inner(z_s))
+        if error < EPS:
+            rel_error = 0.0
+        else:
+            rel_error = error/max(abs(prod_norm_fd), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -472,7 +495,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if error > prod_norm*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['pde_jac']['multiply_dRdU'] = True
             self.out_stream.write(
                 'WARNING: multiply_dRdU() or eval_residual() ' +
@@ -482,7 +505,11 @@ class Verifier(object):
         v_s.equals(1./EPS)
         dRdU(u_p, u_s).T.product(z_s, v_s)
         prod = v_s.inner(z_s)
-        rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
+        abs_error = abs(prod - prod_fd)
+        if abs_error == 0.0:
+            rel_error = 0.0
+        else:
+            rel_error = abs_error/max(abs(prod), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -491,10 +518,11 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
+            '   absolute error       : %f\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
-        if abs(prod - prod_fd) > (abs(prod) + EPS)*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['pde_jac']['multiply_dRdU_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dRdU_T() may be inaccurate!\n'
@@ -542,8 +570,11 @@ class Verifier(object):
         y_d.divide_by(epsilon_fd)
         prod_norm_fd = y_d.inner(z_d)
         v_d.minus(y_d)
-        error = v_d.norm2
-        rel_error = error/(prod_norm + EPS)
+        error = abs(v_d.inner(z_d))
+        if error < EPS:
+            rel_error = 0.0
+        else:
+            rel_error = error/max(abs(prod_norm), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -556,7 +587,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if error > prod_norm*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdX'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCdX() or eval_constraints() ' +
@@ -568,7 +599,11 @@ class Verifier(object):
         dCdX(u_p, u_s).T.product(z_d, v_p)
         prod = v_p.inner(z_p)
         prod_fd = y_d.inner(z_d)
-        rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
+        abs_error = abs(prod - prod_fd)
+        if abs_error == 0.0:
+            rel_error = 0.0
+        else:
+            rel_error = abs_error/max(abs(prod), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -577,10 +612,11 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
+            '   absolute error       : %f\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
-        if abs(prod - prod_fd) > (abs(prod) + EPS)*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdX_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCdX_T() may be inaccurate!\n'
@@ -604,8 +640,11 @@ class Verifier(object):
         y_d.divide_by(epsilon_fd)
         prod_norm_fd = y_d.inner(z_d)
         v_d.minus(y_d)
-        error = v_d.norm2
-        rel_error = error/(prod_norm + EPS)
+        error = abs(v_d.inner(z_d))
+        if error < EPS:
+            rel_error == 0.0
+        else:
+            rel_error = error/max(abs(prod_norm), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -618,7 +657,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if error > prod_norm*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdU'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCdU() or eval_constraints() ' +
@@ -629,7 +668,11 @@ class Verifier(object):
         dCdU(u_p, u_s).T.product(z_d, v_s)
         prod = v_s.inner(z_s)
         prod_fd = y_d.inner(z_d)
-        rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
+        abs_error = abs(prod - prod_fd)
+        if abs_error == 0.0:
+            rel_error = 0.0
+        else:
+            rel_error = abs_error/max(abs(prod), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -638,10 +681,11 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
+            '   absolute error       : %f\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
-        if abs(prod - prod_fd) > (abs(prod) + EPS)*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['cnstr_jac']['multiply_dCdU_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCdU_T() may be inaccurate!\n'
@@ -683,7 +727,11 @@ class Verifier(object):
             factor_linear_system(w_p, w_s)
         J_pert = objective_value(w_p, w_s)
         prod_fd = (J_pert - J)/epsilon_fd
-        rel_error = abs(prod - prod_fd)/(abs(prod) + EPS)
+        abs_error = abs(prod - prod_fd)
+        if abs_error < EPS:
+            rel_error = 0.0
+        else:
+            rel_error = abs_error/max(abs(prod), EPS)
 
         self.out_stream.write(
             '============================================================\n' +
@@ -692,10 +740,11 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
+            '   absolute error       : %f\n'%abs_error +
             '   relative error       : %e\n'%rel_error
         )
 
-        if abs(prod - prod_fd) > (abs(prod) + EPS)*epsilon_fd:
+        if rel_error > epsilon_fd:
             self.failures['red_grad']['solve_adjoint'] = True
             self.out_stream.write(
                 'WARNING: solve_adjoint() may be inaccurate!\n'
