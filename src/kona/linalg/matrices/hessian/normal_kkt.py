@@ -42,7 +42,8 @@ class NormalKKTMatrix(BaseHessian):
         self.dual_factory.request_num_vectors(1)
         self._allocated = False
 
-        self.use_gcrot = False
+        # decide which krylov solver we use
+        self.use_gcrot = get_opt(optns, False, 'use_gcrot')
 
         # initialize the constraint jacobian
         self.A = TotalConstraintJacobian(vector_factories)
