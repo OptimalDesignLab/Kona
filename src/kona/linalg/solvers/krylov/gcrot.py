@@ -28,7 +28,7 @@ class GCROT(KrylovSolver):
         self.max_krylov = get_opt(optns, 50, 'max_matvec')
 
         # put in memory request
-        num_vectors = 2*self.max_iter + 2*self.max_recycle + 3
+        num_vectors = 2*self.max_iter + 2*self.max_recycle + 4
         self.vec_fac.request_num_vectors(num_vectors)
         self.dual_fac = dual_factory
         if self.dual_fac is not None:

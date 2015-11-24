@@ -41,9 +41,6 @@ class GCROTSolverTestCase(unittest.TestCase):
         out_data = self.A.dot(in_data)
         out_vec._data.data[:] = out_data[:]
 
-    def test_dummy(self):
-        self.failUnless('Untested')
-
     def test_solve(self):
         # reset the solution vector
         self.x.equals(0.0)
@@ -167,7 +164,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         # solve the system with FGMRES
         iters, beta, = self.krylov.solve(self.mat_vec, self.b, self.x,
                                          self.precond.product)
-        self.assertTrue(iters == 10)
+        self.assertTrue(iters == 10)        
 
 if __name__ == "__main__":
 
