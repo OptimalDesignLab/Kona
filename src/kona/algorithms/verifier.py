@@ -390,8 +390,8 @@ class Verifier(object):
 
         v_s.equals(1./EPS)
         dRdX(u_p, u_s).product(z_p, v_s)
-        prod_norm = v_s.norm2
         prod_fwd = v_s.inner(z_s)
+        prod_norm = prod_fwd
 
         epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
         w_p.equals(z_p)
@@ -400,7 +400,7 @@ class Verifier(object):
         y_s.equals_residual(w_p, u_s)
         y_s.minus(x_s)
         y_s.divide_by(epsilon_fd)
-        prod_norm_fd = y_s.norm2
+        prod_norm_fd = y_s.inner(z_s)
         v_s.minus(y_s)
         error = v_s.norm2
         rel_error = error/(y_s.norm2 + EPS)
@@ -411,8 +411,8 @@ class Verifier(object):
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %e\n'%prod_norm +
             '   FD product           : %e\n'%prod_norm_fd +
-            '   absolute error       : %e\n'%error +
-            '   relative error       : %e\n'%rel_error
+            '   absolute error norm  : %e\n'%error +
+            '   relative error norm  : %e\n'%rel_error
         )
         if error > prod_norm*epsilon_fd:
             self.failures['pde_jac']['multiply_dRdX'] = True
@@ -431,7 +431,7 @@ class Verifier(object):
             '1^{T} dR/dX * 1\n' +
             '   forward product      : %f\n'%prod_fwd +
             '   reverse product      : %f\n'%prod_rev +
-            '   relative error       : %e\n'%rel_error
+            '   relative error norm  : %e\n'%rel_error
         )
 
         if abs(prod_fwd - prod_rev) > abs(prod_fwd)*EPS:
@@ -447,7 +447,7 @@ class Verifier(object):
         v_s.equals(1./EPS)
         z_s.equals(1.)
         dRdU(u_p, u_s).product(z_s, v_s)
-        prod_norm = v_s.norm2
+        prod_norm = v_s.inner(z_s)
 
         epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
         w_s.equals(z_s)
@@ -456,8 +456,8 @@ class Verifier(object):
         y_s.equals_residual(u_p, w_s)
         y_s.minus(x_s)
         y_s.divide_by(epsilon_fd)
-        prod_norm_fd = y_s.norm2
         prod_fd = y_s.inner(z_s)
+        prod_norm_fd = prod_fd
         v_s.minus(y_s)
         error = v_s.norm2
         rel_error = error/(prod_norm_fd + EPS)
@@ -528,9 +528,10 @@ class Verifier(object):
         x_d.equals_constraints(u_p, u_s)
 
         z_p.equals(1.0)
+        z_d.equals(1.0)
         v_d.equals(1./EPS)
         dCdX(u_p, u_s).product(z_p, v_d)
-        prod_norm = v_d.norm2
+        prod_norm = v_d.inner(z_d)
 
         epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
         w_p.equals(z_p)
@@ -539,7 +540,7 @@ class Verifier(object):
         y_d.equals_constraints(w_p, u_s)
         y_d.minus(x_d)
         y_d.divide_by(epsilon_fd)
-        prod_norm_fd = y_d.norm2
+        prod_norm_fd = y_d.inner(z_d)
         v_d.minus(y_d)
         error = v_d.norm2
         rel_error = error/(prod_norm + EPS)
@@ -590,9 +591,10 @@ class Verifier(object):
                 )
 
         z_s.equals(1.0)
+        z_d.equals(1.0)
         v_d.equals(1./EPS)
         dCdU(u_p, u_s).product(z_s, v_d)
-        prod_norm = v_d.norm2
+        prod_norm = v_d.inner(z_d)
         epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
         w_s.equals(z_s)
         w_s.times(epsilon_fd)
@@ -600,7 +602,7 @@ class Verifier(object):
         y_d.equals_constraints(u_p, w_s)
         y_d.minus(x_d)
         y_d.divide_by(epsilon_fd)
-        prod_norm_fd = y_d.norm2
+        prod_norm_fd = y_d.inner(z_d)
         v_d.minus(y_d)
         error = v_d.norm2
         rel_error = error/(prod_norm + EPS)

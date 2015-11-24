@@ -364,6 +364,9 @@ class CompositeStep(OptimizationAlgorithm):
             'Total number of nonlinear iterations: %i\n\n'%self.iter)
 
     def trust_step(self):
+        
+
+
         success = False
         min_radius_active = False
         raise NotImplementedError
