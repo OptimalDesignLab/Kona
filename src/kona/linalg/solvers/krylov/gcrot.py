@@ -25,7 +25,7 @@ class GCROT(KrylovSolver):
         self.num_stored = 0
         self.ptr = 0 # index of oldest vector in recycled subspace
         self.max_outer = get_opt(optns, 10, 'max_outer')
-        self.max_krylov = get_opt(optns, 50, 'max_krylov')
+        self.max_krylov = get_opt(optns, 50, 'max_matvec')
 
         # put in memory request
         num_vectors = 2*self.max_iter + 2*self.max_recycle + 3
@@ -155,13 +155,13 @@ class GCROT(KrylovSolver):
                 try:
                     mod_gram_schmidt(i, B, self.C, W[i+1])
                 except numpy.linalg.LinAlgError:
-                    self.lin_depend = True
+                    lin_depend = True
 
                 # now orthonormalize W[i+1] against the W[:i]
                 try:
                     mod_GS_normalize(i, H, W)
                 except numpy.linalg.LinAlgError:
-                    self.lin_depend = True
+                    lin_depend = True
 
                 # apply old Givens rotations to new column of the Hessenberg
                 # matrix then generate new Givens rotation matrix and apply it

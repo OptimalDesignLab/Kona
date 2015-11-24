@@ -25,7 +25,7 @@ a multidimensional Rosenbrock problem using the reduced-space Newton-Krylov
 
     # options dictionary -- we only need convergence tolerance for now
     optns = {
-        'primal_tol' : 1e-12,
+        'opt_tol' : 1e-12,
     }
 
     # initialize the optimization controller

@@ -49,13 +49,15 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # set the krylov solver
-        try:
-            krylov = get_opt(optns, STCG, 'krylov', 'solver')
-            krylov_optns = get_opt(optns, {}, 'krylov')
-            self.krylov = krylov(self.primal_factory, krylov_optns)
-            self.krylov.radius = self.radius
-        except:
-            raise BadKonaOption(optns, 'krylov', 'solver')
+        krylov_optns = {
+            'krylov_file'   : get_opt(
+                optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
+            'subspace_size' : get_opt(optns, 10, 'rsnk', 'subspace_size'),
+            'check_res'     : get_opt(optns, True, 'rsnk', 'check_res'),
+            'rel_tol'       : get_opt(optns, 1e-2, 'rsnk', 'rel_tol'),
+        }
+        self.krylov = STCG(self.primal_factory, krylov_optns)
+        self.krylov.radius = self.radius
 
         # initialize the ReducedHessian approximation
         reduced_optns = get_opt(optns, {}, 'reduced')
@@ -67,7 +69,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         self.hessian.set_krylov_solver(self.krylov)
 
         # initialize the preconditioner to the ReducedHessian
-        self.precond = get_opt(optns, None, 'reduced', 'precond')
+        self.precond = get_opt(optns, None, 'rsnk', 'precond')
         if self.precond == 'quasi_newton':
             # set the type of quasi-Newton method
             try:

@@ -17,8 +17,8 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
         optns = {
             'info_file' : 'kona_info.dat',
             'max_iter' : 50,
-            'primal_tol' : 1e-5,
-            'constraint_tol' : 1e-5,
+            'opt_tol' : 1e-5,
+            'feas_tol' : 1e-5,
             'globalization' : 'trust',
 
             'trust' : {
@@ -27,10 +27,28 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
                 'min_radius' : 1e-4,
             },
 
-            'aug_lag' : {
-                'mu_init' : 0.5,
-                'mu_pow' : 0.5,
+            'penalty' : {
+                'mu_init' : 0.1,
+                'mu_pow' : 0.1,
                 'mu_max' : 1e5,
+            },
+
+            'rsnk' : {
+                'precond'       : None,
+                # rsnk algorithm settings
+                'dynamic_tol'   : False,
+                'nu'            : 0.95,
+                # reduced KKT matrix settings
+                'product_fac'   : 0.001,
+                'lambda'        : 0.0,
+                'scale'         : 1.0,
+                'grad_scale'    : 1.0,
+                'feas_scale'    : 1.0,
+                # FLECS solver settings
+                'krylov_file'   : 'kona_krylov.dat',
+                'subspace_size' : 10,
+                'check_res'     : True,
+                'rel_tol'       : 0.00095,
             },
         }
 

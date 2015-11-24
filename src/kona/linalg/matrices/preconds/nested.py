@@ -47,7 +47,7 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
                 'max_iter' : 30,
                 'max_recycle' : 10,
                 'max_outer' : 100,
-                'max_krylov' : 40, # this should be hit first
+                'max_matvec' : 40, # this should be hit first
                 'rel_tol'  : 1e-2,
             }
             self.krylov = GCROT(
@@ -57,7 +57,7 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
         else:
             krylov_optns = {
                 'out_file' : 'kona_nested_krylov.dat',
-                'max_iter' : 40,
+                'max_iter' : 30,
                 'rel_tol'  : 1e-2,
             }
             self.krylov = FGMRES(

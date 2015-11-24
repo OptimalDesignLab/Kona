@@ -61,36 +61,63 @@ from kona.linalg.solvers.krylov import STCG
 
 defaults = {
     'max_iter'          : 100,
-    'primal_tol'        : 1e-8,
-    'constraint_tol'    : 1e-8,
+    'opt_tol'           : 1e-8,
+    'feas_tol'          : 1e-8,
     'info_file'         : sys.stdout,
     'hist_file'         : 'kona_hist.dat',
     'matrix_explicit'   : False,
 
-    'merit_function' : {
-        'type'          : ObjectiveMerit,
-    },
+    'globalization' : 'trust',
 
     'trust' : {
         'init_radius'   : 0.5,
         'max_radius'    : 0.5*(2**3),
         'min_radius'    : 0.5/(2**3),
+        'tol'           : 0.1,
     },
 
-    'aug_lag' : {
-        'barrier_init' : 1000.0,
-        'mu_init' : 10.0,
-        'mu_pow' : 1.0,
-        'mu_max' : 1e5,
+    'penalty' : {
+        'mu_init'       : 0.1,
+        'mu_max'        : 1e5,
+        'mu_pow'        : 1.0,
     },
 
-    'reduced' : {
-        'precond'       : None,
+    'rsnk' : {
+        'precond'       : 'nested',
+        # rsnk algorithm settings
+        'dynamic_tol'   : False,
+        'nu'            : 0.95,
+        # reduced KKT matrix settings
         'product_fac'   : 0.001,
         'lambda'        : 0.0,
-        'scale'         : 0.0,
-        'nu'            : 0.95,
-        'dynamic_tol'   : False,
+        'scale'         : 1.0,
+        'grad_scale'    : 1.0,
+        'feas_scale'    : 1.0,
+        # FLECS solver settings
+        'krylov_file'   : 'kona_krylov.dat',
+        'subspace_size' : 10,
+        'check_res'     : True,
+        'rel_tol'       : 1e-3,
+    },
+
+    'composite-step' : {
+        'normal-step' : {
+            'precond'       : 'svd',
+            'lanczos_size'  : 10,
+            'out_file'      : 'kona_normal_krylov.dat',
+            'subspace_size' : 10,
+            'max_outer'     : 10,
+            'max_recycle'   : 10,
+            'max_matvec'    : 100,
+            'check_res'     : True,
+            'rel_tol'       : 1e-3,
+        },
+        'tangent-step' : {
+            'out_file'      : 'kona_tangent_krylov.dat',
+            'subspace_size' : 50,
+            'check_res'     : True,
+            'rel_tol'       : 1e-3,
+        }
     },
 
     'quasi_newton' : {
@@ -101,7 +128,9 @@ defaults = {
         'threshold'     : 1e-8
     },
 
-    'globalization' : {
+    'merit_function' : ObjectiveMerit,
+
+    'linesearch' : {
         # common options
         'type'          : StrongWolfe,
         'max_iter'      : 50,
@@ -118,12 +147,18 @@ defaults = {
     'krylov' : {
         'out_file'      : 'kona_krylov.dat',
         'type'          : STCG,
-        'max_iter'      : 10,
+        'subspace_size' : 10,
         'rel_tol'       : 0.05,
         'check_res'     : True,
-        'proj_cg'       : False, # STCG
-        'grad_scale'    : 1.0, # FLECS
-        'feas_scale'    : 1.0, # FLECS
+        # STCG settings
+        'proj_cg'       : False,
+        # GCROT settings
+        'max_outer'     : 10,
+        'max_recycle'   : 10,
+        'max_matvec'    : 100,
+        # FLECS settings
+        'grad_scale'    : 1.0,
+        'feas_scale'    : 1.0,
     },
 
     'verify' : {

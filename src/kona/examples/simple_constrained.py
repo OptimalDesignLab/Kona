@@ -51,7 +51,7 @@ class SimpleConstrained(UserSolver):
         super(SimpleConstrained, self).current_solution(
             curr_design, curr_state, curr_adj, curr_dual, num_iter)
 
-        # print self.curr_design
+        print self.curr_design
 
     def restrict_dual(self, dual_vector):
         if self.ineq:

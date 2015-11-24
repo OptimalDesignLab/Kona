@@ -192,3 +192,11 @@ class Sellar(UserSolver):
 
     def restrict_dual(self, dual_vector):
         pass
+
+    def current_solution(self, curr_design, curr_state, curr_adj,
+                         curr_dual, num_iter):
+        super(Sellar, self).current_solution(
+            curr_design, curr_state, curr_adj, curr_dual, num_iter)
+
+        # print 'design =', self.curr_design
+        # print 'states =', self.curr_state

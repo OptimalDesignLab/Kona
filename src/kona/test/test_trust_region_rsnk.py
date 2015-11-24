@@ -16,7 +16,7 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
         optns = {
             'info_file' : 'kona_info.dat',
             'max_iter' : 50,
-            'primal_tol' : 1e-12,
+            'opt_tol' : 1e-12,
 
             'trust' : {
                 'radius' : 1.0,
@@ -51,7 +51,7 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
         optns = {
             'info_file' : 'kona_info.dat',
             'max_iter' : 50,
-            'primal_tol' : 1e-8,
+            'opt_tol' : 1e-8,
 
             'trust' : {
                 'radius' : 1.0,

@@ -41,22 +41,29 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         except Exception:
             raise BadKonaOption(optns, 'quasi_newton','type')
 
-        # set up the merit function
-        merit_optns = get_opt(optns,{},'merit_function')
-        merit_type = get_opt(merit_optns, ObjectiveMerit, 'type')
-        try:
-            self.merit_func = merit_type(
-                primal_factory, state_factory, merit_optns, self.info_file)
-        except:
-            raise BadKonaOption(optns, 'merit_function', 'type')
-
-        # set the type of line-search algorithm
-        try:
-            line_search_alg = get_opt(optns, StrongWolfe, 'globalization', 'type')
-            line_search_opt = get_opt(optns, {}, 'globalization')
-            self.line_search = line_search_alg(line_search_opt, self.info_file)
-        except:
-            raise BadKonaOption(optns, 'globalization', 'type')
+        # set the type of line-search algorithm and merit function
+        self.globalization = get_opt(optns, 'linesearch', 'globalization')
+        if self.globalization is not None:
+            try:
+                line_search_alg = get_opt(
+                    optns, StrongWolfe, 'lineseach', 'type')
+                line_search_opt = get_opt(optns, {}, 'linesearch')
+                self.line_search = line_search_alg(
+                    line_search_opt, self.info_file)
+            except Exception:
+                raise BadKonaOption(optns, 'linesearch', 'type')
+            merit_type = get_opt(
+                optns, ObjectiveMerit, 'merit_function', 'type')
+            if merit_type is ObjectiveMerit:
+                try:
+                    merit_opt = get_opt(optns, {}, 'merit_function')
+                    self.merit_func = merit_type(
+                        primal_factory, state_factory,
+                        merit_opt, self.info_file)
+                except Exception:
+                    raise BadKonaOption(optns, 'merit_function')
+            else:
+                raise TypeError('Invalid merit function!')
 
     def _write_header(self):
         self.hist_file.write(

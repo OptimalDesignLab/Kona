@@ -1,6 +1,7 @@
 from numpy import sqrt
 
 from kona.options import get_opt
+from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import EPS, write_header, write_history
 
@@ -14,7 +15,7 @@ class STCG(KrylovSolver):
         Trust region radius.
     proj_cg : boolean
     """
-    def __init__(self, vector_factory, optns={}):
+    def __init__(self, vector_factory, optns={}, dual_factory=None):
         super(STCG, self).__init__(vector_factory, optns)
 
         # set a default trust radius
@@ -26,20 +27,33 @@ class STCG(KrylovSolver):
 
         # set factory and request vectors needed in solve() method
         self.vec_fac.request_num_vectors(7)
+        self.dual_fac = dual_factory
+        if self.dual_fac is not None:
+            self.dual_fac.request_num_vectors(7)
 
     def _validate_options(self):
         super(STCG, self)._validate_options()
         if self.radius < 0:
             raise ValueError('radius must be postive')
 
+    def _generate_vector(self):
+        if self.dual_fac is None:
+            return self.vec_fac.generate()
+        else:
+            design = self.vec_fac.generate()
+            slack = self.dual_fac.generate()
+            return CompositePrimalVector(design, slack)
+
     def solve(self, mat_vec, b, x, precond):
         self._validate_options()
+        
         # grab some vectors from memory stack
-        r = self.vec_fac.generate()
-        z = self.vec_fac.generate()
-        p = self.vec_fac.generate()
-        Ap = self.vec_fac.generate()
-        work = self.vec_fac.generate()
+        r = self._generate_vector()
+        z = self._generate_vector()
+        p = self._generate_vector()
+        Ap = self._generate_vector()
+        work = self._generate_vector()
+
         # define initial residual and other scalars
         r.equals(b)
         x.equals(0.0)
@@ -102,9 +116,8 @@ class STCG(KrylovSolver):
                     write_history(self.out_file, i+1, res_norm2, norm0)
                 # mark trust-region boundary as active and finish solution
                 self.out_file.write(
-                    '# direction of nonpositive curvature detected: ' + \
-                    'alpha = %f\n'%alpha
-                    )
+                    '# direction of nonpositive curvature detected: ' +
+                    'alpha = %f\n'%alpha)
                 active = True
                 break
             # otherwise we have positive curvature, so let's update alpha

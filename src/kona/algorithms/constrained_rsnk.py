@@ -54,39 +54,76 @@ class ConstrainedRSNK(OptimizationAlgorithm):
         self.state_factory.request_num_vectors(3)
         self.dual_factory.request_num_vectors(12 + 2)
 
-        # get other options
+        # general RSNK options
+        ############################################################
+        self.cnstr_tol = get_opt(optns, 1e-8, 'feas_tol')
+        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
+
+        # trust radius settings
+        ############################################################
         self.radius = get_opt(optns, 0.5, 'trust', 'init_radius')
         self.min_radius = get_opt(optns, 0.5/(2**3), 'trust', 'min_radius')
         self.max_radius = get_opt(optns, 0.5*(2**3), 'trust', 'max_radius')
-        self.mu = get_opt(optns, 1.0, 'aug_lag', 'mu_init')
-        self.mu_pow = get_opt(optns, 0.5, 'aug_lag', 'mu_pow')
-        self.mu_max = get_opt(optns, 1e5, 'aug_lag', 'mu_max')
-        self.cnstr_tol = get_opt(optns, 1e-8, 'constraint_tol')
-        self.nu = get_opt(optns, 0.95, 'reduced', 'nu')
-        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
-        self.globalization = get_opt(optns, 'trust', 'globalization')
 
-        # set the krylov solver
-        acceptable_solvers = [FLECS]
-        try:
-            krylov = get_opt(optns, FLECS, 'krylov', 'solver')
-            if krylov not in acceptable_solvers:
-                raise BadKonaOption(optns, 'krylov', 'solver')
-            krylov_optns = get_opt(optns, {}, 'krylov')
-            self.krylov = krylov(
-                [self.primal_factory, self.dual_factory],
-                krylov_optns)
-        except Exception:
-            raise BadKonaOption(optns, 'krylov', 'solver')
-
-        # penalty parameter data
+        # augmented Lagrangian settings
+        ############################################################
+        self.mu = get_opt(optns, 1.0, 'penalty', 'mu_init')
+        self.mu_pow = get_opt(optns, 0.5, 'penalty', 'mu_pow')
+        self.mu_max = get_opt(optns, 1e5, 'penalty', 'mu_max')
         self.eta = 1./(self.mu**0.1)
 
-        # initialize the globalization method
+        # reduced KKT settings
+        ############################################################
+        self.nu = get_opt(optns, 0.95, 'rsnk', 'nu')
+        reduced_optns = get_opt(optns, {}, 'rsnk')
+        reduced_optns['out_file'] = self.info_file
+        self.KKT_matrix = ReducedKKTMatrix(
+            [self.primal_factory, self.state_factory, self.dual_factory],
+            reduced_optns)
+        self.mat_vec = self.KKT_matrix.product
+
+        # KKT system preconditiner settings
+        ############################################################
+        self.precond = get_opt(optns, None, 'rsnk', 'precond')
+        self.idf_schur = None
+        self.nested = None
+        if self.precond is None:
+            # use identity matrix product as preconditioner
+            self.eye = IdentityMatrix()
+            self.precond = self.eye.product
+        elif self.precond == 'nested':
+            # initialize the nested preconditioner
+            self.nested = NestedKKTPreconditioner(
+                [self.primal_factory, self.state_factory, self.dual_factory],
+                reduced_optns)
+            # define preconditioner as a nested solution of the approximate KKT
+            self.precond = self.nested.solve
+        elif self.precond == 'idf_schur':
+            raise NotImplementedError
+            self.idf_schur = ReducedSchurPreconditioner(
+                [self.primal_factory, self.state_factory, self.dual_factory])
+            self.precond = self.idf_schur.product
+        else:
+            raise BadKonaOption(optns, 'rsnk', 'precond')
+
+        # krylov solver settings
+        ############################################################
+        krylov_optns = {
+            'krylov_file'   : get_opt(
+                optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
+            'subspace_size' : get_opt(optns, 10, 'rsnk', 'subspace_size'),
+            'check_res'     : get_opt(optns, True, 'rsnk', 'check_res'),
+            'rel_tol'       : get_opt(optns, 1e-2, 'rsnk', 'rel_tol'),
+        }
+        self.krylov = FLECS(
+            [self.primal_factory, self.dual_factory],
+            krylov_optns)
+
+        # get globalization options
+        ############################################################
+        self.globalization = get_opt(optns, 'trust', 'globalization')
         if self.globalization is None:
             self.trust_region = False
-            self.merit_func = None
-
         elif self.globalization == 'trust':
             self.trust_region = True
         else:
@@ -95,50 +132,9 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 'Can only use \'linesearch\' or \'trust\'. ' +
                 'If you want to skip globalization, set to None.')
 
-        # initialize the KKT matrix definition
-        reduced_optns = get_opt(optns, {}, 'reduced')
-        reduced_optns['out_file'] = self.info_file
-        self.KKT_matrix = ReducedKKTMatrix(
-            [self.primal_factory, self.state_factory, self.dual_factory],
-            reduced_optns)
-        self.mat_vec = self.KKT_matrix.product
-
-        # initialize the preconditioner for the KKT matrix
-        self.precond = get_opt(optns, None, 'reduced', 'precond')
-        self.idf_schur = None
-        self.ssor = None
-        self.nested = None
-
-        if self.precond is None:
-            # use identity matrix product as preconditioner
-            self.eye = IdentityMatrix()
-            self.precond = self.eye.product
-
-        elif self.precond == 'ssor':
-            # Symmetric Successive Over-Relaxation
-            self.ssor = SSORwithSVD(
-                [self.primal_factory, self.state_factory, self.dual_factory])
-            self.precond = self.ssor.product
-
-        elif self.precond == 'nested':
-            # initialize the nested preconditioner
-            self.nested = NestedKKTPreconditioner(
-                [self.primal_factory, self.state_factory, self.dual_factory],
-                reduced_optns)
-            # define preconditioner as a nested solution of the approximate KKT
-            self.precond = self.nested.solve
-
-        elif self.precond == 'idf_schur':
-            self.idf_schur = ReducedSchurPreconditioner(
-                [self.primal_factory, self.state_factory, self.dual_factory])
-            self.precond = self.idf_schur.product
-
-        else:
-            raise BadKonaOption(optns, 'reduced', 'precond')
-
     def _write_header(self):
         self.hist_file.write(
-            '# Kona equality-constrained RSNK convergence history file\n' +
+            '# Kona constrained RSNK convergence history file\n' +
             '# iters' + ' '*5 +
             '   cost' + ' '*5 +
             'optimality  ' + ' '*5 +
@@ -233,13 +229,13 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 '==========================================================\n' +
                 'Beginning Major Iteration %i\n\n'%self.iter)
             self.info_file.write(
-                'primal vars        = %e\n'%X._primal.infty)
+                'primal vars        = %e\n'%X._primal.norm2)
             self.info_file.write(
-                '   design vars     = %e\n'%X._primal._design.infty)
+                '   design vars     = %e\n'%X._primal._design.norm2)
             self.info_file.write(
-                '   slack vars      = %e\n'%X._primal._slack.infty)
+                '   slack vars      = %e\n'%X._primal._slack.norm2)
             self.info_file.write(
-                'multipliers        = %e\n\n'%X._dual.infty)
+                'multipliers        = %e\n\n'%X._dual.norm2)
 
             if self.iter == 1:
                 # calculate initial norms
@@ -321,9 +317,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             self.KKT_matrix.linearize(X, state, adjoint)
 
             # propagate options through the preconditioners
-            if self.ssor is not None:
-                self.ssor.linearize(X, state, adjoint)
-
             if self.nested is not None:
                 self.nested.linearize(X, state, adjoint)
 
@@ -522,7 +515,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 if self.krylov.trust_active:
                     # if active, decide if we want to increase it
                     self.info_file.write('Trust radius active...\n')
-                    if rho >= 0.75:
+                    if rho >= 0.5:
                         # model is good enough -- increase radius
                         # self.radius = min(2.*P._primal.norm2, self.max_radius)
                         self.radius = min(2.*self.radius, self.max_radius)

@@ -70,7 +70,7 @@ class ReducedKKTMatrix(BaseHessian):
         self.lamb = get_opt(optns, 0.0, 'lambda')
         self.scale = get_opt(optns, 1.0, 'scale')
         self.grad_scale = get_opt(optns, 1.0, 'grad_scale')
-        self.ceq_scale = get_opt(optns, 1.0, 'ceq_scale')
+        self.feas_scale = get_opt(optns, 1.0, 'feas_scale')
         self.dynamic_tol = get_opt(optns, False, 'dynamic_tol')
 
         # get references to individual factories
@@ -325,7 +325,7 @@ class ReducedKKTMatrix(BaseHessian):
         self.dCdU.linearize(self.at_design, self.at_state)
         self.dCdU.product(self.w_adj, self.dual_work)
         out_dual.plus(self.dual_work)
-        out_dual.times(self.ceq_scale)
+        out_dual.times(self.feas_scale)
 
         # add globalization if necessary
         if self.lamb > EPS:

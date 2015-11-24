@@ -1,6 +1,7 @@
+import base_algorithm
 from reduced_space_quasi_newton import ReducedSpaceQuasiNewton
 from reduced_space_newton_krylov import ReducedSpaceNewtonKrylov
 from constrained_rsnk import ConstrainedRSNK
-from base_algorithm import OptimizationAlgorithm
+from composite_step import CompositeStep
 from verifier import Verifier
 import util

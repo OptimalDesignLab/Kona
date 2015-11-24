@@ -103,7 +103,7 @@ class FGMRES(KrylovSolver):
             try:
                 mod_GS_normalize(i, H, W)
             except numpy.linalg.LinAlgError:
-                self.lin_depend = True
+                lin_depend = True
 
             # apply old Givens rotations to new column of the Hessenberg matrix
             # then generate new Givens rotation matrix and apply it to the last

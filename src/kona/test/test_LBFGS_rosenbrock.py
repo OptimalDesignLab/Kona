@@ -18,7 +18,7 @@ class RosenbrockLBFGSTestCase(unittest.TestCase):
         optns = {
             'info_file' : 'kona_info.dat',
             'max_iter' : 200,
-            'primal_tol' : 1e-12,
+            'opt_tol' : 1e-12,
             'globalization' : {
                 'type' : StrongWolfe,
             },
@@ -43,7 +43,7 @@ class RosenbrockLBFGSTestCase(unittest.TestCase):
         optns = {
             'info_file' : 'kona_info.dat',
             'max_iter' : 200,
-            'primal_tol' : 1e-12,
+            'opt_tol' : 1e-12,
             'globalization' : {
                 'type' : BackTracking,
             },

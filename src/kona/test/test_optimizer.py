@@ -9,7 +9,7 @@ class OptimizerTestCase(unittest.TestCase):
         num_design = 2
         solver = kona.examples.Rosenbrock(num_design)
         optns = {
-            'primal_tol' : 1e-12,
+            'opt_tol' : 1e-12,
         }
         algorithm = kona.algorithms.ReducedSpaceQuasiNewton
         optimizer = kona.Optimizer(solver, algorithm, optns)

@@ -19,7 +19,7 @@ class GCROTSolverTestCase(unittest.TestCase):
             'max_iter' : 10,
             'max_recycle' : 10,
             'max_outer' : 10,
-            'max_krylov' : 100, # this should be hit first
+            'max_matvec' : 100, # this should be hit first
             'rel_tol' : 1e-15,
         }
         self.krylov = GCROT(self.pf, optns)

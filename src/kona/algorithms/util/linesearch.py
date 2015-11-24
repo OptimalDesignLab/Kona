@@ -166,7 +166,7 @@ class BackTracking(LineSearch):
             n_iter += 1
 
         # if we got here, linesearch failed
-        return self.alpha_init, n_iter
+        return self.alpha_min, self.max_iter
 
 ################################################################################
 #                           Strong Wolfe Line-Search                           #
