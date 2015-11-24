@@ -53,7 +53,7 @@ class TangentKKTMatrix(BaseHessian):
 
         # initialize the internal krylov method
         krylov_optns = {
-            'out_file' : get_opt(optns, 'kona_tangent_krylov.dat', 'out_file'),
+            'out_file' : get_opt(optns, 'kona_tangent_stcg.dat', 'out_file'),
             'subspace_size' : get_opt(optns, 20, 'subspace_size'),
             'proj_cg'  : True,
             'check_res' : get_opt(optns, True, 'check_res'),
@@ -125,9 +125,3 @@ class TangentKKTMatrix(BaseHessian):
         solution.equals(0.0)
         self.pred, self.trust_active = \
             self.krylov.solve(self.product, rhs, solution, self.precond)
-
-        # # check the steepest descent against trust radius
-        # self.precond(rhs, solution)
-        # solution_norm = solution.norm2
-        # if solution_norm > self.radius:
-        #     solution.times(self.radius/solution_norm)

@@ -42,6 +42,8 @@ class NormalKKTMatrix(BaseHessian):
         self.dual_factory.request_num_vectors(1)
         self._allocated = False
 
+        self.use_gcrot = False
+
         # initialize the constraint jacobian
         self.A = TotalConstraintJacobian(vector_factories)
 
@@ -61,31 +63,34 @@ class NormalKKTMatrix(BaseHessian):
             raise TypeError('Invalid preconditioner!' +
                             'Can be either \'svd\' or None.')
 
-        # # initialize the internal krylov solver
-        # krylov_optns = {
-        #     'out_file' : get_opt(optns, 'kona_normal_krylov.dat', 'out_file'),
-        #     'max_iter' : get_opt(optns, 10, 'max_iter'),
-        #     'max_recycle' : get_opt(optns, 10, 'max_recycle'),
-        #     'max_outer' : get_opt(optns, 10, 'max_outer'),
-        #     'max_matvec' : get_opt(optns, 100, 'max_matvec'),
-        #     'check_res' : get_opt(optns, True, 'check_res'),
-        #     'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
-        # }
-        # self.krylov = GCROT(
-        #     self.primal_factory,
-        #     optns=krylov_optns,
-        #     dual_factory=self.dual_factory)
-
-        krylov_optns = {
-            'out_file' : get_opt(optns, 'kona_normal_krylov.dat', 'out_file'),
-            'subspace_size' : get_opt(optns, 10, 'subspace_size'),
-            'check_res' : get_opt(optns, True, 'check_res'),
-            'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
-        }
-        self.krylov = FGMRES(
-            self.primal_factory,
-            optns=krylov_optns,
-            dual_factory=self.dual_factory)
+        # initialize the internal krylov solver
+        if self.use_gcrot:
+            krylov_optns = {
+                'out_file' : get_opt(
+                    optns, 'kona_normal_gcrot.dat', 'out_file'),
+                'max_iter' : get_opt(optns, 10, 'max_iter'),
+                'max_recycle' : get_opt(optns, 10, 'max_recycle'),
+                'max_outer' : get_opt(optns, 10, 'max_outer'),
+                'max_matvec' : get_opt(optns, 100, 'max_matvec'),
+                'check_res' : get_opt(optns, True, 'check_res'),
+                'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
+            }
+            self.krylov = GCROT(
+                self.primal_factory,
+                optns=krylov_optns,
+                dual_factory=self.dual_factory)
+        else:
+            krylov_optns = {
+                'out_file' : get_opt(
+                    optns, 'kona_normal_fgmres.dat', 'out_file'),
+                'subspace_size' : get_opt(optns, 10, 'subspace_size'),
+                'check_res' : get_opt(optns, True, 'check_res'),
+                'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
+            }
+            self.krylov = FGMRES(
+                self.primal_factory,
+                optns=krylov_optns,
+                dual_factory=self.dual_factory)
 
     def linearize(self, at_kkt, at_state):
         # store references to the evaluation point
@@ -109,7 +114,8 @@ class NormalKKTMatrix(BaseHessian):
             self.svd.linearize(self.at_dual, self.at_slack)
 
         # reset the krylov subspace
-        # self.krylov.clear_subspace()
+        if self.use_gcrot:
+            self.krylov.clear_subspace()
 
         # do aliasing on a work vector
         self.dual_work = self.A.dual_work
