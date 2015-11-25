@@ -13,7 +13,6 @@ class EqualityCompositeStepTestCase(unittest.TestCase):
     def test_with_simple_constrained(self):
 
         solver = SimpleConstrained(
-            init_x=[1.51, -1.52, 1.53],
             ineq=False)
 
         optns = {

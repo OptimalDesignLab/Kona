@@ -12,7 +12,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        feasible = False
+        feasible = True
         if feasible:
             init_x = [0.51, 0.52, 0.53]
         else:
@@ -28,7 +28,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 0.1,
+                'init_radius' : 1.0,
                 'max_radius' : 10.0,
                 'min_radius' : 1e-3,
             },
