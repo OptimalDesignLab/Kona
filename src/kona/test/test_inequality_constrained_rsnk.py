@@ -3,7 +3,6 @@ import unittest
 
 from kona import Optimizer
 from kona.algorithms import ConstrainedRSNK
-from kona.algorithms.util.merit import AugmentedLagrangian
 from kona.examples import SimpleConstrained, ExponentialConstrained, Sellar
 
 class InequalityConstrainedRSNKTestCase(unittest.TestCase):
