@@ -437,7 +437,7 @@ class CompositeStep(OptimizationAlgorithm):
                 '   merit_init     = %e\n'%merit_init +
                 '   merit_next     = %e\n'%merit_next +
                 '   pred           = %e\n'%pred +
-                '   rho            = %f\n'%rho)
+                '   rho            = %e\n'%rho)
 
             # modify radius based on model quality
             if rho <= 0.01 or np.isnan(rho):
@@ -451,10 +451,28 @@ class CompositeStep(OptimizationAlgorithm):
                     normal_rhs._dual.equals(dual_work)
                     normal_rhs._dual.times(-1.)
 
-                    # attempt a 2nd order correction
+                    # calculate a 2nd order correction
                     self.info_file.write(
                         '   Attempting a second order correction...\n')
                     self.normal_KKT.solve(normal_rhs, P, krylov_tol)
+
+                    # apply the correction
+                    P._primal.plus(step_save._primal)
+                    P._dual.equals(step_save._dual)
+
+                    # # calculate predicted decrease in the merit function
+                    # self.normal_KKT.A.product(P._primal._design, dual_work)
+                    # slack_work.exp(X._primal._slack)
+                    # slack_work.restrict()
+                    # slack_work.times(P._primal._slack)
+                    # slack_work.times(-1.)
+                    # dual_work.plus(slack_work)
+                    # dual_work.plus(dLdX._dual)
+                    # pred = self.tangent_KKT.pred \
+                    #     - normal_step._primal.inner(dLdX._primal) \
+                    #     + self.mu*dLdX._dual.norm2**2 \
+                    #     - P._dual.inner(dual_work) \
+                    #     - self.mu*dual_work.inner(dual_work)
 
                 elif iters == 2:
                     # if we got here, the second order correction failed
@@ -556,10 +574,15 @@ class CompositeStep(OptimizationAlgorithm):
                     else:
                         # constraints are bad
                         # increase penalty if we haven't met feasibility
-                        self.mu = min(self.mu*(10.**self.mu_pow), self.mu_max)
-                        self.eta = 1./(self.mu**0.1)
-                        self.info_file.write(
-                            '   Mu increased -> %1.2e\n'%self.mu)
+                        if self.mu < self.mu_max:
+                            self.mu = \
+                                min(self.mu*(10.**self.mu_pow), self.mu_max)
+                            self.eta = 1./(self.mu**0.1)
+                            self.info_file.write(
+                                '   Mu increased -> %1.2e\n'%self.mu)
+                        else:
+                            self.info_file.write(
+                                '   Max penalty reached!\n')
 
                 # perform an adjoint solution for the Lagrangian
                 state_work.equals_objective_partial(X._primal._design, state)
@@ -574,9 +597,13 @@ class CompositeStep(OptimizationAlgorithm):
                     self.info_file.write('Trust radius active...\n')
                     if rho >= 0.5:
                         # model is good enough -- increase radius
-                        self.radius = min(2.*self.radius, self.max_radius)
-                        self.info_file.write(
-                            '   Radius increased -> %f\n'%self.radius)
+                        if self.radius < self.max_radius:
+                            self.radius = min(2.*self.radius, self.max_radius)
+                            self.info_file.write(
+                                '   Radius increased -> %f\n'%self.radius)
+                        else:
+                            self.info_file.write(
+                                '   Max radius reached!\n')
                         min_radius_active = False
 
                 # trust radius globalization worked, break loop

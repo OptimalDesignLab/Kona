@@ -431,7 +431,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                 '   merit_init     = %e\n'%merit_init +
                 '   merit_next     = %e\n'%merit_next +
                 '   pred_aug       = %e\n'%self.krylov.pred_aug +
-                '   rho            = %f\n'%rho)
+                '   rho            = %e\n'%rho)
 
             # modify radius based on model quality
             if rho <= 0.01 or np.isnan(rho):
@@ -443,6 +443,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     self.info_file.write(
                         '   Attempting a second order correction...\n')
                     self.krylov.apply_correction(dual_work, P)
+                    P._primal.plus(kkt_save._primal)
+                    P._dual.equals(kkt_save._dual)
                 elif iters == 2:
                     # if we got here, the second order correction failed
                     # reject step

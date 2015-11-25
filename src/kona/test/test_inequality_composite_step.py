@@ -3,7 +3,7 @@ import unittest
 import sys
 
 from kona import Optimizer
-from kona.algorithms import CompositeStep
+from kona.algorithms import CompositeStep, Verifier
 from kona.examples import SimpleConstrained, ExponentialConstrained, Sellar
 
 class InequalityCompositeStepTestCase(unittest.TestCase):
@@ -66,6 +66,7 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
         }
 
         algorithm = CompositeStep
+        # algorithm = Verifier
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 
