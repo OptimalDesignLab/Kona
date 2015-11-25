@@ -21,24 +21,23 @@ class EqualityCompositeStepTestCase(unittest.TestCase):
             'max_iter' : 50,
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
-            
-            'globalization' : None,
+            'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 1.0,
+                'init_radius' : 0.1,
                 'max_radius' : 1.0,
                 'min_radius' : 1e-4,
             },
 
             'penalty' : {
-                'mu_init' : 10.0,
-                'mu_pow' : 0.5,
+                'mu_init' : 0.1,
+                'mu_pow' : 0.1,
                 'mu_max' : 1e5,
             },
 
             'composite-step' : {
                 'normal-step' : {
-                    'precond'     : 'svd',
+                    'precond'     : None,
                     'lanczos_size': 1,
                     'out_file'    : 'kona_normal_krylov.dat',
                     'max_inner'   : 10,

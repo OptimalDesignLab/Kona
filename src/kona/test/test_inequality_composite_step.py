@@ -10,22 +10,23 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
     def test_sellar(self):
 
         solver = Sellar()
-
+    
         optns = {
             'info_file' : 'kona_info.dat',
             'max_iter' : 200,
-            'opt_tol' : 1e-4,
-            'feas_tol' : 1e-4,
-            'globalization' : None,
+            'opt_tol' : 1e-5,
+            'feas_tol' : 1e-5,
+
+            'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 0.1,
-                'max_radius' : 4.0,
+                'init_radius' : 1.0,
+                'max_radius' : 10.0,
                 'min_radius' : 1e-4,
             },
 
             'penalty' : {
-                'mu_init' : 1.0,
+                'mu_init' : 0.1,
                 'mu_pow' : 0.1,
                 'mu_max' : 1e5,
             },
@@ -90,16 +91,16 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
 
-            'globalization' : None,
+            'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 4.0,
-                'max_radius' : 4.0,
+                'init_radius' : 1.0,
+                'max_radius' : 10.0,
                 'min_radius' : 1e-4,
             },
 
             'penalty' : {
-                'mu_init' : 100.0,
+                'mu_init' : 10.0,
                 'mu_pow' : 0.1,
                 'mu_max' : 1e5,
             },
@@ -151,11 +152,11 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
 
-            'globalization' : None,
+            'globalization' : 'trust',
 
             'trust' : {
                 'init_radius' : 1.0,
-                'max_radius' : 1.0,
+                'max_radius' : 4.0,
                 'min_radius' : 1e-4,
             },
 
