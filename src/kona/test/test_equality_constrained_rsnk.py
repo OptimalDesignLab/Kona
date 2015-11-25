@@ -28,8 +28,8 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 0.1,
-                'max_radius' : 1.0,
+                'init_radius' : 1.0,
+                'max_radius' : 4.0,
                 'min_radius' : 1e-3,
             },
 

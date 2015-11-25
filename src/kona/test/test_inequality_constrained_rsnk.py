@@ -13,7 +13,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
 
         optns = {
             'info_file' : 'kona_info.dat',
-            'max_iter' : 200,
+            'max_iter' : 50,
             'opt_tol' : 1e-4,
             'feas_tol' : 1e-4,
             'globalization' : 'trust',
@@ -25,7 +25,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             },
 
             'penalty' : {
-                'mu_init' : 100.0,
+                'mu_init' : 10.0,
                 'mu_pow' : 0.1,
                 'mu_max' : 1e5,
             },
