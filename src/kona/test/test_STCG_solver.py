@@ -52,24 +52,30 @@ class STCGSolverTestCase(unittest.TestCase):
         self.x.equals(0)
         # solve the system with CG
         self.krylov.radius = 1.0
-        self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
+        prec, active = self.krylov.solve(self.mat_vec, self.b, self.x,
+                                         self.precond.product)
         # calculate expected result
         expected = numpy.array([.2, 0, 0, .2])
         # compare actual result to expected
         diff = abs(self.x._data.data - expected)
         diff = max(diff)
         self.assertTrue(diff < 1.e-6)
+        self.assertTrue(not active)
+        self.assertTrue(abs(prec - 0.2) <= 1e-12)
 
     def test_radius_active(self):
         # reset the solution vector
         self.x.equals(0)
         # solve the system with CG
         self.krylov.radius = 0.1
-        self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
+        prec, active = self.krylov.solve(self.mat_vec, self.b, self.x,
+                                         self.precond.product)
         # compare actual result to expected
         exp_norm = self.krylov.radius
         actual_norm = self.x.norm2
         self.assertTrue(abs(actual_norm - exp_norm) <= 1e-5)
+        self.assertTrue(active)
+        self.assertTrue(abs(prec - 0.145) <= 1e-12)
 
 if __name__ == "__main__":
 
