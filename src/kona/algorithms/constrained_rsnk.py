@@ -6,7 +6,6 @@ from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.matrices.preconds import SSORwithSVD
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS
@@ -451,7 +450,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                         '   Correction failed! Resetting step...\n')
                     P.equals(kkt_save)
                 else:
-                    self.radius = max(0.5*P._primal.norm2, self.min_radius)
+                    self.radius = max(0.5*self.radius, self.min_radius)
                     if self.radius == self.min_radius:
                         self.info_file.write(
                             '      Reached minimum radius! ' +

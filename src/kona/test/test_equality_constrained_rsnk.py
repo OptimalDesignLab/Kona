@@ -12,7 +12,13 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        solver = SimpleConstrained(ineq=False)
+        feasible = False
+        if feasible:
+            init_x = [0.51, 0.52, 0.53]
+        else:
+            init_x = [1.51, 1.52, 1.53]
+
+        solver = SimpleConstrained(init_x=init_x, ineq=False)
 
         optns = {
             'info_file' : 'kona_info.dat',
@@ -22,9 +28,9 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 0.5,
+                'init_radius' : 0.1,
                 'max_radius' : 10.0,
-                'min_radius' : 1e-4,
+                'min_radius' : 1e-3,
             },
 
             'penalty' : {
