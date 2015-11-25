@@ -407,19 +407,23 @@ class ConstrainedRSNK(OptimizationAlgorithm):
             # add the FLECS step
             kkt_work.equals_ax_p_by(1., X, 1., P)
             # solve states at the new step
-            state_work.equals_primal_solution(kkt_work._primal._design)
-            # evaluate the constraint terms at the new step
-            dual_work.equals_constraints(kkt_work._primal._design, state_work)
-            slack_work.exp(kkt_work._primal._slack)
-            slack_work.times(-1.)
-            slack_work.restrict()
-            dual_work.plus(slack_work)
-            # compute the merit value at the next step
-            merit_next = objective_value(kkt_work._primal._design, state) \
-                + X._dual.inner(dual_work) \
-                + 0.5*self.mu*(dual_work.norm2**2)
-            # evaluate the quality of the FLECS model
-            rho = (merit_init - merit_next)/self.krylov.pred_aug
+            if state_work.equals_primal_solution(kkt_work._primal._design):
+                # evaluate the constraint terms at the new step
+                dual_work.equals_constraints(
+                    kkt_work._primal._design, state_work)
+                slack_work.exp(kkt_work._primal._slack)
+                slack_work.times(-1.)
+                slack_work.restrict()
+                dual_work.plus(slack_work)
+                # compute the merit value at the next step
+                merit_next = objective_value(kkt_work._primal._design, state) \
+                    + X._dual.inner(dual_work) \
+                    + 0.5*self.mu*(dual_work.norm2**2)
+                # evaluate the quality of the FLECS model
+                rho = (merit_init - merit_next)/self.krylov.pred_aug
+            else:
+                merit_next = np.nan
+                rho = np.nan
 
             self.info_file.write(
                 'Trust Region Step : iter %i\n'%iters +
@@ -443,8 +447,6 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     self.info_file.write(
                         '   Attempting a second order correction...\n')
                     self.krylov.apply_correction(dual_work, P)
-                    P._primal.plus(kkt_save._primal)
-                    P._dual.equals(kkt_save._dual)
                 elif iters == 2:
                     # if we got here, the second order correction failed
                     # reject step

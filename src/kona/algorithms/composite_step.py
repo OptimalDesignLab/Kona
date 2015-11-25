@@ -148,7 +148,10 @@ class CompositeStep(OptimizationAlgorithm):
 
         # evaluate the initial design before starting outer iterations
         X.equals_init_guess()
-        state.equals_primal_solution(X._primal._design)
+        if not state.equals_primal_solution(X._primal._design):
+            raise RuntimeError(
+                'Invalid initial guess! Nonlinear solution breakdown.')
+
         if self.factor_matrices and self.iter < self.max_iter:
             factor_linear_system(X._primal._design, state)
 
@@ -447,25 +450,27 @@ class CompositeStep(OptimizationAlgorithm):
             X.plus(P)
 
             # solve states at the new step
-            state_work.equals_primal_solution(X._primal._design)
+            if state_work.equals_primal_solution(X._primal._design):
+                # evaluate the constraint terms at the new step
+                dual_work.equals_constraints(X._primal._design, state)
+                slack_work.exp(X._primal._slack)
+                slack_work.times(-1.)
+                slack_work.restrict()
+                dual_work.plus(slack_work)
 
-            # evaluate the constraint terms at the new step
-            dual_work.equals_constraints(X._primal._design, state)
-            slack_work.exp(X._primal._slack)
-            slack_work.times(-1.)
-            slack_work.restrict()
-            dual_work.plus(slack_work)
+                # compute the merit value at the new step
+                merit_next = objective_value(X._primal._design, state) \
+                    + X._dual.inner(dual_work) \
+                    + 0.5*self.mu*(dual_work.norm2**2)
 
-            # compute the merit value at the new step
-            merit_next = objective_value(X._primal._design, state) \
-                + X._dual.inner(dual_work) \
-                + 0.5*self.mu*(dual_work.norm2**2)
+                # evaluate the quality of the FLECS model
+                rho = (merit_init - merit_next)/pred
+            else:
+                merit_next = np.nan
+                rho = np.nan
 
             # reset the step
             X.minus(P)
-
-            # evaluate the quality of the FLECS model
-            rho = (merit_init - merit_next)/pred
 
             self.info_file.write(
                 'Trust Region Step : iter %i\n'%iters +

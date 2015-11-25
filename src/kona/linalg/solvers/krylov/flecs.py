@@ -162,7 +162,6 @@ class FLECS(KrylovSolver):
 
         # construct the design update
         # leave the dual solution untouched
-        step._primal.equals(0.0)
         for k in xrange(self.iters):
             step._primal.equals_ax_p_by(
                 1.0, step._primal, self.y[k], self.Z[k]._primal)
