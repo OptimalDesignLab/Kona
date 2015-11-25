@@ -443,8 +443,8 @@ class ConstrainedRSNK(OptimizationAlgorithm):
                     self.info_file.write(
                         '   Attempting a second order correction...\n')
                     self.krylov.apply_correction(dual_work, P)
-                    # P._primal.plus(kkt_save._primal)
-                    # P._dual.equals(kkt_save._dual)
+                    P._primal.plus(kkt_save._primal)
+                    P._dual.equals(kkt_save._dual)
                 elif iters == 2:
                     # if we got here, the second order correction failed
                     # reject step

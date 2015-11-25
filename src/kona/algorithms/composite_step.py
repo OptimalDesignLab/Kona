@@ -57,7 +57,10 @@ class CompositeStep(OptimizationAlgorithm):
             self.eta = 1./(self.mu**0.1)
 
         elif self.globalization is None:
-            pass
+            self.mu = get_opt(optns, 0.1, 'penalty', 'mu_init')
+            self.mu_pow = get_opt(optns, 0.1, 'penalty', 'mu_pow')
+            self.mu_max = get_opt(optns, 1e4, 'penalty', 'mu_max')
+            self.eta = 1./(self.mu**0.1)
         else:
             raise TypeError(
                 'Invalid globalization! ' +
@@ -343,18 +346,55 @@ class CompositeStep(OptimizationAlgorithm):
                         'Trust radius breakdown! Terminating...\n')
                     break
             elif self.globalization is None:
-                # accept step
-                X._primal.plus(P._primal)
-                X._primal._slack.restrict()
-                X._dual.plus(P._dual)
+                # evaluate the constraint term at the current step
+                dual_work.equals_constraints(X._primal._design, state)
+                slack_work.exp(X._primal._slack)
+                slack_work.times(-1.)
+                slack_work.restrict()
+                dual_work.plus(slack_work)
 
-                # calculate states
-                state.equals_primal_solution(X._primal._design)
+                # compute the merit value at the current step
+                merit_init = objective_value(X._primal._design, state) \
+                    + X._dual.inner(dual_work) \
+                    + 0.5*self.mu*(dual_work.norm2**2)
+
+                # add the full step
+                X.plus(P)
+                X._primal._slack.restrict()
+
+                # solve states at the new step
+                state_work.equals_primal_solution(X._primal._design)
 
                 # if this is a matrix-based problem, tell the solver to factor
                 # some important matrices to be used in the next iteration
                 if self.factor_matrices and self.iter < self.max_iter:
                     factor_linear_system(X._primal._design, state)
+
+                # evaluate the constraint terms at the new step
+                dual_work.equals_constraints(X._primal._design, state)
+                slack_work.exp(X._primal._slack)
+                slack_work.times(-1.)
+                slack_work.restrict()
+                dual_work.plus(slack_work)
+
+                # compute the merit value at the new step
+                merit_next = objective_value(X._primal._design, state) \
+                    + X._dual.inner(dual_work) \
+                    + 0.5*self.mu*(dual_work.norm2**2)
+
+                # evaluate the quality of the FLECS model
+                rho = (merit_init - merit_next)/pred
+
+                self.info_file.write(
+                    '   primal_step    = %e\n'%P._primal.norm2 +
+                    '      design_step = %e\n'%P._primal._design.norm2 +
+                    '      slack_step  = %e\n'%P._primal._slack.norm2 +
+                    '   lambda_step    = %e\n'%P._dual.norm2 +
+                    '\n' +
+                    '   merit_init     = %e\n'%merit_init +
+                    '   merit_next     = %e\n'%merit_next +
+                    '   pred           = %e\n'%pred +
+                    '   rho            = %e\n'%rho)
 
                 # perform an adjoint solution for the Lagrangian
                 state_work.equals_objective_partial(X._primal._design, state)
@@ -403,7 +443,7 @@ class CompositeStep(OptimizationAlgorithm):
                 + X._dual.inner(dual_work) \
                 + 0.5*self.mu*(dual_work.norm2**2)
 
-            # add the FLECS step
+            # add the full step
             X.plus(P)
 
             # solve states at the new step
@@ -441,110 +481,65 @@ class CompositeStep(OptimizationAlgorithm):
 
             # modify radius based on model quality
             if rho <= 0.01 or np.isnan(rho):
-                # model is bad! -- first we try a 2nd order correction
-                if iters == 1:
-                    # save the old step in case correction fails
-                    step_save.equals(P)
-
-                    # recalculate the normal-step RHS
-                    normal_rhs.equals(0.0)
-                    normal_rhs._dual.equals(dual_work)
-                    normal_rhs._dual.times(-1.)
-
-                    # calculate a 2nd order correction
+                # model is bad! -- shrink radius and re-solve
+                self.radius = max(0.5*P._primal.norm2, self.min_radius)
+                if self.radius == self.min_radius:
                     self.info_file.write(
-                        '   Attempting a second order correction...\n')
-                    self.normal_KKT.solve(normal_rhs, P, krylov_tol)
-
-                    # apply the correction
-                    P._primal.plus(step_save._primal)
-                    P._dual.equals(step_save._dual)
-
-                    # # calculate predicted decrease in the merit function
-                    # self.normal_KKT.A.product(P._primal._design, dual_work)
-                    # slack_work.exp(X._primal._slack)
-                    # slack_work.restrict()
-                    # slack_work.times(P._primal._slack)
-                    # slack_work.times(-1.)
-                    # dual_work.plus(slack_work)
-                    # dual_work.plus(dLdX._dual)
-                    # pred = self.tangent_KKT.pred \
-                    #     - normal_step._primal.inner(dLdX._primal) \
-                    #     + self.mu*dLdX._dual.norm2**2 \
-                    #     - P._dual.inner(dual_work) \
-                    #     - self.mu*dual_work.inner(dual_work)
-
-                elif iters == 2:
-                    # if we got here, the second order correction failed
-                    # reject step
-                    self.info_file.write(
-                        '   Correction failed! Resetting step...\n')
-                    P.equals(step_save)
-
+                        '      Reached minimum radius! ' +
+                        'Exiting globalization...\n')
+                    min_radius_active = True
+                    break
                 else:
-                    self.radius = max(0.5*self.radius, self.min_radius)
-                    if self.radius == self.min_radius:
-                        self.info_file.write(
-                            '      Reached minimum radius! ' +
-                            'Exiting globalization...\n')
-                        min_radius_active = True
-                        break
+                    self.info_file.write(
+                        '   Re-solving with smaller radius -> ' +
+                        '%f\n'%self.radius)
 
-                    else:
-                        self.info_file.write(
-                            '   Re-solving with smaller radius -> ' +
-                            '%f\n'%self.radius)
+                    # shrink the normal step
+                    normal_step._primal.times(
+                        0.8*self.radius/normal_step._primal.norm2)
 
-                        # shrink the normal step
-                        normal_step._primal.times(
-                            0.8*self.radius/normal_step._primal.norm2)
+                    # calculate the tangent step Radius
+                    self.tangent_KKT.radius = np.sqrt(
+                        self.radius**2
+                        - normal_step._primal._design.norm2**2
+                        - normal_step._primal._slack.norm2**2)
 
-                        # calculate the tangent step Radius
-                        self.tangent_KKT.radius = np.sqrt(
-                            self.radius**2
-                            - normal_step._primal._design.norm2**2
-                            - normal_step._primal._slack.norm2**2)
+                    # set up the RHS vector for the tangent-step solve
+                    self.tangent_KKT.W.product(
+                        normal_step._primal._design, tangent_rhs._design)
+                    tangent_rhs._design.plus(dLdX._primal._design)
+                    tangent_rhs._design.times(-1.)
+                    tangent_rhs._slack.equals(normal_step._primal._slack)
+                    tangent_rhs._slack.times(X._dual)
+                    tangent_rhs._slack.times(slack_work)
+                    dual_work.equals(X._dual)
+                    dual_work.times(slack_work)
+                    tangent_rhs._slack.plus(dual_work)
+                    tangent_rhs._slack.restrict()
 
-                        # set up the RHS vector for the tangent-step solve
-                        self.tangent_KKT.W.product(
-                            normal_step._primal._design, tangent_rhs._design)
-                        tangent_rhs._design.plus(dLdX._primal._design)
-                        tangent_rhs._design.times(-1.)
-                        tangent_rhs._slack.equals(normal_step._primal._slack)
-                        tangent_rhs._slack.times(X._dual)
-                        tangent_rhs._slack.times(slack_work)
-                        dual_work.equals(X._dual)
-                        dual_work.times(slack_work)
-                        tangent_rhs._slack.plus(dual_work)
-                        tangent_rhs._slack.restrict()
+                    # solve for the tangent step
+                    self.tangent_KKT.solve(
+                        tangent_rhs, tangent_step, krylov_tol)
 
-                        # solve for the tangent step
-                        self.tangent_KKT.solve(
-                            tangent_rhs, tangent_step, krylov_tol)
+                    # assemble the complete step
+                    P._primal.equals_ax_p_by(
+                        1., normal_step._primal, 1, tangent_step)
+                    P._primal._slack.restrict()
 
-                        # assemble the complete step
-                        P._primal.equals_ax_p_by(
-                            1., normal_step._primal, 1, tangent_step)
-                        P._primal._slack.restrict()
-
-                        # calculate predicted decrease in the merit function
-                        self.normal_KKT.A.product(P._primal._design, dual_work)
-                        slack_work.exp(X._primal._slack)
-                        slack_work.restrict()
-                        slack_work.times(P._primal._slack)
-                        slack_work.times(-1.)
-                        dual_work.plus(slack_work)
-                        dual_work.plus(dLdX._dual)
-                        pred = self.tangent_KKT.pred \
-                            - normal_step._primal.inner(dLdX._primal) \
-                            + self.mu*dLdX._dual.norm2**2 \
-                            - P._dual.inner(dual_work) \
-                            - self.mu*dual_work.inner(dual_work)
+                    # calculate predicted decrease in the merit function
+                    self.normal_KKT.A.product(P._primal._design, dual_work)
+                    slack_work.exp(X._primal._slack)
+                    slack_work.restrict()
+                    slack_work.times(P._primal._slack)
+                    slack_work.times(-1.)
+                    dual_work.plus(slack_work)
+                    dual_work.plus(dLdX._dual)
+                    pred = self.tangent_KKT.pred \
+                        - normal_step._primal.inner(dLdX._primal) \
+                        + self.mu*dLdX._dual.norm2**2 \
+                        - P._dual.inner(dual_work) \
+                        - self.mu*dual_work.inner(dual_work)
             else:
-                if iters == 2:
-                    # 2nd order correction worked -- yay!
-                    self.info_file.write('   Correction worked!\n')
-
                 # model is okay -- accept primal step
                 self.info_file.write('\nStep accepted!\n')
 

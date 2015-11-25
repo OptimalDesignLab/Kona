@@ -156,7 +156,7 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
             'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 0.1,
+                'init_radius' : 4.0,
                 'max_radius' : 1.0,
                 'min_radius' : 1e-4,
             },
