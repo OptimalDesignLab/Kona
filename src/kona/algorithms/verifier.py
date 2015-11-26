@@ -222,6 +222,15 @@ class Verifier(object):
         v_p = self.primal_factory.generate()
         w_p = self.primal_factory.generate()
 
+        u_p.equals(10.0)
+        u_p.divide_by(u_p.norm2)
+        one = u_p.norm2
+        if abs(one) - 1 > EPS:
+            self.failures['primal_vec']['equals_value'] = True
+            self.failures['primal_vec']['times'] = True
+            self.failures['primal_vec']['inner'] = True
+            self.exit_verify = True
+
         u_p.equals(1.)
         v_p.equals(-1.)
         w_p.equals(u_p)
@@ -285,6 +294,15 @@ class Verifier(object):
         v_s = self.state_factory.generate()
         w_s = self.state_factory.generate()
 
+        u_s.equals(10.0)
+        u_s.divide_by(u_s.norm2)
+        one = u_s.norm2
+        if abs(one) - 1 > EPS:
+            self.failures['state_vec']['equals_value'] = True
+            self.failures['state_vec']['times'] = True
+            self.failures['state_vec']['inner'] = True
+            self.exit_verify = True
+
         u_s.equals(1.)
         v_s.equals(-1.)
         w_s.equals(u_s)
@@ -347,6 +365,15 @@ class Verifier(object):
         u_d = self.dual_factory.generate()
         v_d = self.dual_factory.generate()
         w_d = self.dual_factory.generate()
+
+        u_d.equals(10.0)
+        u_d.divide_by(u_d.norm2)
+        one = u_d.norm2
+        if abs(one) - 1 > EPS:
+            self.failures['dual_vec']['equals_value'] = True
+            self.failures['dual_vec']['times'] = True
+            self.failures['dual_vec']['inner'] = True
+            self.exit_verify = True
 
         u_d.equals(1.)
         v_d.equals(-1.)
