@@ -369,7 +369,7 @@ class CompositeStep(OptimizationAlgorithm):
                 X._primal._slack.restrict()
 
                 # solve states at the new step
-                state_work.equals_primal_solution(X._primal._design)
+                state.equals_primal_solution(X._primal._design)
 
                 # if this is a matrix-based problem, tell the solver to factor
                 # some important matrices to be used in the next iteration
