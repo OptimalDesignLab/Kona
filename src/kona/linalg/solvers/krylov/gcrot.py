@@ -104,7 +104,7 @@ class GCROT(KrylovSolver):
         # calculate norm of rhs vector
         norm0 = beta
 
-        if (beta <= self.rel_tol*norm0) or (beta < EPS):
+        if (beta <= self.rel_tol*norm0) or (beta < 1e3*EPS):
             # system is already solved
             self.out_file.write('GCROT system solved by initial guess.\n')
             return iters, beta
