@@ -4,20 +4,33 @@ from kona.user import UserSolver
 
 class Sellar(UserSolver):
 
-    def __init__(self, init_x=[5., 2., 1.]):
+    def __init__(self, init_x=[5., 2., 1.], des_bounds=True):
         super(Sellar, self).__init__(3, 2, 8)
         self.init_x = init_x
+        self.des_bounds = des_bounds
 
-        self.dCdX = np.array(
-            [[0., 0., 0.],
-             [0., 0., 0.],
-             [1., 0., 0.],
-             [-1., 0., 0.],
-             [0., 1., 0.],
-             [0., -1., 0.],
-             [0., 0., 1.],
-             [0., 0., -1.]]
-        )
+        if self.des_bounds:
+            self.dCdX = np.array(
+                [[0., 0., 0.],
+                 [0., 0., 0.],
+                 [1., 0., 0.],
+                 [-1., 0., 0.],
+                 [0., 1., 0.],
+                 [0., -1., 0.],
+                 [0., 0., 1.],
+                 [0., 0., -1.]]
+            )
+        else:
+            self.dCdX = np.array(
+                [[0., 0., 0.],
+                 [0., 0., 0.],
+                 [0., 0., 0.],
+                 [0., 0., 0.],
+                 [0., 0., 0.],
+                 [0., 0., 0.],
+                 [0., 0., 0.],
+                 [0., 0., 0.]]
+            )
 
         self.dCdU = np.array(
             [[1./3.16, 0.],
@@ -105,12 +118,20 @@ class Sellar(UserSolver):
 
         store_here.data[0] = y1/3.16 - 1
         store_here.data[1] = 1 - y2/24.
-        store_here.data[2] = x1 + 10.
-        store_here.data[3] = 10. - x1
-        store_here.data[4] = x2
-        store_here.data[5] = 10. - x2
-        store_here.data[6] = x3
-        store_here.data[7] = 10. - x3
+        if self.des_bounds:
+            store_here.data[2] = x1 + 10.
+            store_here.data[3] = 10. - x1
+            store_here.data[4] = x2
+            store_here.data[5] = 10. - x2
+            store_here.data[6] = x3
+            store_here.data[7] = 10. - x3
+        else:
+            store_here.data[2] = 0.
+            store_here.data[3] = 0.
+            store_here.data[4] = 0.
+            store_here.data[5] = 0.
+            store_here.data[6] = 0.
+            store_here.data[7] = 0.
 
     def multiply_dCdX(self, at_design, at_state, in_vec, out_vec):
         out_vec.data = np.dot(self.dCdX, in_vec.data)
@@ -141,6 +162,10 @@ class Sellar(UserSolver):
         while iters < max_iter:
             y1 = u[0]
             y2 = u[1]
+
+            if y1 < 0.:
+                u -= du
+                break
 
             R[0] = y1 - x1**2 - x3 - x2 + 0.2*y2
             R[1] = y2 - np.sqrt(y1) - x1 - x2
