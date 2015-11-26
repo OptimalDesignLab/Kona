@@ -83,7 +83,7 @@ defaults = {
     },
 
     'rsnk' : {
-        'precond'       : 'nested',
+        'precond'       : None, # 'nested'
         # rsnk algorithm settings
         'dynamic_tol'   : False,
         'nu'            : 0.95,
@@ -102,8 +102,9 @@ defaults = {
 
     'composite-step' : {
         'normal-step' : {
-            'precond'       : 'svd',
+            'precond'       : None, # 'svd'
             'lanczos_size'  : 10,
+            'use_gcrot'     : False,
             'out_file'      : 'kona_normal_krylov.dat',
             'subspace_size' : 10,
             'max_outer'     : 10,

@@ -216,7 +216,13 @@ class Sellar(UserSolver):
         store_here.data[2] = self.init_x[2]
 
     def restrict_dual(self, dual_vector):
-        pass
+        if not self.des_bounds:
+            dual_vector.data[2] = 0.
+            dual_vector.data[3] = 0.
+            dual_vector.data[4] = 0.
+            dual_vector.data[5] = 0.
+            dual_vector.data[6] = 0.
+            dual_vector.data[7] = 0.
 
     def current_solution(self, curr_design, curr_state, curr_adj,
                          curr_dual, num_iter):

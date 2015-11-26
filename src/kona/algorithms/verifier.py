@@ -101,6 +101,9 @@ class Verifier(object):
                 'plus'                  : None,
                 'times'                 : None,
                 'equals_ax_p_by'        : None,
+                'exp'                   : None,
+                'log'                   : None,
+                'pow'                   : None,
                 'inner'                 : None,
             },
             'state_vec' : {
@@ -109,6 +112,9 @@ class Verifier(object):
                 'plus'                  : None,
                 'times'                 : None,
                 'equals_ax_p_by'        : None,
+                'exp'                   : None,
+                'log'                   : None,
+                'pow'                   : None,
                 'inner'                 : None,
             },
             'dual_vec' : {
@@ -117,6 +123,9 @@ class Verifier(object):
                 'plus'                  : None,
                 'times'                 : None,
                 'equals_ax_p_by'        : None,
+                'exp'                   : None,
+                'log'                   : None,
+                'pow'                   : None,
                 'inner'                 : None,
             },
             # UserSolver gradient operations
@@ -235,6 +244,39 @@ class Verifier(object):
             self.failures['primal_vec']['inner'] = True
             self.exit_verify = True
 
+        u_p.equals(0.0)
+        v_p.exp(u_p)
+        w_p.equals(-1.0)
+        w_p.plus(v_p)
+        zero = w_p.norm2
+        if abs(zero) > EPS:
+            self.failures['primal_vec']['equals_value'] = True
+            self.failures['primal_vec']['exp'] = True
+            self.failures['primal_vec']['plus'] = True
+            self.failures['primal_vec']['inner'] = True
+            self.exit_verify = True
+
+        u_p.equals(1.0)
+        v_p.log(u_p)
+        zero = v_p.norm2
+        if abs(zero) > EPS:
+            self.failures['primal_vec']['equals_value'] = True
+            self.failures['primal_vec']['log'] = True
+            self.failures['primal_vec']['inner'] = True
+            self.exit_verify = True
+
+        u_p.equals(2.0)
+        u_p.pow(2.0)
+        w_p.equals(-4.0)
+        w_p.plus(u_p)
+        zero = w_p.norm2
+        if abs(zero) > EPS:
+            self.failures['primal_vec']['equals_value'] = True
+            self.failures['primal_vec']['pow'] = True
+            self.failures['primal_vec']['plus'] = True
+            self.failures['primal_vec']['inner'] = True
+            self.exit_verify = True
+
     def _verify_state_vec(self):
         if not self.optns['state_vec']:
             return
@@ -265,6 +307,39 @@ class Verifier(object):
             self.failures['state_vec']['inner'] = True
             self.exit_verify = True
 
+        u_s.equals(0.0)
+        v_s.exp(u_s)
+        w_s.equals(-1.0)
+        w_s.plus(v_s)
+        zero = w_s.norm2
+        if abs(zero) > EPS:
+            self.failures['state_vec']['equals_value'] = True
+            self.failures['state_vec']['exp'] = True
+            self.failures['state_vec']['plus'] = True
+            self.failures['state_vec']['inner'] = True
+            self.exit_verify = True
+
+        u_s.equals(1.0)
+        v_s.log(u_s)
+        zero = v_s.norm2
+        if abs(zero) > EPS:
+            self.failures['state_vec']['equals_value'] = True
+            self.failures['state_vec']['log'] = True
+            self.failures['state_vec']['inner'] = True
+            self.exit_verify = True
+
+        u_s.equals(2.0)
+        u_s.pow(2.0)
+        w_s.equals(-4.0)
+        w_s.plus(u_s)
+        zero = w_s.norm2
+        if abs(zero) > EPS:
+            self.failures['state_vec']['equals_value'] = True
+            self.failures['state_vec']['pow'] = True
+            self.failures['state_vec']['plus'] = True
+            self.failures['state_vec']['inner'] = True
+            self.exit_verify = True
+
     def _verify_dual_vec(self):
         if not self.optns['dual_vec']:
             return
@@ -292,6 +367,39 @@ class Verifier(object):
         if abs(zero) > EPS:
             self.failures['dual_vec']['times'] = True
             self.failures['dual_vec']['equals_ax_p_by'] = True
+            self.failures['dual_vec']['inner'] = True
+            self.exit_verify = True
+
+        u_d.equals(0.0)
+        v_d.exp(u_d)
+        w_d.equals(-1.0)
+        w_d.plus(v_d)
+        zero = w_d.norm2
+        if abs(zero) > EPS:
+            self.failures['dual_vec']['equals_value'] = True
+            self.failures['dual_vec']['exp'] = True
+            self.failures['dual_vec']['plus'] = True
+            self.failures['dual_vec']['inner'] = True
+            self.exit_verify = True
+
+        u_d.equals(1.0)
+        v_d.log(u_d)
+        zero = v_d.norm2
+        if abs(zero) > EPS:
+            self.failures['dual_vec']['equals_value'] = True
+            self.failures['dual_vec']['log'] = True
+            self.failures['dual_vec']['inner'] = True
+            self.exit_verify = True
+
+        u_d.equals(2.0)
+        u_d.pow(2.0)
+        w_d.equals(-4.0)
+        w_d.plus(u_d)
+        zero = w_d.norm2
+        if abs(zero) > EPS:
+            self.failures['dual_vec']['equals_value'] = True
+            self.failures['dual_vec']['pow'] = True
+            self.failures['dual_vec']['plus'] = True
             self.failures['dual_vec']['inner'] = True
             self.exit_verify = True
 
