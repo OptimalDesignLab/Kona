@@ -156,6 +156,8 @@ defaults = {
         'check_res'     : True,
         # STCG settings
         'proj_cg'       : False,
+        # FGMRES settings
+        'check_LSgrad'  : False,
         # GCROT settings
         'max_outer'     : 10,
         'max_recycle'   : 10,

@@ -63,6 +63,23 @@ class FLECSSolverTestCase(unittest.TestCase):
                                          self.precond.product)
         self.assertTrue(iters == 3)
 
+    def test_solve_overdetermined(self):
+        # try solving an overdetermined problem; must be a symmetric matrix
+        self.A = numpy.array([[4, 3, 2, 0],
+                              [3, 4, 3, 0],
+                              [2, 3, 4, 0],
+                              [0, 0, 0, 0]])
+        self.b.equals(1.)
+        self.krylov.check_LSgrad = True
+        # reset the solution vector
+        self.x.equals(0)
+        # solve the system with FGMRES
+        iters, beta, = self.krylov.solve(self.mat_vec, self.b, self.x,
+                                         self.precond.product)
+        
+        
+
+
 if __name__ == "__main__":
 
     unittest.main()
