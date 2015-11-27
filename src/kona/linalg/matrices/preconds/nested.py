@@ -44,10 +44,10 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
         if self.use_gcrot:
             krylov_optns = {
                 'out_file' : 'kona_nested_krylov.dat',
-                'subspace_size' : 20,
+                'subspace_size' : 10,
                 'max_recycle' : 10,
-                'max_outer' : 100,
-                'max_matvec' : 40, # this should be hit first
+                'max_outer' : 10,
+                'max_matvec' : 50, # this should be hit first
                 'rel_tol'  : 1e-2,
             }
             self.krylov = GCROT(
