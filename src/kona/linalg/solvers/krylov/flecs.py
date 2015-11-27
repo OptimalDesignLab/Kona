@@ -48,7 +48,8 @@ class FLECS(KrylovSolver):
     def __init__(self, vector_factories, optns={}):
         super(FLECS, self).__init__(vector_factories, optns)
 
-        self.rel_tol = get_opt(optns, 0.5, 'rel_tol')
+        self.rel_tol = get_opt(optns, 1e-2, 'rel_tol')
+        self.abs_tol = get_opt(optns, 1e-5, 'abs_tol')
 
         # set a default trust radius
         # NOTE: this will be set by the optimization algorithm later
@@ -396,8 +397,9 @@ class FLECS(KrylovSolver):
                 self.gamma_aug/(self.feas_scale*feas0))
 
             # check for convergence
-            if (self.gamma < self.rel_tol*self.feas_scale*feas0) and \
-                    (self.omega < self.rel_tol*self.grad_scale*grad0):
+            if ((self.gamma < self.rel_tol*self.feas_scale*feas0) and
+               (self.omega < self.rel_tol*self.grad_scale*grad0)) or \
+               ((self.gamma < self.abs_tol) and (self.omega < self.abs_tol)):
                 break
 
             # check for breakdown

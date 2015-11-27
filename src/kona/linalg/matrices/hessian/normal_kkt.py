@@ -75,6 +75,7 @@ class NormalKKTMatrix(BaseHessian):
                 'max_matvec' : get_opt(optns, 50, 'max_matvec'),
                 'check_res' : get_opt(optns, True, 'check_res'),
                 'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
+                'abs_tol' : get_opt(optns, 1e-5, 'abs_tol')
             }
             self.krylov = GCROT(
                 self.primal_factory,
@@ -87,6 +88,7 @@ class NormalKKTMatrix(BaseHessian):
                 'subspace_size' : get_opt(optns, 10, 'subspace_size'),
                 'check_res' : get_opt(optns, True, 'check_res'),
                 'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
+                'abs_tol' : get_opt(optns, 1e-5, 'abs_tol')
             }
             self.krylov = FGMRES(
                 self.primal_factory,

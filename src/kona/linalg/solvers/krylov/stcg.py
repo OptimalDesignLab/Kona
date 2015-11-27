@@ -18,6 +18,9 @@ class STCG(KrylovSolver):
     def __init__(self, vector_factory, optns={}, dual_factory=None):
         super(STCG, self).__init__(vector_factory, optns)
 
+        self.rel_tol = get_opt(optns, 1e-5, 'rel_tol')
+        self.abs_tol = get_opt(optns, 1e-8, 'abs_tol')
+
         # set a default trust radius
         # NOTE: the trust radius is set by the optimization algorithm
         self.radius = 1.0
@@ -172,11 +175,11 @@ class STCG(KrylovSolver):
             # check convergence
             if self.proj_cg:
                 write_history(self.out_file, i+1, r_dot_z, norm0)
-                if r_dot_z < norm0*self.rel_tol:
+                if r_dot_z < norm0*self.rel_tol or r_dot_z < self.abs_tol:
                     break
             else:
                 write_history(self.out_file, i+1, res_norm2, norm0)
-                if res_norm2 < norm0*self.rel_tol:
+                if res_norm2 < norm0*self.rel_tol or res_norm2 < self.abs_tol:
                     break
             # if we didn't converge, update beta
             beta *= r_dot_z

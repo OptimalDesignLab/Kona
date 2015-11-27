@@ -18,7 +18,8 @@ class GCROT(KrylovSolver):
         super(GCROT, self).__init__(vector_factory, optns)
 
         # get relative tolerance
-        self.rel_tol = get_opt(optns, 0.5, 'rel_tol')
+        self.rel_tol = get_opt(optns, 1e-5, 'rel_tol')
+        self.abs_tol = get_opt(optns, 1e-8, 'abs_tol')
 
         # get maximum number of recycled vectors, and set current
         self.max_recycle = get_opt(optns, 10, 'max_recycle')
@@ -103,10 +104,7 @@ class GCROT(KrylovSolver):
             res.equals_ax_p_by(1.0, res, -alpha, self.C[k])
         beta = res.norm2
 
-        # calculate norm of rhs vector
-        #norm0 = beta
-
-        if (beta <= self.rel_tol*norm0) or (beta < 1e3*EPS):
+        if (beta <= self.rel_tol*norm0) or (beta < self.abs_tol):
             # system is already solved
             self.out_file.write('GCROT system solved by initial guess.\n')
             return iters, beta
@@ -149,8 +147,12 @@ class GCROT(KrylovSolver):
                         'GCROT: Arnoldi process breakdown: ' +
                         'H(%i, %i) = %e, however '%(i+1, i, H[i+1, i]) +
                         '||res|| = %e\n'%beta)
-                elif beta < self.rel_tol*norm0 or iters >= self.max_krylov:
+
+                elif beta <= self.rel_tol*norm0 or \
+                        beta <= self.abs_tol or \
+                        iters >= self.max_krylov:
                     break
+
                 inner_iters += 1
                 iters += 1
 

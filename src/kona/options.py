@@ -98,6 +98,7 @@ defaults = {
         'subspace_size' : 10,
         'check_res'     : True,
         'rel_tol'       : 1e-3,
+        'abs_tol'       : 1e-5,
     },
 
     'composite-step' : {
@@ -112,12 +113,14 @@ defaults = {
             'max_matvec'    : 100,
             'check_res'     : True,
             'rel_tol'       : 1e-3,
+            'abs_tol'       : 1e-5,
         },
         'tangent-step' : {
             'out_file'      : 'kona_tangent_krylov.dat',
             'subspace_size' : 50,
             'check_res'     : True,
             'rel_tol'       : 1e-3,
+            'abs_tol'       : 1e-5,
         }
     },
 

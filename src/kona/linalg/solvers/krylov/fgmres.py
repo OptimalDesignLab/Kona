@@ -17,7 +17,8 @@ class FGMRES(KrylovSolver):
         super(FGMRES, self).__init__(vector_factory, optns)
 
         # get relative tolerance
-        self.rel_tol = get_opt(optns, 0.5, 'rel_tol')
+        self.rel_tol = get_opt(optns, 1e-3, 'rel_tol')
+        self.abs_tol = get_opt(optns, 1e-8, 'abs_tol')
 
         # put in memory request
         self.vec_fac.request_num_vectors(2*self.max_iter + 1)
@@ -59,7 +60,7 @@ class FGMRES(KrylovSolver):
         W[0].plus(b)
         beta = W[0].norm2
 
-        if (beta <= self.rel_tol*norm0) or (beta < EPS):
+        if (beta <= self.rel_tol*norm0) or (beta < self.abs_tol):
             # system is already solved
             self.out_file.write('FMGRES system solved by initial guess.\n')
             return iters, beta
@@ -86,7 +87,7 @@ class FGMRES(KrylovSolver):
                     'FGMRES: Arnoldi process breakdown: ' +
                     'H(%i, %i) = %e, however '%(i+1, i, H[i+1, i]) +
                     '||res|| = %e\n'%beta)
-            elif beta < self.rel_tol*norm0:
+            elif beta < self.rel_tol*norm0 or beta < self.abs_tol:
                 break
 
             iters += 1

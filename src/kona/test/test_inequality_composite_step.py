@@ -42,13 +42,15 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
                     'max_recycle'   : 10,
                     'max_matvec'    : 50,
                     'check_res'     : True,
-                    'rel_tol'       : 1e-8,
+                    'rel_tol'       : 1e-5,
+                    'abs_tol'       : 1e-9,
                 },
                 'tangent-step' : {
                     'out_file'      : 'kona_tangent_krylov.dat',
                     'subspace_size' : 20,
                     'check_res'     : True,
-                    'rel_tol'       : 1e-8,
+                    'rel_tol'       : 1e-5,
+                    'abs_tol'       : 1e-9,
                 }
             },
 
@@ -116,13 +118,15 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
                     'max_recycle'   : 10,
                     'max_matvec'    : 100,
                     'check_res'     : True,
-                    'rel_tol'       : 1e-8,
+                    'rel_tol'       : 1e-5,
+                    'abs_tol'       : 1e-8,
                 },
                 'tangent-step' : {
                     'out_file'      : 'kona_tangent_krylov.dat',
                     'subspace_size' : 50,
                     'check_res'     : True,
-                    'rel_tol'       : 1e-8,
+                    'rel_tol'       : 1e-5,
+                    'abs_tol'       : 1e-8,
                 }
             },
         }
@@ -177,13 +181,15 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
                     'max_recycle' : 10,
                     'max_matvec'  : 100,
                     'check_res'   : True,
-                    'rel_tol'     : 1e-8,
+                    'rel_tol'     : 1e-5,
+                    'abs_tol'     : 1e-8,
                 },
                 'tangent-step' : {
                     'out_file'    : 'kona_tangent_krylov.dat',
                     'subspace_size'    : 50,
                     'check_res'   : True,
-                    'rel_tol'     : 1e-8,
+                    'rel_tol'     : 1e-5,
+                    'abs_tol'     : 1e-8,
                 }
             },
         }
