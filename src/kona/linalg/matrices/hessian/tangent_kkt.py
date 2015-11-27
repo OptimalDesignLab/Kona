@@ -105,9 +105,9 @@ class TangentKKTMatrix(BaseHessian):
         in_kkt = ReducedKKTVector(in_vec, self.dual_in)
         in_kkt._dual.equals(0.0)
         out_kkt = ReducedKKTVector(out_vec, self.dual_out)
-        self.proj_cg.solve(in_kkt, out_kkt, rel_tol=1e-8)
+        self.proj_cg.solve(in_kkt, out_kkt, rel_tol=1e-6)
 
-    def solve(self, rhs, solution, rel_tol=1e-6):
+    def solve(self, rhs, solution, rel_tol=None):
         if self.radius is None:
             raise ValueError('Trust radius not set!')
 
@@ -125,9 +125,3 @@ class TangentKKTMatrix(BaseHessian):
         solution.equals(0.0)
         self.pred, self.trust_active = \
             self.krylov.solve(self.product, rhs, solution, self.precond)
-
-        # # # check the steepest descent against trust radius
-        # self.precond(rhs, solution)
-        # solution_norm = solution.norm2
-        # if solution_norm > self.radius:
-        #     solution.times(self.radius/solution_norm)
