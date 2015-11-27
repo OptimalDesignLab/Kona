@@ -21,8 +21,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
         super(ReducedSpaceQuasiNewton, self).__init__(
-            primal_factory, state_factory, dual_factory, optns
-        )
+            primal_factory, state_factory, dual_factory, optns)
         # number of vectors required in solve() method
         self.primal_factory.request_num_vectors(6)
         self.state_factory.request_num_vectors(3)
@@ -76,7 +75,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     def _write_history(self, num_iter, norm):
         self.hist_file.write(
             '# %5i'%num_iter + ' '*5 +
-            '%10e'%self.primal_factory._memory.cost + ' '*5 +
+            '%10i'%self.primal_factory._memory.cost + ' '*5 +
             '%10e'%norm + '\n'
         )
 
@@ -145,8 +144,11 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             # s = delta x = alpha * p is needed later by quasi-Newton method
             p.times(alpha)
             self.iter += 1
-        # optimization is finished, so print total number of iterations
 
+        # optimization is finished, so print total number of iterations
+        current_solution(x, state, num_iter=self.iter)
+        info.write('\n')
+        self._write_history(self.iter, grad_norm)
         if converged:
             self.info_file.write('Optimization successful!\n')
         else:

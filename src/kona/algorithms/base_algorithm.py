@@ -47,7 +47,7 @@ class OptimizationAlgorithm(object):
 
         # set up max iterations and primal tolerance for convergence
         self.max_iter = get_opt(optns, 100, 'max_iter')
-        self.primal_tol = get_opt(optns, 1e-8,'opt_tol')
+        self.primal_tol = get_opt(optns, 1e-8, 'opt_tol')
 
         # set up the info file
         self.info_file = get_opt(optns, sys.stdout, 'info_file')

@@ -98,30 +98,16 @@ class LowRankSVD(BaseHessian):
     4. Compute :math:`v_{\\lambda} = \\Lambda \\hat{v}_{\\lambda}`.
     """
 
-    def __init__(self, vector_factories, optns):
-        super(LowRankSVD, self).__init__(vector_factories, optns)
+    def __init__(self, fwd_mat_vec, fwd_factory,
+                 rev_mat_vec=None, rev_factory=None, optns={}):
 
         # set basic internal options
-        self.use_precond = True
         self.subspace_size = get_opt(optns, 10, 'lanczos_size')
 
         # get references to individual factories
-        self.primal_factory = None
-        self.state_factory = None
-        self.dual_factory = None
-        for factory in self.vec_fac:
-            if factory._vec_type is PrimalVector:
-                self.primal_factory = factory
-            elif factory._vec_type is StateVector:
-                self.state_factory = factory
-            elif factory._vec_type is DualVector:
-                self.dual_factory = factory
-
-        # set the constraint jacobian matrix
-        if isinstance(A, TotalConstraintJacobian):
-            self.A = A
-        else:
-            raise TypeError('Invalid constraint jacobian!')
+        self.fwd_factory = fwd_factory
+        if rev_factory is not None:
+            self.rev_factory = self.rev_factory
 
         # reset the linearization flag
         self._allocated = False
@@ -131,7 +117,7 @@ class LowRankSVD(BaseHessian):
         self.state_factory.request_num_vectors(6)
         self.dual_factory.request_num_vectors(3 + 2*self.subspace_size)
 
-    def linearize(self, at_dual, at_slack):
+    def decompose(self, fwd_mat_vec, rev_mat_vec):
 
         if not self._allocated:
             # this is the first allocation
@@ -155,12 +141,6 @@ class LowRankSVD(BaseHessian):
             self.state_work = self.state_factory.generate()
             # flip the allocation flag
             self._allocated = True
-
-        # do some aliasing
-        self.at_dual = at_dual
-        self.at_slack = at_slack
-        self.slack_term.exp(self.at_slack)
-        self.slack_term.restrict()
 
         def _fwd_mat_vec(in_vec, out_vec):
             self.A.product(in_vec, out_vec)

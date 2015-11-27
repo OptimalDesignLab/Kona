@@ -19,17 +19,27 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
             'opt_tol' : 1e-12,
 
             'trust' : {
-                'radius' : 1.0,
+                'init_radius' : 0.5,
                 'max_radius' : 2.0,
+                'min_radius' : 1e-4,
             },
 
-            'krylov' : {
-                'out_file'      : 'kona_krylov.dat',
-                'max_iter'      : num_design,
-                'rel_tol'       : 1e-2,
+            'rsnk' : {
+                'precond'       : None,
+                # rsnk algorithm settings
+                'dynamic_tol'   : False,
+                'nu'            : 0.95,
+                # reduced KKT matrix settings
+                'product_fac'   : 0.001,
+                'lambda'        : 0.0,
+                'scale'         : 1.0,
+                'grad_scale'    : 1.0,
+                'feas_scale'    : 1.0,
+                # krylov solver settings
+                'krylov_file'   : 'kona_krylov.dat',
+                'subspace_size' : 10,
                 'check_res'     : True,
-                # STCG options
-                'proj_cg'       : False,
+                'rel_tol'       : 1e-7,
             },
         }
         rsnk = ReducedSpaceNewtonKrylov(
@@ -54,21 +64,27 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
             'opt_tol' : 1e-8,
 
             'trust' : {
-                'radius' : 1.0,
-                'max_radius' : 2.0,
+                'init_radius' : 1.0,
+                'max_radius' : 4.0,
+                'min_radius' : 1e-4,
             },
 
-            'reduced' : {
-                'precond' : None,
-            },
-
-            'krylov' : {
-                'out_file'      : 'kona_krylov.dat',
-                'max_iter'      : 10,
-                'rel_tol'       : 0.5,
+            'rsnk' : {
+                'precond'       : None,
+                # rsnk algorithm settings
+                'dynamic_tol'   : False,
+                'nu'            : 0.95,
+                # reduced KKT matrix settings
+                'product_fac'   : 0.001,
+                'lambda'        : 0.0,
+                'scale'         : 1.0,
+                'grad_scale'    : 1.0,
+                'feas_scale'    : 1.0,
+                # krylov solver settings
+                'krylov_file'   : 'kona_krylov.dat',
+                'subspace_size' : 10,
                 'check_res'     : True,
-                # STCG options
-                'proj_cg'       : False,
+                'rel_tol'       : 1e-7,
             },
         }
 

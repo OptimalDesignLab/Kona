@@ -60,7 +60,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
         self.krylov.radius = self.radius
 
         # initialize the ReducedHessian approximation
-        reduced_optns = get_opt(optns, {}, 'reduced')
+        reduced_optns = get_opt(optns, {}, 'rsnk')
         reduced_optns['out_file'] = self.info_file
         self.hessian = ReducedHessian(
             [self.primal_factory, self.state_factory], reduced_optns)
@@ -99,7 +99,7 @@ class ReducedSpaceNewtonKrylov(OptimizationAlgorithm):
     def _write_history(self, num_iter, norm, rho):
         self.hist_file.write(
             ' %6i'%num_iter + ' '*5 +
-            '%10e'%self.primal_factory._memory.cost + ' '*5 +
+            '%10i'%self.primal_factory._memory.cost + ' '*5 +
             '%10e'%norm + ' '*5 +
             '%10e'%rho + ' '*5 +
             '%10e'%self.radius + '\n'

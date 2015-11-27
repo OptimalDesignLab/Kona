@@ -140,15 +140,7 @@ class Spiral(UserSolver):
         super(Spiral, self).current_solution(
             curr_design, curr_state, curr_adj, curr_dual, num_iter)
 
-        # print 'Current Design: '
-        # print self.curr_design
-        # print 'Current State: '
-        # print self.curr_state
-
-        self.PDE.linearize(curr_design, curr_state)
-        self.x_hist.append(curr_design.data[0])
-        self.u1_hist.append(curr_state.data[0])
-        self.u2_hist.append(curr_state.data[1])
-        self.obj_hist.append(self.PDE.F)
-        self.grad_hist.append(
-            self.PDE.dFdX + self.PDE.dRdX.T.dot(curr_adj.data))
+        print 'Current Design: '
+        print self.curr_design
+        print 'Current State: '
+        print self.curr_state
