@@ -29,6 +29,7 @@ class GCROT(KrylovSolver):
 
         # put in memory request
         num_vectors = 2*self.max_iter + 2*self.max_recycle + 4
+        print 'num_vectors = ',num_vectors
         self.vec_fac.request_num_vectors(num_vectors)
         self.dual_fac = dual_factory
         if self.dual_fac is not None:
@@ -94,6 +95,8 @@ class GCROT(KrylovSolver):
         mat_vec(x, res)
         res.minus(b)
         res.times(-1.0)
+        norm0 = res.norm2
+        
         # find initial guess from recycled subspace
         for k in xrange(self.num_stored):
             alpha = res.inner(self.C[k])
@@ -102,7 +105,7 @@ class GCROT(KrylovSolver):
         beta = res.norm2
 
         # calculate norm of rhs vector
-        norm0 = beta
+        #norm0 = beta
 
         if (beta <= self.rel_tol*norm0) or (beta < 1e3*EPS):
             # system is already solved
@@ -115,15 +118,14 @@ class GCROT(KrylovSolver):
 
         # begin outer, GCROT, loop
         ##########################
-
+        W = []
+        Z = []
         for j in xrange(self.max_outer):
 
             # begin nested FGMRES(fgmres_iter)
             fgmres_iter = self.max_recycle - self.num_stored + self.max_iter
 
             # initialize some work data for FGMRES
-            W = []
-            Z = []
             y = numpy.zeros(fgmres_iter + 1)
             sn = numpy.zeros(fgmres_iter + 1)
             cn = numpy.zeros(fgmres_iter + 1)
@@ -219,6 +221,10 @@ class GCROT(KrylovSolver):
             alpha = C_new.inner(res)
             res.equals_ax_p_by(1.0, res, -alpha, C_new)
             x.equals_ax_p_by(1.0, x, alpha, U_new)
+
+            # clear W and Z before saving C and U
+            W = []
+            Z = []
 
             # determine which vector to discard from U[:self.num_stored] and
             # C[:self.num_stored], if necessary
