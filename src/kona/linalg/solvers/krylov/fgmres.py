@@ -120,10 +120,6 @@ class FGMRES(KrylovSolver):
             y[i] = g[i] # save for check_LSgrad
             g[i], g[i+1] = apply_givens(sn[i], cn[i], g[i], g[i+1])
 
-            # set L2 norm of residual and output relative residual if necessary
-            beta = abs(g[i+1])
-            write_history(self.out_file, i+1, beta, norm0)
-
             if self.check_LSgrad and iters > 1:
                 # check the gradient of the least-squares problem
                 y[:i] = numpy.zeros(i)
@@ -136,6 +132,10 @@ class FGMRES(KrylovSolver):
                         '# small gradient in FGMRES least-squares problem\n')
                     break
 
+            # set L2 norm of residual and output relative residual if necessary
+            beta = abs(g[i+1])
+            write_history(self.out_file, i+1, beta, norm0)
+                
         ##############
         # END BIG LOOP
 
