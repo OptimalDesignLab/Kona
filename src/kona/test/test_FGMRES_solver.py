@@ -16,7 +16,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.pf.request_num_vectors(7)
         optns = {
             'max_iter' : 30,
-            'rel_tol' : 1e-15,
+            'rel_tol' : 1e-10,
         }
         self.krylov = FGMRES(self.pf, optns)
         self.km.allocate_memory()
