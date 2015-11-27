@@ -105,7 +105,7 @@ class TangentKKTMatrix(BaseHessian):
         in_kkt = ReducedKKTVector(in_vec, self.dual_in)
         in_kkt._dual.equals(0.0)
         out_kkt = ReducedKKTVector(out_vec, self.dual_out)
-        self.proj_cg.solve(in_kkt, out_kkt, rel_tol=1e-6)
+        self.proj_cg.solve(in_kkt, out_kkt)
 
     def solve(self, rhs, solution, rel_tol=None):
         if self.radius is None:
@@ -116,12 +116,15 @@ class TangentKKTMatrix(BaseHessian):
 
         # set krylov relative tolerance and radius
         self.krylov.radius = self.radius
-        if rel_tol is None:
-            self.krylov.rel_tol = self.rel_tol
-        else:
+        if rel_tol is not None:
+            tmp_rel_tol = self.krylov.rel_tol
             self.krylov.rel_tol = rel_tol
 
         # solve the system
         solution.equals(0.0)
         self.pred, self.trust_active = \
             self.krylov.solve(self.product, rhs, solution, self.precond)
+
+        # reset the krylov relative tolerance
+        if rel_tol is not None:
+            self.krylov.rel_tol = tmp_rel_tol

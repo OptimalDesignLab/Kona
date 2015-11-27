@@ -147,11 +147,14 @@ class NormalKKTMatrix(BaseHessian):
 
     def solve(self, rhs, solution, rel_tol=None):
         # set krylov relative tolerance
-        if rel_tol is None:
-            self.krylov.rel_tol = self.rel_tol
-        else:
+        if rel_tol is not None:
+            tmp_rel_tol = self.krylov.rel_tol
             self.krylov.rel_tol = rel_tol
 
         # solve the system
         solution.equals(0.0)
         self.krylov.solve(self.product, rhs, solution, self.precond)
+
+        # reset the tolerance for the krylov object
+        if rel_tol is not None:
+            self.krylov.rel_tol = tmp_rel_tol
