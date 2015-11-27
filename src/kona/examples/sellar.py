@@ -116,8 +116,8 @@ class Sellar(UserSolver):
         y1 = at_state.data[0]
         y2 = at_state.data[1]
 
-        store_here.data[0] = y1/3.16 - 1
-        store_here.data[1] = 1 - y2/24.
+        store_here.data[0] = y1/3.16 - 1.
+        store_here.data[1] = 1. - y2/24.
         if self.des_bounds:
             store_here.data[2] = x1 + 10.
             store_here.data[3] = 10. - x1

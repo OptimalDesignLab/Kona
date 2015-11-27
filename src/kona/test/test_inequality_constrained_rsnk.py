@@ -19,13 +19,13 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 3.0,
-                'max_radius' : 100.0,
-                'min_radius' : 1e-6,
+                'init_radius' : 2.5,
+                'max_radius' : 10.0,
+                'min_radius' : 1e-4,
             },
 
             'penalty' : {
-                'mu_init' : 10.0,
+                'mu_init' : 1.0,
                 'mu_pow' : 0.1,
                 'mu_max' : 1e4,
             },
@@ -43,9 +43,10 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
                 'feas_scale'    : 1.0,
                 # FLECS solver settings
                 'krylov_file'   : 'kona_krylov.dat',
-                'subspace_size' : 10,
+                'subspace_size' : 20,
                 'check_res'     : True,
-                'rel_tol'       : 0.00095,
+                'rel_tol'       : 1e-8,
+                'abs_tol'       : 1e-12,
             },
         }
 
@@ -77,13 +78,13 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             'feas_tol' : 1e-5,
 
             'trust' : {
-                'init_radius' : 0.1,
-                'max_radius' : 4.0,
+                'init_radius' : 5.0,
+                'max_radius' : 100.0,
                 'min_radius' : 1e-4,
             },
 
             'penalty' : {
-                'mu_init' : 100.0,
+                'mu_init' : 10.0,
                 'mu_pow' : 0.1,
                 'mu_max' : 1e5,
             },
@@ -103,7 +104,8 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
                 'krylov_file'   : 'kona_krylov.dat',
                 'subspace_size' : 10,
                 'check_res'     : True,
-                'rel_tol'       : 0.00095,
+                'rel_tol'       : 1e-8,
+                'abs_tol'       : 1e-12,
             },
         }
 
@@ -135,8 +137,8 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 0.1,
-                'max_radius' : 1.0,
+                'init_radius' : 10.0,
+                'max_radius' : 100.0,
                 'min_radius' : 1e-4,
             },
 
@@ -161,7 +163,8 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
                 'krylov_file'   : 'kona_krylov.dat',
                 'subspace_size' : 10,
                 'check_res'     : True,
-                'rel_tol'       : 0.00095,
+                'rel_tol'       : 1e-8,
+                'abs_tol'       : 1e-12,
             },
         }
 
