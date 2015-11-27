@@ -468,8 +468,8 @@ class CompositeStep(OptimizationAlgorithm):
             design_work[0].inner(P._primal._design) \
             + dual_work.inner(P._primal._slack)
 
-        if p_dot_grad >= 0:
-            raise ValueError('Search direction is not a descent direction!')
+        # if p_dot_grad >= 0:
+        #     raise ValueError('Search direction is not a descent direction!')
 
         # start line search iterations
         max_iter = 5

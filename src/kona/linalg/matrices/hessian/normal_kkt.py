@@ -43,7 +43,7 @@ class NormalKKTMatrix(BaseHessian):
         self._allocated = False
 
         # decide which krylov solver we use
-        self.use_gcrot = get_opt(optns, False, 'use_gcrot')
+        self.use_gcrot = get_opt(optns, True, 'use_gcrot')
 
         # initialize the constraint jacobian
         self.A = TotalConstraintJacobian(vector_factories)

@@ -29,7 +29,6 @@ class GCROT(KrylovSolver):
 
         # put in memory request
         num_vectors = 2*self.max_iter + 2*self.max_recycle + 4
-        print 'num_vectors = ',num_vectors
         self.vec_fac.request_num_vectors(num_vectors)
         self.dual_fac = dual_factory
         if self.dual_fac is not None:
@@ -96,7 +95,7 @@ class GCROT(KrylovSolver):
         res.minus(b)
         res.times(-1.0)
         norm0 = res.norm2
-        
+
         # find initial guess from recycled subspace
         for k in xrange(self.num_stored):
             alpha = res.inner(self.C[k])

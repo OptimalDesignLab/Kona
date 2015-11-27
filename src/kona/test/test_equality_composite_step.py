@@ -38,6 +38,7 @@ class EqualityCompositeStepTestCase(unittest.TestCase):
                 'normal-step' : {
                     'precond'     : None,
                     'lanczos_size': 1,
+                    'use_gcrot'   : True,
                     'out_file'    : 'kona_normal_krylov.dat',
                     'max_inner'   : 10,
                     'max_outer'   : 10,
