@@ -5,7 +5,7 @@ from kona.linalg.memory import KonaMemory
 from kona.algorithms import STCG_RSNK
 from kona.examples import Rosenbrock, Spiral
 
-class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
+class STCGRSNKTestCase(unittest.TestCase):
 
     def test_RSNK_with_Rosenbrock(self):
 

@@ -7,7 +7,7 @@ from kona.linalg.matrices.hessian import LimitedMemoryBFGS
 from kona.examples import Rosenbrock, Spiral
 from kona.algorithms import ReducedSpaceQuasiNewton
 
-class RosenbrockLBFGSTestCase(unittest.TestCase):
+class LBFGSTestCase(unittest.TestCase):
 
     def test_LBFGS_with_StrongWolfe(self):
 

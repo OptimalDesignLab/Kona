@@ -5,10 +5,7 @@ from kona import Optimizer
 from kona.algorithms import FLECS_RSNK
 from kona.examples import SimpleConstrained
 
-class EqualityConstrainedRSNKTestCase(unittest.TestCase):
-
-    # def test_dummy(self):
-    #     self.failUnless('Untested')
+class EqualityFLECSRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 

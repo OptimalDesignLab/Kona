@@ -5,7 +5,7 @@ from kona import Optimizer
 from kona.algorithms import FLECS_RSNK
 from kona.examples import SimpleConstrained, ExponentialConstrained, Sellar
 
-class InequalityConstrainedRSNKTestCase(unittest.TestCase):
+class InequalityFLECSRSNKTestCase(unittest.TestCase):
 
     def test_sellar(self):
 

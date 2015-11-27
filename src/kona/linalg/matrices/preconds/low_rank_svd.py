@@ -31,7 +31,9 @@ class LowRankSVD(object):
     Attributes
     ----------
     subspace_size : int
-        The
+        Number of vectors in each Lanczos subspace. Corresponds to the number
+        of iterations in the Lanczos algorithm, and the number of singular
+        values approximated by the decomposition.
     """
     def __init__(self, fwd_mat_vec, fwd_factory,
                  rev_mat_vec=None, rev_factory=None,
@@ -45,7 +47,7 @@ class LowRankSVD(object):
         self.fwd_factory = fwd_factory
         if rev_mat_vec is not None:
             self.rev_mat_vec = rev_mat_vec
-            self.rev_factory = self.rev_factory
+            self.rev_factory = rev_factory
         else:
             self.rev_mat_vec = None
             self.rev_factory = self.fwd_factory
@@ -58,7 +60,6 @@ class LowRankSVD(object):
         self.rev_factory.request_num_vectors(2*self.subspace_size)
 
     def linearize(self):
-
         if not self._allocated:
             # this is the first allocation
             # generate subspace vectors

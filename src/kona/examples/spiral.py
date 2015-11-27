@@ -127,12 +127,12 @@ class Spiral(UserSolver):
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
         self.PDE.linearize(at_design, at_state)
         result.data = np.linalg.solve(self.PDE.dRdU, rhs_vec.data)
-        return 0
+        return 1
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, rel_tol, result):
         self.PDE.linearize(at_design, at_state)
         result.data = np.linalg.solve(self.PDE.dRdU.T, rhs_vec.data)
-        return 0
+        return 1
 
     def current_solution(self, curr_design, curr_state, curr_adj,
                          curr_dual, num_iter):

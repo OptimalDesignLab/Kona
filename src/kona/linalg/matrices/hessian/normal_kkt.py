@@ -4,7 +4,7 @@ from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian
 from kona.linalg.matrices.hessian import TotalConstraintJacobian
-from kona.linalg.matrices.preconds import LowRankSVD
+from kona.linalg.matrices.preconds import NestedNormalStepPreconditioner
 from kona.linalg.solvers.krylov import GCROT, FGMRES
 
 class NormalKKTMatrix(BaseHessian):
@@ -51,18 +51,19 @@ class NormalKKTMatrix(BaseHessian):
         # get preconditioner options
         self.precond = get_opt(optns, None, 'precond')
         if self.precond is None:
-            self.svd = None
+            self.nested_svd = None
             eye = IdentityMatrix()
             self.precond = eye.product
-        elif self.precond == 'svd':
+        elif self.precond == 'nested_svd':
             svd_optns = {
                 'lanczos_size' : get_opt(optns, 10, 'lanczos_size'),
             }
-            self.svd = LowRankSVD(vector_factories, self.A, svd_optns)
-            self.precond = self.svd.product
+            self.nested_svd = NestedNormalStepPreconditioner(
+                self.primal_factory, self.dual_factory, self.A, svd_optns)
+            self.precond = self.nested_svd.solve
         else:
             raise TypeError('Invalid preconditioner!' +
-                            'Can be either \'svd\' or None.')
+                            'Can be either \'nested_svd\' or None.')
 
         # initialize the internal krylov solver
         if self.use_gcrot:
@@ -113,8 +114,8 @@ class NormalKKTMatrix(BaseHessian):
         self.A.linearize(self.at_design, self.at_state)
 
         # linearize the preconditioner
-        if self.svd is not None:
-            self.svd.linearize(self.at_dual, self.at_slack)
+        if self.nested_svd is not None:
+            self.nested_svd.linearize(self.at_dual, self.at_slack)
 
         # reset the krylov subspace
         if self.use_gcrot:
