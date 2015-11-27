@@ -2,7 +2,7 @@ import numpy
 import unittest
 
 from kona import Optimizer
-from kona.algorithms import ConstrainedRSNK
+from kona.algorithms import FLECS_RSNK
 from kona.examples import SimpleConstrained
 
 class EqualityConstrainedRSNKTestCase(unittest.TestCase):
@@ -58,7 +58,7 @@ class EqualityConstrainedRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = ConstrainedRSNK
+        algorithm = FLECS_RSNK
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 

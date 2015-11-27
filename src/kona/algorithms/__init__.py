@@ -1,7 +1,7 @@
 import base_algorithm
 from reduced_space_quasi_newton import ReducedSpaceQuasiNewton
-from reduced_space_newton_krylov import ReducedSpaceNewtonKrylov
-from constrained_rsnk import ConstrainedRSNK
-from composite_step import CompositeStep
+from stcg_rsnk import STCG_RSNK
+from flecs_rsnk import FLECS_RSNK
+from composite_step_rsnk import CompositeStepRSNK
 from verifier import Verifier
 import util

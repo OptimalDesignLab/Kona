@@ -2,7 +2,7 @@ import unittest
 import numpy
 
 from kona.linalg.memory import KonaMemory
-from kona.algorithms import ReducedSpaceNewtonKrylov
+from kona.algorithms import STCG_RSNK
 from kona.examples import Rosenbrock, Spiral
 
 class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
@@ -42,7 +42,7 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
                 'rel_tol'       : 1e-7,
             },
         }
-        rsnk = ReducedSpaceNewtonKrylov(
+        rsnk = STCG_RSNK(
             km.primal_factory, km.state_factory, None, optns)
         km.allocate_memory()
         rsnk.solve()
@@ -88,7 +88,7 @@ class ReducedSpaceNewtonKrylovTestCase(unittest.TestCase):
             },
         }
 
-        rsnk = ReducedSpaceNewtonKrylov(
+        rsnk = STCG_RSNK(
             km.primal_factory, km.state_factory, None, optns)
         km.allocate_memory()
         rsnk.solve()

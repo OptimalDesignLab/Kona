@@ -2,7 +2,7 @@ import numpy
 import unittest
 
 from kona import Optimizer
-from kona.algorithms import CompositeStep
+from kona.algorithms import CompositeStepRSNK
 from kona.examples import SimpleConstrained
 
 class EqualityCompositeStepTestCase(unittest.TestCase):
@@ -57,7 +57,7 @@ class EqualityCompositeStepTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = CompositeStep
+        algorithm = CompositeStepRSNK
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 

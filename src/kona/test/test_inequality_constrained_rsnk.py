@@ -2,7 +2,7 @@ import numpy
 import unittest
 
 from kona import Optimizer
-from kona.algorithms import ConstrainedRSNK
+from kona.algorithms import FLECS_RSNK
 from kona.examples import SimpleConstrained, ExponentialConstrained, Sellar
 
 class InequalityConstrainedRSNKTestCase(unittest.TestCase):
@@ -51,7 +51,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
         }
 
         # algorithm = Verifier
-        algorithm = ConstrainedRSNK
+        algorithm = FLECS_RSNK
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 
@@ -109,7 +109,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = ConstrainedRSNK
+        algorithm = FLECS_RSNK
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 
@@ -168,7 +168,7 @@ class InequalityConstrainedRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = ConstrainedRSNK
+        algorithm = FLECS_RSNK
         # algorithm = Verifier
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
