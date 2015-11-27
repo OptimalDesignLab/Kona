@@ -14,7 +14,7 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
 
         optns = {
             'info_file' : 'kona_info.dat',
-            'max_iter' : 200,
+            'max_iter' : 30,
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
 
@@ -35,11 +35,12 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
                 'normal-step' : {
                     'precond'       : None,
                     'lanczos_size'  : 1,
+                    'use_gcrot'     : False,
                     'out_file'      : 'kona_normal_krylov.dat',
                     'subspace_size' : 20,
                     'max_outer'     : 10,
                     'max_recycle'   : 10,
-                    'max_matvec'    : 100,
+                    'max_matvec'    : 50,
                     'check_res'     : True,
                     'rel_tol'       : 1e-8,
                 },

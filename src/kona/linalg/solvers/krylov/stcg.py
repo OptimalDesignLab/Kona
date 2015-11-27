@@ -46,7 +46,7 @@ class STCG(KrylovSolver):
 
     def solve(self, mat_vec, b, x, precond):
         self._validate_options()
-        
+
         # grab some vectors from memory stack
         r = self._generate_vector()
         z = self._generate_vector()

@@ -46,22 +46,15 @@ class CompositeStep(OptimizationAlgorithm):
         self.min_radius = get_opt(optns, 0.5/(2**3), 'trust', 'min_radius')
         self.max_radius = get_opt(optns, 0.5*(2**3), 'trust', 'max_radius')
 
+        # get penalty parameter options
+        self.mu = get_opt(optns, 1.0, 'penalty', 'mu_init')
+        self.mu_pow = get_opt(optns, 1e-8, 'penalty', 'mu_pow')
+        self.mu_max = get_opt(optns, 1e4, 'penalty', 'mu_max')
+
         # get globalization type
         self.globalization = get_opt(optns, 'trust', 'globalization')
 
-        if self.globalization == 'trust':
-            # get penalty parameter options for the augmented Lagrangian
-            self.mu = get_opt(optns, 0.1, 'penalty', 'mu_init')
-            self.mu_pow = get_opt(optns, 0.1, 'penalty', 'mu_pow')
-            self.mu_max = get_opt(optns, 1e4, 'penalty', 'mu_max')
-            self.eta = 1./(self.mu**0.1)
-
-        elif self.globalization is None:
-            self.mu = get_opt(optns, 1.0, 'penalty', 'mu_init')
-            self.mu_pow = get_opt(optns, 1e-8, 'penalty', 'mu_pow')
-            self.mu_max = get_opt(optns, 1e4, 'penalty', 'mu_max')
-            self.eta = 1./(self.mu**0.1)
-        else:
+        if self.globalization not in ['trust', None]:
             raise TypeError(
                 'Invalid globalization! ' +
                 'Can only use \'trust\'. ' +

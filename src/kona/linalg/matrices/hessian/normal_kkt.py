@@ -49,7 +49,7 @@ class NormalKKTMatrix(BaseHessian):
         self.A = TotalConstraintJacobian(vector_factories)
 
         # get preconditioner options
-        self.precond = get_opt(optns, 'svd', 'precond')
+        self.precond = get_opt(optns, None, 'precond')
         if self.precond is None:
             self.svd = None
             eye = IdentityMatrix()
@@ -69,10 +69,10 @@ class NormalKKTMatrix(BaseHessian):
             krylov_optns = {
                 'out_file' : get_opt(
                     optns, 'kona_normal_gcrot.dat', 'out_file'),
-                'max_iter' : get_opt(optns, 10, 'max_iter'),
+                'subspace_size' : get_opt(optns, 10, 'subspace_size'),
                 'max_recycle' : get_opt(optns, 10, 'max_recycle'),
                 'max_outer' : get_opt(optns, 10, 'max_outer'),
-                'max_matvec' : get_opt(optns, 100, 'max_matvec'),
+                'max_matvec' : get_opt(optns, 50, 'max_matvec'),
                 'check_res' : get_opt(optns, True, 'check_res'),
                 'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
             }

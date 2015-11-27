@@ -25,7 +25,7 @@ class KrylovSolver(object):
     def __init__(self, vector_factory, optns={}):
         self.vec_fac = vector_factory
         self.max_iter = get_opt(optns, 10, 'subspace_size')
-        self.rel_tol = get_opt(optns, 1e-8, 'rel_tol')
+        self.rel_tol = get_opt(optns, 1e-6, 'rel_tol')
         self.check_res = get_opt(optns, True, 'check_res')
         # set up the info file
         self.out_file = get_opt(optns, 'kona_krylov.dat', 'out_file')
