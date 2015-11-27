@@ -16,8 +16,10 @@ class FGMRES(KrylovSolver):
     def __init__(self, vector_factory, optns={}, dual_factory=None):
         super(FGMRES, self).__init__(vector_factory, optns)
 
-        # get relative tolerance
+        # get relative tolerance and other options
         self.rel_tol = get_opt(optns, 0.5, 'rel_tol')
+        # only set check_LSgrad = True if the matrix is symmetric
+        self.check_LSgrad = get_opt(optns, False, 'check_LSgrad')
 
         # put in memory request
         self.vec_fac.request_num_vectors(2*self.max_iter + 1)
@@ -44,6 +46,7 @@ class FGMRES(KrylovSolver):
         Z = []
         y = numpy.zeros(self.max_iter)
         g = numpy.zeros(self.max_iter + 1)
+        rLS = numpy.zeros(self.max_iter)
         sn = numpy.zeros(self.max_iter + 1)
         cn = numpy.zeros(self.max_iter + 1)
         H = numpy.zeros((self.max_iter + 1, self.max_iter))
@@ -114,11 +117,24 @@ class FGMRES(KrylovSolver):
 
             H[i, i], H[i+1, i], sn[i], cn[i] = generate_givens(
                 H[i, i], H[i+1, i])
+            y[i] = g[i] # save for check_LSgrad
             g[i], g[i+1] = apply_givens(sn[i], cn[i], g[i], g[i+1])
 
             # set L2 norm of residual and output relative residual if necessary
             beta = abs(g[i+1])
             write_history(self.out_file, i+1, beta, norm0)
+
+            if self.check_LSgrad and iters > 1:
+                # check the gradient of the least-squares problem
+                y[:i] = numpy.zeros(i)
+                for k in xrange(i-1, -1, -1):
+                    y[k], y[k+1] = apply_givens(-sn[k], cn[k], y[k], y[k+1])
+                rLS = numpy.dot(H[:i+1,:i+1], y[:i+1])
+                #print 'rLS norm = ',numpy.sqrt(rLS.dot(rLS))
+                if numpy.sqrt(rLS.dot(rLS)) < 1000*EPS:
+                    self.out_file.write(
+                        '# small gradient in FGMRES least-squares problem\n')
+                    break
 
         ##############
         # END BIG LOOP
