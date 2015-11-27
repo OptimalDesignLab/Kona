@@ -20,7 +20,7 @@ class EqualityCompositeStepTestCase(unittest.TestCase):
             'max_iter' : 50,
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
-            'globalization' : 'trust',
+            'globalization' : 'linesearch',
 
             'trust' : {
                 'init_radius' : 0.1,

@@ -18,7 +18,7 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
 
-            'globalization' : 'trust',
+            'globalization' : 'linesearch',
 
             'trust' : {
                 'init_radius' : 5.0,
@@ -92,7 +92,7 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
 
-            'globalization' : 'trust',
+            'globalization' : 'linesearch',
 
             'trust' : {
                 'init_radius' : 1.0,
@@ -152,7 +152,7 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
 
-            'globalization' : 'trust',
+            'globalization' : 'linesearch',
 
             'trust' : {
                 'init_radius' : 4.0,
