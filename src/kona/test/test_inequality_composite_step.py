@@ -18,11 +18,11 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
 
-            'globalization' : 'linesearch',
+            'globalization' : 'trust',
 
             'trust' : {
-                'init_radius' : 5.0,
-                'max_radius' : 10.0,
+                'init_radius' : 10.0,
+                'max_radius' : 100.0,
                 'min_radius' : 1e-4,
             },
 
@@ -38,19 +38,19 @@ class InequalityCompositeStepTestCase(unittest.TestCase):
                     'use_gcrot'     : True,
                     'out_file'      : 'kona_normal_krylov.dat',
                     'subspace_size' : 20,
-                    'max_outer'     : 10,
-                    'max_recycle'   : 10,
-                    'max_matvec'    : 50,
+                    'max_outer'     : 20,
+                    'max_recycle'   : 20,
+                    'max_matvec'    : 100,
                     'check_res'     : True,
-                    'rel_tol'       : 1e-5,
-                    'abs_tol'       : 1e-9,
+                    'rel_tol'       : 1e-8,
+                    'abs_tol'       : 1e-12,
                 },
                 'tangent-step' : {
                     'out_file'      : 'kona_tangent_krylov.dat',
                     'subspace_size' : 20,
                     'check_res'     : True,
-                    'rel_tol'       : 1e-5,
-                    'abs_tol'       : 1e-9,
+                    'rel_tol'       : 1e-8,
+                    'abs_tol'       : 1e-12,
                 }
             },
 

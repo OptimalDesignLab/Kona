@@ -98,7 +98,7 @@ class LowRankSVD(BaseHessian):
     4. Compute :math:`v_{\\lambda} = \\Lambda \\hat{v}_{\\lambda}`.
     """
 
-    def __init__(self, vector_factories, A, optns):
+    def __init__(self, vector_factories, optns):
         super(LowRankSVD, self).__init__(vector_factories, optns)
 
         # set basic internal options
