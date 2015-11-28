@@ -128,7 +128,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
         else:
             raise TypeError(
                 'Invalid globalization! ' +
-                'Can only use \'linesearch\' or \'trust\'. ' +
+                'Can only use \'trust\'. ' +
                 'If you want to skip globalization, set to None.')
 
     def _write_header(self):

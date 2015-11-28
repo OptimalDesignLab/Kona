@@ -47,8 +47,12 @@ class Optimizer(object):
         dual_factory = self._memory.dual_factory
         # check if this is a verification
         if algorithm is Verifier:
-            self._optns['verify']['out_file'] = \
-                self._memory.open_file(self._optns['verify']['out_file'])
+            try:
+                self._optns['verify']['out_file'] = \
+                    self._memory.open_file(self._optns['verify']['out_file'])
+            except Exception:
+                self._optns['verify']['out_file'] = \
+                    self._memory.open_file('kona_verify.dat')
             verifier_optns = self._optns['verify']
             try:
                 verifier_optns['matrix_explicit'] = \
