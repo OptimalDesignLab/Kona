@@ -35,12 +35,14 @@ class NestedNormalStepPreconditioner(object):
         krylov_optns = {
             'out_file' : 'kona_nested_krylov.dat',
             'subspace_size' : 10,
+            'max_recycle' : 10,
+            'max_outer' : 10,
+            'max_matvec' : 100,
             'check_res' : True,
-            'check_LSgrad' : True,
             'rel_tol' : 1e-3,
             'abs_tol' : 1e-5,
         }
-        self.krylov = FGMRES(
+        self.krylov = GCROT(
             self.primal_factory,
             optns=krylov_optns,
             dual_factory=self.dual_factory)
@@ -69,6 +71,9 @@ class NestedNormalStepPreconditioner(object):
 
         # trigger the SVD decomposition
         self.svd.linearize()
+
+        # reset GCROT cycled subspace
+        self.krylov.clear_subspace()
 
     def product(self, in_vec, out_vec):
         # calculate the design component
@@ -154,7 +159,7 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
                 'subspace_size' : 10,
                 'max_recycle' : 10,
                 'max_outer' : 10,
-                'max_matvec' : 50, # this should be hit first
+                'max_matvec' : 100, # this should be hit first
                 'rel_tol'  : 1e-3,
                 'abs_tol'  : 1e-5,
             }

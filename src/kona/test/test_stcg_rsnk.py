@@ -1,8 +1,9 @@
 import unittest
 import numpy
+import sys
 
-from kona.linalg.memory import KonaMemory
-from kona.algorithms import STCG_RSNK
+from kona import Optimizer
+from kona.algorithms import STCG_RSNK, Verifier
 from kona.examples import Rosenbrock, Spiral
 
 class STCGRSNKTestCase(unittest.TestCase):
@@ -53,10 +54,6 @@ class STCGRSNKTestCase(unittest.TestCase):
     def test_RSNK_with_Spiral(self):
 
         solver = Spiral()
-        km = KonaMemory(solver)
-
-        km.primal_factory.request_num_vectors(4)
-        km.state_factory.request_num_vectors(4)
 
         optns = {
             'info_file' : 'kona_info.dat',
@@ -64,8 +61,8 @@ class STCGRSNKTestCase(unittest.TestCase):
             'opt_tol' : 1e-8,
 
             'trust' : {
-                'init_radius' : 1.0,
-                'max_radius' : 4.0,
+                'init_radius' : 10.0,
+                'max_radius' : 100.0,
                 'min_radius' : 1e-4,
             },
 
@@ -86,12 +83,24 @@ class STCGRSNKTestCase(unittest.TestCase):
                 'check_res'     : True,
                 'rel_tol'       : 1e-7,
             },
+
+            'verify' : {
+                'primal_vec'    : True,
+                'state_vec'     : True,
+                'dual_vec'      : False,
+                'gradients'     : True,
+                'pde_jac'       : True,
+                'cnstr_jac'     : False,
+                'red_grad'      : True,
+                'lin_solve'     : True,
+                'out_file'      : sys.stdout,
+            },
         }
 
-        rsnk = STCG_RSNK(
-            km.primal_factory, km.state_factory, None, optns)
-        km.allocate_memory()
-        rsnk.solve()
+        algorithm = STCG_RSNK
+        # algorithm = Verifier
+        optimizer = Optimizer(solver, algorithm, optns)
+        optimizer.solve()
 
         diff = abs(solver.curr_design)
         self.assertTrue(max(diff) < 1e-5)
