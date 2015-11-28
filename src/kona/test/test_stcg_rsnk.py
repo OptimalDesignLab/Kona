@@ -12,7 +12,6 @@ class STCGRSNKTestCase(unittest.TestCase):
 
         num_design = 2
         solver = Rosenbrock(num_design)
-        km = KonaMemory(solver)
 
         optns = {
             'info_file' : 'kona_info.dat',
@@ -43,10 +42,10 @@ class STCGRSNKTestCase(unittest.TestCase):
                 'rel_tol'       : 1e-7,
             },
         }
-        rsnk = STCG_RSNK(
-            km.primal_factory, km.state_factory, None, optns)
-        km.allocate_memory()
-        rsnk.solve()
+
+        algorithm = STCG_RSNK
+        optimizer = Optimizer(solver, algorithm, optns)
+        optimizer.solve()
 
         diff = abs(solver.curr_design - numpy.ones(num_design))
         self.assertTrue(max(diff) < 1e-5)
