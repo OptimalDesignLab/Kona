@@ -102,7 +102,7 @@ class STCGRSNKTestCase(unittest.TestCase):
         optimizer.solve()
 
         diff = abs(solver.curr_design)
-        self.assertTrue(max(diff) < 1e-5)
+        self.assertTrue(max(diff) < 1e-4)
 
 if __name__ == "__main__":
     unittest.main()
