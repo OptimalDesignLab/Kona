@@ -98,7 +98,7 @@ class Spiral(UserSolver):
         store_here.data = self.PDE.dFdU
 
     def init_design(self, store_here):
-        store_here.data = np.array([7.0*np.pi])
+        store_here.data = np.array([8.0*np.pi])
 
     def solve_nonlinear(self, at_design, result):
         # start with initial guess for solution and linearize

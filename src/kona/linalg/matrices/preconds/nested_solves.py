@@ -159,7 +159,7 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
                 'subspace_size' : 10,
                 'max_recycle' : 10,
                 'max_outer' : 10,
-                'max_matvec' : 100, # this should be hit first
+                'max_matvec' : 50, # this should be hit first
                 'rel_tol'  : 1e-3,
                 'abs_tol'  : 1e-5,
             }
@@ -198,6 +198,14 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
                     self.dual_factory.generate()),
                 self.dual_factory.generate())
             self.nested_allocated = True
+
+    def _linear_solve(self, rhs_vec, solution, rel_tol=1e-8):
+        self.dRdU.linearize(self.at_design, self.at_state)
+        self.dRdU.precond(rhs_vec, solution)
+
+    def _adjoint_solve(self, rhs_vec, solution, rel_tol=1e-8):
+        self.dRdU.linearize(self.at_design, self.at_state)
+        self.dRdU.T.precond(rhs_vec, solution)
 
     def mult_kkt_approx(self, in_vec, out_vec):
         # modify the incoming vector
