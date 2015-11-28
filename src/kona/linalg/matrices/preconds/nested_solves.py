@@ -48,13 +48,13 @@ class NestedNormalStepPreconditioner(object):
             dual_factory=self.dual_factory)
 
     def _fwd_mat_vec(self, in_vec, out_vec):
-        self.A.product(in_vec, out_vec)
+        self.A.approx.product(in_vec, out_vec)
         out_vec.times(self.at_dual)
 
     def _rev_mat_vec(self, in_vec, out_vec):
         self.dual_work.equals(in_vec)
         self.dual_work.times(self.at_dual)
-        self.A.T.product(self.dual_work, out_vec)
+        self.A.T.approx.product(self.dual_work, out_vec)
 
     def linearize(self, at_dual, at_slack):
         # if this is the first linearization, create a work vector
