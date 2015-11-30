@@ -247,6 +247,12 @@ class PrimalVector(KonaVector):
         self._memory.solver.copy_dual_to_targstate(
             dual_vector._data, self._data)
 
+    def enforce_bounds(self):
+        """
+        Element-wise enforcement of design bounds.
+        """
+        self._memory.solver.enforce_bounds(self._data)
+
     def equals_init_design(self):
         """
         Sets this vector equal to the initial design point.

@@ -85,7 +85,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
     def _write_history(self, opt, feas, obj):
         self.hist_file.write(
-            '#%6i'%self.iter + ' '*5 +
+            '%7i'%self.iter + ' '*5 +
             '%7i'%self.primal_factory._memory.cost + ' '*5 +
             '%11e'%opt + ' '*5 +
             '%11e'%feas + ' '*5 +
@@ -491,6 +491,8 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             # calculate the next step
             kkt_work._primal.equals_ax_p_by(1., X._primal, alpha, P._primal)
             kkt_work._dual.equals_ax_p_by(1., X._dual, 1., P._dual)
+            kkt_work._primal._design.enforce_bounds()
+            kkt_work._primal._slack.restrict()
 
             # solve for the states
             if state_work.equals_primal_solution(kkt_work._primal._design):
@@ -620,6 +622,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
             # get the new design point
             X._primal.plus(P._primal)
+            X._primal._design.enforce_bounds()
             X._primal._slack.restrict()
             X._dual.plus(P._dual)
 
@@ -715,6 +718,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                 # model is okay -- accept primal step
                 self.info_file.write('\nStep accepted!\n')
                 X._primal.plus(P._primal)
+                X._primal._design.enforce_bounds()
                 X._primal._slack.restrict()
                 X._dual.plus(P._dual)
 

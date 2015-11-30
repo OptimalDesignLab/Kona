@@ -105,7 +105,7 @@ class TangentKKTMatrix(BaseHessian):
         in_kkt = ReducedKKTVector(in_vec, self.dual_in)
         in_kkt._dual.equals(0.0)
         out_kkt = ReducedKKTVector(out_vec, self.dual_out)
-        self.proj_cg.solve(in_kkt, out_kkt)
+        self.proj_cg.solve(in_kkt, out_kkt, rel_tol=4e-6)
 
     def solve(self, rhs, solution, rel_tol=None):
         if self.radius is None:

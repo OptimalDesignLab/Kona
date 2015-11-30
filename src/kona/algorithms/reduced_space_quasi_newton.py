@@ -74,7 +74,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
 
     def _write_history(self, num_iter, norm):
         self.hist_file.write(
-            '# %5i'%num_iter + ' '*5 +
+            '%7i'%num_iter + ' '*5 +
             '%10i'%self.primal_factory._memory.cost + ' '*5 +
             '%10e'%norm + '\n'
         )

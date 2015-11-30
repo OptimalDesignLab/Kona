@@ -145,7 +145,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
     def _write_history(self, opt, feas, obj):
         self.hist_file.write(
-            '#%6i'%self.iter + ' '*5 +
+            '%7i'%self.iter + ' '*5 +
             '%7i'%self.primal_factory._memory.cost + ' '*5 +
             '%11e'%opt + ' '*5 +
             '%11e'%feas + ' '*5 +
@@ -349,6 +349,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
             else:
                 # accept step
                 X._primal.plus(P._primal)
+                X._primal._design.enforce_bounds()
+                X._primal._slack.restrict()
                 X._dual.plus(P._dual)
 
                 # calculate states
@@ -406,6 +408,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
                 + 0.5*self.mu*(dual_work.norm2**2)
             # add the FLECS step
             kkt_work.equals_ax_p_by(1., X, 1., P)
+            kkt_work._primal._design.enforce_bounds()
+            kkt_work._primal._slack.restrict()
             # solve states at the new step
             if state_work.equals_primal_solution(kkt_work._primal._design):
                 # evaluate the constraint terms at the new step
@@ -478,6 +482,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
                 # accept the new step entirely
                 X.plus(P)
+                X._primal._design.enforce_bounds()
                 X._primal._slack.restrict()
                 state.equals_primal_solution(X._primal._design)
 

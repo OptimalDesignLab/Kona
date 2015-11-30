@@ -1,4 +1,4 @@
-from numpy import sqrt
+import numpy as np
 
 from kona.options import BadKonaOption, get_opt
 
@@ -45,7 +45,6 @@ class STCG_RSNK(OptimizationAlgorithm):
         # get other options
         self.radius = get_opt(optns, 1.0, 'trust', 'init_radius')
         self.max_radius = get_opt(optns, 1.0, 'trust', 'max_radius')
-        self.trust_tol = get_opt(optns, 0.1, 'trust', 'tol')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # set the krylov solver
@@ -98,7 +97,7 @@ class STCG_RSNK(OptimizationAlgorithm):
 
     def _write_history(self, num_iter, norm, rho):
         self.hist_file.write(
-            ' %6i'%num_iter + ' '*5 +
+            '%7i'%num_iter + ' '*5 +
             '%10i'%self.primal_factory._memory.cost + ' '*5 +
             '%10e'%norm + ' '*5 +
             '%10e'%rho + ' '*5 +
@@ -118,7 +117,8 @@ class STCG_RSNK(OptimizationAlgorithm):
 
         # set initial design and solve for state
         x.equals_init_design()
-        state.equals_primal_solution(x)
+        if not state.equals_primal_solution(x):
+            raise RuntimeError('Invalid initial point! State-solve failed.')
         # solve for adjoint
         adjoint.equals_adjoint_solution(x, state, state_work)
         # get objective value
@@ -163,7 +163,7 @@ class STCG_RSNK(OptimizationAlgorithm):
 
             # define adaptive Krylov tolerance for superlinear convergence
             krylov_tol = self.krylov.rel_tol*min(
-                1.0, sqrt(grad_norm/grad_norm0))
+                1.0, np.sqrt(grad_norm/grad_norm0))
             krylov_tol = max(krylov_tol, grad_tol/grad_norm)
             krylov_tol *= self.hessian.nu
 
@@ -180,7 +180,9 @@ class STCG_RSNK(OptimizationAlgorithm):
             pred, active = self.krylov.solve(
                 self.hessian.product, dJdX, p, self.precond)
             dJdX.times(-1.0)
+            primal_work.equals(x)
             x.plus(p)
+            x.enforce_bounds()
 
             # compute the actual reduction and trust parameter rho
             obj_old = obj
@@ -189,19 +191,19 @@ class STCG_RSNK(OptimizationAlgorithm):
                 obj = objective_value(x, state)
                 rho = (obj_old - obj)/pred
             else:
-                rho = -1e-16
+                rho = np.nan
 
             # update radius if necessary
-            if rho < 0.25:
+            if rho < 0.25 or np.isnan(rho):
                 self.radius *= 0.25
             else:
                 if active and (rho > 0.75):
                     self.radius = min(2*self.radius, self.max_radius)
 
             # revert the solution if necessary
-            if rho < self.trust_tol:
+            if rho < 0.1:
                 self.info_file.write('reverting solution...\n')
-                x.minus(p)
+                x.equals(primal_work)
                 state.equals(state_work)
             else:
                 adjoint.equals_adjoint_solution(x, state, state_work)

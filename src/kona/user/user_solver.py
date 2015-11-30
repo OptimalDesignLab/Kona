@@ -454,6 +454,18 @@ class UserSolver(object):
         """
         out_vec.data[:] = 0.0
 
+    def enforce_bounds(self, design_vector):
+        """
+        Evaluate the design vector element-wise. If a design variable violates
+        a bound, set it to the bound value.
+
+        Parameters
+        ----------
+        design_vector : BaseVector
+            Design vector over which bounds will be enforced.
+        """
+        pass
+
     def restrict_dual(self, dual_vector):
         """
         Set all dual variables corresponding to equality constraints to zero.

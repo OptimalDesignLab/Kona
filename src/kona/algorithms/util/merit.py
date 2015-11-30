@@ -149,6 +149,7 @@ class ObjectiveMerit(MeritFunction):
             # calculate the trial primal and state vectors
             self.x_trial.equals_ax_p_by(
                 1.0, self.x_start, alpha, self.search_dir)
+            self.x_trial.enforce_bounds()
             self.u_trial.equals_primal_solution(self.x_trial)
             # calculate and return the raw objective function
             self.func_val = objective_value(self.x_trial, self.u_trial)
@@ -163,6 +164,7 @@ class ObjectiveMerit(MeritFunction):
             # calculate the trial primal and state vectors
             self.x_trial.equals_ax_p_by(
                 1.0, self.x_start, alpha, self.search_dir)
+            self.x_trial.enforce_bounds()
             self.u_trial.equals_primal_solution(self.x_trial)
             # calculate objective partial
             self.primal_work.equals_objective_partial(
@@ -307,6 +309,7 @@ class QuadraticPenalty(MeritFunction):
             # compute trial point
             self.x_trial.equals_ax_p_by(
                 1., self.x_start, alpha, self.design_step)
+            self.x_trial.enforce_bounds()
             self.u_trial.equals_primal_solution(self.x_trial)
             if self.slack_trial is not None:
                 self.slack_trial.equals_ax_p_by(

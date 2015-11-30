@@ -153,7 +153,7 @@ class dRdU(KonaMatrix):
                 self._primal._data, self._state._data,
                 rhs_vec._data, rel_tol, solution._data)
 
-        self._memory.cost += cost
+        self._memory.cost += abs(cost)
 
     def precond(self, in_vec, out_vec):
         if not self._transposed:
