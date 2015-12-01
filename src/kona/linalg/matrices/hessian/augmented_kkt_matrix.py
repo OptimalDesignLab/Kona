@@ -7,7 +7,7 @@ from kona.linalg.matrices.hessian import TotalConstraintJacobian
 from kona.linalg.matrices.preconds import NestedNormalStepPreconditioner
 from kona.linalg.solvers.krylov import GCROT, FGMRES
 
-class NormalKKTMatrix(BaseHessian):
+class AugmentedKKTMatrix(BaseHessian):
     """
     Matrix object for the the normal system associated with the reduced KKT
     system.
@@ -24,7 +24,7 @@ class NormalKKTMatrix(BaseHessian):
     This matrix is used to solve the normal-step in a composite-step algorithm.
     """
     def __init__(self, vector_factories, optns={}):
-        super(NormalKKTMatrix, self).__init__(vector_factories, optns)
+        super(AugmentedKKTMatrix, self).__init__(vector_factories, optns)
 
         # get references to individual factories
         self.primal_factory = None

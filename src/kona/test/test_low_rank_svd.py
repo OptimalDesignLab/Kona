@@ -4,7 +4,7 @@ from kona.examples import Sellar
 from kona.linalg.memory import KonaMemory
 from kona.linalg.matrices.common import dCdU, dRdU
 from kona.linalg.matrices.hessian import TotalConstraintJacobian
-from kona.linalg.matrices.hessian import ConstrainedHessian
+from kona.linalg.matrices.hessian import LagrangianHessian
 from kona.linalg.matrices.preconds import LowRankSVD
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
@@ -99,10 +99,10 @@ class LowRankSVDTestCase(unittest.TestCase):
         self.sf.request_num_vectors(10)
         self.df.request_num_vectors(15)
 
-        self.W = ConstrainedHessian([self.pf, self.sf, self.df])
+        self.W = LagrangianHessian([self.pf, self.sf, self.df])
 
         def mat_vec(in_vec, out_vec):
-            self.W.product(in_vec, out_vec)
+            self.W.multiply_W(in_vec, out_vec)
 
         svd_optns = {'lanczos_size': 3}
         self.svd = LowRankSVD(
@@ -126,10 +126,10 @@ class LowRankSVDTestCase(unittest.TestCase):
         state_work.plus(adjoint)
         state_work.times(-1.)
         dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-        self.W.linearize(X._primal._design, X._dual, state, adjoint)
+        self.W.linearize(X, state, adjoint)
         self.svd.linearize()
 
-        self.W.product(in_vec._primal._design, out_vec_exact._primal._design)
+        self.W.multiply_W(in_vec._primal._design, out_vec_exact._primal._design)
         self.svd.approx_fwd_prod(
             in_vec._primal._design, out_vec_approx._primal._design)
 

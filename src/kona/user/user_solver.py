@@ -187,7 +187,8 @@ class UserSolver(object):
 
         .. math::
 
-            \frac{\partial R(at_design, at_state)}{\partial X}^T in_vec = out_vec
+            \frac{\partial R(at_design, at_state)}{\partial X}^T in_vec =
+            out_vec
 
         .. note::
 
@@ -222,7 +223,8 @@ class UserSolver(object):
 
         .. math::
 
-            \frac{\partial R(at_design, at_state)}{\partial U}^T in_vec = out_vec
+            \frac{\partial R(at_design, at_state)}{\partial U}^T in_vec =
+            out_vec
 
         .. note::
 
@@ -404,7 +406,8 @@ class UserSolver(object):
 
         .. math::
 
-            \frac{\partial C(at_design, at_state)}{\partial X}^T in_vec = out_vec
+            \frac{\partial C(at_design, at_state)}{\partial X}^T in_vec =
+            out_vec
 
         .. note::
 
@@ -434,7 +437,8 @@ class UserSolver(object):
 
         .. math::
 
-            \frac{\partial C(at_design, at_state)}{\partial U}^T in_vec = out_vec
+            \frac{\partial C(at_design, at_state)}{\partial U}^T in_vec =
+            out_vec
 
         .. note::
 
@@ -540,11 +544,16 @@ class UserSolver(object):
 
         For linear problems, this can be a simple linear system solution:
 
-        .. math:: \mathcal{K}(x)\mathbf{u} = \mathbf{F}(x)
+        .. math::
+
+            \mathcal{K}(x)\mathbf{u} = \mathbf{F}(x)
 
         For nonlinear problems, this can involve Newton iterations:
 
-        .. math:: \frac{\partial R(x, u_{guess})}{\partual u} \Delta u = -R(x, u_{guess})
+        .. math::
+
+            \frac{\partial R(x, u_{guess})}{\partual u} \Delta u =
+            -R(x, u_{guess})
 
         If the solution fails to converge, the user should return a
         negative integer in order to help Kona intelligently backtrack in the
@@ -630,7 +639,8 @@ class UserSolver(object):
 
         .. math::
 
-            \frac{\partial R(at_design, at_state)}{\partial U}^T result = rhs_vec
+            \frac{\partial R(at_design, at_state)}{\partial U}^T result =
+            rhs_vec
 
         The jacobian should be evaluated at the given (design, state) point,
         ``at_design`` and ``at_state``.

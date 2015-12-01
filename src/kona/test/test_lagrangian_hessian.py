@@ -3,12 +3,12 @@ import unittest
 from kona.examples import Sellar
 from kona.linalg.memory import KonaMemory
 from kona.linalg.matrices.common import dCdU, dRdU
-from kona.linalg.matrices.hessian import ConstrainedHessian
+from kona.linalg.matrices.hessian import LagrangianHessian
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 
 
-class ConstrainedHessianTestCase(unittest.TestCase):
+class LagrangianHessianTestCase(unittest.TestCase):
     '''Test case for the Constrained Hessian approximation matrix.'''
 
     def _generate_KKT_vector(self):
@@ -29,7 +29,7 @@ class ConstrainedHessianTestCase(unittest.TestCase):
         self.sf.request_num_vectors(3)
         self.df.request_num_vectors(11)
 
-        self.W = ConstrainedHessian([self.pf, self.sf, self.df])
+        self.W = LagrangianHessian([self.pf, self.sf, self.df])
 
         km.allocate_memory()
 
@@ -79,8 +79,8 @@ class ConstrainedHessianTestCase(unittest.TestCase):
         state_work.plus(adjoint)
         state_work.times(-1.)
         dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-        self.W.linearize(X._primal._design, X._dual, state, adjoint)
-        self.W.product(in_vec._primal._design, out_vec._primal._design)
+        self.W.linearize(X, state, adjoint)
+        self.W.multiply_W(in_vec._primal._design, out_vec._primal._design)
 
         print '-----------------------------'
         print 'Constrained Hessian'

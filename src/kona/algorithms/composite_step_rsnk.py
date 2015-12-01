@@ -5,7 +5,7 @@ from kona.linalg import current_solution, factor_linear_system, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dCdX, dCdU, dRdX, dRdU
-from kona.linalg.matrices.hessian import NormalKKTMatrix, TangentKKTMatrix
+from kona.linalg.matrices.hessian import AugmentedKKTMatrix, LagrangianHessian
 from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
@@ -62,11 +62,11 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
         # initialize the KKT matrix definition
         normal_optns = get_opt(optns, {}, 'composite-step', 'normal-step')
-        self.normal_KKT = NormalKKTMatrix(
+        self.normal_KKT = AugmentedKKTMatrix(
             [self.primal_factory, self.state_factory, self.dual_factory],
             normal_optns)
         tangent_optns = get_opt(optns, {}, 'composite-step', 'tangent-step')
-        self.tangent_KKT = TangentKKTMatrix(
+        self.tangent_KKT = LagrangianHessian(
             [self.primal_factory, self.state_factory, self.dual_factory],
             tangent_optns)
         self.tangent_KKT.set_projector(self.normal_KKT)
@@ -307,7 +307,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
             # set up the RHS vector for the tangent-step solve
             # design component: -(W * normal_design + dL/dDesign)
-            self.tangent_KKT.W.product(
+            self.tangent_KKT.multiply_W(
                 normal_step._primal._design, tangent_rhs._design)
             tangent_rhs._design.plus(dLdX._primal._design)
             tangent_rhs._design.times(-1.)
@@ -468,6 +468,15 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             design_work[0].inner(P._primal._design) \
             + dual_work.inner(P._primal._slack)
 
+        self.info_file.write('\n')
+        self.info_file.write(
+            '   primal_step    = %e\n'%P._primal.norm2 +
+            '      design_step = %e\n'%P._primal._design.norm2 +
+            '      slack_step  = %e\n'%P._primal._slack.norm2 +
+            '   lambda_step    = %e\n'%P._dual.norm2 +
+            '\n' +
+            '   p_dot_grad     = %e\n'%p_dot_grad)
+
         # if p_dot_grad >= 0:
         #     raise ValueError('Search direction is not a descent direction!')
 
@@ -522,7 +531,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                 '   f_next     = %e\n'%f_next)
             if f_next <= f_suff:
                 self.info_file.write(
-                    'Line search succeeded with alpha = %f\n'%alpha)
+                    'Line search succeeded!\n')
                 converged = True
                 break
             else:
@@ -691,7 +700,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                     slack_work.restrict()
 
                     # set up the RHS vector for the tangent-step solve
-                    self.tangent_KKT.W.product(
+                    self.tangent_KKT.multiply_W(
                         normal_step._primal._design, tangent_rhs._design)
                     tangent_rhs._design.plus(dLdX._primal._design)
                     tangent_rhs._design.times(-1.)

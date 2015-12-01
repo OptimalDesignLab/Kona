@@ -28,6 +28,12 @@ class DualVectorTestCase(unittest.TestCase):
         self.dv.equals_constraints(at_design, at_state)
         self.assertEqual(self.dv.inner(self.dv), 9000)
 
+    def restrict_dual(self):
+        self.dv.eqals(1.0)
+        self.dv.restrict_dual()
+        zero = self.dv.norm2
+        self.assertEqual(zero, 0.0)
+
 class TestCaseDualVectorIDF(unittest.TestCase):
 
     def setUp(self):

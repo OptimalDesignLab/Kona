@@ -154,6 +154,12 @@ class PrimalVectorTestCase(unittest.TestCase):
             at_design, at_state, at_adjoint, at_dual, primal_work)
         self.assertEqual(self.pv.inner(self.pv), 256000)
 
+    def test_enforce_bounds(self):
+        self.pv.equals(-1.)
+        self.pv.enforce_bounds()
+        zero = self.pv.norm2
+        self.assertEqual(zero, 0.0)
+
 class TestCasePrimalVectorIDF(unittest.TestCase):
 
     def setUp(self):

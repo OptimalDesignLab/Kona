@@ -67,6 +67,14 @@ class DummySolver(UserSolver):
     def init_design(self, store_here):
         store_here.data[:] = 10.
 
+    def enforce_bounds(self, design_vec):
+        for i in xrange(len(design_vec.data)):
+            if design_vec.data[i] < 0.:
+                design_vec.data[i] = 0.
+
+    def restrict_dual(self, dual_vec):
+        dual_vec.data[:] = 0.
+
     def solve_nonlinear(self, at_design, result):
         result.data[:] = numpy.sum(at_design.data)
         return 0

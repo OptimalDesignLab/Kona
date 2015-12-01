@@ -1,19 +1,27 @@
 
+from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian.basic import BaseHessian
+from kona.linalg.matrices.hessian import AugmentedKKTMatrix
 from kona.linalg.solvers.util import calc_epsilon
+from kona.linalg.solvers.krylov import STCG
 
-class ConstrainedHessian(BaseHessian):
+class LagrangianHessian(BaseHessian):
     """
     Matrix object for the Hessian block of the reduced KKT matrix.
 
     Uses the same 2nd order adjoint formulation as ReducedKKTMatrix, but only
     for the diagonal Hessian block,
     :math:`\mathsf{W} = \\nabla^2_x \\mathcal{L}`.
+
+    If slack terms are present, it will also perform a product with the slack
+    derivative of the Lagrangian.
     """
-    def __init__(self, vector_factories):
-        super(ConstrainedHessian, self).__init__(vector_factories, {})
+    def __init__(self, vector_factories, optns={}):
+        super(LagrangianHessian, self).__init__(vector_factories, optns)
 
         # get references to individual factories
         self.primal_factory = None
@@ -32,22 +40,46 @@ class ConstrainedHessian(BaseHessian):
         # request vector allocation
         self.primal_factory.request_num_vectors(3)
         self.state_factory.request_num_vectors(6)
-        self.dual_factory.request_num_vectors(1)
+        self.dual_factory.request_num_vectors(4)
 
         # set misc settings
         self._approx = False
         self._transposed = False
         self._allocated = False
 
+        # initialize the internal krylov method
+        krylov_optns = {
+            'out_file' : get_opt(optns, 'kona_tangent_stcg.dat', 'out_file'),
+            'subspace_size' : get_opt(optns, 20, 'subspace_size'),
+            'proj_cg'  : True,
+            'check_res' : get_opt(optns, True, 'check_res'),
+            'rel_tol'  : get_opt(optns, 1e-3, 'rel_tol'),
+        }
+        self.krylov = STCG(
+            self.primal_factory,
+            optns=krylov_optns,
+            dual_factory=self.dual_factory)
+
     @property
     def approx(self):
         self._approx = True
         return self
 
-    def linearize(self, at_primal, at_dual, at_state, at_adjoint):
+    def set_projector(self, proj_cg):
+        if isinstance(proj_cg, AugmentedKKTMatrix):
+            self.proj_cg = proj_cg
+        else:
+            raise TypeError('Invalid null-space projector!')
+
+    def linearize(self, X, at_state, at_adjoint):
         # store references to the evaluation point
-        self.at_design = at_primal
-        self.at_dual = at_dual
+        if isinstance(X._primal, CompositePrimalVector):
+            self.at_design = X._primal._design
+            self.at_slack = X._primal._slack
+        else:
+            self.at_design = X._primal
+            self.at_slack = None
+        self.at_dual = X._dual
         self.at_state = at_state
         self.at_adjoint = at_adjoint
 
@@ -63,6 +95,9 @@ class ConstrainedHessian(BaseHessian):
             self.adjoint_res = self.state_factory.generate()
             self.pert_state = self.state_factory.generate()
             self.dual_work = self.dual_factory.generate()
+            self.slack_term = self.dual_factory.generate()
+            self.dual_in = self.dual_factory.generate()
+            self.dual_out = self.dual_factory.generate()
             self._allocated = True
 
         # compute adjoint residual at the linearization
@@ -85,12 +120,20 @@ class ConstrainedHessian(BaseHessian):
             self.at_dual, self.design_work)
         self.reduced_grad.plus(self.design_work)
 
-    def product(self, in_vec, out_vec):
+        # if slacks exist, compute the slack term
+        if self.at_slack is not None:
+            self.slack_term.exp(self.at_slack)
+            self.slack_term.times(self.at_dual)
+            self.slack_term.times(-1.)
+            self.slack_term.restrict()
+
+    def multiply_W(self, in_vec, out_vec):
         # calculate the FD perturbation for the design
         epsilon_fd = calc_epsilon(self.at_design.norm2, in_vec.norm2)
 
         # perturb the design variables
-        self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec)
+        self.pert_design.equals_ax_p_by(
+            1.0, self.at_design, epsilon_fd, in_vec)
 
         # compute partial (d^2 L/dx^2)*in_vec and store in out_vec
         out_vec.equals_objective_partial(self.pert_design, self.at_state)
@@ -177,3 +220,55 @@ class ConstrainedHessian(BaseHessian):
 
         # reset the approx and transpose flags at the end
         self._approx = False
+
+    def multiply_slack(self, in_vec, out_vec):
+        out_vec.equals(in_vec)
+        out_vec.times(self.slack_term)
+
+    def product(self, in_vec, out_vec):
+        # do some aliasing
+        if self.at_slack is not None:
+            in_design = in_vec._design
+            in_slack = in_vec._slack
+            out_design = out_vec._design
+            out_slack = out_vec._slack
+        else:
+            in_design = in_vec
+            in_slack = None
+            out_design = out_vec
+            out_slack = None
+
+        # multiply the design component
+        self.multiply_W(in_design, out_design)
+
+        # multiply the slack component
+        if self.at_slack is not None:
+            self.multiply_slack(in_slack, out_slack)
+
+    def precond(self, in_vec, out_vec):
+        in_kkt = ReducedKKTVector(in_vec, self.dual_in)
+        in_kkt._dual.equals(0.0)
+        out_kkt = ReducedKKTVector(out_vec, self.dual_out)
+        self.proj_cg.solve(in_kkt, out_kkt, rel_tol=1e-4)
+
+    def solve(self, rhs, solution, rel_tol=None):
+        if self.radius is None:
+            raise ValueError('Trust radius not set!')
+
+        if self.proj_cg is None:
+            raise ValueError('CG projection preconditioner not set!')
+
+        # set krylov relative tolerance and radius
+        self.krylov.radius = self.radius
+        if rel_tol is not None:
+            tmp_rel_tol = self.krylov.rel_tol
+            self.krylov.rel_tol = rel_tol
+
+        # solve the system
+        solution.equals(0.0)
+        self.pred, self.trust_active = \
+            self.krylov.solve(self.product, rhs, solution, self.precond)
+
+        # reset the krylov relative tolerance
+        if rel_tol is not None:
+            self.krylov.rel_tol = tmp_rel_tol

@@ -3,10 +3,10 @@ from kona.options import get_opt
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.hessian.basic import BaseHessian
-from kona.linalg.matrices.hessian import ConstrainedHessian, NormalKKTMatrix
+from kona.linalg.matrices.hessian import LagrangianHessian, AugmentedKKTMatrix
 from kona.linalg.solvers.krylov import STCG
 
-class TangentKKTMatrix(BaseHessian):
+class LagrangianHessian(BaseHessian):
     """
     Matrix object for the the tangent system associated with the reduced KKT
     system.
@@ -22,7 +22,7 @@ class TangentKKTMatrix(BaseHessian):
     This matrix is used to solve the tangent-step in a composite-step algorithm.
     """
     def __init__(self, vector_factories, optns={}):
-        super(TangentKKTMatrix, self).__init__(vector_factories, optns)
+        super(LagrangianHessian, self).__init__(vector_factories, optns)
 
         # get references to individual factories
         self.primal_factory = None
@@ -49,7 +49,7 @@ class TangentKKTMatrix(BaseHessian):
         self.pred = 0.
 
         # initialize the Hessian block
-        self.W = ConstrainedHessian(vector_factories)
+        self.W = LagrangianHessian(vector_factories)
 
         # initialize the internal krylov method
         krylov_optns = {
@@ -65,7 +65,7 @@ class TangentKKTMatrix(BaseHessian):
             dual_factory=self.dual_factory)
 
     def set_projector(self, proj_cg):
-        if isinstance(proj_cg, NormalKKTMatrix):
+        if isinstance(proj_cg, AugmentedKKTMatrix):
             self.proj_cg = proj_cg
         else:
             raise TypeError('Invalid null-space projector!')
@@ -105,7 +105,7 @@ class TangentKKTMatrix(BaseHessian):
         in_kkt = ReducedKKTVector(in_vec, self.dual_in)
         in_kkt._dual.equals(0.0)
         out_kkt = ReducedKKTVector(out_vec, self.dual_out)
-        self.proj_cg.solve(in_kkt, out_kkt, rel_tol=4e-6)
+        self.proj_cg.solve(in_kkt, out_kkt, rel_tol=1e-4)
 
     def solve(self, rhs, solution, rel_tol=None):
         if self.radius is None:
