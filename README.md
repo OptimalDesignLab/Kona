@@ -4,6 +4,14 @@
 
 # Kona - A Parallel Optimization Framework
 
+## Install Guide
+
+Kona should be installed using `pip install -e .` run from the root directory
+of the repo.
+
+For a quick start guide on how to run optimization problems with Kona, please
+refer to the [documentation](http://kona.readthedocs.org).
+
 ## What is it?
 
 Kona is a library for nonlinear constrained optimization.
@@ -19,8 +27,8 @@ As a consequence of its abstracted vector and matrix implementations, Kona is
 also useful for developing new optimization algorithms for PDE-governed
 optimization.
 
-Please refer to the code documentation, API reference and use examples on
-[ReadTheDocs](http://kona.readthedocs.org) for more details on Kona's
+Please refer to the API reference and use examples in the
+[documentation](http://kona.readthedocs.org) for more details on Kona's
 parallel-agnostic implementation and linear algebra abstraction.
 
 ## Who is developing it?
