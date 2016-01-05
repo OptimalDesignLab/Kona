@@ -3,7 +3,7 @@ import unittest
 
 from kona import Optimizer
 from kona.algorithms import FLECS_RSNK
-from kona.examples import SimpleConstrained
+from kona.examples import SphereConstrained
 
 class EqualityFLECSRSNKTestCase(unittest.TestCase):
 
@@ -15,7 +15,7 @@ class EqualityFLECSRSNKTestCase(unittest.TestCase):
         else:
             init_x = [1.51, 1.52, 1.53]
 
-        solver = SimpleConstrained(init_x=init_x, ineq=False)
+        solver = SphereConstrained(init_x=init_x, ineq=False)
 
         optns = {
             'info_file' : 'kona_info.dat',

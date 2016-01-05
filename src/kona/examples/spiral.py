@@ -133,14 +133,3 @@ class Spiral(UserSolver):
         self.PDE.linearize(at_design, at_state)
         result.data = np.linalg.solve(self.PDE.dRdU.T, rhs_vec.data)
         return 1
-
-    def current_solution(self, curr_design, curr_state, curr_adj,
-                         curr_dual, num_iter):
-
-        super(Spiral, self).current_solution(
-            curr_design, curr_state, curr_adj, curr_dual, num_iter)
-
-        print 'Current Design: '
-        print self.curr_design
-        print 'Current State: '
-        print self.curr_state

@@ -1,6 +1,6 @@
 
 def current_solution(curr_design, curr_state=None, curr_adj=None,
-                     curr_dual=None, num_iter=None):
+                     curr_dual=None, num_iter=None, curr_slack=None):
     """
     Notify the solver of the current solution point.
 
@@ -30,8 +30,11 @@ def current_solution(curr_design, curr_state=None, curr_adj=None,
     if curr_dual is not None:
         curr_dual = curr_dual._data
 
+    if curr_slack is not None:
+        curr_slack = curr_slack._data
+
     return solver.current_solution(
-        curr_design, curr_state, curr_adj, curr_dual, num_iter)
+        curr_design, curr_state, curr_adj, curr_dual, num_iter, curr_slack)
 
 def objective_value(at_design, at_state):
     """

@@ -3,7 +3,7 @@ import unittest
 
 from kona import Optimizer
 from kona.algorithms import CompositeStepRSNK
-from kona.examples import SimpleConstrained
+from kona.examples import SphereConstrained
 
 class EqualityCompositeStepTestCase(unittest.TestCase):
 
@@ -12,7 +12,7 @@ class EqualityCompositeStepTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        solver = SimpleConstrained(
+        solver = SphereConstrained(
             ineq=False)
 
         optns = {

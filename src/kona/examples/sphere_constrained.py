@@ -1,9 +1,9 @@
 from kona.user import UserSolver
 
-class SimpleConstrained(UserSolver):
+class SphereConstrained(UserSolver):
 
     def __init__(self, init_x=[0.51, 0.52, 0.53], ineq=False):
-        super(SimpleConstrained, self).__init__(3, 0, 1)
+        super(SphereConstrained, self).__init__(3, 0, 1)
         self.ineq = ineq
         self.init_x = init_x
 
@@ -45,13 +45,6 @@ class SimpleConstrained(UserSolver):
         store_here.data[0] = self.init_x[0]
         store_here.data[1] = self.init_x[1]
         store_here.data[2] = self.init_x[2]
-
-    def current_solution(self, curr_design, curr_state, curr_adj,
-                         curr_dual, num_iter):
-        super(SimpleConstrained, self).current_solution(
-            curr_design, curr_state, curr_adj, curr_dual, num_iter)
-
-        print self.curr_design
 
     def restrict_dual(self, dual_vector):
         if self.ineq:

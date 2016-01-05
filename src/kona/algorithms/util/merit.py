@@ -1,8 +1,9 @@
 import sys
 
+from kona.options import get_opt
 from kona.linalg import objective_value
 from kona.linalg.solvers.util import EPS
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
+from kona.linalg.matrices.common import dRdX
 from kona.linalg.vectors.composite import CompositePrimalVector
 
 class MeritFunction(object):
@@ -185,7 +186,7 @@ class ObjectiveMerit(MeritFunction):
 
         return self.p_dot_grad
 
-class QuadraticPenalty(MeritFunction):
+class L2QuadraticPenalty(MeritFunction):
     """
     A merit function with L2 constraint norm pernalty term, used for
     constrained RSNK problems.
@@ -200,7 +201,7 @@ class QuadraticPenalty(MeritFunction):
     def __init__(self, primal_factory, state_factory, dual_factory,
                  optns={}, out_file=sys.stdout):
         # trigger the base class initialization
-        super(QuadraticPenalty, self).__init__(
+        super(L2QuadraticPenalty, self).__init__(
             primal_factory, state_factory, optns, out_file)
 
         # store a pointer to the dual factory
@@ -225,7 +226,7 @@ class QuadraticPenalty(MeritFunction):
             self._allocated = True
 
         # store information for the new point the merit function is reset at
-        self.p_dot_grad = 0.
+        self.p_dot_grad = None
         self.mu = mu
         self.u_start = u_start
         if isinstance(kkt_start._primal, CompositePrimalVector):
@@ -243,8 +244,7 @@ class QuadraticPenalty(MeritFunction):
         self.x_trial.equals(self.x_start)
         self.u_trial.equals(self.u_start)
         if self.slack_start is not None:
-            self.slack_trial.exp(self.slack_start)
-            self.slack_trial.restrict()
+            self.slack_trial.equals(self.slack_start)
         else:
             self.slack_trial = None
 
@@ -252,57 +252,14 @@ class QuadraticPenalty(MeritFunction):
         self.dual_work.equals_constraints(self.x_trial, self.u_trial)
         if self.slack_trial is not None:
             self.slack_work.exp(self.slack_trial)
-            self.slack_work.times(-1.)
             self.slack_work.restrict()
-            self.dual_work.plus(self.slack_work)
+            self.dual_work.minus(self.slack_work)
 
         # evaluate merit function value
         obj_val = objective_value(self.x_trial, self.u_trial)
         penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)
         self.func_val = obj_val + penalty_term
         self.last_func_alpha = 0.0
-
-    def calc_dir_deriv(self):
-        # get the partial objective
-        self.design_work.equals_objective_partial(self.x_start, self.u_start)
-        # compute costraint vector
-        self.dual_work.equals_constraints(self.x_start, self.u_start)
-        if self.slack_start is not None:
-            # if slacks exist, compute slack term and modify constraints
-            self.slack_work.exp(self.slack_start)
-            self.slack_work.restrict()
-            self.dual_work.minus(self.slack_work)
-        # compute and add (c^T * c) partial contribution
-        dCdX(self.x_start, self.u_start).T.product(
-            self.dual_work, self.x_trial)
-        self.design_work.plus(self.x_trial)
-
-        # assemble the adjoint equation RHS
-        # get the objective partial
-        self.state_work.equals_objective_partial(
-            self.x_start, self.u_start)
-        # add contribution from (c^T c) -- this includes slacks already
-        dCdU(self.x_start, self.u_start).T.product(
-            self.dual_work, self.adjoint_work)
-        self.state_work.plus(self.adjoint_work)
-        # move the vector to RHS
-        self.state_work.times(-1.)
-        # solve the adjoint
-        dRdU(self.x_start, self.u_start).T.solve(
-            self.state_work, self.adjoint_work)
-
-        # add the state contribution
-        dRdX(self.x_start, self.u_start).T.product(
-            self.adjoint_work, self.x_trial)
-        self.x_trial.times(self.mu)
-        self.design_work.plus(self.x_trial)
-
-        # compute the directional derivative
-        self.p_dot_grad = self.design_work.inner(self.design_step)
-        if self.slack_start is not None:
-            self.slack_work.times(self.dual_work)
-            self.slack_work.times(-2.)
-            self.p_dot_grad += self.slack_work.inner(self.slack_step)
 
     def eval_func(self, alpha):
         if abs(alpha - self.last_func_alpha) > EPS:
@@ -311,18 +268,15 @@ class QuadraticPenalty(MeritFunction):
                 1., self.x_start, alpha, self.design_step)
             self.x_trial.enforce_bounds()
             self.u_trial.equals_primal_solution(self.x_trial)
-            if self.slack_trial is not None:
-                self.slack_trial.equals_ax_p_by(
-                    1., self.slack_start, alpha, self.slack_step)
-                self.slack_trial.restrict()
 
             # evaluate constraints at the trial point
             self.dual_work.equals_constraints(self.x_trial, self.u_trial)
             if self.slack_trial is not None:
+                self.slack_trial.equals_ax_p_by(
+                    1., self.slack_start, alpha, self.slack_step)
                 self.slack_work.exp(self.slack_trial)
-                self.slack_work.times(-1.)
                 self.slack_work.restrict()
-                self.dual_work.plus(self.slack_work)
+                self.dual_work.minus(self.slack_work)
 
             # evaluate merit function value
             obj_val = objective_value(self.x_trial, self.u_trial)
@@ -332,7 +286,7 @@ class QuadraticPenalty(MeritFunction):
 
         return self.func_val
 
-class AugmentedLagrangian(QuadraticPenalty):
+class AugmentedLagrangian(L2QuadraticPenalty):
     """
     An augmented Lagrangian merit function for constrained RSNK problems.
 
@@ -355,36 +309,42 @@ class AugmentedLagrangian(QuadraticPenalty):
         super(AugmentedLagrangian, self).__init__(
             primal_factory, state_factory, dual_factory, optns, out_file)
 
+        self.freeze_mults = get_opt(optns, False, 'freeze_mults')
+
         # request an additional dual vector
         self.dual_factory.request_num_vectors(1)
 
         # child allocation flag
         self._child_allocated = False
 
-    def reset(self, kkt_start, u_start, search_dir, p_dot_grad, mu):
+    def reset(self, kkt_start, u_start, search_dir, mu):
         # allocate the parent merit function
         super(AugmentedLagrangian, self).reset(
-            kkt_start, u_start, search_dir, p_dot_grad, mu)
+            kkt_start, u_start, search_dir, mu)
 
         # if the internal vectors are not allocated, do it now
         if not self._child_allocated:
-            self.dual_frozen = self.dual_factory.generate()
+            self.multipliers = self.dual_factory.generate()
             self._child_allocated = True
 
-        # save the frozen Lagrange multipliers
-        self.dual_frozen.equals(kkt_start._dual)
+        # store references to dual start and dual step
+        self.mult_start = kkt_start._dual
+        self.mult_step = search_dir._dual
+
+        # save the Lagrange multipliers
+        self.multipliers.equals(self.mult_start)
 
         # add the multiplier term on top of the parent merit value
-        lambda_cnstr = self.dual_frozen.inner(self.dual_work)
-        self.func_val += lambda_cnstr
+        self.func_val += self.multipliers.inner(self.dual_work)
 
     def eval_func(self, alpha):
-        # evaluate the parent merit function value
-        self.func_val = super(AugmentedLagrangian, self).eval_func(alpha)
-
-        # add the multiplier term on top of the parent merit value
         if abs(alpha - self.last_func_alpha) > EPS:
-            lambda_cnstr = self.dual_frozen.inner(self.dual_work)
-            self.func_val += lambda_cnstr
+            # evaluate the parent merit function value
+            self.func_val = super(AugmentedLagrangian, self).eval_func(alpha)
+            # add the multiplier term on top of the parent merit value
+            if not self.freeze_mults:
+                self.multipliers.equals_ax_p_by(
+                    1., self.mult_start, alpha, self.mult_step)
+            self.func_val += self.multipliers.inner(self.dual_work)
 
         return self.func_val

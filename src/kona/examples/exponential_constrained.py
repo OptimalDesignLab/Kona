@@ -41,12 +41,5 @@ class ExponentialConstrained(UserSolver):
         store_here.data[0] = self.init_x[0]
         store_here.data[1] = self.init_x[1]
 
-    def current_solution(self, curr_design, curr_state, curr_adj,
-                         curr_dual, num_iter):
-        super(ExponentialConstrained, self).current_solution(
-            curr_design, curr_state, curr_adj, curr_dual, num_iter)
-
-        # print self.curr_design
-
     def restrict_dual(self, dual_vector):
         pass

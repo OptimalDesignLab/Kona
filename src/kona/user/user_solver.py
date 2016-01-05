@@ -676,7 +676,7 @@ class UserSolver(object):
         return 0
 
     def current_solution(self, curr_design, curr_state, curr_adj,
-                         curr_dual, num_iter):
+                         curr_dual, num_iter, curr_slack):
         """
         Kona will evaluate this method at every outer/nonlinear optimization
         iteration. It can be used to print out useful information to monitor
@@ -714,6 +714,9 @@ class UserSolver(object):
 
         if curr_dual is not None:
             self.curr_dual = curr_dual.data
+
+        if curr_slack is not None:
+            self.curr_slack = curr_slack.data
 
         return None
 

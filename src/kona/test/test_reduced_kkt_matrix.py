@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from kona.examples import SimpleConstrained
+from kona.examples import SphereConstrained
 from kona.linalg.memory import KonaMemory
 from kona.linalg.matrices.common import dCdU, dRdU
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
@@ -21,7 +21,7 @@ class ReducedKKTMatrixTestCase(unittest.TestCase):
         self.assertTrue(np.linalg.norm(vec1 - vec2) < atol)
 
     def test_equality_constrained_product(self):
-        solver = SimpleConstrained(ineq=False)
+        solver = SphereConstrained(ineq=False)
         km = KonaMemory(solver)
         self.pf = km.primal_factory
         self.sf = km.state_factory

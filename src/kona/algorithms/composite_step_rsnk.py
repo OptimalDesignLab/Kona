@@ -180,7 +180,8 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
         # send initial point info to the user
         solver_info = current_solution(
-            X._primal._design, state, adjoint, X._dual, self.iter)
+            X._primal._design, state, adjoint, X._dual, self.iter,
+            X._primal._slack)
         if isinstance(solver_info, str):
             self.info_file.write('\n' + solver_info + '\n')
 
@@ -376,7 +377,8 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
             # send current solution info to the user
             solver_info = current_solution(
-                X._primal._design, state, adjoint, X._dual, self.iter)
+                X._primal._design, state, adjoint, X._dual, self.iter,
+                X._primal._slack)
             if isinstance(solver_info, str):
                 self.info_file.write('\n' + solver_info + '\n')
 
