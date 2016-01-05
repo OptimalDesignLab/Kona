@@ -1,5 +1,5 @@
 AugmentedKKTMatrix
-================
+==================
 
 .. autoclass:: kona.linalg.matrices.hessian.AugmentedKKMatrix
     :members:
