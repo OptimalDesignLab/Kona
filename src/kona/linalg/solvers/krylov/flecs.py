@@ -16,7 +16,8 @@ class FLECS(KrylovSolver):
 
     .. note::
 
-        Insert FLECS paper reference here.
+        For more information, see
+        `SIAM paper on FLECS <http://epubs.siam.org/doi/10.1137/140994496>`.
 
     Attributes
     ----------

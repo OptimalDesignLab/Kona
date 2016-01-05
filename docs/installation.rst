@@ -1,12 +1,11 @@
 Quick Start Guide
 =================
 
-Kona can be installed just like any other Python module, using the standard
-:code:`setup.py` syntax.
+Kona can be installed just like any other Python module.
 
 .. code::
 
-    python setup.py install
+    pip install -e .
 
 Below is a simple example script that performs gradient-based optimization on
 a multidimensional Rosenbrock problem using the reduced-space Newton-Krylov
@@ -36,3 +35,6 @@ a multidimensional Rosenbrock problem using the reduced-space Newton-Krylov
 
     # print solution
     print solver.curr_design
+
+The above optimization run will produce a ``kona_hist.dat`` file tracking
+convergence norms across non-linear iterations.

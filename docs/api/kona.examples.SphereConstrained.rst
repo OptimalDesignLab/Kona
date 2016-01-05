@@ -1,7 +1,7 @@
-InversePoisson
+SphereConstrained
 ==============
 
-.. autoclass:: kona.examples.poisson.InversePoisson
+.. autoclass:: kona.examples.SphereConstrained
     :members:
     :undoc-members:
     :show-inheritance:

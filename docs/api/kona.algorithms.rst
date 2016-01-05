@@ -16,5 +16,7 @@ Package contents
 
     kona.algorithms.OptimizationAlgorithm
     kona.algorithms.ReducedSpaceQuasiNewton
-    kona.algorithms.ReducedSpaceNewtonKrylov
-    kona.algorithms.ConstrainedRSNK
+    kona.algorithms.STCG_RSNK
+    kona.algorithms.FLECS_RSNK
+    kona.algorithms.CompositeStepRSNK
+    kona.algorithms.Verifier
