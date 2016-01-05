@@ -12,9 +12,13 @@ Welcome to KONA's documentation!
     :target: https://travis-ci.org/OptimalDesignLab/Kona
     :alt: Build Status
 
+.. |coverage| image:: https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master&service=github
+    :target: https://coveralls.io/github/OptimalDesignLab/Kona?branch=master
+    :alt: Coveralls.io
+
 .. |coverage| image:: http://codecov.io/github/OptimalDesignLab/Kona/coverage.svg?branch=master
     :target: http://codecov.io/github/OptimalDesignLab/Kona?branch=master
-    :alt: Test Coverage
+    :alt: Codecov.io
 
 Kona is a library for nonlinear constrained optimization. It was designed
 primarily for partial-differential-equation (PDE) governed
