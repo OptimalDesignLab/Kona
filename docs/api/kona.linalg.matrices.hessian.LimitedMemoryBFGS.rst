@@ -1,5 +1,5 @@
 LimitedMemoryBFGS
-=================
+==================
 
 .. autoclass:: kona.linalg.matrices.hessian.LimitedMemoryBFGS
     :members:

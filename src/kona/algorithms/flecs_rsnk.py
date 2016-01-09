@@ -33,7 +33,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
     .. note::
 
-        Insert RSNK paper reference here.
+        More information on this reduced-space Newton-Krylov appoach can be
+        found `in this paper <http://arc.aiaa.org/doi/abs/10.2514/6.2015-1945>`.
 
     Parameters
     ----------

@@ -45,7 +45,9 @@ class ReducedKKTMatrix(BaseHessian):
     equality constrained or mixed constrained problems.
 
     .. note::
-        Insert paper reference describing the 2nd order adjoint formulation.
+
+        More information on this 2nd order adjoint formulation can be found
+        `in this paper <http://arc.aiaa.org/doi/abs/10.2514/6.2015-1945>`.
 
     Attributes
     ----------
