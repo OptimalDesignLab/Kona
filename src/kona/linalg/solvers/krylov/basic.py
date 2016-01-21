@@ -28,7 +28,7 @@ class KrylovSolver(object):
         self.rel_tol = get_opt(optns, 1e-6, 'rel_tol')
         self.check_res = get_opt(optns, True, 'check_res')
         # set up the info file
-        self.out_file = get_opt(optns, 'kona_krylov.dat', 'out_file')
+        self.out_file = get_opt(optns, 'kona_krylov.dat', 'krylov_file')
         if isinstance(self.out_file, str):
             try:
                 _memory = self.vec_fac._memory
