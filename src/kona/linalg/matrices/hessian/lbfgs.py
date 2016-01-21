@@ -59,7 +59,7 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         self.s_dot_y_list.append(curvature)
 
     def product(self, in_vec, out_vec):
-        pass
+        raise NotImplementedError
 
     def solve(self, u_vec, v_vec, rel_tol=1e-15):
         lambda0 = self.lambda0

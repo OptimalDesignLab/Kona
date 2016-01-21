@@ -27,29 +27,6 @@ class LimitedMemorySR1(QuasiNewtonApprox):
 
         vector_factory.request_num_vectors(3*self.max_stored + 4)
 
-    def _hessian_product(self, u_vec, v_vec):
-        s_list = self.s_list
-        y_list = self.y_list
-        num_stored = len(s_list)
-
-        Bs = []
-        for k in xrange(num_stored):
-            Bs.append(self.vec_fac.generate())
-            Bs[k].equals(s_list[k])
-
-        v_vec.equals(u_vec)
-
-        for i in xrange(num_stored):
-            denom = 1.0 / (y_list[i].inner(s_list[i]) - Bs[i].inner(s_list[i]))
-            fac = (y_list[i].inner(u_vec) - Bs[i].inner(u_vec))*denom
-            v_vec.equals_ax_p_by(1.0, v_vec, fac, y_list[i])
-            v_vec.equals_ax_p_by(1.0, v_vec, -fac, Bs[i])
-            for j in xrange(i+1, num_stored):
-                fac = (y_list[i].inner(s_list[j])
-                       - Bs[i].inner(s_list[j]))*denom
-                Bs[j].equals_ax_p_by(1.0, Bs[j], fac, y_list[i])
-                Bs[j].equals_ax_p_by(1.0, Bs[j], -fac, Bs[i])
-
     def _check_threshold(self, z_list, k, alpha):
         # alias some variables
         lambda0 = self.lambda0
@@ -82,7 +59,7 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         y_copy = self.vec_fac.generate()
         tmp = self.vec_fac.generate()
         y_copy.equals(y_in)
-        self._hessian_product(y_copy, tmp)
+        self.product(y_copy, tmp)
         tmp.minus(s_in)
 
         norm_resid = tmp.norm2
@@ -116,6 +93,29 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         # force garbage collection
         del s_new, y_new
         gc.collect()
+
+    def product(self, u_vec, v_vec):
+        s_list = self.s_list
+        y_list = self.y_list
+        num_stored = len(s_list)
+
+        Bs = []
+        for k in xrange(num_stored):
+            Bs.append(self.vec_fac.generate())
+            Bs[k].equals(s_list[k])
+
+        v_vec.equals(u_vec)
+
+        for i in xrange(num_stored):
+            denom = 1.0 / (y_list[i].inner(s_list[i]) - Bs[i].inner(s_list[i]))
+            fac = (y_list[i].inner(u_vec) - Bs[i].inner(u_vec))*denom
+            v_vec.equals_ax_p_by(1.0, v_vec, fac, y_list[i])
+            v_vec.equals_ax_p_by(1.0, v_vec, -fac, Bs[i])
+            for j in xrange(i+1, num_stored):
+                fac = (y_list[i].inner(s_list[j])
+                       - Bs[i].inner(s_list[j]))*denom
+                Bs[j].equals_ax_p_by(1.0, Bs[j], fac, y_list[i])
+                Bs[j].equals_ax_p_by(1.0, Bs[j], -fac, Bs[i])
 
     def solve(self, u_vec, v_vec, rel_tol=1e-15):
         # alias some variables
