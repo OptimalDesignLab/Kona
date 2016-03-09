@@ -119,7 +119,7 @@ class InequalityFLECSRSNKTestCase(unittest.TestCase):
         diff = abs(solver.curr_design - expected)
         self.assertTrue(max(diff) < 1e-4)
 
-    def test_with_simple_constrained(self):
+    def test_with_sphere_constrained(self):
 
         feasible = False
         if feasible:
