@@ -77,7 +77,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.b.equals(1)
         # solve the system with FLECS
         self.krylov.radius = 100.0
-        self.krylov.mu = 100000.0
+        self.krylov.mu = 10000.0
         self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
         # calculate expected result
         self.b.equals(1)
@@ -93,6 +93,8 @@ class FLECSSolverTestCase(unittest.TestCase):
         total_data[3] = self.x._dual._data.data[:]
         diff = abs(total_data - expected)
         diff = max(diff)
+        print diff
+        print self.krylov.trust_active
         self.assertTrue(diff <= 1.e-3 and not self.krylov.trust_active)
 
     def test_radius_active(self):

@@ -135,7 +135,7 @@ class FGMRES(KrylovSolver):
             # set L2 norm of residual and output relative residual if necessary
             beta = abs(g[i+1])
             write_history(self.out_file, i+1, beta, norm0)
-                
+
         ##############
         # END BIG LOOP
 

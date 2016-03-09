@@ -216,7 +216,6 @@ class FLECS(KrylovSolver):
 
         lamb = 0.0
         radius_aug = self.radius
-        self.trust_active = False
         try:
             # compute the transformation to apply trust-radius directly
             rhs_tmp = numpy.copy(rhs_aug)
@@ -242,7 +241,6 @@ class FLECS(KrylovSolver):
             self.y_aug = solve_tri(L.T, vec_tmp, lower=False)
 
         except numpy.linalg.LinAlgError:
-            # print 'Cholesky failed!'
             # if Cholesky factorization fails, compute a conservative radius
             eig_vals, _ = eigen_decomp(ZtZ_prim_r)
             radius_aug = self.radius/sqrt(eig_vals[self.iters-1])
@@ -251,7 +249,7 @@ class FLECS(KrylovSolver):
 
         # check if the trust-radius constraint is active
         self.trust_active = False
-        if lamb > 0.0:
+        if lamb >= 1e-8:
             self.radius = radius_aug
             self.trust_active = True
 
