@@ -880,9 +880,9 @@ class Verifier(object):
         if self.factor_matrices:
             factor_linear_system(primal, primal_sol)
 
-        u.equals(1.0)
-        v.equals(1.0)
-        rel_tol = 1e-8
+        u.equals_objective_partial(primal, primal_sol)
+        v.equals(u)
+        rel_tol = 1e-6
 
         dRdU(primal, primal_sol).solve(u, w, rel_tol)
         forward = v.inner(w)
