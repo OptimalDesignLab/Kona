@@ -116,6 +116,8 @@ class KonaVector(object):
         value : float
             Vector to be added.
         """
+        if val == 0.0:
+            raise ValueError('Divide by zero!')
         self.times(1./val)
 
     def equals_ax_p_by(self, a, X, b, Y):
