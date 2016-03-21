@@ -5,7 +5,7 @@ from kona.options import BadKonaOption, get_opt
 from kona.linalg import current_solution, objective_value, factor_linear_system
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS, ReducedHessian
-from kona.linalg.solvers.krylov import STCG
+from kona.linalg.solvers.krylov import STCG, FGMRES
 
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
@@ -56,7 +56,14 @@ class STCG_RSNK(OptimizationAlgorithm):
             'check_res'     : get_opt(optns, True, 'rsnk', 'check_res'),
             'rel_tol'       : get_opt(optns, 1e-2, 'rsnk', 'rel_tol'),
         }
-        self.krylov = STCG(self.primal_factory, krylov_optns)
+
+        if self.globalization is None:
+            self.info_file.write(
+                ">> WARNING: Globalization is turned off. " +
+                "Solving with FGMRES. <<\n")
+            self.krylov = FGMRES(self.primal_factory, krylov_optns)
+        else:
+            self.krylov = STCG(self.primal_factory, krylov_optns)
         self.krylov.radius = self.radius
 
         # initialize the ReducedHessian approximation
