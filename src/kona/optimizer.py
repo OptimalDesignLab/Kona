@@ -68,8 +68,20 @@ class Optimizer(object):
                 primal_factory, state_factory, dual_factory, self._optns)
 
     def _process_options(self, optns):
-        # update the file handles
-        self._optns.update(optns)
+        # this is a recursive dictionary merge function
+        def merge(a, b):
+            for key in b:
+                if key in a:
+                    if isinstance(a[key], dict) and isinstance(b[key], dict):
+                        merge(a[key], b[key])
+                    else:
+                        a[key] = b[key]
+                else:
+                    a[key] = b[key]
+            return a
+        # merge user dictionary with default file names
+        self._optns = merge(self._optns, optns)
+        # open the files on the master (zero) rank
         self._optns['info_file'] = \
             self._memory.open_file(self._optns['info_file'])
         self._optns['hist_file'] = \

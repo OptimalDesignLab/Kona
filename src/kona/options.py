@@ -93,7 +93,7 @@ defaults = {
         'scale'         : 1.0,
         'grad_scale'    : 1.0,
         'feas_scale'    : 1.0,
-        # FLECS solver settings
+        # Krylov solver settings
         'krylov_file'   : 'kona_krylov.dat',
         'subspace_size' : 10,
         'check_res'     : True,
@@ -150,10 +150,11 @@ defaults = {
 
     'krylov' : {
         'out_file'      : 'kona_krylov.dat',
-        'type'          : STCG,
         'subspace_size' : 10,
-        'rel_tol'       : 0.05,
         'check_res'     : True,
+        'rel_tol'       : 1e-3,
+        'abs_tol'       : 1e-5,
+        'type'          : STCG,
         # STCG settings
         'proj_cg'       : False,
         # FGMRES settings
