@@ -43,6 +43,7 @@ class STCG_RSNK(OptimizationAlgorithm):
         self.state_factory.request_num_vectors(8)
 
         # get other options
+        self.globalization = get_opt(optns, 'trust', 'globalization')
         self.radius = get_opt(optns, 1.0, 'trust', 'init_radius')
         self.max_radius = get_opt(optns, 1.0, 'trust', 'max_radius')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
@@ -91,15 +92,17 @@ class STCG_RSNK(OptimizationAlgorithm):
             '# iters' + ' '*5 +
             '      cost' + ' '*5 +
             ' grad norm' + ' '*5 +
+            ' objective' + ' '*5 +
             '     ratio' + ' '*5 +
             '    radius' + '\n'
         )
 
-    def _write_history(self, num_iter, norm, rho):
+    def _write_history(self, num_iter, norm, obj, rho):
         self.hist_file.write(
             '%7i'%num_iter + ' '*5 +
             '%10i'%self.primal_factory._memory.cost + ' '*5 +
             '%10e'%norm + ' '*5 +
+            '%10e'%obj + ' '*5 +
             '%10e'%rho + ' '*5 +
             '%10e'%self.radius + '\n'
         )
@@ -155,7 +158,7 @@ class STCG_RSNK(OptimizationAlgorithm):
                 dJdX_old.equals(dJdX)
             # write history
             current_solution(x, state, adjoint, num_iter=self.iter)
-            self._write_history(self.iter, grad_norm, rho)
+            self._write_history(self.iter, grad_norm, obj, rho)
             # check convergence
             if grad_norm < grad_tol:
                 converged = True
@@ -184,29 +187,37 @@ class STCG_RSNK(OptimizationAlgorithm):
             x.plus(p)
             x.enforce_bounds()
 
-            # compute the actual reduction and trust parameter rho
-            obj_old = obj
-            state_work.equals(state)
-            if state.equals_primal_solution(x):
+            if self.globalization is None:
+                state.equals_primal_solution(x)
                 obj = objective_value(x, state)
-                rho = (obj_old - obj)/pred
-            else:
-                rho = np.nan
-
-            # update radius if necessary
-            if rho < 0.25 or np.isnan(rho):
-                self.radius *= 0.25
-            else:
-                if active and (rho > 0.75):
-                    self.radius = min(2*self.radius, self.max_radius)
-
-            # revert the solution if necessary
-            if rho < 0.1:
-                self.info_file.write('reverting solution...\n')
-                x.equals(primal_work)
-                state.equals(state_work)
-            else:
                 adjoint.equals_adjoint_solution(x, state, state_work)
+            elif self.globalization == 'trust':
+                # compute the actual reduction and trust parameter rho
+                obj_old = obj
+                state_work.equals(state)
+                if state.equals_primal_solution(x):
+                    obj = objective_value(x, state)
+                    rho = (obj_old - obj)/pred
+                else:
+                    rho = np.nan
+
+                # update radius if necessary
+                if rho < 0.25 or np.isnan(rho):
+                    self.radius *= 0.25
+                else:
+                    if active and (rho > 0.75):
+                        self.radius = min(2*self.radius, self.max_radius)
+
+                # revert the solution if necessary
+                if rho < 0.1:
+                    self.info_file.write('reverting solution...\n')
+                    obj = obj_old
+                    x.equals(primal_work)
+                    state.equals(state_work)
+                else:
+                    adjoint.equals_adjoint_solution(x, state, state_work)
+            else:
+                raise TypeError("Wrong globalization type!")
 
             if self.factor_matrices and self.iter < self.max_iter:
                 factor_linear_system(x, state)
