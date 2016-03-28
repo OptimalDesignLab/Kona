@@ -19,7 +19,7 @@ class STCG(KrylovSolver):
         super(STCG, self).__init__(vector_factory, optns)
 
         self.rel_tol = get_opt(optns, 1e-5, 'rel_tol')
-        self.abs_tol = get_opt(optns, 1e-8, 'abs_tol')
+        self.abs_tol = get_opt(optns, 1e-12, 'abs_tol')
 
         # set a default trust radius
         # NOTE: the trust radius is set by the optimization algorithm
