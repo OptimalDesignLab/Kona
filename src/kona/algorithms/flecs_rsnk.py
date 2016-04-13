@@ -99,7 +99,6 @@ class FLECS_RSNK(OptimizationAlgorithm):
             # define preconditioner as a nested solution of the approximate KKT
             self.precond = self.nested.solve
         elif self.precond == 'idf_schur':
-            raise NotImplementedError
             self.idf_schur = ReducedSchurPreconditioner(
                 [self.primal_factory, self.state_factory, self.dual_factory])
             self.precond = self.idf_schur.product
