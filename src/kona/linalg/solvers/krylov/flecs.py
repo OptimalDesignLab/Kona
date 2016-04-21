@@ -138,7 +138,7 @@ class FLECS(KrylovSolver):
 
     def _write_history(self, res, grad, feas, feas_aug):
         self.out_file.write(
-            '# %5i'%self.iters + ' '*5 +
+            '  %5i'%self.iters + ' '*5 +
             '%10e'%res + ' '*5 +
             '%10e'%grad + ' '*5 +
             '%10e'%feas + ' '*5 +

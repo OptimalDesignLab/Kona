@@ -144,8 +144,10 @@ class ReducedHessian(BaseHessian):
         out_vec : ReducedKKTVector
             Result of the operation.
         """
-        # perturb the design vector
+        # calculate perturbation
         epsilon_fd = calc_epsilon(self.primal_norm, in_vec.norm2)
+
+        # perturb the design vector
         self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec)
 
         # compute total gradient at the perturbed design
@@ -189,7 +191,6 @@ class ReducedHessian(BaseHessian):
         self.state_work[0].times(-1.0)
 
         # perform state perturbation
-        epsilon_fd = calc_epsilon(self.state_norm, self.w_adj.norm2)
         self.state_work[1].equals_ax_p_by(
             1.0, self.at_state, epsilon_fd, self.w_adj)
 

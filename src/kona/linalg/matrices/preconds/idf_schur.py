@@ -1,10 +1,9 @@
-import copy
-
 from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian
 from kona.linalg.matrices.hessian import TotalConstraintJacobian
 from kona.linalg.solvers.krylov import FGMRES
+from kona.linalg.memory import KonaFile
 
 class ReducedSchurPreconditioner(BaseHessian):
     """
@@ -43,13 +42,13 @@ class ReducedSchurPreconditioner(BaseHessian):
             elif factory._vec_type is DualVector:
                 self.dual_factory = factory
 
-        self.primal_factory.request_num_vectors(2)
+        self.primal_factory.request_num_vectors(3)
+        self.dual_factory.request_num_vectors(1)
 
         # initialize the internal FGMRES solver
-        krylov_out = copy.deepcopy(self.out_file)
-        krylov_out.file = None # this silences the internal Krylov solver
-        krylov_optns = {'out_file' : krylov_out}
-        self.krylov = FGMRES(self.primal_factory, krylov_optns)
+        self.krylov = FGMRES(self.primal_factory, {})
+        self.krylov.out_file = KonaFile(None, 1)
+        self.max_iter = 15
 
         # initialize an identity preconditioner
         self.eye = IdentityMatrix()
@@ -62,15 +61,40 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.diag = 0.0
         self._allocated = False
 
-    def _jac_prod(self, in_vec, out_vec):
-        self.cnstr_jac.approx.product(in_vec, out_vec)
+    def prod_design(self, in_vec, out_vec):
+        self.design_prod.equals(in_vec)
+        self.design_prod.restrict_to_design()
+        self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
+        out_vec.equals(0.0)
+        out_vec.convert(self.dual_prod)
 
-    def _jac_prod_T(self, in_vec, out_vec):
-        self.cnstr_jac.T.approx.product(in_vec, out_vec)
+    def prod_target(self, in_vec, out_vec):
+        self.design_prod.equals(in_vec)
+        self.design_prod.restrict_to_target()
+        self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
+        out_vec.equals(0.0)
+        out_vec.convert(self.dual_prod)
+
+    def prod_design_t(self, in_vec, out_vec):
+        self.dual_prod.equals(0.0)
+        self.dual_prod.convert(in_vec)
+        self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
+        out_vec.restrict_to_design()
+
+    def prod_target_t(self, in_vec, out_vec):
+        self.dual_prod.equals(0.0)
+        self.dual_prod.convert(in_vec)
+        self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
+        out_vec.restrict_to_target()
 
     def linearize(self, at_KKT, at_state):
         # store references to the evaluation point
-        self.at_design = at_KKT._primal
+        try:
+            self.at_design = at_KKT._primal._design
+            self.at_slack = at_KKT._primal._slack
+        except Exception:
+            self.at_design = at_KKT._primal
+            self.at_slack = None
         self.at_state = at_state
         self.at_dual = at_KKT._dual
         self.at_KKT = at_KKT
@@ -80,12 +104,23 @@ class ReducedSchurPreconditioner(BaseHessian):
 
         # if this is the first linearization, allocate some useful vectors
         if not self._allocated:
+            self.design_prod = self.primal_factory.generate()
+            self.dual_prod = self.dual_factory.generate()
             self.design_work = []
             for i in xrange(2):
                 self.design_work.append(self.primal_factory.generate())
 
     def product(self, in_vec, out_vec):
-        # do some aliasing to make life easier
+        # do some aliasing
+        try:
+            in_design = in_vec._primal._design
+            out_design = out_vec._primal._design
+            out_vec._primal._slack.equals(in_vec._primal._slack)
+        except Exception:
+            in_design = in_vec._primal
+            out_design = out_vec._primal
+        in_dual = in_vec._dual
+        out_dual = out_vec._dual
         design_work = self.design_work
 
         # set solver settings
@@ -93,35 +128,30 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.krylov.rel_tol = rel_tol
         self.krylov.check_res = False
 
-        out_vec.equals(0.0)
-        design_work[0].equals(in_vec._primal)
-        design_work[0].restrict_to_target()
+        out_design.equals(0.0)
+        out_dual.equals(0.0)
 
         # Step 1: Solve (dC/dy)^T in_dual = (u_design)_(target subspace)
-        self.cnstr_jac.restrict_to_target()
-        design_work[1].equals(in_vec._primal)
+        design_work[1].equals(in_design)
         design_work[1].restrict_to_target()
         design_work[0].equals(0.0)
         self.krylov.solve(
-            self._jac_prod_T, design_work[1], design_work[0], self.precond)
-        out_vec._dual.convert(design_work[0])
+            self.prod_target_t, design_work[1], design_work[0], self.precond)
+        out_dual.convert(design_work[0])
 
         # Step 2: Compute (out_design)_(design subspace) =
         # (in_design)_(design subspace) - (dC/dx)^T * out_dual
-        self.cnstr_jac.restrict_to_design()
-        self._jac_prod_T(design_work[0], out_vec._primal)
-        fac = 1.0/(1.0 + self.diag)
-        out_vec._primal.equals_ax_p_by(
-            -fac, out_vec._primal, fac, in_vec._primal)
-        out_vec._primal.restrict_to_design()
+        self.prod_design_t(design_work[0], out_design)
+        fac = 1.0 # /(1.0 + self.diag)
+        out_design.equals_ax_p_by(-fac, out_design, fac, in_design)
+        out_design.restrict_to_design()
 
         # Step 3: Solve (dC/dy) (out_design)_(target subspace) =
         # in_dual - (dC/dx) (out_design)_(design subspace)
-        self._jac_prod(out_vec._primal, design_work[0])
-        design_work[1].convert(in_vec._dual)
+        self.prod_design(out_design, design_work[0])
+        design_work[1].convert(in_dual)
         design_work[0].equals_ax_p_by(-1., design_work[0], 1., design_work[1])
         design_work[1].equals(0.0)
-        self.cnstr_jac.restrict_to_target()
         self.krylov.solve(
-            self._jac_prod, design_work[0], design_work[1], self.precond)
-        out_vec._primal.plus(design_work[1])
+            self.prod_target, design_work[0], design_work[1], self.precond)
+        out_design.plus(design_work[1])

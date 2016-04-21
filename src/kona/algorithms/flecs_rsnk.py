@@ -100,7 +100,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
             self.precond = self.nested.solve
         elif self.precond == 'idf_schur':
             self.idf_schur = ReducedSchurPreconditioner(
-                [self.primal_factory, self.state_factory, self.dual_factory])
+                [self.primal_factory, self.state_factory, self.dual_factory],
+                reduced_optns)
             self.precond = self.idf_schur.product
         else:
             raise BadKonaOption(optns, 'rsnk', 'precond')
