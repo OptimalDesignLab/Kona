@@ -40,3 +40,9 @@ now deprecated, but still available [on BitBucket](https://bitbucket.org/odl/kon
 The Python re-write of Kona is being developed and maintained by Dr. Hicken and
 the [Optimal Design Lab](http://www.optimaldesignlab.com) research group at
 Rensselaer Polytechnic Institute.
+
+## Acknowledgements
+
+This work is supported by the National Science Foundation under Grant No.
+1332819, and the National Aeronautics and Space Administration under Grant No. 
+NNX14AC73A.

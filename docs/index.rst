@@ -43,3 +43,10 @@ Indices and Tables
 
 * :ref:`genindex`
 * :ref:`modindex`
+
+Acknowledgements
+================
+
+This work is supported by the National Science Foundation under Grant No.
+1332819, and the National Aeronautics and Space Administration under Grant No. 
+NNX14AC73A.
