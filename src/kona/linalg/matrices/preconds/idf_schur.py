@@ -47,7 +47,7 @@ class ReducedSchurPreconditioner(BaseHessian):
 
         # initialize the internal FGMRES solver
         self.krylov = FGMRES(self.primal_factory, {})
-        self.krylov.out_file = KonaFile(None, 1)
+        self.krylov.out_file = KonaFile('kona_schur.dat', 0)
         self.max_iter = 15
 
         # initialize an identity preconditioner

@@ -45,6 +45,6 @@ setup(
     packages=find_packages(),
     test_suite='nose.collector',
     install_requires=[
-        'numpy>1.9',
+        'numpy>1.8',
     ],
 )

@@ -8,12 +8,12 @@ from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
-from kona.linalg.solvers.krylov import FLECS
+from kona.linalg.solvers.krylov import FGMRES
 from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 # from kona.algorithms.util.merit import AugmentedLagrangian
 
-class FLECS_RSNK(OptimizationAlgorithm):
+class ParameterContinuation(OptimizationAlgorithm):
     """
     A reduced-space Newton-Krylov optimization algorithm for PDE-governed
     (in)equality constrained problems.
@@ -45,7 +45,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
     """
     def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
         # trigger base class initialization
-        super(FLECS_RSNK, self).__init__(
+        super(ParameterContinuation, self).__init__(
             primal_factory, state_factory, dual_factory, optns
         )
 
@@ -58,20 +58,6 @@ class FLECS_RSNK(OptimizationAlgorithm):
         ############################################################
         self.cnstr_tol = get_opt(optns, 1e-8, 'feas_tol')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
-
-        # trust radius settings
-        ############################################################
-        self.radius = get_opt(optns, 0.5, 'trust', 'init_radius')
-        self.min_radius = get_opt(optns, 0.5/(2**3), 'trust', 'min_radius')
-        self.max_radius = get_opt(optns, 0.5*(2**3), 'trust', 'max_radius')
-
-        # augmented Lagrangian settings
-        ############################################################
-        self.mu = get_opt(optns, 1.0, 'penalty', 'mu_init')
-        self.mu_init = self.mu
-        self.mu_pow = get_opt(optns, 0.5, 'penalty', 'mu_pow')
-        self.mu_max = get_opt(optns, 1e5, 'penalty', 'mu_max')
-        self.eta = 1./(self.mu**0.1)
 
         # reduced KKT settings
         ############################################################
