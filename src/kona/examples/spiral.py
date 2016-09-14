@@ -5,7 +5,7 @@ from kona.user import UserSolver
 class SpiralSolver(object):
 
     def linearize(self, at_design, at_state=None):
-        self.X = at_design.data[0]
+        self.X = at_design[0]
         if at_state is not None:
             self.U = at_state.data
         else:
@@ -57,7 +57,11 @@ class SpiralSolver(object):
 class Spiral(UserSolver):
 
     def __init__(self):
-        super(Spiral, self).__init__(1,2,0)
+        super(Spiral, self).__init__(
+            num_design=1,
+            num_state=2,
+            num_eq=0,
+            num_ineq=0)
         self.PDE = SpiralSolver()
         self.x_hist = []
         self.u1_hist = []
@@ -71,34 +75,34 @@ class Spiral(UserSolver):
 
     def eval_residual(self, at_design, at_state, store_here):
         self.PDE.linearize(at_design, at_state)
-        store_here.data = self.PDE.R
+        store_here.data[:] = self.PDE.R
 
     def multiply_dRdX(self, at_design, at_state, in_vec, out_vec):
         self.PDE.linearize(at_design, at_state)
-        out_vec.data = self.PDE.dRdX.dot(in_vec.data)
+        out_vec.data[:] = self.PDE.dRdX.dot(in_vec)
 
     def multiply_dRdU(self, at_design, at_state, in_vec, out_vec):
         self.PDE.linearize(at_design, at_state)
-        out_vec.data = self.PDE.dRdU.dot(in_vec.data)
+        out_vec.data[:] = self.PDE.dRdU.dot(in_vec.data)
 
-    def multiply_dRdX_T(self, at_design, at_state, in_vec, out_vec):
+    def multiply_dRdX_T(self, at_design, at_state, in_vec):
         self.PDE.linearize(at_design, at_state)
-        out_vec.data = self.PDE.dRdX.T.dot(in_vec.data)
+        return self.PDE.dRdX.T.dot(in_vec.data)
 
     def multiply_dRdU_T(self, at_design, at_state, in_vec, out_vec):
         self.PDE.linearize(at_design, at_state)
-        out_vec.data = self.PDE.dRdU.T.dot(in_vec.data)
+        out_vec.data[:] = self.PDE.dRdU.T.dot(in_vec.data)
 
-    def eval_dFdX(self, at_design, at_state, store_here):
+    def eval_dFdX(self, at_design, at_state):
         self.PDE.linearize(at_design, at_state)
-        store_here.data = self.PDE.dFdX
+        return self.PDE.dFdX
 
     def eval_dFdU(self, at_design, at_state, store_here):
         self.PDE.linearize(at_design, at_state)
-        store_here.data = self.PDE.dFdU
+        store_here.data[:] = self.PDE.dFdU
 
-    def init_design(self, store_here):
-        store_here.data = np.array([8.0*np.pi])
+    def init_design(self):
+        return np.array([8.0*np.pi])
 
     def solve_nonlinear(self, at_design, result):
         # start with initial guess for solution and linearize
@@ -118,7 +122,7 @@ class Spiral(UserSolver):
             # run linear solution and update state variables
             self.PDE.U += np.linalg.solve(self.PDE.dRdU, -self.PDE.R)
         # write result and return cost
-        result.data = self.PDE.U
+        result.data[:] = self.PDE.U
         if converged:
             return iters
         else:
@@ -126,10 +130,10 @@ class Spiral(UserSolver):
 
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
         self.PDE.linearize(at_design, at_state)
-        result.data = np.linalg.solve(self.PDE.dRdU, rhs_vec.data)
+        result.data[:] = np.linalg.solve(self.PDE.dRdU, rhs_vec.data)
         return 1
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, rel_tol, result):
         self.PDE.linearize(at_design, at_state)
-        result.data = np.linalg.solve(self.PDE.dRdU.T, rhs_vec.data)
+        result.data[:] = np.linalg.solve(self.PDE.dRdU.T, rhs_vec.data)
         return 1
