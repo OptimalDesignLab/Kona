@@ -1,17 +1,4 @@
-import numpy as np
-
-from kona.options import BadKonaOption, get_opt
-from kona.linalg import current_solution, factor_linear_system, objective_value
-from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
-from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.matrices.preconds import NestedKKTPreconditioner
-from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
-from kona.linalg.solvers.krylov import FLECS
-from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
-# from kona.algorithms.util.merit import AugmentedLagrangian
 
 class FLECS_RSNK(OptimizationAlgorithm):
     """
@@ -525,3 +512,16 @@ class FLECS_RSNK(OptimizationAlgorithm):
                 break
 
         return converged, min_radius_active
+
+# imports here to prevent circular errors
+import numpy as np
+from kona.options import BadKonaOption, get_opt
+from kona.linalg.common import current_solution, factor_linear_system, objective_value
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
+from kona.linalg.matrices.hessian import ReducedKKTMatrix
+from kona.linalg.matrices.preconds import NestedKKTPreconditioner
+from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
+from kona.linalg.solvers.krylov import FLECS
+from kona.linalg.solvers.util import EPS

@@ -1,11 +1,5 @@
 import sys
 
-from kona.options import get_opt
-from kona.linalg import objective_value
-from kona.linalg.solvers.util import EPS
-from kona.linalg.matrices.common import dRdX
-from kona.linalg.vectors.composite import CompositePrimalVector
-
 class MeritFunction(object):
     """
     Base class for all merit functions.
@@ -348,3 +342,10 @@ class AugmentedLagrangian(L2QuadraticPenalty):
             self.func_val += self.multipliers.inner(self.dual_work)
 
         return self.func_val
+
+# imports here to prevent circular errors
+from kona.options import get_opt
+from kona.linalg.common import objective_value
+from kona.linalg.solvers.util import EPS
+from kona.linalg.matrices.common import dRdX
+from kona.linalg.vectors.composite import CompositePrimalVector

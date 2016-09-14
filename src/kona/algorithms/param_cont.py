@@ -1,12 +1,3 @@
-import numpy as np
-
-from kona.options import BadKonaOption, get_opt
-from kona.linalg import current_solution, factor_linear_system, objective_value
-from kona.linalg.matrices.common import dRdU, dRdX, IdentityMatrix
-from kona.linalg.matrices.hessian import ReducedHessian
-from kona.linalg.matrices.preconds import LowRankSVD
-from kona.linalg.solvers.krylov import FGMRES
-from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class ParameterContinuation(OptimizationAlgorithm):
@@ -328,3 +319,11 @@ class ParameterContinuation(OptimizationAlgorithm):
             outer_iters += 1
             self.hist_file.write('\n')
             self.info_file.write('\n')
+
+# imports here to prevent circular errors
+import numpy as np
+from kona.options import BadKonaOption, get_opt
+from kona.linalg.common import current_solution, factor_linear_system, objective_value
+from kona.linalg.matrices.common import IdentityMatrix
+from kona.linalg.matrices.hessian import ReducedHessian
+from kona.linalg.solvers.krylov import FGMRES

@@ -1,14 +1,3 @@
-import numpy, sys
-
-from kona.options import get_opt
-from kona.linalg import objective_value, factor_linear_system
-from kona.linalg.solvers.util import calc_epsilon
-from kona.linalg.matrices.common import dRdX, dRdU
-from kona.linalg.matrices.common import dCEQdX, dCEQdU, dCINdX, dCINdU
-from kona.linalg.vectors.common import PrimalVector, StateVector
-from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
-
-EPS = numpy.finfo(numpy.float32).eps
 
 class Verifier(object):
     """
@@ -1160,3 +1149,11 @@ class Verifier(object):
                 self.out_stream.write(
                     'WARNING: Fix solve_adjoint() and check this test again!\n'
                 )
+
+# imports here to prevent errors
+import sys
+from kona.options import get_opt
+from kona.linalg.common import objective_value, factor_linear_system
+from kona.linalg.solvers.util import calc_epsilon, EPS
+from kona.linalg.matrices.common import dRdX, dRdU
+from kona.linalg.matrices.common import dCEQdX, dCEQdU, dCINdX, dCINdU

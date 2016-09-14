@@ -1,11 +1,4 @@
-import numpy
-
-from kona.options import get_opt
-from kona.linalg.vectors.common import PrimalVector, StateVector
-from kona.linalg.matrices.common import dRdX, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian, QuasiNewtonApprox
-from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import calc_epsilon
 
 class ReducedHessian(BaseHessian):
     """
@@ -274,3 +267,11 @@ class ReducedHessian(BaseHessian):
 
         # trigger the solution
         return self.krylov.solve(self.product, rhs, solution, precond)
+
+# imports here to prevent circular errors
+import numpy
+from kona.options import get_opt
+from kona.linalg.vectors.common import PrimalVector, StateVector
+from kona.linalg.matrices.common import dRdX, dRdU, IdentityMatrix
+from kona.linalg.solvers.krylov.basic import KrylovSolver
+from kona.linalg.solvers.util import calc_epsilon

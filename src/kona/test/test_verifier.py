@@ -1,6 +1,4 @@
 import unittest
-import sys
-
 from kona import Optimizer
 from kona.algorithms import Verifier
 from kona.examples import Sellar
@@ -15,15 +13,15 @@ class VerifierTestCase(unittest.TestCase):
             'verify' : {
                 'primal_vec'     : True,
                 'state_vec'      : True,
-                'dual_vec_eq'    : True,
+                'dual_vec_eq'    : False,
                 'dual_vec_in'    : True,
                 'gradients'      : True,
                 'pde_jac'        : True,
-                'cnstr_jac_eq'   : True,
-                'cnstr_jac_in  ' : True,
+                'cnstr_jac_eq'   : False,
+                'cnstr_jac_in'   : True,
                 'red_grad'       : True,
                 'lin_solve'      : True,
-                'out_file'       : sys.stdout,
+                'out_file'       : 'kona_verify.dat',
             },
         }
 

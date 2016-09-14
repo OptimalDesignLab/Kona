@@ -1,12 +1,3 @@
-import numpy as np
-
-from kona.options import BadKonaOption, get_opt
-
-from kona.linalg import current_solution, objective_value, factor_linear_system
-from kona.linalg.matrices.common import IdentityMatrix
-from kona.linalg.matrices.hessian import LimitedMemoryBFGS, ReducedHessian
-from kona.linalg.solvers.krylov import STCG, FGMRES
-
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class STCG_RSNK(OptimizationAlgorithm):
@@ -239,3 +230,11 @@ class STCG_RSNK(OptimizationAlgorithm):
 
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n'%self.iter)
+
+# imports here to prevent circular errors
+import numpy as np
+from kona.options import BadKonaOption, get_opt
+from kona.linalg.common import current_solution, objective_value, factor_linear_system
+from kona.linalg.matrices.common import IdentityMatrix
+from kona.linalg.matrices.hessian import LimitedMemoryBFGS, ReducedHessian
+from kona.linalg.solvers.krylov import STCG, FGMRES

@@ -1,9 +1,4 @@
-from numpy import sqrt
-
-from kona.options import get_opt
-from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import EPS, write_header, write_history
 
 class STCG(KrylovSolver):
     """
@@ -231,3 +226,9 @@ class STCG(KrylovSolver):
 
         # return some useful stuff
         return pred, active
+
+# imports here to prevent circular errors
+from numpy import sqrt
+from kona.options import get_opt
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.solvers.util import EPS, write_header, write_history

@@ -1,12 +1,3 @@
-import numpy as np
-
-from kona.options import get_opt
-from kona.linalg import current_solution, factor_linear_system, objective_value
-from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.matrices.common import dCdX, dCdU, dRdX, dRdU
-from kona.linalg.matrices.hessian import AugmentedKKTMatrix, LagrangianHessian
-from kona.linalg.solvers.util import EPS
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class CompositeStepRSNK(OptimizationAlgorithm):
@@ -766,3 +757,13 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                 break
 
         return converged, min_radius_active
+
+# imports here to prevent circular errors
+import numpy as np
+from kona.options import get_opt
+from kona.linalg.common import current_solution, factor_linear_system, objective_value
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.matrices.common import dCdX, dCdU, dRdX, dRdU
+from kona.linalg.matrices.hessian import AugmentedKKTMatrix, LagrangianHessian
+from kona.linalg.solvers.util import EPS

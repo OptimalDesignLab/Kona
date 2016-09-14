@@ -1,11 +1,4 @@
-from kona.options import BadKonaOption, get_opt
-
-from kona.linalg import current_solution, factor_linear_system
-from kona.linalg.matrices.hessian import LimitedMemoryBFGS
-
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
-from kona.algorithms.util.linesearch import StrongWolfe
-from kona.algorithms.util.merit import ObjectiveMerit
 
 class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     """
@@ -155,3 +148,10 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             self.info_file.write('Failed to converge!\n')
 
         info.write('Total number of nonlinear iterations: %i\n'%self.iter)
+
+# imports here to prevent circular errors
+from kona.options import BadKonaOption, get_opt
+from kona.linalg.common import current_solution, factor_linear_system
+from kona.linalg.matrices.hessian import LimitedMemoryBFGS
+from kona.algorithms.util.linesearch import StrongWolfe
+from kona.algorithms.util.merit import ObjectiveMerit

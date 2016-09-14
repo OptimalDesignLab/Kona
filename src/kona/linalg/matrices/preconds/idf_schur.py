@@ -1,9 +1,4 @@
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
-from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian.basic import BaseHessian
-from kona.linalg.matrices.hessian import TotalConstraintJacobian
-from kona.linalg.solvers.krylov import FGMRES
-from kona.linalg.memory import KonaFile
 
 class ReducedSchurPreconditioner(BaseHessian):
     """
@@ -155,3 +150,10 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.krylov.solve(
             self.prod_target, design_work[0], design_work[1], self.precond)
         out_design.plus(design_work[1])
+
+# imports here to prevent circular errors
+from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+from kona.linalg.matrices.common import IdentityMatrix
+from kona.linalg.matrices.hessian import TotalConstraintJacobian
+from kona.linalg.solvers.krylov import FGMRES
+from kona.linalg.memory import KonaFile
