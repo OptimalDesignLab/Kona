@@ -94,6 +94,16 @@ class Optimizer(object):
             self._memory.open_file(self._optns['krylov']['out_file'])
 
     def set_design_bounds(self, lower=None, upper=None):
+        """
+        Define lower and upper design bounds.
+
+        Parameters
+        ----------
+        lower : int
+            Lower bound for design variables.
+        upper : int
+            Upper bound for design variables.
+        """
         # make sure user provided some value
         if lower is not None and upper is None:
             raise ValueError("Must specify at least one bound!")
@@ -104,7 +114,6 @@ class Optimizer(object):
         if upper is not None:
             assert isinstance(upper, (np.float, np.int))
             self._memory.design_ub = upper
-
 
     def solve(self):
         self._memory.allocate_memory()

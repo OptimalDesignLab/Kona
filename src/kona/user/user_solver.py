@@ -248,8 +248,11 @@ class UserSolver(object):
             Current state vector.
         in_vec : BaseVector
             Vector to be operated on.
-        out_vec : numpy.ndarray
-            Location where user should store the result.
+
+        Returns
+        -------
+        numpy.ndarray
+            Result of the operation
         """
         return np.zeros(self.num_design)
 
@@ -643,18 +646,6 @@ class UserSolver(object):
         """
         assert len(in_vec) == self.num_ineq, "Incorrect vector size!"
         out_vec.data[:] = 0.0
-
-    def enforce_bounds(self, design_vector):
-        """
-        Evaluate the design vector element-wise. If a design variable violates
-        a bound, set it to the bound value.
-
-        Parameters
-        ----------
-        design_vector : BaseVector
-            Design vector over which bounds will be enforced.
-        """
-        pass
 
     def eval_dFdX(self, at_design, at_state):
         """
