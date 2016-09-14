@@ -59,7 +59,7 @@ class Sellar(UserSolver):
         return np.array([0., 1., 2.*x3])
 
     def eval_dFdU(self, at_design, at_state, store_here):
-        y2 = at_state[1]
+        y2 = at_state.data[1]
         store_here.data[0] = 1.
         store_here.data[1] = -np.exp(-y2)
 
@@ -87,7 +87,7 @@ class Sellar(UserSolver):
         return np.dot(dRdX.T, in_vec.data)
 
     def multiply_dRdU(self, at_design, at_state, in_vec, out_vec):
-        y1 = at_state[0]
+        y1 = at_state.data[0]
         dRdU = np.array(
             [[1., 0.2],
              [-.5*y1**-.5, 1.]])
@@ -175,7 +175,7 @@ class Sellar(UserSolver):
         return -1
 
     def solve_linear(self, at_design, at_state, rhs_vec, rel_tol, result):
-        y1 = at_state[0]
+        y1 = at_state.data[0]
         dRdU = np.array(
             [[1., 0.2],
              [-.5*y1**-.5, 1.]])
@@ -183,7 +183,7 @@ class Sellar(UserSolver):
         return 1
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, rel_tol, result):
-        y1 = at_state[0]
+        y1 = at_state.data[0]
         dRdU = np.array(
             [[1., 0.2],
              [-.5*y1**-.5, 1.]])

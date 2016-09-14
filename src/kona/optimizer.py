@@ -31,6 +31,9 @@ class Optimizer(object):
             'krylov' : {
                 'out_file' : 'kona_krylov.dat',
             },
+            'verify' : {
+                'out_file' : 'kona_verify.dat',
+            }
         }
         # process the final options
         if optns is None:
@@ -45,17 +48,13 @@ class Optimizer(object):
         ineq_factory =  self._memory.ineq_factory
         # check if this is a verification
         if algorithm is Verifier:
-            try:
-                self._optns['verify']['out_file'] = \
-                    self._memory.open_file(self._optns['verify']['out_file'])
-            except Exception:
-                self._optns['verify']['out_file'] = \
-                    self._memory.open_file('kona_verify.dat')
+            self._optns['verify']['out_file'] = \
+                self._memory.open_file(self._optns['verify']['out_file'])
             verifier_optns = self._optns['verify']
             try:
                 verifier_optns['matrix_explicit'] = \
                     self._optns['matrix_explicit']
-            except Exception:
+            except KeyError:
                 verifier_optns['matrix_explicit'] = False
             self._algorithm = Verifier(
                 [primal_factory, state_factory, eq_factory, ineq_factory],
