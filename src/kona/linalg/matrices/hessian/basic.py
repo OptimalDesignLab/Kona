@@ -1,6 +1,3 @@
-import sys
-
-from kona.options import get_opt
 
 class BaseHessian(object):
     """
@@ -94,3 +91,7 @@ class QuasiNewtonApprox(BaseHessian):
             Difference between subsequent gradients.
         """
         raise NotImplementedError # pragma: no cover
+
+# imports at the bottom to prevent circular import errors
+import sys
+from kona.options import get_opt

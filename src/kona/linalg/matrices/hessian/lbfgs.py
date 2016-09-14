@@ -1,7 +1,3 @@
-import numpy
-
-from kona.options import get_opt
-
 from kona.linalg.matrices.hessian.basic import QuasiNewtonApprox
 
 class LimitedMemoryBFGS(QuasiNewtonApprox):
@@ -100,3 +96,7 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
             if lambda0 > 0.0:
                 beta += rho[k] * lambda0 * s_list[k].inner(v_vec)
             v_vec.equals_ax_p_by(1.0, v_vec, (alpha[k] - beta), s_list[k])
+
+# imports at the bottom to prevent circular import errors
+import numpy
+from kona.options import get_opt

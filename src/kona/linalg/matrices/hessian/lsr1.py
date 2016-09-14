@@ -70,7 +70,7 @@ class LimitedMemorySR1(QuasiNewtonApprox):
                 prod < numpy.finfo(float).eps:
             self.out_file.write(
                 'LimitedMemorySR1::AddCorrection():' +
-                'correction skipped due to threshold condition.')
+                'correction skipped due to threshold condition.\n')
             return
 
         # if maximum is reached, remove old elements

@@ -1,8 +1,3 @@
-import numpy as np
-
-from kona.user import UserSolver
-from kona.algorithms import Verifier
-from kona.linalg.memory import KonaMemory
 
 class Optimizer(object):
     """
@@ -118,3 +113,9 @@ class Optimizer(object):
     def solve(self):
         self._memory.allocate_memory()
         self._algorithm.solve()
+
+# package imports at the bottom to prevent circular import errors
+import numpy as np
+from kona.user import UserSolver
+from kona.algorithms import Verifier
+from kona.linalg.memory import KonaMemory

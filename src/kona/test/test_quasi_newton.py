@@ -12,7 +12,7 @@ from kona.options import BadKonaOption
 class QuasiNewtonTestCase(unittest.TestCase):
 
     def setUp(self):
-        solver = UserSolver()
+        solver = UserSolver(1, 1)
         km = KonaMemory(solver)
         self.pf = km.primal_factory
         self.sf = km.state_factory
@@ -79,7 +79,7 @@ class HessianApproxTestCase(unittest.TestCase):
         # Hessian matrix is [1 0 0; 0 100 0; 0 0 10]
         # initial iterate is [1 1 1] and exact line searches are used
         max_stored = 3
-        solver = UserSolver(num_primal=3)
+        solver = UserSolver(3)
         km = KonaMemory(solver)
         vf = km.primal_factory
         optns = {'max_stored': max_stored}
@@ -132,7 +132,7 @@ class HessianApproxTestCase(unittest.TestCase):
         # Hessian matrix is [1 0 0; 0 100 0; 0 0 -10]
         # initial iterate is [1 1 1] and exact line searches are used
         max_stored = 3
-        solver = UserSolver(num_primal=3)
+        solver = UserSolver(3)
         km = KonaMemory(solver)
         vf = km.primal_factory
         optns = {'max_stored': max_stored}

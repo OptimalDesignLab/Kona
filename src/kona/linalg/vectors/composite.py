@@ -393,4 +393,5 @@ class CompositePrimalVector(CompositeVector):
         self.slack.restrict()
 
 # package imports at the bottom to prevent import errors
-from kona.linalg.vectors.common import *
+from kona.linalg.vectors.common import PrimalVector
+from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ

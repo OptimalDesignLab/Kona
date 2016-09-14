@@ -264,4 +264,5 @@ class IdentityMatrix(KonaMatrix):
         out_vec.equals(in_vec)
 
 # package imports at the bottom to prevent import errors
-from kona.linalg.vectors.common import *
+from kona.linalg.vectors.common import PrimalVector, StateVector
+from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
