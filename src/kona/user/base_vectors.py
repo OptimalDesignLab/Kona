@@ -16,7 +16,7 @@ class BaseVector(object):
     ----------
     size: int
         Size of the 1-D numpy vector contained in this object.
-    val : float, optional
+    val : float or array-like, optional
         Data value for vector initialization.
 
     Attributes
@@ -185,94 +185,3 @@ class BaseVector(object):
         power : float
         """
         self.data = self.data**power
-
-class BaseAllocator(object):
-    """
-    Allocator object that handles the generation of vectors within the
-    problem's various vector spaces.
-
-    Parameters
-    ----------
-    num_primal : int
-        Primal space size.
-    num_state : int
-        State space size.
-    num_dual : int
-        Dual space size.
-
-    Attributes
-    ----------
-    num_primal : int
-        Primal space size.
-    num_state : int
-        State space size.
-    num_dual : int
-        Dual space size.
-    """
-    def __init__(self, num_primal, num_state, num_dual):
-        self.num_primal = num_primal
-        self.num_state = num_state
-        self.num_dual = num_dual
-
-    def alloc_primal(self, count):
-        """
-        Initialize as many instances of the "primal" vector space object as
-        Kona requested.
-
-        Parameters
-        ----------
-        count : int
-            Number of vectors requested in the primal-space.
-
-        Returns
-        -------
-        list
-            A standard Python array containing the reuqested number of
-            instances of the user's primal-space `BaseVector` implementation.
-        """
-        out = []
-        for i in xrange(count):
-            out.append(BaseVector(self.num_primal))
-        return out
-
-    def alloc_state(self, count):
-        """
-        Initialize as many instances of the "state" vector space object as
-        Kona requested.
-
-        Parameters
-        ----------
-        count : int
-            Number of vectors requested in the state-space.
-
-        Returns
-        -------
-        list
-            A standard Python array containing the reuqested number of
-            instances of the user's state-space `BaseVector` implementation.
-        """
-        out = []
-        for i in xrange(count):
-            out.append(BaseVector(self.num_state))
-        return out
-
-    def alloc_dual(self, count):
-        """
-        Initialize as many instances of the "dual" vector space object as
-        Kona requested.
-
-        Parameters
-        ----------
-        count : int
-            Number of vectors requested in the dual-space.
-
-        Returns
-        -------
-        list
-            A standard Python array containing the reuqested number of
-            instances of the user's dual-space `BaseVector` implementation.
-        """
-        out = []
-        for i in xrange(count):
-            out.append(BaseVector(self.num_dual))
-        return out

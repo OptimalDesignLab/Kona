@@ -45,17 +45,17 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.precond = IdentityMatrix()
 
     def mat_vec(self, in_vec, out_vec):
-        in_design = in_vec._primal._design._data.data
-        in_slack = in_vec._primal._slack._data.data
-        in_dual = in_vec._dual._data.data
+        in_design = in_vec.primal.design.base.data
+        in_slack = in_vec.primal.slack.base.data
+        in_dual = in_vec.dual.base.data
         tmp = numpy.zeros(4)
         tmp[0:2] = in_design[:]
         tmp[2] = in_slack[:]
         tmp[3] = in_dual[:]
         out_data = self.A.dot(tmp)
-        out_vec._primal._design._data.data[:] = out_data[0:2]
-        out_vec._primal._slack._data.data[:] = out_data[2]
-        out_vec._dual._data.data[:] = out_data[3]
+        out_vec.primal.design.base.data[:] = out_data[0:2]
+        out_vec.primal.slack.base.data[:] = out_data[2]
+        out_vec.dual.base.data[:] = out_data[3]
 
     def test_bad_radius(self):
         # reset the solution vector
@@ -82,15 +82,15 @@ class FLECSSolverTestCase(unittest.TestCase):
         # calculate expected result
         self.b.equals(1)
         rhs = numpy.zeros(4)
-        rhs[0:2] = self.b._primal._design._data.data[:]
-        rhs[2] = self.b._primal._slack._data.data[:]
-        rhs[3] = self.b._dual._data.data[:]
+        rhs[0:2] = self.b.primal.design.base.data[:]
+        rhs[2] = self.b.primal.slack.base.data[:]
+        rhs[3] = self.b.dual.base.data[:]
         expected = numpy.linalg.solve(self.A, rhs)
         # compare actual result to expected
         total_data = numpy.zeros(4)
-        total_data[0:2] = self.x._primal._design._data.data[:]
-        total_data[2] = self.x._primal._slack._data.data[:]
-        total_data[3] = self.x._dual._data.data[:]
+        total_data[0:2] = self.x.primal.design.base.data[:]
+        total_data[2] = self.x.primal.slack.base.data[:]
+        total_data[3] = self.x.dual.base.data[:]
         diff = abs(total_data - expected)
         diff = max(diff)
         print diff
@@ -106,7 +106,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
         # compare actual result to expected
         exp_norm = self.krylov.radius
-        actual_norm = self.x._primal.norm2
+        actual_norm = self.x.primal.norm2
         print exp_norm
         print actual_norm
         print self.krylov.trust_active

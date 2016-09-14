@@ -1,6 +1,3 @@
-import numpy as np
-
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX
 
 class KonaVector(object):
     """
@@ -19,16 +16,16 @@ class KonaVector(object):
     ----------
     _memory : UserMemory
         Pointer to the Kona user memory.
-    _data : BaseVector
+    base : BaseVector
         User defined vector object that contains data and operations on data.
     """
 
     def __init__(self, memory_obj, user_vector=None):
         self._memory = memory_obj
-        self._data = user_vector
+        self.base = user_vector
 
     def __del__(self):
-        self._memory.push_vector(type(self), self._data)
+        self._memory.push_vector(type(self), self.base)
 
     def _check_type(self, vector):
         if not isinstance(vector, type(self)):
@@ -49,10 +46,10 @@ class KonaVector(object):
         """
         if isinstance(val,
                       (float, np.float32, np.float64, int, np.int32, np.int64)):
-            self._data.equals_value(val)
+            self.base.equals_value(val)
         else:
-            self._check_type(val)
-            self._data.equals_vector(val._data)
+            assert isinstance(val, type(self))
+            self.base.equals_vector(val.base)
 
     def plus(self, vector):
         """
@@ -65,8 +62,8 @@ class KonaVector(object):
         vector : KonaVector
             Vector to be added.
         """
-        self._check_type(vector)
-        self._data.plus(vector._data)
+        assert isinstance(vector, type(self))
+        self.base.plus(vector.base)
 
     def minus(self, vector):
         """
@@ -82,10 +79,10 @@ class KonaVector(object):
         if vector == self: # special case...
             self.equals(0)
 
-        self._check_type(vector)
-        self._data.times_scalar(-1.)
-        self._data.plus(vector._data)
-        self._data.times_scalar(-1.)
+        assert isinstance(vector, type(self))
+        self.base.times_scalar(-1.)
+        self.base.plus(vector.base)
+        self.base.times_scalar(-1.)
 
     def times(self, factor):
         """
@@ -100,10 +97,10 @@ class KonaVector(object):
         """
         if isinstance(factor,
                       (float, np.float32, np.float64, int, np.int32, np.int64)):
-            self._data.times_scalar(factor)
+            self.base.times_scalar(factor)
         else:
-            self._check_type(factor)
-            self._data.times_vector(factor._data)
+            assert isinstance(factor, type(self))
+            self.base.times_vector(factor.base)
 
     def divide_by(self, val):
         """
@@ -136,9 +133,9 @@ class KonaVector(object):
         Y : KonaVector
             Vector for the operation.
         """
-        self._check_type(X)
-        self._check_type(Y)
-        self._data.equals_ax_p_by(a, X._data, b, Y._data)
+        assert isinstance(X, type(self))
+        assert isinstance(Y, type(self))
+        self.base.equals_ax_p_by(a, X.base, b, Y.base)
 
     def exp(self, vector):
         """
@@ -150,8 +147,8 @@ class KonaVector(object):
         vector : KonaVector
             Vector for the operation.
         """
-        self._check_type(vector)
-        self._data.exp(vector._data)
+        assert isinstance(vector, type(self))
+        self.base.exp(vector.base)
 
     def log(self, vector):
         """
@@ -163,8 +160,8 @@ class KonaVector(object):
         vector : KonaVector
             Vector for the operation.
         """
-        self._check_type(vector)
-        self._data.log(vector._data)
+        assert isinstance(vector, type(self))
+        self.base.log(vector.base)
 
     def pow(self, power):
         """
@@ -174,7 +171,7 @@ class KonaVector(object):
         ----------
         power : float
         """
-        self._data.pow(power)
+        self.base.pow(power)
 
     def inner(self, vector):
         """
@@ -185,8 +182,8 @@ class KonaVector(object):
         float
             Inner product.
         """
-        self._check_type(vector)
-        return self._data.inner(vector._data)
+        assert isinstance(vector, type(self))
+        return self.base.inner(vector.base)
 
     @property
     def norm2(self): # this takes the L2 norm of the vector
@@ -211,7 +208,7 @@ class KonaVector(object):
         float
             Infinity norm.
         """
-        return self._data.infty
+        return self.base.infty
 
 class PrimalVector(KonaVector):
     """
@@ -219,13 +216,18 @@ class PrimalVector(KonaVector):
     to design vectors.
     """
 
+    def __init__(self, memory_obj, user_vector=None):
+        super(PrimalVector, self).__init__(memory_obj, user_vector)
+        self.lb = self._memory.design_lb
+        self.ub = self._memory.design_ub
+
     def restrict_to_design(self):
         """
         Set target state variables to zero, leaving design variables untouched.
 
         Used only for IDF problems.
         """
-        self._memory.solver.restrict_design(0, self._data)
+        self._memory.solver.restrict_design(0, self.base.data)
 
     def restrict_to_target(self):
         """
@@ -233,7 +235,7 @@ class PrimalVector(KonaVector):
 
         Used only for IDF problems.
         """
-        self._memory.solver.restrict_design(1, self._data)
+        self._memory.solver.restrict_design(1, self.base.data)
 
     def convert(self, dual_vector):
         """
@@ -243,23 +245,30 @@ class PrimalVector(KonaVector):
 
         Parameters
         ----------
-        dual_vector : DualVector
+        dual_vector : DualVectorEQ
             Source vector for target state variable data.
         """
         self._memory.solver.copy_dual_to_targstate(
-            dual_vector._data, self._data)
+            dual_vector.base.data, self.base.data)
 
     def enforce_bounds(self):
         """
         Element-wise enforcement of design bounds.
         """
-        self._memory.solver.enforce_bounds(self._data)
+        if self.lb is not None:
+            for i in xrange(len(self.base.data)):
+                if self.base.data[i] < self.lb:
+                    self.base.data[i] = self.lb
+        if self.ub is not None:
+            for i in xrange(len(self.base.data)):
+                if self.base.data[i] > self.ub:
+                    self.base.data[i] = self.ub
 
     def equals_init_design(self):
         """
         Sets this vector equal to the initial design point.
         """
-        self._memory.solver.init_design(self._data)
+        self.base.data[:] = self._memory.solver.init_design()
 
     def equals_objective_partial(self, at_primal, at_state):
         """
@@ -273,9 +282,8 @@ class PrimalVector(KonaVector):
         at_state : StateVector
             Current state point.
         """
-        self._memory.solver.eval_dFdX(at_primal._data,
-                                      at_state._data,
-                                      self._data)
+        self.base.data[:] = self._memory.solver.eval_dFdX(
+            at_primal.base.data, at_state.base)
 
     def equals_total_gradient(self, at_primal, at_state, at_adjoint,
                               primal_work):
@@ -300,8 +308,8 @@ class PrimalVector(KonaVector):
         # add it to the objective partial
         self.plus(primal_work)
 
-    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
-                                         at_adjoint, primal_work):
+    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_adjoint,
+                                         at_dual, primal_work):
         """
         Computes in-place the total derivative of the Lagrangian.
 
@@ -311,7 +319,7 @@ class PrimalVector(KonaVector):
             Current primal point.
         at_state : StateVector
             Current state point.
-        at_dual : DualVector
+        at_dual : DualVectorEQ, DualVectorINEQ or CompositeDualVector
             Current lagrange multipliers.
         at_adjoint : StateVector
             Current adjoint variables for the Lagrangian (rhs = - dL/dU)
@@ -320,10 +328,18 @@ class PrimalVector(KonaVector):
         """
         # first compute the total derivative of the objective
         self.equals_total_gradient(at_primal, at_state, at_adjoint, primal_work)
-        # multiply the lagrange multipliers by the constraint jacobian
-        dCdX(at_primal, at_state).T.product(at_dual, primal_work)
-        # subtract it from to the total objective derivative
-        self.plus(primal_work)
+        # add the lagrange multiplier product
+        if isinstance(at_dual, CompositeDualVector):
+            dCEQdX(at_primal, at_state).T.product(at_dual.eq, primal_work)
+            self.plus(primal_work)
+            dCINdX(at_primal, at_state).T.product(at_dual.ineq, primal_work)
+            self.plus(primal_work)
+        elif isinstance(at_dual, DualVectorEQ):
+            dCEQdX(at_primal, at_state).T.product(at_dual, primal_work)
+            self.plus(primal_work)
+        elif isinstance(at_dual, DualVectorINEQ):
+            dCINdX(at_primal, at_state).T.product(at_dual, primal_work)
+            self.plus(primal_work)
 
 class StateVector(KonaVector):
     """
@@ -343,7 +359,7 @@ class StateVector(KonaVector):
             Current state point.
         """
         self._memory.solver.eval_dFdU(
-            at_primal._data, at_state._data, self._data)
+            at_primal.base.data, at_state.base, self.base)
 
     def equals_residual(self, at_primal, at_state):
         """
@@ -357,7 +373,7 @@ class StateVector(KonaVector):
             Current state point.
         """
         self._memory.solver.eval_residual(
-            at_primal._data, at_state._data, self._data)
+            at_primal.base.data, at_state.base, self.base)
 
     def equals_primal_solution(self, at_primal):
         """
@@ -369,7 +385,8 @@ class StateVector(KonaVector):
         at_primal : PrimalVector
             Current primal point.
         """
-        cost = self._memory.solver.solve_nonlinear(at_primal._data, self._data)
+        cost = self._memory.solver.solve_nonlinear(
+            at_primal.base.data, self.base)
         self._memory.cost += abs(cost)
         if cost < 0:
             return False
@@ -394,11 +411,45 @@ class StateVector(KonaVector):
         state_work.times(-1) # negative of the objective partial (-dF/dU)
         dRdU(at_primal, at_state).T.solve(state_work, self)
 
+    def equals_lagrangian_adjoint(self, at_kkt, at_state, state_work):
+        """
+        Computes in-place the adjoint variables for the augmented Lagrangian,
+        linearized at the given KKT vector and state points.
+
+        Parameters
+        ----------
+        at_kkt : ReducedKKTVector
+            Current KKT point.
+        at_state : StateVector
+            Current state point.
+        adj_work : StateVector
+            Temporary work vector of State type.
+        state_work : StateVector
+            Temporary work vector of State type.
+        """
+        # assemble the right hand side for the Lagrangian adjoint solve
+        if isinstance(at_kkt.primal, CompositePrimalVector):
+            at_design = at_kkt.primal.design
+        else:
+            at_design = at_kkt.primal
+        state_work.equals_objective_partial(at_design, at_state)
+        if isinstance(at_kkt.dual, CompositeDualVector):
+            dCEQdU(at_design, at_state).T.product(at_kkt.dual.eq, self)
+            state_work.plus(self)
+            dCINdU(at_design, at_state).T.product(at_kkt.dual.ineq, self)
+            state_work.plus(self)
+        else:
+            dCEQdU(at_design, at_state).T.product(at_kkt.dual, self)
+            state_work.plus(self)
+        # perform adjoint solution
+        state_work.times(-1.)
+        dRdU(at_design, at_state).T.solve(state_work, self)
+
 class DualVector(KonaVector):
-    """
-    Derived from the base abstracted vector. Contains member functions specific
-    to state vectors.
-    """
+    pass
+
+class DualVectorEQ(DualVector):
+
     def convert(self, primal_vector):
         """
         Copy target state variables from the design space into dual space. Used
@@ -410,18 +461,12 @@ class DualVector(KonaVector):
             Source vector for target state variable data.
         """
         self._memory.solver.copy_targstate_to_dual(
-            primal_vector._data, self._data)
-
-    def restrict(self):
-        """
-        Sets the dual variables corresponding to equality constraints to zero.
-        """
-        self._memory.solver.restrict_dual(self._data)
+            primal_vector.base.data, self.base.data)
 
     def equals_constraints(self, at_primal, at_state):
         """
-        Evaluate all constraints at the given primal and state points, and
-        store the result in-place.
+        Evaluate all equality constraints at the given primal and state points,
+        and store the result in-place.
 
         Parameters
         ----------
@@ -430,5 +475,29 @@ class DualVector(KonaVector):
         at_state : StateVector
             Current state point.
         """
-        self._memory.solver.eval_constraints(
-            at_primal._data, at_state._data, self._data)
+        self.base.data[:] = self._memory.solver.eval_eq_cnstr(
+            at_primal.base.data, at_state.base)
+
+class DualVectorINEQ(DualVector):
+
+    def equals_constraints(self, at_primal, at_state):
+        """
+        Evaluate all in-equality constraints at the given primal and state
+        points, and store the result in-place.
+
+        Parameters
+        ----------
+        at_primal : PrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        """
+        self.base.data[:] = self._memory.solver.eval_ineq_cnstr(
+            at_primal.base.data, at_state.base)
+
+
+# package imports at the bottom to prevent import errors
+import numpy as np
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.vectors.composite import CompositeDualVector
+from kona.linalg.matrices.common import *

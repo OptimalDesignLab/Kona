@@ -8,12 +8,14 @@ from dummy_solver import DummySolver
 class PrimalVectorTestCase(unittest.TestCase):
 
     def setUp(self):
-        solver = DummySolver(10, 10, 10)
+        solver = DummySolver(10, 10, 0)
         self.km = km = KonaMemory(solver)
+
+        km.design_lb = 0.
 
         km.primal_factory.request_num_vectors(3)
         km.state_factory.request_num_vectors(3)
-        km.dual_factory.request_num_vectors(1)
+        km.eq_factory.request_num_vectors(1)
         km.allocate_memory()
 
         # can't create bear KonaVectors because the memory manager doesn't
@@ -42,12 +44,12 @@ class PrimalVectorTestCase(unittest.TestCase):
     def test_inner(self):
         # have to manually poke the data here
         # so the test doesn't rely on any other methods
-        self.pv._data.data = 2*np.ones(10)
+        self.pv.base.data = 2*np.ones(10)
         self.assertEqual(self.pv.inner(self.pv), 40)
 
         # have to manually poke the data here
         # so the test doesn't rely on any other methods
-        self.pv._data.data = -2*np.ones(10)
+        self.pv.base.data = -2*np.ones(10)
         self.assertEqual(self.pv.inner(self.pv), 40)
 
     def test_norm2(self):
@@ -111,14 +113,14 @@ class PrimalVectorTestCase(unittest.TestCase):
         pv3.equals(2)
 
         pv3.equals_ax_p_by(2, self.pv, 3, pv3)
-        self.assertEqual(pv3.inner(self.pv), 80)
+        self.assertEqual(pv3.inner(self.pv), 80.0)
 
         pv2.equals_ax_p_by(2, self.pv, 3, pv2)
-        self.assertEqual(pv2.inner(self.pv), 50)
+        self.assertEqual(pv2.inner(self.pv), 50.0)
 
     def test_init_design(self):
         self.pv.equals_init_design()
-        self.assertEqual(self.pv.inner(self.pv), 1000)
+        self.assertEqual(self.pv.inner(self.pv), 1000.0)
 
     def test_equals_objective_partial(self):
         at_design = self.km.primal_factory.generate()
@@ -126,7 +128,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         at_state = self.sv
         at_state.equals(2)
         self.pv.equals_objective_partial(at_design, at_state)
-        self.assertEqual(self.pv.inner(self.pv), 9000)
+        self.assertEqual(self.pv.inner(self.pv), 10.0)
 
     def test_equals_total_gradient(self):
         at_design = self.km.primal_factory.generate()
@@ -138,7 +140,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         at_adjoint.equals(3)
         self.pv.equals_total_gradient(
             at_design, at_state, at_adjoint, primal_work)
-        self.assertEqual(self.pv.inner(self.pv), 81000)
+        self.assertEqual(self.pv.inner(self.pv), 160.0)
 
     def test_equals_lagrangian_total_gradient(self):
         at_design = self.km.primal_factory.generate()
@@ -148,11 +150,11 @@ class PrimalVectorTestCase(unittest.TestCase):
         primal_work = self.km.primal_factory.generate()
         at_adjoint = self.km.state_factory.generate()
         at_adjoint.equals(3)
-        at_dual = self.km.dual_factory.generate()
+        at_dual = self.km.eq_factory.generate()
         at_dual.equals(4)
         self.pv.equals_lagrangian_total_gradient(
             at_design, at_state, at_adjoint, at_dual, primal_work)
-        self.assertEqual(self.pv.inner(self.pv), 256000)
+        self.assertEqual(self.pv.inner(self.pv), 19360.0)
 
     def test_enforce_bounds(self):
         self.pv.equals(-1.)
@@ -163,15 +165,15 @@ class PrimalVectorTestCase(unittest.TestCase):
 class TestCasePrimalVectorIDF(unittest.TestCase):
 
     def setUp(self):
-        solver = UserSolverIDF(5, 10, 0)
+        solver = UserSolverIDF(5, 10, 10)
         self.km = km = KonaMemory(solver)
 
         km.primal_factory.request_num_vectors(1)
-        km.dual_factory.request_num_vectors(1)
+        km.eq_factory.request_num_vectors(1)
         km.allocate_memory()
 
         self.pv = km.primal_factory.generate()
-        self.dv = km.dual_factory.generate()
+        self.dv = km.eq_factory.generate()
 
     def test_restrict_to_design(self):
         self.pv.equals(5)

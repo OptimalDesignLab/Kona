@@ -8,7 +8,8 @@ from kona.user.user_solver import UserSolver
 class VectorFactoryTestCase(unittest.TestCase):
 
     def test_generate(self):
-        solver = UserSolver()
+        ndv = 2
+        solver = UserSolver(ndv)
         km = KonaMemory(solver)
         vf = km.primal_factory
 
@@ -29,7 +30,8 @@ class VectorFactoryTestCase(unittest.TestCase):
         self.assertEqual(len(km.vector_stack[PrimalVector]), 12)
 
     def test_error_generate(self):
-        solver = UserSolver()
+        ndv = 2
+        solver = UserSolver(ndv)
         km = KonaMemory(solver)
         vf = km.primal_factory
 
@@ -52,12 +54,13 @@ class VectorFactoryTestCase(unittest.TestCase):
         except RuntimeError as err:
             self.assertEqual(
                 str(err),
-                'Memory allready allocated, can-not re-allocate')
+                'Memory already allocated, can-not re-allocate')
         else:
             self.fail("RuntimeError expected")
 
     def test_too_many_vectors(self):
-        solver = UserSolver()
+        ndv = 2
+        solver = UserSolver(ndv)
         km = KonaMemory(solver)
         vf = km.primal_factory
 

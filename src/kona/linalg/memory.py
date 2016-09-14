@@ -1,4 +1,3 @@
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
 
 class VectorFactory(object):
     """
@@ -53,7 +52,7 @@ class VectorFactory(object):
         KonaVector
             Abstracted vector type linked to user generated memory.
         """
-        if self._memory.is_allocated:
+        if self._memory.allocated:
             try:
                 data = self._memory.pop_vector(self._vec_type)
             except IndexError:
@@ -112,24 +111,33 @@ class KonaMemory(object):
     def __init__(self, solver):
         # assign user object
         self.solver = solver
+        self.ndv = solver.num_design
+        self.neq = solver.num_eq
+        self.nineq = solver.num_ineq
         self.rank = self.solver.get_rank()
+
+        # empty design bounds
+        self.design_lb = None
+        self.design_ub = None
 
         # allocate vec assignments
         self.vector_stack = {
             PrimalVector : [],
             StateVector : [],
-            DualVector : [],
+            DualVectorEQ : [],
+            DualVectorINEQ : [],
         }
 
         # prepare vector factories
         self.primal_factory = VectorFactory(self, PrimalVector)
         self.state_factory = VectorFactory(self, StateVector)
-        self.dual_factory = VectorFactory(self, DualVector)
+        self.eq_factory = VectorFactory(self, DualVectorEQ)
+        self.ineq_factory = VectorFactory(self, DualVectorINEQ)
 
         # cost tracking
         self.cost = 0
 
-        self.is_allocated = False
+        self.allocated = False
 
     def push_vector(self, vec_type, user_data):
         """
@@ -176,19 +184,23 @@ class KonaMemory(object):
         to allocate all actual, real memory required for the optimization.
         """
 
-        if self.is_allocated:
-            raise RuntimeError('Memory allready allocated, can-not re-allocate')
-
-        allocator = self.solver.allocator
+        if self.allocated:
+            raise RuntimeError('Memory already allocated, can-not re-allocate')
 
         self.vector_stack[PrimalVector] = \
-            allocator.alloc_primal(self.primal_factory.num_vecs)
+            [BaseVector(self.ndv) for i in range(self.primal_factory.num_vecs)]
         self.vector_stack[StateVector] = \
-            allocator.alloc_state(self.state_factory.num_vecs)
-        self.vector_stack[DualVector] = \
-            allocator.alloc_dual(self.dual_factory.num_vecs)
+            self.solver.allocate_state(self.state_factory.num_vecs)
+        self.vector_stack[DualVectorEQ] = \
+            [BaseVector(self.neq) for i in range(self.eq_factory.num_vecs)]
+        self.vector_stack[DualVectorINEQ] = \
+            [BaseVector(self.nineq) for i in range(self.ineq_factory.num_vecs)]
 
-        self.is_allocated = True
+        self.allocated = True
 
     def open_file(self, filename):
         return KonaFile(filename, self.rank)
+
+# imports at the bottom to prevent circular errors
+from kona.user import BaseVector
+from kona.linalg.vectors.common import *

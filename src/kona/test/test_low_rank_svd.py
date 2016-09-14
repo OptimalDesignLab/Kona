@@ -52,36 +52,36 @@ class LowRankSVDTestCase(unittest.TestCase):
 
         in_vec.equals(2.0)
         X.equals_init_guess()
-        state.equals_primal_solution(X._primal._design)
-        self.A.linearize(X._primal._design, state)
+        state.equals_primal_solution(X.primal.design)
+        self.A.linearize(X.primal.design, state)
         self.svd.linearize()
 
-        self.A.product(in_vec._primal._design, out_vec_exact._dual)
-        self.svd.approx_fwd_prod(in_vec._primal._design, out_vec_approx._dual)
+        self.A.product(in_vec.primal.design, out_vec_exact.dual)
+        self.svd.approx_fwd_prod(in_vec.primal.design, out_vec_approx.dual)
 
         print 'Constraint Jacobian test:'
 
-        print 'Exact fwd product  =', out_vec_exact._dual.norm2
-        print 'Approx fwd product =', out_vec_approx._dual.norm2
+        print 'Exact fwd product  =', out_vec_exact.dual.norm2
+        print 'Approx fwd product =', out_vec_approx.dual.norm2
 
-        out_vec_approx._dual.minus(out_vec_exact._dual)
-        abs_error = out_vec_approx._dual.norm2
-        rel_error = abs_error/out_vec_exact._dual.norm2
+        out_vec_approx.dual.minus(out_vec_exact.dual)
+        abs_error = out_vec_approx.dual.norm2
+        rel_error = abs_error/out_vec_exact.dual.norm2
 
         print 'Abs error norm     =', abs_error
         print 'Rel error norm     =', rel_error
 
         self.assertTrue(rel_error <= 1e-8)
 
-        self.A.T.product(in_vec._dual, out_vec_exact._primal._design)
-        self.svd.approx_rev_prod(in_vec._dual, out_vec_approx._primal._design)
+        self.A.T.product(in_vec.dual, out_vec_exact.primal.design)
+        self.svd.approx_rev_prod(in_vec.dual, out_vec_approx.primal.design)
 
-        print 'Exact rev product  =', out_vec_exact._primal._design.norm2
-        print 'Approx fwd product =', out_vec_approx._primal._design.norm2
+        print 'Exact rev product  =', out_vec_exact.primal.design.norm2
+        print 'Approx fwd product =', out_vec_approx.primal.design.norm2
 
-        out_vec_approx._primal._design.minus(out_vec_exact._primal._design)
-        abs_error = out_vec_approx._primal._design.norm2
-        rel_error = abs_error/out_vec_exact._primal._design.norm2
+        out_vec_approx.primal.design.minus(out_vec_exact.primal.design)
+        abs_error = out_vec_approx.primal.design.norm2
+        rel_error = abs_error/out_vec_exact.primal.design.norm2
 
         print 'Abs error norm     =', abs_error
         print 'Rel error norm     =', rel_error
@@ -120,26 +120,26 @@ class LowRankSVDTestCase(unittest.TestCase):
 
         in_vec.equals(2.0)
         X.equals_init_guess()
-        state.equals_primal_solution(X._primal._design)
-        state_work.equals_objective_partial(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+        state.equals_primal_solution(X.primal.design)
+        state_work.equals_objective_partial(X.primal.design, state)
+        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint)
+        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
         self.W.linearize(X, state, adjoint)
         self.svd.linearize()
 
-        self.W.multiply_W(in_vec._primal._design, out_vec_exact._primal._design)
+        self.W.multiply_W(in_vec.primal.design, out_vec_exact.primal.design)
         self.svd.approx_fwd_prod(
-            in_vec._primal._design, out_vec_approx._primal._design)
+            in_vec.primal.design, out_vec_approx.primal.design)
 
         print 'Hessian test:'
-        print 'Exact product  =', out_vec_exact._primal._design.norm2
-        print 'Approx product =', out_vec_approx._primal._design.norm2
+        print 'Exact product  =', out_vec_exact.primal.design.norm2
+        print 'Approx product =', out_vec_approx.primal.design.norm2
 
-        out_vec_approx._primal._design.minus(out_vec_exact._primal._design)
-        abs_error = out_vec_approx._primal._design.norm2
-        rel_error = abs_error/out_vec_exact._primal._design.norm2
+        out_vec_approx.primal.design.minus(out_vec_exact.primal.design)
+        abs_error = out_vec_approx.primal.design.norm2
+        rel_error = abs_error/out_vec_exact.primal.design.norm2
 
         print 'Abs error norm =', abs_error
         print 'Rel error norm =', rel_error

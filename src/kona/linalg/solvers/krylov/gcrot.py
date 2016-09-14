@@ -57,10 +57,10 @@ class GCROT(KrylovSolver):
         # the data goes back to the stack and is used again later
         for vector in self.C:
             if self.dual_fac is not None:
-                del vector._primal._design
-                del vector._primal._slack
-                del vector._primal
-                del vector._dual
+                del vector.primal.design
+                del vector.primal.slack
+                del vector.primal
+                del vector.dual
             del vector
         self.C = []
 
@@ -68,10 +68,10 @@ class GCROT(KrylovSolver):
         # the data goes back to the stack and is used again later
         for vector in self.U:
             if self.dual_fac is not None:
-                del vector._primal._design
-                del vector._primal._slack
-                del vector._primal
-                del vector._dual
+                del vector.primal.design
+                del vector.primal.slack
+                del vector.primal
+                del vector.dual
             del vector
         self.U = []
 

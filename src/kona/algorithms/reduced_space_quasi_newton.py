@@ -129,7 +129,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
                 self.approx_hessian.add_correction(p, dfdx_old)
                 dfdx_old.equals(dfdx)
             # write convergence history here
-            current_solution(x, state, num_iter=self.iter)
+            current_solution(num_iter=self.iter, curr_design=state)
             info.write('\n')
             self._write_history(self.iter, grad_norm)
             # solve for search direction
@@ -146,7 +146,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             self.iter += 1
 
         # optimization is finished, so print total number of iterations
-        current_solution(x, state, num_iter=self.iter)
+        current_solution(num_iter=self.iter, curr_design=state)
         info.write('\n')
         self._write_history(self.iter, grad_norm)
         if converged:

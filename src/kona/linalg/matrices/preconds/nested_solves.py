@@ -77,23 +77,23 @@ class NestedNormalStepPreconditioner(object):
 
     def product(self, in_vec, out_vec):
         # calculate the design component
-        self.svd.approx_rev_prod(in_vec._dual, out_vec._primal._design)
-        out_vec._primal._design.plus(in_vec._primal._design)
+        self.svd.approx_rev_prod(in_vec.dual, out_vec.primal.design)
+        out_vec.primal.design.plus(in_vec.primal.design)
 
         # calculate the slack component
-        out_vec._primal._slack.equals(in_vec._dual)
-        out_vec._primal._slack.times(self.at_dual)
-        out_vec._primal._slack.times(self.slack_term)
-        out_vec._primal._slack.times(-1.)
-        out_vec._primal._slack.plus(in_vec._primal._slack)
+        out_vec.primal.slack.equals(in_vec.dual)
+        out_vec.primal.slack.times(self.at_dual)
+        out_vec.primal.slack.times(self.slack_term)
+        out_vec.primal.slack.times(-1.)
+        out_vec.primal.slack.plus(in_vec.primal.slack)
 
         # calculate the dual component
-        self.svd.approx_fwd_prod(in_vec._primal._design, out_vec._dual)
-        self.dual_work.equals(in_vec._primal._slack)
+        self.svd.approx_fwd_prod(in_vec.primal.design, out_vec.dual)
+        self.dual_work.equals(in_vec.primal.slack)
         self.dual_work.times(self.at_dual)
         self.dual_work.times(self.slack_term)
         self.dual_work.times(-1.)
-        out_vec._dual.plus(self.dual_work)
+        out_vec.dual.plus(self.dual_work)
 
     def solve(self, rhs_vec, solution, rel_tol=None):
         # set the tolerance for the krylov solution
@@ -110,7 +110,7 @@ class NestedNormalStepPreconditioner(object):
         self.krylov.solve(self.product, rhs_vec, solution, precond)
 
         # back out the corect dual solution
-        solution._dual.times(self.at_dual)
+        solution.dual.times(self.at_dual)
 
         # reset the tolerance
         if rel_tol is not None:
@@ -210,26 +210,26 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
     def mult_kkt_approx(self, in_vec, out_vec):
         # modify the incoming vector
         self.in_vec.equals(in_vec)
-        in_vec._dual.times(self.at_dual)
+        in_vec.dual.times(self.at_dual)
         # strip the slack variables out of the in/out vectors
         short_in = ReducedKKTVector(
-            self.in_vec._primal._design, self.in_vec._dual)
+            self.in_vec.primal.design, self.in_vec.dual)
         short_out = ReducedKKTVector(
-            out_vec._primal._design, out_vec._dual)
+            out_vec.primal.design, out_vec.dual)
 
         # compute the slack-less KKT matrix-vector product
         super(NestedKKTPreconditioner, self).product(short_in, short_out)
 
         # set slack components of the output vecetor to zero
-        out_vec._primal._slack.equals(0.0)
+        out_vec.primal.slack.equals(0.0)
 
         # augment the dual component such that:
         # out_dual = diag(lambda)*A*in_design + diag(e^s)*in_dual
-        out_vec._dual.times(self.at_dual)
+        out_vec.dual.times(self.at_dual)
         self.slack_work.exp(self.at_slack)
         self.slack_work.restrict()
-        self.slack_work.times(in_vec._dual)
-        out_vec._dual.plus(self.slack_work)
+        self.slack_work.times(in_vec.dual)
+        out_vec.dual.plus(self.slack_work)
 
     def solve(self, rhs, solution):
         # make sure we have a krylov solver
@@ -242,11 +242,11 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
 
         # modify the dual component of the RHS vector
         self.rhs_work.equals(rhs)
-        self.rhs_work._dual.times(self.at_dual)
-        rhs._primal._slack.restrict()
-        self.rhs_work._dual.minus(rhs._primal._slack)
+        self.rhs_work.dual.times(self.at_dual)
+        rhs.primal.slack.restrict()
+        self.rhs_work.dual.minus(rhs.primal.slack)
         # save slack component of RHS and then set it to zero
-        self.rhs_work._primal._slack.equals(0.0)
+        self.rhs_work.primal.slack.equals(0.0)
 
         # solve the system
         solution.equals(0.0)
@@ -256,18 +256,18 @@ class NestedKKTPreconditioner(ReducedKKTMatrix):
         # back out the slack solutions
         self.dual_work.exp(self.at_slack)
         self.dual_work.restrict()
-        solution._primal._slack.equals(solution._dual)
-        solution._primal._slack.times(self.dual_work)
-        solution._primal._slack.plus(rhs._primal._slack)
+        solution.primal.slack.equals(solution.dual)
+        solution.primal.slack.times(self.dual_work)
+        solution.primal.slack.plus(rhs.primal.slack)
         self.dual_work.exp(self.at_slack)
         self.dual_work.pow(-1.)
         self.dual_work.restrict()
-        solution._primal._slack.times(self.dual_work)
+        solution.primal.slack.times(self.dual_work)
         self.dual_work.equals(self.at_dual)
         self.dual_work.pow(-1.)
-        solution._primal._slack.times(self.dual_work)
-        solution._primal._slack.times(-1.)
-        solution._primal._slack.restrict()
+        solution.primal.slack.times(self.dual_work)
+        solution.primal.slack.times(-1.)
+        solution.primal.slack.restrict()
 
         # back out the actual dual solution
-        solution._dual.times(self.at_dual)
+        solution.dual.times(self.at_dual)

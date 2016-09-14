@@ -33,13 +33,13 @@ class GCROTSolverTestCase(unittest.TestCase):
             numpy.diag(0.5*numpy.ones(N),1)
         self.A[0,0] = 0.5
         self.A[N,N] = 0.5
-        self.b._data.data[0] = 1.0
+        self.b.base.data[0] = 1.0
         self.precond = IdentityMatrix()
 
     def mat_vec(self, in_vec, out_vec):
-        in_data = in_vec._data.data.copy()
+        in_data = in_vec.base.data.copy()
         out_data = self.A.dot(in_data)
-        out_vec._data.data[:] = out_data[:]
+        out_vec.base.data[:] = out_data[:]
 
     def test_solve(self):
         # reset the solution vector
@@ -84,7 +84,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         3.284649320874005e-03, 5.417980612002247e-04, 0.000000000000000e+00])
 
         # compare actual result to expected
-        diff = abs(self.x._data.data - expected)
+        diff = abs(self.x.base.data - expected)
         diff = max(diff)
         self.assertTrue(diff < 1.e-12)
 
@@ -141,7 +141,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         3.284649320874005e-03, 5.417980612002247e-04, 0.000000000000000e+00])
 
         # compare actual result to expected
-        diff = abs(self.x._data.data - expected)
+        diff = abs(self.x.base.data - expected)
         diff = max(diff)
         self.assertTrue(diff < 1.e-12)
 
@@ -214,7 +214,7 @@ class GCROTSolverTestCase(unittest.TestCase):
             9.271942789652368e-24, 9.651911680462248e-27, 0.000000000000000e+00])
 
         # compare actual result to expected
-        diff = abs(self.x._data.data - expected)
+        diff = abs(self.x.base.data - expected)
         diff = max(diff)
         self.assertTrue(diff < 1.e-12)
 
@@ -222,7 +222,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         N = 100
         # try solving a consistent underdetermined problem
         self.A[10:N+1,:] = numpy.zeros((N+1-10,N+1))
-        self.b._data.data[10:N+1] = numpy.zeros(N+1-10)
+        self.b.base.data[10:N+1] = numpy.zeros(N+1-10)
 
         # clear the recycled subspace
         self.krylov.clear_subspace()

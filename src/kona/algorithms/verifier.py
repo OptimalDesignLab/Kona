@@ -452,8 +452,7 @@ class Verifier(object):
         v_p.equals(1./EPS)
         v_p.equals_objective_partial(u_p, u_s)
         z_p.equals(1.0)
-        epsilon_fd = 1e-5
-        # epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
+        epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
         w_p.equals(z_p)
         w_p.times(epsilon_fd)
         w_p.plus(u_p)
@@ -482,7 +481,7 @@ class Verifier(object):
         v_s.equals(1./EPS)
         v_s.equals_objective_partial(u_p, u_s)
         z_s.equals(1.0)
-        # epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
+        epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
         w_s.equals(z_s)
         w_s.times(epsilon_fd)
         w_s.plus(u_s)
@@ -535,8 +534,7 @@ class Verifier(object):
         prod_fwd = v_s.inner(z_s)
         prod_norm = prod_fwd
 
-        epsilon_fd = 1e-5
-        # epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
+        epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
         w_p.equals(z_p)
         w_p.times(epsilon_fd)
         w_p.plus(u_p)
@@ -594,7 +592,7 @@ class Verifier(object):
         dRdU(u_p, u_s).product(z_s, v_s)
         prod_norm = v_s.inner(z_s)
 
-        # epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
+        epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
         w_s.equals(z_s)
         w_s.times(epsilon_fd)
         w_s.plus(u_s)
@@ -680,8 +678,7 @@ class Verifier(object):
         dCdX(u_p, u_s).product(z_p, v_d)
         prod_norm = v_d.inner(z_d)
 
-        epsilon_fd = 1e-5
-        # epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
+        epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
         w_p.equals(z_p)
         w_p.times(epsilon_fd)
         w_p.plus(u_p)
@@ -745,7 +742,7 @@ class Verifier(object):
         v_d.equals(1./EPS)
         dCdU(u_p, u_s).product(z_s, v_d)
         prod_norm = v_d.inner(z_d)
-        # epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
+        epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
         w_s.equals(z_s)
         w_s.times(epsilon_fd)
         w_s.plus(u_s)
@@ -827,8 +824,7 @@ class Verifier(object):
         z_p.equals(1.0)
         prod = z_p.inner(v_p)
 
-        epsilon_fd = 1e-5
-        # epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
+        epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
         w_p.equals(z_p)
         w_p.times(epsilon_fd)
         w_p.plus(u_p)

@@ -73,13 +73,13 @@ class LagrangianHessian(BaseHessian):
 
     def linearize(self, X, at_state, at_adjoint):
         # store references to the evaluation point
-        if isinstance(X._primal, CompositePrimalVector):
-            self.at_design = X._primal._design
-            self.at_slack = X._primal._slack
+        if isinstance(X.primal, CompositePrimalVector):
+            self.at_design = X.primal.design
+            self.at_slack = X.primal.slack
         else:
-            self.at_design = X._primal
+            self.at_design = X.primal
             self.at_slack = None
-        self.at_dual = X._dual
+        self.at_dual = X.dual
         self.at_state = at_state
         self.at_adjoint = at_adjoint
 
@@ -228,10 +228,10 @@ class LagrangianHessian(BaseHessian):
     def product(self, in_vec, out_vec):
         # do some aliasing
         if self.at_slack is not None:
-            in_design = in_vec._design
-            in_slack = in_vec._slack
-            out_design = out_vec._design
-            out_slack = out_vec._slack
+            in_design = in_vec.design
+            in_slack = in_vec.slack
+            out_design = out_vec.design
+            out_slack = out_vec.slack
         else:
             in_design = in_vec
             in_slack = None
@@ -247,7 +247,7 @@ class LagrangianHessian(BaseHessian):
 
     def precond(self, in_vec, out_vec):
         in_kkt = ReducedKKTVector(in_vec, self.dual_in)
-        in_kkt._dual.equals(0.0)
+        in_kkt.dual.equals(0.0)
         out_kkt = ReducedKKTVector(out_vec, self.dual_out)
         self.proj_cg.solve(in_kkt, out_kkt, rel_tol=1e-4)
 

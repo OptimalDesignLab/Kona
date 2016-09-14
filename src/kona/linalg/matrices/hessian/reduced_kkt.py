@@ -169,17 +169,17 @@ class ReducedKKTMatrix(BaseHessian):
             self._allocated = True
 
         # store the linearization point
-        if isinstance(at_kkt._primal, CompositePrimalVector):
-            self.at_design = at_kkt._primal._design
-            self.at_slack = at_kkt._primal._slack
+        if isinstance(at_kkt.primal, CompositePrimalVector):
+            self.at_design = at_kkt.primal.design
+            self.at_slack = at_kkt.primal.slack
         else:
-            self.at_design = at_kkt._primal
+            self.at_design = at_kkt.primal
             self.at_slack = None
         self.design_norm = self.at_design.norm2
         self.at_state = at_state
         self.state_norm = self.at_state.norm2
         self.at_adjoint = at_adjoint
-        self.at_dual = at_kkt._dual
+        self.at_dual = at_kkt.dual
 
         # compute adjoint residual at the linearization
         self.dual_work.equals_constraints(self.at_design, self.at_state)
@@ -222,20 +222,20 @@ class ReducedKKTMatrix(BaseHessian):
         out_vec.equals(0.0)
 
         # do some aliasing to make the code cleanier
-        if isinstance(in_vec._primal, CompositePrimalVector):
+        if isinstance(in_vec.primal, CompositePrimalVector):
             if self.at_slack is None:
                 raise TypeError('No slack variables defined!')
-            in_design = in_vec._primal._design
-            in_slack = in_vec._primal._slack
-            out_design = out_vec._primal._design
-            out_slack = out_vec._primal._slack
+            in_design = in_vec.primal.design
+            in_slack = in_vec.primal.slack
+            out_design = out_vec.primal.design
+            out_slack = out_vec.primal.slack
         else:
-            in_design = in_vec._primal
+            in_design = in_vec.primal
             in_slack = None
-            out_design = out_vec._primal
+            out_design = out_vec.primal
             out_slack = None
-        in_dual = in_vec._dual
-        out_dual = out_vec._dual
+        in_dual = in_vec.dual
+        out_dual = out_vec.dual
 
         # modify the in_vec for inequality constraints
         self.dual_work.equals_constraints(self.at_design, self.at_state)
@@ -281,7 +281,7 @@ class ReducedKKTMatrix(BaseHessian):
         # multiply by -1 to move to RHS
         self.state_work[0].times(-1.0)
 
-        # second part of LHS: (dC/dU) * in_vec._dual
+        # second part of LHS: (dC/dU) * in_vec.dual
         self.dCdU.linearize(self.at_design, self.at_state)
         self.dCdU.T.product(in_dual, self.state_work[1])
 
@@ -323,7 +323,7 @@ class ReducedKKTMatrix(BaseHessian):
         # evaluate dual part of product:
         # C = dC/dX*in_vec + dC/dU*w_adj
         self.dCdX.linearize(self.at_design, self.at_state)
-        self.dCdX.product(in_design, out_vec._dual)
+        self.dCdX.product(in_design, out_vec.dual)
         self.dCdU.linearize(self.at_design, self.at_state)
         self.dCdU.product(self.w_adj, self.dual_work)
         out_dual.plus(self.dual_work)

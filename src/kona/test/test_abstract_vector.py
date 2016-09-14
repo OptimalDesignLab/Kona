@@ -1,10 +1,7 @@
 import unittest
-
 import numpy as np
 
 from kona.user import BaseVector
-from kona.user import BaseAllocator
-# from kona.user_vectors.petsc_vector import NumpyVector # should follow this exact interface
 
 class AbsVectorTestCase(unittest.TestCase):
     '''Test case that can be used for any base abstract vector class'''
@@ -67,30 +64,6 @@ class AbsVectorTestCase(unittest.TestCase):
             self.assertEqual(
                 str(err),
                 'size given as 10, but length of value 12')
-
-
-class TestCaseProblemAllocator(unittest.TestCase):
-
-    def setUp(self):
-        self.alloc = BaseAllocator(3, 4, 5)
-
-    def test_primal_vec(self):
-        base_var = self.alloc.alloc_primal(1)[0]
-        self.assertTrue(isinstance(base_var, BaseVector))
-
-        self.assertEqual(base_var.data.shape[0], 3)
-
-    def test_state_vec(self):
-        base_var = self.alloc.alloc_state(1)[0]
-        self.assertTrue(isinstance(base_var, BaseVector))
-
-        self.assertEqual(base_var.data.shape[0], 4)
-
-    def test_dual_vec(self):
-        base_var = self.alloc.alloc_dual(1)[0]
-        self.assertTrue(isinstance(base_var, BaseVector))
-
-        self.assertEqual(base_var.data.shape[0], 5)
 
 if __name__ == "__main__":
     unittest.main()

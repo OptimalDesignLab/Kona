@@ -90,42 +90,42 @@ class HessianApproxTestCase(unittest.TestCase):
         s_new = vf.generate()
         y_new = vf.generate()
         # first "iteration"
-        s_new._data.data[:] = 0.0
-        y_new._data.data[:] = 0.0
-        s_new._data.data[0] = -1.0
-        y_new._data.data[0] = -1.0
+        s_new.base.data[:] = 0.0
+        y_new.base.data[:] = 0.0
+        s_new.base.data[0] = -1.0
+        y_new.base.data[0] = -1.0
         lbfgs.add_correction(s_new, y_new)
         # second "iteration"
-        s_new._data.data[:] = 0.0
-        y_new._data.data[:] = 0.0
-        s_new._data.data[1] = -1.0
-        y_new._data.data[1] = -100.0
+        s_new.base.data[:] = 0.0
+        y_new.base.data[:] = 0.0
+        s_new.base.data[1] = -1.0
+        y_new.base.data[1] = -100.0
         lbfgs.add_correction(s_new, y_new)
         # third "iteration"
-        s_new._data.data[:] = 0.0
-        y_new._data.data[:] = 0.0
-        s_new._data.data[2] = -1.0
-        y_new._data.data[2] = -10.0
+        s_new.base.data[:] = 0.0
+        y_new.base.data[:] = 0.0
+        s_new.base.data[2] = -1.0
+        y_new.base.data[2] = -10.0
         lbfgs.add_correction(s_new, y_new)
 
         # testing first column of H*H^{-1}
-        s_new._data.data[:] = 0.0
-        y_new._data.data[:] = 0.0
-        s_new._data.data[0] = 1.0
+        s_new.base.data[:] = 0.0
+        y_new.base.data[:] = 0.0
+        s_new.base.data[0] = 1.0
         lbfgs.solve(s_new, y_new)
-        self.assertRelError(y_new._data.data,
+        self.assertRelError(y_new.base.data,
                             np.array([1.,0.,0.]), atol=1e-15)
         # testing second column of H*H^{-1}
-        s_new._data.data[:] = 0.0
-        s_new._data.data[1] = 100.0
+        s_new.base.data[:] = 0.0
+        s_new.base.data[1] = 100.0
         lbfgs.solve(s_new, y_new)
-        self.assertRelError(y_new._data.data,
+        self.assertRelError(y_new.base.data,
                             np.array([0.,1.,0.]), atol=1e-15)
         # testing third column of H*H^{-1}
-        s_new._data.data[:] = 0.0
-        s_new._data.data[2] = 10.0
+        s_new.base.data[:] = 0.0
+        s_new.base.data[2] = 10.0
         lbfgs.solve(s_new, y_new)
-        self.assertRelError(y_new._data.data,
+        self.assertRelError(y_new.base.data,
                             np.array([0.,0.,1.]), atol=1e-15)
 
     def test_LimitedMemorySR1(self):
@@ -143,42 +143,42 @@ class HessianApproxTestCase(unittest.TestCase):
         s_new = vf.generate()
         y_new = vf.generate()
         # first "iteration"
-        s_new._data.data[:] = 0.0
-        y_new._data.data[:] = 0.0
-        s_new._data.data[0] = -1.0
-        y_new._data.data[0] = -1.0
+        s_new.base.data[:] = 0.0
+        y_new.base.data[:] = 0.0
+        s_new.base.data[0] = -1.0
+        y_new.base.data[0] = -1.0
         lsr1.add_correction(s_new, y_new)
         # second "iteration"
-        s_new._data.data[:] = 0.0
-        y_new._data.data[:] = 0.0
-        s_new._data.data[1] = -1.0
-        y_new._data.data[1] = -100.0
+        s_new.base.data[:] = 0.0
+        y_new.base.data[:] = 0.0
+        s_new.base.data[1] = -1.0
+        y_new.base.data[1] = -100.0
         lsr1.add_correction(s_new, y_new)
         # third "iteration"
-        s_new._data.data[:] = 0.0
-        y_new._data.data[:] = 0.0
-        s_new._data.data[2] = -1.0
-        y_new._data.data[2] = 10.0
+        s_new.base.data[:] = 0.0
+        y_new.base.data[:] = 0.0
+        s_new.base.data[2] = -1.0
+        y_new.base.data[2] = 10.0
         lsr1.add_correction(s_new, y_new)
 
         # testing first column of H*H^{-1}
-        s_new._data.data[:] = 0.0
-        y_new._data.data[:] = 0.0
-        s_new._data.data[0] = 1.0
+        s_new.base.data[:] = 0.0
+        y_new.base.data[:] = 0.0
+        s_new.base.data[0] = 1.0
         lsr1.solve(s_new, y_new)
-        self.assertRelError(y_new._data.data,
+        self.assertRelError(y_new.base.data,
                             np.array([1.,0.,0.]), atol=1e-15)
         # testing second column of H*H^{-1}
-        s_new._data.data[:] = 0.0
-        s_new._data.data[1] = 100.0
+        s_new.base.data[:] = 0.0
+        s_new.base.data[1] = 100.0
         lsr1.solve(s_new, y_new)
-        self.assertRelError(y_new._data.data,
+        self.assertRelError(y_new.base.data,
                             np.array([0.,1.,0.]), atol=1e-15)
         # testing third column of H*H^{-1}
-        s_new._data.data[:] = 0.0
-        s_new._data.data[2] = -10.0
+        s_new.base.data[:] = 0.0
+        s_new.base.data[2] = -10.0
         lsr1.solve(s_new, y_new)
-        self.assertRelError(y_new._data.data,
+        self.assertRelError(y_new.base.data,
                             np.array([0.,0.,1.]), atol=1e-15)
 
 if __name__ == "__main__":

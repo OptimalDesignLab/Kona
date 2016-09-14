@@ -47,42 +47,40 @@ class ReducedKKTMatrixTestCase(unittest.TestCase):
         in_vec = self._generate_KKT_vector()
         out_vec = self._generate_KKT_vector()
 
-        in_vec._primal.equals(2.0)
-        in_vec._dual.equals(2.0)
+        in_vec.primal.equals(2.0)
+        in_vec.dual.equals(2.0)
 
-        X._primal._data.data[0] = 0.51
-        X._primal._data.data[1] = 0.52
-        X._primal._data.data[2] = 0.53
-        X._dual.equals(-1.0)
-        state.equals_primal_solution(X._primal)
-        state_work.equals_objective_partial(X._primal, state)
-        dCdU(X._primal, state).T.product(X._dual, adjoint)
+        X.primal.base.data[0] = 0.51
+        X.primal.base.data[1] = 0.52
+        X.primal.base.data[2] = 0.53
+        X.dual.equals(-1.0)
+        state.equals_primal_solution(X.primal)
+        state_work.equals_objective_partial(X.primal, state)
+        dCdU(X.primal, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal, state).T.solve(state_work, adjoint)
-        dLdX.equals_KKT_conditions(
-            X, state, adjoint, primal_work, dual_work)
+        dRdU(X.primal, state).T.solve(state_work, adjoint)
+        dLdX.equals_KKT_conditions(X, state, adjoint, primal_work)
 
         epsilon_fd = 1e-6
         X.equals_ax_p_by(1.0, X, epsilon_fd, in_vec)
-        state.equals_primal_solution(X._primal)
-        state_work.equals_objective_partial(X._primal, state)
-        dCdU(X._primal, state).T.product(X._dual, adjoint)
+        state.equals_primal_solution(X.primal)
+        state_work.equals_objective_partial(X.primal, state)
+        dCdU(X.primal, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal, state).T.solve(state_work, adjoint)
-        dLdX_pert.equals_KKT_conditions(
-            X, state, adjoint, primal_work, dual_work)
+        dRdU(X.primal, state).T.solve(state_work, adjoint)
+        dLdX_pert.equals_KKT_conditions(X, state, adjoint, primal_work)
 
         dLdX_pert.minus(dLdX)
         dLdX_pert.divide_by(epsilon_fd)
 
-        X._primal._data.data[0] = 0.51
-        X._primal._data.data[1] = 0.52
-        X._primal._data.data[2] = 0.53
-        X._dual.equals(-1.)
-        state.equals_primal_solution(X._primal)
-        adjoint.equals_adjoint_solution(X._primal, state, state_work)
+        X.primal.base.data[0] = 0.51
+        X.primal.base.data[1] = 0.52
+        X.primal.base.data[2] = 0.53
+        X.dual.equals(-1.)
+        state.equals_primal_solution(X.primal)
+        adjoint.equals_adjoint_solution(X.primal, state, state_work)
         self.KKT_matrix.linearize(X, state, adjoint)
         self.KKT_matrix.product(in_vec, out_vec)
 
@@ -90,11 +88,11 @@ class ReducedKKTMatrixTestCase(unittest.TestCase):
         print 'Equality Constraints'
         print '----------------------'
         print 'FD product:'
-        print dLdX_pert._primal._data.data
-        print dLdX_pert._dual._data.data
+        print dLdX_pert.primal.base.data
+        print dLdX_pert.dual.base.data
         print 'Analytical product:'
-        print out_vec._primal._data.data
-        print out_vec._dual._data.data
+        print out_vec.primal.base.data
+        print out_vec.dual.base.data
         print '----------------------'
 
         dLdX.equals_ax_p_by(1.0, dLdX_pert, -1.0, out_vec)

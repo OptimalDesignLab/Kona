@@ -198,21 +198,20 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
         # evaluate the initial design before starting outer iterations
         X.equals_init_guess()
-        state.equals_primal_solution(X._primal._design)
+        state.equals_primal_solution(X.primal.design)
         if self.factor_matrices and self.iter < self.max_iter:
-            factor_linear_system(X._primal._design, state)
+            factor_linear_system(X.primal.design, state)
 
         # perform an adjoint solution for the Lagrangian
-        state_work.equals_objective_partial(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+        state_work.equals_objective_partial(X.primal.design, state)
+        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint)
+        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
 
         # send initial point info to the user
-        solver_info = current_solution(
-            X._primal._design, state, adjoint, X._dual, self.iter,
-            X._primal._slack)
+        solver_info = current_solution(X.primal.design, state, adjoint, X.dual,
+                                       self.iter, X.primal.slack)
         if isinstance(solver_info, str):
             self.info_file.write('\n' + solver_info + '\n')
 
@@ -224,27 +223,26 @@ class FLECS_RSNK(OptimizationAlgorithm):
             self.iter += 1
 
             # evaluate optimality, feasibility and KKT norms
-            dLdX.equals_KKT_conditions(
-                X, state, adjoint, primal_work, dual_work)
+            dLdX.equals_KKT_conditions(X, state, adjoint, primal_work)
             # print info on current point
             self.info_file.write(
                 '==========================================================\n' +
                 'Beginning Major Iteration %i\n\n'%self.iter)
             self.info_file.write(
-                'primal vars        = %e\n'%X._primal.norm2)
+                'primal vars        = %e\n'%X.primal.norm2)
             self.info_file.write(
-                '   design vars     = %e\n'%X._primal._design.norm2)
+                '   design vars     = %e\n'%X.primal.design.norm2)
             self.info_file.write(
-                '   slack vars      = %e\n'%X._primal._slack.norm2)
+                '   slack vars      = %e\n'%X.primal.slack.norm2)
             self.info_file.write(
-                'multipliers        = %e\n\n'%X._dual.norm2)
+                'multipliers        = %e\n\n'%X.dual.norm2)
 
             if self.iter == 1:
                 # calculate initial norms
-                self.grad_norm0 = dLdX._primal.norm2
-                self.design_norm0 = dLdX._primal._design.norm2
-                self.slack_norm0 = dLdX._primal._slack.norm2
-                self.feas_norm0 = max(dLdX._dual.norm2, EPS)
+                self.grad_norm0 = dLdX.primal.norm2
+                self.design_norm0 = dLdX.primal.design.norm2
+                self.slack_norm0 = dLdX.primal.slack.norm2
+                self.feas_norm0 = max(dLdX.dual.norm2, EPS)
                 self.kkt_norm0 = np.sqrt(
                     self.feas_norm0**2 + self.grad_norm0**2)
 
@@ -268,10 +266,10 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
             else:
                 # calculate current norms
-                grad_norm = dLdX._primal.norm2
-                design_norm = dLdX._primal._design.norm2
-                slack_norm = dLdX._primal._slack.norm2
-                feas_norm = max(dLdX._dual.norm2, EPS)
+                grad_norm = dLdX.primal.norm2
+                design_norm = dLdX.primal.design.norm2
+                slack_norm = dLdX.primal.slack.norm2
+                feas_norm = max(dLdX.dual.norm2, EPS)
                 kkt_norm = np.sqrt(feas_norm**2 + grad_norm**2)
 
                 # update the augmented Lagrangian penalty
@@ -291,7 +289,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
             self.mu = min(self.mu, self.mu_max)
 
             # write convergence history
-            obj_val = objective_value(X._primal._design, state)
+            obj_val = objective_value(X.primal.design, state)
             self._write_history(grad_norm, feas_norm, obj_val)
 
             # check for convergence
@@ -359,30 +357,29 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     break
             else:
                 # accept step
-                X._primal.plus(P._primal)
-                X._primal._design.enforce_bounds()
-                X._primal._slack.restrict()
-                X._dual.plus(P._dual)
+                X.primal.plus(P.primal)
+                X.primal.design.enforce_bounds()
+                X.primal.slack.restrict()
+                X.dual.plus(P.dual)
 
                 # calculate states
-                state.equals_primal_solution(X._primal._design)
+                state.equals_primal_solution(X.primal.design)
 
                 # if this is a matrix-based problem, tell the solver to factor
                 # some important matrices to be used in the next iteration
                 if self.factor_matrices and self.iter < self.max_iter:
-                    factor_linear_system(X._primal._design, state)
+                    factor_linear_system(X.primal.design, state)
 
                 # perform an adjoint solution for the Lagrangian
-                state_work.equals_objective_partial(X._primal._design, state)
-                dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+                state_work.equals_objective_partial(X.primal.design, state)
+                dCdU(X.primal.design, state).T.product(X.dual, adjoint)
                 state_work.plus(adjoint)
                 state_work.times(-1.)
-                dRdU(X._primal._design, state).T.solve(state_work, adjoint)
+                dRdU(X.primal.design, state).T.solve(state_work, adjoint)
 
             # send current solution info to the user
-            solver_info = current_solution(
-                X._primal._design, state, adjoint, X._dual, self.iter,
-                X._primal._slack)
+            solver_info = current_solution(X.primal.design, state, adjoint,
+                                           X.dual, self.iter, X.primal.slack)
             if isinstance(solver_info, str):
                 self.info_file.write('\n' + solver_info + '\n')
 
@@ -409,31 +406,31 @@ class FLECS_RSNK(OptimizationAlgorithm):
         while iters <= max_iter:
             iters += 1
             # evaluate the constraint term at the current step
-            dual_work.equals_constraints(X._primal._design, state)
-            slack_work.exp(X._primal._slack)
+            dual_work.equals_constraints(X.primal.design, state)
+            slack_work.exp(X.primal.slack)
             slack_work.times(-1.)
             slack_work.restrict()
             dual_work.plus(slack_work)
             # compute the merit value at the current step
-            merit_init = objective_value(X._primal._design, state) \
-                + X._dual.inner(dual_work) \
+            merit_init = objective_value(X.primal.design, state) \
+                + X.dual.inner(dual_work) \
                 + 0.5*self.mu*(dual_work.norm2**2)
             # add the FLECS step
             kkt_work.equals_ax_p_by(1., X, 1., P)
-            kkt_work._primal._design.enforce_bounds()
-            kkt_work._primal._slack.restrict()
+            kkt_work.primal.design.enforce_bounds()
+            kkt_work.primal.slack.restrict()
             # solve states at the new step
-            if state_work.equals_primal_solution(kkt_work._primal._design):
+            if state_work.equals_primal_solution(kkt_work.primal.design):
                 # evaluate the constraint terms at the new step
                 dual_work.equals_constraints(
-                    kkt_work._primal._design, state_work)
-                slack_work.exp(kkt_work._primal._slack)
+                    kkt_work.primal.design, state_work)
+                slack_work.exp(kkt_work.primal.slack)
                 slack_work.times(-1.)
                 slack_work.restrict()
                 dual_work.plus(slack_work)
                 # compute the merit value at the next step
-                merit_next = objective_value(kkt_work._primal._design, state) \
-                    + X._dual.inner(dual_work) \
+                merit_next = objective_value(kkt_work.primal.design, state) \
+                    + X.dual.inner(dual_work) \
                     + 0.5*self.mu*(dual_work.norm2**2)
                 # evaluate the quality of the FLECS model
                 rho = (merit_init - merit_next)/self.krylov.pred_aug
@@ -443,10 +440,10 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
             self.info_file.write(
                 'Trust Region Step : iter %i\n'%iters +
-                '   primal_step    = %e\n'%P._primal.norm2 +
-                '      design_step = %e\n'%P._primal._design.norm2 +
-                '      slack_step  = %e\n'%P._primal._slack.norm2 +
-                '   lambda_step    = %e\n'%P._dual.norm2 +
+                '   primal_step    = %e\n'%P.primal.norm2 +
+                '      design_step = %e\n'%P.primal.design.norm2 +
+                '      slack_step  = %e\n'%P.primal.slack.norm2 +
+                '   lambda_step    = %e\n'%P.dual.norm2 +
                 '\n' +
                 '   merit_init     = %e\n'%merit_init +
                 '   merit_next     = %e\n'%merit_next +
@@ -494,21 +491,21 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
                 # accept the new step entirely
                 X.plus(P)
-                X._primal._design.enforce_bounds()
-                X._primal._slack.restrict()
-                state.equals_primal_solution(X._primal._design)
+                X.primal.design.enforce_bounds()
+                X.primal.slack.restrict()
+                state.equals_primal_solution(X.primal.design)
 
                 # if this is a matrix-based problem, tell the solver to factor
                 # some important matrices to be used in the next iteration
                 if self.factor_matrices and self.iter < self.max_iter:
-                    factor_linear_system(X._primal._design, state)
+                    factor_linear_system(X.primal.design, state)
 
                 # perform an adjoint solution for the Lagrangian
-                state_work.equals_objective_partial(X._primal._design, state)
-                dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+                state_work.equals_objective_partial(X.primal.design, state)
+                dCdU(X.primal.design, state).T.product(X.dual, adjoint)
                 state_work.plus(adjoint)
                 state_work.times(-1.)
-                dRdU(X._primal._design, state).T.solve(state_work, adjoint)
+                dRdU(X.primal.design, state).T.solve(state_work, adjoint)
 
                 # check the trust radius
                 if self.krylov.trust_active:
@@ -516,7 +513,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     self.info_file.write('Trust radius active...\n')
                     if rho >= 0.5:
                         # model is good enough -- increase radius
-                        self.radius = min(2.*P._primal.norm2, self.max_radius)
+                        self.radius = min(2.*P.primal.norm2, self.max_radius)
                         # self.radius = min(2.*self.radius, self.max_radius)
                         self.info_file.write(
                             '   Radius increased -> %f\n'%self.radius)

@@ -164,7 +164,8 @@ class STCG_RSNK(OptimizationAlgorithm):
                     self.quasi_newton.add_correction(p, dJdX_old)
                 dJdX_old.equals(dJdX)
             # write history
-            current_solution(x, state, adjoint, num_iter=self.iter)
+            current_solution(num_iter=self.iter, curr_design=state,
+                             curr_state=adjoint)
             self._write_history(self.iter, grad_norm, obj, rho)
             # check convergence
             if grad_norm < grad_tol:
@@ -209,20 +210,18 @@ class STCG_RSNK(OptimizationAlgorithm):
                     rho = np.nan
 
                 # update radius if necessary
-                if rho < 0.25 or np.isnan(rho):
-                    self.radius *= 0.25
-                else:
-                    if active and (rho > 0.75):
-                        self.radius = min(2*self.radius, self.max_radius)
-
-                # revert the solution if necessary
-                if rho < 0.1:
+                if rho < 0.1 or np.isnan(rho):
                     self.info_file.write('reverting solution...\n')
                     obj = obj_old
                     x.equals(primal_work)
                     state.equals(state_work)
+                    self.radius *= 0.25
+                    self.info_file.write('new radius = %f\n'%self.radius)
                 else:
                     adjoint.equals_adjoint_solution(x, state, state_work)
+                    if active and rho > 0.75:
+                        self.radius = min(2*self.radius, self.max_radius)
+                        self.info_file.write('new radius = %f\n'%self.radius)
             else:
                 raise TypeError("Wrong globalization type!")
 

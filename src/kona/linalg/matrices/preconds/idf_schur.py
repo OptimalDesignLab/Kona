@@ -90,13 +90,13 @@ class ReducedSchurPreconditioner(BaseHessian):
     def linearize(self, at_KKT, at_state):
         # store references to the evaluation point
         try:
-            self.at_design = at_KKT._primal._design
-            self.at_slack = at_KKT._primal._slack
+            self.at_design = at_KKT.primal.design
+            self.at_slack = at_KKT.primal.slack
         except Exception:
-            self.at_design = at_KKT._primal
+            self.at_design = at_KKT.primal
             self.at_slack = None
         self.at_state = at_state
-        self.at_dual = at_KKT._dual
+        self.at_dual = at_KKT.dual
         self.at_KKT = at_KKT
 
         # linearize the constraint jacobian
@@ -113,14 +113,14 @@ class ReducedSchurPreconditioner(BaseHessian):
     def product(self, in_vec, out_vec):
         # do some aliasing
         try:
-            in_design = in_vec._primal._design
-            out_design = out_vec._primal._design
-            out_vec._primal._slack.equals(in_vec._primal._slack)
+            in_design = in_vec.primal.design
+            out_design = out_vec.primal.design
+            out_vec.primal.slack.equals(in_vec.primal.slack)
         except Exception:
-            in_design = in_vec._primal
-            out_design = out_vec._primal
-        in_dual = in_vec._dual
-        out_dual = out_vec._dual
+            in_design = in_vec.primal
+            out_design = out_vec.primal
+        in_dual = in_vec.dual
+        out_dual = out_vec.dual
         design_work = self.design_work
 
         # set solver settings

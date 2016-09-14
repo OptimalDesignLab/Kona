@@ -24,7 +24,7 @@ class BackTrackingTestCase(unittest.TestCase):
         self.bt = BackTracking() # leave all settings with initial values
 
         search_dir = self.pf.generate()
-        search_dir._data.data[:] = [-1,0]
+        search_dir.base.data[:] = [-1,0]
 
         at_design = self.pf.generate()
         at_design.equals(1)
@@ -47,7 +47,7 @@ class BackTrackingTestCase(unittest.TestCase):
         '''Assuming your first guess viloates sufficient decrease condition'''
 
         search_dir = self.pf.generate()
-        search_dir._data.data[:] = [-1,0]
+        search_dir.base.data[:] = [-1,0]
 
         at_design = self.pf.generate()
         at_design.equals(1)
@@ -79,7 +79,7 @@ class BackTrackingTestCase(unittest.TestCase):
         '''Assuming your first guess viloates sufficient decrease condition'''
 
         search_dir = self.pf.generate()
-        search_dir._data.data[:] = [-1,0]
+        search_dir.base.data[:] = [-1,0]
 
         at_design = self.pf.generate()
         at_design.equals(1)
@@ -110,7 +110,7 @@ class BackTrackingTestCase(unittest.TestCase):
         '''Check that it works when the search direction sign is flips'''
 
         search_dir = self.pf.generate()
-        search_dir._data.data[:] = [4.25,0]
+        search_dir.base.data[:] = [4.25,0]
 
         at_design = self.pf.generate()
         at_design.equals(-2)
@@ -140,7 +140,7 @@ class BackTrackingTestCase(unittest.TestCase):
     def test_bad_search_direction(self):
 
         search_dir = self.pf.generate()
-        search_dir._data.data[:] = [-1,0]
+        search_dir.base.data[:] = [-1,0]
 
         at_design = self.pf.generate()
         at_design.equals(1)

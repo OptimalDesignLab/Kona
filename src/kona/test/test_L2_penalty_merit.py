@@ -44,18 +44,18 @@ class L2PenaltyMeritTestCase(unittest.TestCase):
         self.search_dir.equals(1.0)
 
         self.kkt_start.equals_init_guess()
-        self.kkt_start._primal._design.enforce_bounds()
+        self.kkt_start.primal.design.enforce_bounds()
 
-        self.u_start.equals_primal_solution(self.kkt_start._primal._design)
+        self.u_start.equals_primal_solution(self.kkt_start.primal.design)
 
         self.cnstr.equals_constraints(
-            self.kkt_start._primal._design, self.u_start)
-        self.slack_term.exp(self.kkt_start._primal._slack)
+            self.kkt_start.primal.design, self.u_start)
+        self.slack_term.exp(self.kkt_start.primal.slack)
         self.slack_term.restrict()
         self.cnstr.minus(self.slack_term)
 
         obj_val = objective_value(
-            self.kkt_start._primal._design, self.u_start)
+            self.kkt_start.primal.design, self.u_start)
         penalty_term = 0.5*self.mu*(self.cnstr.norm2**2)
         self.merit_val_init = obj_val + penalty_term
 
@@ -71,15 +71,15 @@ class L2PenaltyMeritTestCase(unittest.TestCase):
         # calculate expected merit value
         self.kkt_trial.equals_ax_p_by(
             1., self.kkt_start, alpha, self.search_dir)
-        self.kkt_trial._primal._design.enforce_bounds()
-        self.u_trial.equals_primal_solution(self.kkt_trial._primal._design)
+        self.kkt_trial.primal.design.enforce_bounds()
+        self.u_trial.equals_primal_solution(self.kkt_trial.primal.design)
         self.cnstr_trial.equals_constraints(
-            self.kkt_trial._primal._design, self.u_trial)
-        self.slack_term.exp(self.kkt_trial._primal._slack)
+            self.kkt_trial.primal.design, self.u_trial)
+        self.slack_term.exp(self.kkt_trial.primal.slack)
         self.slack_term.restrict()
         self.cnstr_trial.minus(self.slack_term)
         obj_val = objective_value(
-            self.kkt_trial._primal._design, self.u_trial)
+            self.kkt_trial.primal.design, self.u_trial)
         penalty_term = 0.5*self.mu*(self.cnstr_trial.norm2**2)
         expected_value = obj_val + penalty_term
 

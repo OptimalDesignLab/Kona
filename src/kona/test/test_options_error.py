@@ -2,7 +2,6 @@ import unittest
 
 from kona.options import BadKonaOption
 
-
 class KonaOptionTestCase(unittest.TestCase):
 
     def test_err_msg(self):
@@ -20,5 +19,4 @@ class KonaOptionTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

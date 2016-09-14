@@ -1,14 +1,5 @@
-import gc
-import numpy
-from numpy import sqrt
 
-from kona.options import get_opt
-from kona.linalg.vectors.common import PrimalVector, DualVector
-from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import \
-    solve_tri, solve_trust_reduced, eigen_decomp, mod_GS_normalize, EPS
 
 class FLECS(KrylovSolver):
     """
@@ -98,20 +89,20 @@ class FLECS(KrylovSolver):
         # clear out all the vectors stored in V
         # the data goes back to the stack and is used again later
         for vector in self.V:
-            del vector._primal._design
-            del vector._primal._slack
-            del vector._primal
-            del vector._dual
+            del vector.primal.design
+            del vector.primal.slack
+            del vector.primal
+            del vector.dual
             del vector
         self.V = []
 
         # clear out all vectors stored in Z
         # the data goes back to the stack and is used again later
         for vector in self.Z:
-            del vector._primal._design
-            del vector._primal._slack
-            del vector._primal
-            del vector._dual
+            del vector.primal.design
+            del vector.primal.slack
+            del vector.primal
+            del vector.dual
             del vector
         self.Z = []
 
@@ -159,20 +150,20 @@ class FLECS(KrylovSolver):
         A = ZtZ_prim_r + VtVH + VtVH.T
         rhs = numpy.zeros(self.iters)
         for k in xrange(self.iters):
-            rhs[k] = self.V[k]._dual.inner(cnstr)
+            rhs[k] = self.V[k].dual.inner(cnstr)
         self.y = numpy.linalg.solve(A, rhs)
 
         # construct the design update
         # leave the dual solution untouched
         for k in xrange(self.iters):
-            step._primal.equals_ax_p_by(
-                1.0, step._primal, self.y[k], self.Z[k]._primal)
+            step.primal.equals_ax_p_by(
+                1.0, step.primal, self.y[k], self.Z[k].primal)
 
         # trust radius check
         # NOTE: THIS IS TEMPORARY
-        if step._primal.norm2 > self.radius:
+        if step.primal.norm2 > self.radius:
             self.trust_active = True
-            step._primal.times(self.radius/step._primal.norm2)
+            step.primal.times(self.radius/step.primal.norm2)
 
         # compute a new predicted reduction associated with this step
         # self.pred_aug = -self.y.dot(0.5*numpy.array(A.dot(self.y)) + rhs)
@@ -298,20 +289,20 @@ class FLECS(KrylovSolver):
         res.equals(b)
 
         # calculate norm of rhs vector
-        grad0 = b._primal.norm2
-        feas0 = max(b._dual.norm2, EPS)
+        grad0 = b.primal.norm2
+        feas0 = max(b.dual.norm2, EPS)
         norm0 = b.norm2
 
         # calculate initial (negative) residual and compute its norm
         self.V.append(self._generate_vector())
         self.V[0].equals(b)
-        self.V[0]._primal.times(self.grad_scale)
-        self.V[0]._dual.times(self.feas_scale)
+        self.V[0].primal.times(self.grad_scale)
+        self.V[0].dual.times(self.feas_scale)
 
         # normalize the residual
         self.beta = self.V[0].norm2
         self.V[0].divide_by(self.beta)
-        self.VtV_dual[0, 0] = self.V[0]._dual.inner(self.V[0]._dual)
+        self.VtV_dual[0, 0] = self.V[0].dual.inner(self.V[0].dual)
         self.gamma = self.beta*sqrt(max(self.VtV_dual[0, 0], 0.0))
         self.omega = sqrt(max(self.beta**2 - self.gamma**2, 0.0))
 
@@ -346,13 +337,13 @@ class FLECS(KrylovSolver):
 
             # add to Krylov subspace
             self.V.append(self._generate_vector())
-            self.Z[i]._primal.times(self.grad_scale)
-            self.Z[i]._dual.times(self.feas_scale)
+            self.Z[i].primal.times(self.grad_scale)
+            self.Z[i].dual.times(self.feas_scale)
             mat_vec(self.Z[i], self.V[i+1])
-            self.Z[i]._primal.divide_by(self.grad_scale)
-            self.Z[i]._dual.divide_by(self.feas_scale)
-            self.V[i+1]._primal.times(self.grad_scale)
-            self.V[i+1]._dual.times(self.feas_scale)
+            self.Z[i].primal.divide_by(self.grad_scale)
+            self.Z[i].dual.divide_by(self.feas_scale)
+            self.V[i+1].primal.times(self.grad_scale)
+            self.V[i+1].dual.times(self.feas_scale)
 
             # modified Gram-Schmidt orthonormalization
             try:
@@ -362,23 +353,23 @@ class FLECS(KrylovSolver):
 
             # compute new row and column of the VtZ matrix
             for k in xrange(i+1):
-                self.VtZ_prim[k, i] = self.V[k]._primal.inner(self.Z[i]._primal)
-                self.VtZ_prim[i+1, k] = self.V[i+1]._primal.inner(
-                    self.Z[k]._primal)
+                self.VtZ_prim[k, i] = self.V[k].primal.inner(self.Z[i].primal)
+                self.VtZ_prim[i+1, k] = self.V[i+1].primal.inner(
+                    self.Z[k].primal)
 
-                self.VtZ_dual[k, i] = self.V[k]._dual.inner(self.Z[i]._dual)
-                self.VtZ_dual[i+1, k] = self.V[i+1]._dual.inner(self.Z[k]._dual)
+                self.VtZ_dual[k, i] = self.V[k].dual.inner(self.Z[i].dual)
+                self.VtZ_dual[i+1, k] = self.V[i+1].dual.inner(self.Z[k].dual)
 
                 self.VtZ[k, i] = self.VtZ_prim[k, i] + self.VtZ_dual[k, i]
                 self.VtZ[i+1, k] = self.VtZ_prim[i+1, k] + self.VtZ_dual[i+1, k]
 
-                self.ZtZ_prim[k, i] = self.Z[k]._primal.inner(self.Z[i]._primal)
-                self.ZtZ_prim[i, k] = self.Z[i]._primal.inner(self.Z[k]._primal)
+                self.ZtZ_prim[k, i] = self.Z[k].primal.inner(self.Z[i].primal)
+                self.ZtZ_prim[i, k] = self.Z[i].primal.inner(self.Z[k].primal)
 
-                self.VtV_dual[k, i+1] = self.V[k]._dual.inner(self.V[i+1]._dual)
-                self.VtV_dual[i+1, k] = self.V[i+1]._dual.inner(self.V[k]._dual)
+                self.VtV_dual[k, i+1] = self.V[k].dual.inner(self.V[i+1].dual)
+                self.VtV_dual[i+1, k] = self.V[i+1].dual.inner(self.V[k].dual)
 
-            self.VtV_dual[i+1, i+1] = self.V[i+1]._dual.inner(self.V[i+1]._dual)
+            self.VtV_dual[i+1, i+1] = self.V[i+1].dual.inner(self.V[i+1].dual)
 
             # solve the reduced problems and compute the residual
             self.solve_subspace_problems()
@@ -416,14 +407,14 @@ class FLECS(KrylovSolver):
         # compute solution: augmented-Lagrangian for primal, FGMRES for dual
         x.equals(0.0)
         for k in xrange(self.iters):
-            x._primal.equals_ax_p_by(
-                1.0, x._primal, self.y_aug[k], self.Z[k]._primal)
-            x._dual.equals_ax_p_by(
-                1.0, x._dual, self.y_mult[k], self.Z[k]._dual)
+            x.primal.equals_ax_p_by(
+                1.0, x.primal, self.y_aug[k], self.Z[k].primal)
+            x.dual.equals_ax_p_by(
+                1.0, x.dual, self.y_mult[k], self.Z[k].dual)
 
         # scale the solution
-        x._primal.times(self.grad_scale)
-        x._dual.times(self.feas_scale)
+        x.primal.times(self.grad_scale)
+        x.dual.times(self.feas_scale)
 
         # check residual
         if self.check_res:
@@ -435,7 +426,7 @@ class FLECS(KrylovSolver):
             mat_vec(self.V[0], res)
             res.equals_ax_p_by(1.0, b, -1.0, res)
             true_res = res.norm2
-            true_feas = res._dual.norm2
+            true_feas = res.dual.norm2
             # print residual information
             out_data = true_res/norm0
             self.out_file.write(
@@ -468,8 +459,8 @@ class FLECS(KrylovSolver):
 
     def re_solve(self, b, x):
         # calculate norms for the RHS vector
-        grad0 = b._primal.norm2
-        feas0 = max(b._dual.norm2, EPS)
+        grad0 = b.primal.norm2
+        feas0 = max(b.dual.norm2, EPS)
         norm0 = sqrt(grad0**2 + feas0**2)
 
         # reset some prior data and re-solve the subspace problem
@@ -502,9 +493,21 @@ class FLECS(KrylovSolver):
         # always use composite-step approach in re-solve
         x.equals(0.0)
         for k in xrange(self.iters):
-            x._primal.equals_ax_p_by(
-                1.0, x._primal, self.y_aug[k], self.Z[k]._primal)
-            x._dual.equals_ax_p_by(
-                1.0, x._dual, self.y_mult[k], self.Z[k]._dual)
-        x._primal.times(self.grad_scale)
-        x._dual.times(self.feas_scale)
+            x.primal.equals_ax_p_by(
+                1.0, x.primal, self.y_aug[k], self.Z[k].primal)
+            x.dual.equals_ax_p_by(
+                1.0, x.dual, self.y_mult[k], self.Z[k].dual)
+        x.primal.times(self.grad_scale)
+        x.dual.times(self.feas_scale)
+
+# package imports at the bottom to prevent errors
+import gc
+import numpy
+from numpy import sqrt
+
+from kona.options import get_opt
+from kona.linalg.vectors.common import *
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.solvers.util import \
+    solve_tri, solve_trust_reduced, eigen_decomp, mod_GS_normalize, EPS

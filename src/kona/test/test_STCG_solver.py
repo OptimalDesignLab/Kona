@@ -32,9 +32,9 @@ class STCGSolverTestCase(unittest.TestCase):
         self.precond = IdentityMatrix()
 
     def mat_vec(self, in_vec, out_vec):
-        in_data = in_vec._data.data.copy()
+        in_data = in_vec.base.data.copy()
         out_data = self.A.dot(in_data)
-        out_vec._data.data[:] = out_data[:]
+        out_vec.base.data[:] = out_data[:]
 
     def test_bad_radius(self):
         # reset the solution vector
@@ -57,7 +57,7 @@ class STCGSolverTestCase(unittest.TestCase):
         # calculate expected result
         expected = numpy.array([.2, 0, 0, .2])
         # compare actual result to expected
-        diff = abs(self.x._data.data - expected)
+        diff = abs(self.x.base.data - expected)
         diff = max(diff)
         self.assertTrue(diff < 1.e-6)
         self.assertTrue(not active)

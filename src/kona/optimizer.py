@@ -1,3 +1,5 @@
+import numpy as np
+
 from kona.user import UserSolver
 from kona.algorithms import Verifier
 from kona.linalg.memory import KonaMemory
@@ -20,7 +22,7 @@ class Optimizer(object):
     algorithm : OptimizationAlgorithm
     optns : dict, optional
     """
-    def __init__(self, solver, algorithm, optns=None):
+    def __init__(self, solver, algorithm, ndv, neq=0, nineq=0, optns=None):
         # complain if solver or algorithm types are wrong
         # if not isinstance(solver, UserSolver):
         #     raise TypeError('Kona.Optimizer() >> ' +
@@ -44,7 +46,8 @@ class Optimizer(object):
         # get vector factories
         primal_factory = self._memory.primal_factory
         state_factory = self._memory.state_factory
-        dual_factory = self._memory.dual_factory
+        eq_factory = self._memory.eq_factory
+        ineq_factory =  self._memory.ineq_factory
         # check if this is a verification
         if algorithm is Verifier:
             try:
@@ -60,12 +63,13 @@ class Optimizer(object):
             except Exception:
                 verifier_optns['matrix_explicit'] = False
             self._algorithm = Verifier(
-                [primal_factory, state_factory, dual_factory],
+                [primal_factory, state_factory, eq_factory, ineq_factory],
                 solver, verifier_optns)
         else:
             # otherwise initialize the optimization algorithm
             self._algorithm = algorithm(
-                primal_factory, state_factory, dual_factory, self._optns)
+                primal_factory, state_factory, eq_factory, ineq_factory,
+                self._optns)
 
     def _process_options(self, optns):
         # this is a recursive dictionary merge function
@@ -88,6 +92,19 @@ class Optimizer(object):
             self._memory.open_file(self._optns['hist_file'])
         self._optns['krylov']['out_file'] = \
             self._memory.open_file(self._optns['krylov']['out_file'])
+
+    def set_design_bounds(self, lower=None, upper=None):
+        # make sure user provided some value
+        if lower is not None and upper is None:
+            raise ValueError("Must specify at least one bound!")
+        # assign the bounds
+        if lower is not None:
+            assert isinstance(lower, (np.float, np.int))
+            self._memory.design_lb = lower
+        if upper is not None:
+            assert isinstance(upper, (np.float, np.int))
+            self._memory.design_ub = upper
+
 
     def solve(self):
         self._memory.allocate_memory()

@@ -1,6 +1,3 @@
-import numpy as np
-
-from kona.linalg.vectors.common import PrimalVector, DualVector
 
 class CompositeVector(object):
     """
@@ -221,29 +218,35 @@ class ReducedKKTVector(CompositeVector):
     init_dual = -0.01
 
     def __init__(self, primal_vec, dual_vec):
-        if isinstance(primal_vec, PrimalVector) or \
-           isinstance(primal_vec, CompositePrimalVector):
-            self._primal = primal_vec
+        if isinstance(primal_vec, PrimalVector):
+            if not isinstance(dual_vec, DualVectorEQ):
+                raise TypeError(
+                    'ReducedKKTVector() >> Mismatched dual vector. ' +
+                    'Must be DualVectorEQ!')
+        elif isinstance(primal_vec, CompositePrimalVector):
+            if not isinstance(dual_vec, CompositeDualVector):
+                raise TypeError(
+                    'ReducedKKTVector() >> Mismatched dual vector. ' +
+                    'Must be CompositeDualVector!')
         else:
-            raise TypeError('CompositeVector() >> ' +
-                            'Unidentified primal vector.')
+            raise TypeError(
+                'ReducedKKTVector() >> Invalid primal vector. ' +
+                'Must be either PrimalVector or CompositePrimalVector!')
 
-        if isinstance(dual_vec, DualVector):
-            self._dual = dual_vec
-        else:
-            raise TypeError('CompositeVector() >> ' +
-                            'Unidentified dual vector.')
+        self.primal = primal_vec
+        self.dual = dual_vec
 
-        super(ReducedKKTVector, self).__init__([primal_vec, dual_vec])
+        super(ReducedKKTVector, self).__init__(
+            [primal_vec, dual_vec])
 
     def equals_init_guess(self):
         """
         Sets the KKT vector to the initial guess, using the initial design.
         """
-        self._primal.equals_init_design()
-        self._dual.equals(self.init_dual)
+        self.primal.equals_init_design()
+        self.dual.equals(self.init_dual)
 
-    def equals_KKT_conditions(self, x, state, adjoint, design_work, dual_work):
+    def equals_KKT_conditions(self, x, state, adjoint, design_work):
         """
         Calculates the total derivative of the Lagrangian
         :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda^T (c(x, u) - e^s)` with
@@ -270,23 +273,50 @@ class ReducedKKTVector(CompositeVector):
             Evaluate KKT conditions at this state point.
         adjoint : StateVector
             Evaluate KKT conditions using this adjoint vector.
-        slack : DualVector
-            Evaluate KKT conditions using these slack variables.
         design_work : PrimalVector
             Work vector for intermediate calculations.
         """
         # evaluate primal component
-        self._primal.equals_lagrangian_total_gradient(
-            x._primal, state, x._dual, adjoint, design_work)
+        self.primal.equals_lagrangian_total_gradient(
+            x.primal, state, x.dual, adjoint, design_work)
         # evaluate multiplier component
-        if isinstance(self._primal, CompositePrimalVector):
-            self._dual.equals_constraints(x._primal._design, state)
-            dual_work.exp(x._primal._slack)
-            dual_work.times(-1.)
-            dual_work.restrict()
-            self._dual.plus(dual_work)
+        self.dual.equals_constraints(x.primal, state)
+        if isinstance(self.primal, CompositePrimalVector):
+            self.dual.ineq.minus(self.primal.slack)
+
+class CompositeDualVector(CompositeVector):
+    """
+        A composite vector representing a combined equality and inequality
+        constraints.
+
+        Parameters
+        ----------
+        _memory : KonaMemory
+            All-knowing Kona memory manager.
+        eq : DualVectorEQ
+            Equality constraints.
+        ineq : DualVectorINEQ
+            Inequality Constraints
+        """
+
+    def __init__(self, dual_eq, dual_ineq):
+        if isinstance(dual_eq, DualVectorEQ):
+            self.eq = dual_eq
         else:
-            self._dual.equals_constraints(x._primal, state)
+            raise TypeError('CompositeDualVector() >> ' +
+                            'Unidentified equality constraint vector.')
+
+        if isinstance(dual_ineq, DualVectorINEQ):
+            self.ineq = dual_ineq
+        else:
+            raise TypeError('CompositeDualVector() >> ' +
+                            'Unidentified inequality constraint vector.')
+
+        super(CompositeDualVector, self).__init__([dual_eq, dual_ineq])
+
+    def equals_constraints(self, at_primal, at_state):
+        self.eq.equals_constraints(at_primal.design, at_state)
+        self.ineq.equals_constraints(at_primal.design, at_state)
 
 class CompositePrimalVector(CompositeVector):
     """
@@ -296,32 +326,32 @@ class CompositePrimalVector(CompositeVector):
     ----------
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    _primal : PrimalVector
+    design : PrimalVector
         Design component of the composite vector.
-    _slack : DualVector
+    slack : DualVectorINEQ
         Slack components of the composite vector.
     """
 
     init_slack = 0.0
 
-    def __init__(self, primal_vec, dual_vec):
+    def __init__(self, primal_vec, dual_ineq):
         if isinstance(primal_vec, PrimalVector):
-            self._design = primal_vec
+            self.design = primal_vec
         else:
-            raise TypeError('CompositeVector() >> ' +
+            raise TypeError('CompositePrimalVector() >> ' +
                             'Unidentified primal vector.')
 
-        if isinstance(dual_vec, DualVector):
-            self._slack = dual_vec
+        if isinstance(dual_ineq, DualVectorINEQ):
+            self.slack = dual_ineq
         else:
-            raise TypeError('CompositeVector() >> ' +
+            raise TypeError('CompositePrimalVector() >> ' +
                             'Unidentified dual vector.')
 
-        super(CompositePrimalVector, self).__init__([primal_vec, dual_vec])
+        super(CompositePrimalVector, self).__init__([primal_vec, dual_ineq])
 
     def equals_init_design(self):
-        self._design.equals_init_design()
-        self._slack.equals(self.init_slack)
+        self.design.equals_init_design()
+        self.slack.equals(self.init_slack)
 
     def equals_lagrangian_total_gradient(self, at_primal, at_state,
                                          at_dual, at_adjoint, design_work):
@@ -351,13 +381,16 @@ class CompositePrimalVector(CompositeVector):
             Work vector in the design space.
         """
         # do some aliasing
-        at_design = at_primal._design
-        at_slack = at_primal._slack
+        at_design = at_primal.design
+        at_slack = at_primal.slack
         # compute the design derivative of the lagrangian
-        self._design.equals_lagrangian_total_gradient(
+        self.design.equals_lagrangian_total_gradient(
             at_design, at_state, at_dual, at_adjoint, design_work)
         # compute the slack derivative of the lagrangian
-        self._slack.exp(at_slack)
-        self._slack.times(at_dual)
-        self._slack.times(-1.)
-        self._slack.restrict()
+        self.slack.exp(at_slack)
+        self.slack.times(at_dual)
+        self.slack.times(-1.)
+        self.slack.restrict()
+
+# package imports at the bottom to prevent import errors
+from kona.linalg.vectors.common import *

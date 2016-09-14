@@ -137,10 +137,10 @@ class KrylovUtilTestCase(unittest.TestCase):
 
         # define matrix vector products
         def fwd_mat_vec(in_vec, out_vec):
-            out_vec._data.data = np.inner(A, in_vec._data.data)
+            out_vec.base.data = np.inner(A, in_vec.base.data)
 
         def rev_mat_vec(in_vec, out_vec):
-            out_vec._data.data = np.inner(A.T, in_vec._data.data)
+            out_vec.base.data = np.inner(A.T, in_vec.base.data)
 
         # allocate subspaces
         q_work = pf.generate()

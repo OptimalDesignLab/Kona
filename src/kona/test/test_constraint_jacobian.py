@@ -48,51 +48,49 @@ class TotalConstraintJacobianTestCase(unittest.TestCase):
         in_vec.equals(2.0)
 
         X.equals_init_guess()
-        state.equals_primal_solution(X._primal._design)
-        state_work.equals_objective_partial(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+        state.equals_primal_solution(X.primal.design)
+        state_work.equals_objective_partial(X.primal.design, state)
+        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-        dLdX.equals_KKT_conditions(
-            X, state, adjoint, primal_work, dual_work)
+        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+        dLdX.equals_KKT_conditions(X, state, adjoint, primal_work)
 
         epsilon_fd = 1e-6
-        X._primal._design.equals_ax_p_by(
-            1.0, X._primal._design, epsilon_fd, in_vec._primal._design)
-        state.equals_primal_solution(X._primal._design)
-        state_work.equals_objective_partial(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+        X.primal.design.equals_ax_p_by(
+            1.0, X.primal.design, epsilon_fd, in_vec.primal.design)
+        state.equals_primal_solution(X.primal.design)
+        state_work.equals_objective_partial(X.primal.design, state)
+        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-        dLdX_pert.equals_KKT_conditions(
-            X, state, adjoint, primal_work, dual_work)
+        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+        dLdX_pert.equals_KKT_conditions(X, state, adjoint, primal_work)
 
         dLdX_pert.minus(dLdX)
         dLdX_pert.divide_by(epsilon_fd)
 
         X.equals_init_guess()
-        state.equals_primal_solution(X._primal._design)
-        state_work.equals_objective_partial(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+        state.equals_primal_solution(X.primal.design)
+        state_work.equals_objective_partial(X.primal.design, state)
+        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-        self.A.linearize(X._primal._design, state)
-        self.A.product(in_vec._primal._design, out_vec._dual)
+        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+        self.A.linearize(X.primal.design, state)
+        self.A.product(in_vec.primal.design, out_vec.dual)
 
         print '-----------------------------'
         print 'Constraint Hessian'
         print '-----------------------------'
         print 'FD product:'
-        print dLdX_pert._dual._data.data
+        print dLdX_pert.dual.base.data
         print 'Analytical product:'
-        print out_vec._dual._data.data
+        print out_vec.dual.base.data
         print '-----------------------------'
 
         dLdX.equals_ax_p_by(1.0, dLdX_pert, -1.0, out_vec)
-        diff_norm = dLdX._dual.norm2
+        diff_norm = dLdX.dual.norm2
 
         self.assertTrue(diff_norm <= 1e-3)
 

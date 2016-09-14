@@ -98,9 +98,9 @@ class AugmentedKKTMatrix(BaseHessian):
 
     def linearize(self, at_kkt, at_state):
         # store references to the evaluation point
-        self.at_design = at_kkt._primal._design
-        self.at_slack = at_kkt._primal._slack
-        self.at_dual = at_kkt._dual
+        self.at_design = at_kkt.primal.design
+        self.at_slack = at_kkt.primal.slack
+        self.at_dual = at_kkt.dual
         self.at_state = at_state
 
         # generate a work vector
@@ -127,24 +127,24 @@ class AugmentedKKTMatrix(BaseHessian):
     def product(self, in_vec, out_vec):
         # compute the design product
         # out_design = in_design + A^T*in_dual
-        self.A.T.product(in_vec._dual, out_vec._primal._design)
-        out_vec._primal._design.plus(in_vec._primal._design)
+        self.A.T.product(in_vec.dual, out_vec.primal.design)
+        out_vec.primal.design.plus(in_vec.primal.design)
 
         # compute the slack product
         # out_slack = in_slack - Sigma*in_dual
-        out_vec._primal._slack.equals(in_vec._dual)
-        out_vec._primal._slack.times(self.slack_term)
-        out_vec._primal._slack.times(-1.)
-        out_vec._primal._slack.plus(in_vec._primal._slack)
-        out_vec._primal._slack.restrict()
+        out_vec.primal.slack.equals(in_vec.dual)
+        out_vec.primal.slack.times(self.slack_term)
+        out_vec.primal.slack.times(-1.)
+        out_vec.primal.slack.plus(in_vec.primal.slack)
+        out_vec.primal.slack.restrict()
 
         # compute the dual product
         # out_dual = A*in_design - Sigma*in_slack
-        self.A.product(in_vec._primal._design, out_vec._dual)
-        self.dual_work.equals(in_vec._primal._slack)
+        self.A.product(in_vec.primal.design, out_vec.dual)
+        self.dual_work.equals(in_vec.primal.slack)
         self.dual_work.times(self.slack_term)
         self.dual_work.times(-1.)
-        out_vec._dual.plus(self.dual_work)
+        out_vec.dual.plus(self.dual_work)
 
     def solve(self, rhs, solution, rel_tol=None):
         # set krylov relative tolerance

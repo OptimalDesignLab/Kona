@@ -48,51 +48,49 @@ class LagrangianHessianTestCase(unittest.TestCase):
         in_vec.equals(2.0)
 
         X.equals_init_guess()
-        state.equals_primal_solution(X._primal._design)
-        state_work.equals_objective_partial(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+        state.equals_primal_solution(X.primal.design)
+        state_work.equals_objective_partial(X.primal.design, state)
+        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-        dLdX.equals_KKT_conditions(
-            X, state, adjoint, design_work, dual_work)
+        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+        dLdX.equals_KKT_conditions(X, state, adjoint, design_work)
 
         epsilon_fd = 1e-6
-        X._primal._design.equals_ax_p_by(
-            1.0, X._primal._design, epsilon_fd, in_vec._primal._design)
-        state.equals_primal_solution(X._primal._design)
-        state_work.equals_objective_partial(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+        X.primal.design.equals_ax_p_by(
+            1.0, X.primal.design, epsilon_fd, in_vec.primal.design)
+        state.equals_primal_solution(X.primal.design)
+        state_work.equals_objective_partial(X.primal.design, state)
+        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint)
-        dLdX_pert.equals_KKT_conditions(
-            X, state, adjoint, design_work, dual_work)
+        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+        dLdX_pert.equals_KKT_conditions(X, state, adjoint, design_work)
 
         dLdX_pert.minus(dLdX)
         dLdX_pert.divide_by(epsilon_fd)
 
         X.equals_init_guess()
-        state.equals_primal_solution(X._primal._design)
-        state_work.equals_objective_partial(X._primal._design, state)
-        dCdU(X._primal._design, state).T.product(X._dual, adjoint)
+        state.equals_primal_solution(X.primal.design)
+        state_work.equals_objective_partial(X.primal.design, state)
+        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X._primal._design, state).T.solve(state_work, adjoint)
+        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
         self.W.linearize(X, state, adjoint)
-        self.W.multiply_W(in_vec._primal._design, out_vec._primal._design)
+        self.W.multiply_W(in_vec.primal.design, out_vec.primal.design)
 
         print '-----------------------------'
         print 'Constrained Hessian'
         print '-----------------------------'
         print 'FD product:'
-        print dLdX_pert._primal._design._data.data
+        print dLdX_pert.primal.design.base.data
         print 'Analytical product:'
-        print out_vec._primal._design._data.data
+        print out_vec.primal.design.base.data
         print '-----------------------------'
 
         dLdX.equals_ax_p_by(1.0, dLdX_pert, -1.0, out_vec)
-        diff_norm = dLdX._primal._design.norm2
+        diff_norm = dLdX.primal.design.norm2
 
         self.assertTrue(diff_norm <= 1e-3)
 

@@ -229,14 +229,14 @@ class L2QuadraticPenalty(MeritFunction):
         self.p_dot_grad = None
         self.mu = mu
         self.u_start = u_start
-        if isinstance(kkt_start._primal, CompositePrimalVector):
-            self.x_start = kkt_start._primal._design
-            self.design_step = search_dir._primal._design
-            self.slack_start = kkt_start._primal._slack
-            self.slack_step = search_dir._primal._slack
+        if isinstance(kkt_start.primal, CompositePrimalVector):
+            self.x_start = kkt_start.primal.design
+            self.design_step = search_dir.primal.design
+            self.slack_start = kkt_start.primal.slack
+            self.slack_step = search_dir.primal.slack
         else:
-            self.x_start = kkt_start._primal
-            self.design_step = search_dir._primal
+            self.x_start = kkt_start.primal
+            self.design_step = search_dir.primal
             self.slack_start = None
             self.slack_step = None
 
@@ -328,8 +328,8 @@ class AugmentedLagrangian(L2QuadraticPenalty):
             self._child_allocated = True
 
         # store references to dual start and dual step
-        self.mult_start = kkt_start._dual
-        self.mult_step = search_dir._dual
+        self.mult_start = kkt_start.dual
+        self.mult_step = search_dir.dual
 
         # save the Lagrange multipliers
         self.multipliers.equals(self.mult_start)
