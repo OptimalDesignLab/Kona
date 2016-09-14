@@ -3,8 +3,10 @@ import numpy, sys
 from kona.options import get_opt
 from kona.linalg import objective_value, factor_linear_system
 from kona.linalg.solvers.util import calc_epsilon
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+from kona.linalg.matrices.common import dRdX, dRdU
+from kona.linalg.matrices.common import dCEQdX, dCEQdU, dCINdX, dCINdU
+from kona.linalg.vectors.common import PrimalVector, StateVector
+from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
 
 EPS = numpy.finfo(numpy.float32).eps
 
@@ -28,57 +30,60 @@ class Verifier(object):
     solver : UserSolver
     optns : dict
     """
-    def __init__(self, vector_factories, solver, optns={}):
+    def __init__(self, primal_factory, state_factory, eq_factory, ineq_factory,
+                 optns={}):
         # extract vector factories
-        self.primal_factory = None
-        self.state_factory = None
-        self.dual_factory = None
-        for factory in vector_factories:
-            if factory is not None:
-                if factory._vec_type is PrimalVector:
-                    self.primal_factory = factory
-                if factory._vec_type is StateVector:
-                    self.state_factory = factory
-                if factory._vec_type is DualVector:
-                    self.dual_factory = factory
+        self.primal_factory = primal_factory
+        self.state_factory = state_factory
+        self.eq_factory = eq_factory
+        self.ineq_factory = ineq_factory
 
         # store solver handle
-        self.solver = solver
+        self.solver = self.primal_factory._memory.solver
 
         # assemble internal options dictionary
         self.optns = {
-            'primal_vec' : get_opt(optns, True, 'primal_vec'),
-            'state_vec'  : get_opt(optns, True, 'state_vec'),
-            'dual_vec'   : get_opt(optns, False, 'dual_vec'),
-            'gradients'  : get_opt(optns, True, 'gradients'),
-            'pde_jac'    : get_opt(optns, True, 'pde_jac'),
-            'cnstr_jac'  : get_opt(optns, False, 'cnstr_jac'),
-            'red_grad'   : get_opt(optns, True, 'red_grad'),
-            'lin_solve'  : get_opt(optns, True, 'lin_solve'),
+            'primal_vec'   : get_opt(optns, True, 'verify', 'primal_vec'),
+            'state_vec'    : get_opt(optns, True, 'verify', 'state_vec'),
+            'dual_vec_eq'  : get_opt(optns, False, 'verify', 'dual_vec_eq'),
+            'dual_vec_in'  : get_opt(optns, False, 'verify', 'dual_vec_in'),
+            'gradients'    : get_opt(optns, True, 'verify', 'gradients'),
+            'pde_jac'      : get_opt(optns, True, 'verify', 'pde_jac'),
+            'cnstr_jac_eq' : get_opt(optns, False, 'verify', 'cnstr_jac_eq'),
+            'cnstr_jac_in' : get_opt(optns, False, 'verify', 'cnstr_jac_in'),
+            'red_grad'     : get_opt(optns, True, 'verify', 'red_grad'),
+            'lin_solve'    : get_opt(optns, True, 'verify', 'lin_solve'),
         }
-        self.out_stream = get_opt(optns, sys.stdout, 'out_file')
+        self.out_stream = get_opt(optns, sys.stdout, 'verify', 'out_file')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # request vectors
         num_primal = 0
         num_state = 0
-        num_dual = 0
+        num_dual_eq = 0
+        num_dual_in = 0
         if self.optns['primal_vec']:
             num_primal = max(num_primal, 3)
         if self.optns['state_vec']:
             num_state = max(num_state, 3)
-        if self.optns['dual_vec']:
-            num_dual = max(num_dual, 3)
+        if self.optns['dual_vec_eq']:
+            num_dual_eq = max(num_dual_eq, 3)
+        if self.optns['dual_vec_in']:
+            num_dual_in = max(num_dual_in, 3)
         if self.optns['gradients']:
             num_primal = max(num_primal, 4)
             num_state = max(num_state, 4)
         if self.optns['pde_jac']:
             num_primal = max(num_primal, 6)
             num_state = max(num_state, 6)
-        if self.optns['cnstr_jac']:
+        if self.optns['cnstr_jac_eq']:
             num_primal = max(num_primal, 6)
             num_state = max(num_state, 6)
-            num_dual = max(num_dual, 6)
+            num_dual_eq = max(num_dual_eq, 6)
+        if self.optns['cnstr_jac_in']:
+            num_primal = max(num_primal, 6)
+            num_state = max(num_state, 6)
+            num_dual_in = max(num_dual_in, 6)
         if self.optns['red_grad']:
             num_primal = max(num_primal, 4)
             num_state = max(num_state, 4)
@@ -87,8 +92,10 @@ class Verifier(object):
             num_state = max(num_state, 5)
         self.primal_factory.request_num_vectors(num_primal)
         self.state_factory.request_num_vectors(num_state)
-        if self.optns['dual_vec']:
-            self.dual_factory.request_num_vectors(num_dual)
+        if self.optns['dual_vec_eq']:
+            self.eq_factory.request_num_vectors(num_dual_eq)
+        if self.optns['dual_vec_in']:
+            self.ineq_factory.request_num_vectors(num_dual_in)
 
         # set a dictionary that will keep track of failures
         self.warnings_flagged = False
@@ -117,7 +124,18 @@ class Verifier(object):
                 'pow'                   : None,
                 'inner'                 : None,
             },
-            'dual_vec' : {
+            'dual_vec_eq' : {
+                'equals_value'          : None,
+                'equals_vector'         : None,
+                'plus'                  : None,
+                'times'                 : None,
+                'equals_ax_p_by'        : None,
+                'exp'                   : None,
+                'log'                   : None,
+                'pow'                   : None,
+                'inner'                 : None,
+            },
+            'dual_vec_in': {
                 'equals_value'          : None,
                 'equals_vector'         : None,
                 'plus'                  : None,
@@ -141,11 +159,17 @@ class Verifier(object):
                 'multiply_dRdU_T'       : None,
             },
             # UserSolver constraint jacobian operations
-            'cnstr_jac' : {
-                'multiply_dCdX'         : None,
-                'multiply_dCdU'         : None,
-                'multiply_dCdX_T'       : None,
-                'multiply_dCdU_T'       : None,
+            'cnstr_jac_eq' : {
+                'multiply_dCEQdX'       : None,
+                'multiply_dCEQdU'       : None,
+                'multiply_dCEQdX_T'     : None,
+                'multiply_dCEQdU_T'     : None,
+            },
+            'cnstr_jac_in': {
+                'multiply_dCINdX'       : None,
+                'multiply_dCINdU'       : None,
+                'multiply_dCINdX_T'     : None,
+                'multiply_dCINdU_T'     : None,
             },
             # UserSolver forward and reverse linear solves
             'lin_solve' : {
@@ -157,9 +181,11 @@ class Verifier(object):
         }
 
         # define an array if useful keys
-        self.critical = ['primal_vec', 'state_vec', 'dual_vec']
+        self.critical = \
+            ['primal_vec', 'state_vec', 'dual_vec_eq', 'dual_vec_in']
         self.non_critical = \
-            ['gradients', 'pde_jac', 'cnstr_jac', 'lin_solve', 'red_grad']
+            ['gradients', 'pde_jac', 'cnstr_jac_eq', 'cnstr_jac_in',
+             'lin_solve', 'red_grad']
         self.all_tests = self.critical + self.non_critical
 
     def solve(self):
@@ -358,21 +384,21 @@ class Verifier(object):
             self.failures['state_vec']['inner'] = True
             self.exit_verify = True
 
-    def _verify_dual_vec(self):
-        if not self.optns['dual_vec']:
+    def _verify_dual_vec_eq(self):
+        if not self.optns['dual_vec_eq']:
             return
 
-        u_d = self.dual_factory.generate()
-        v_d = self.dual_factory.generate()
-        w_d = self.dual_factory.generate()
+        u_d = self.eq_factory.generate()
+        v_d = self.eq_factory.generate()
+        w_d = self.eq_factory.generate()
 
         u_d.equals(10.0)
         u_d.divide_by(u_d.norm2)
         one = u_d.norm2
         if abs(one) - 1 > EPS:
-            self.failures['dual_vec']['equals_value'] = True
-            self.failures['dual_vec']['times'] = True
-            self.failures['dual_vec']['inner'] = True
+            self.failures['dual_vec_eq']['equals_value'] = True
+            self.failures['dual_vec_eq']['times'] = True
+            self.failures['dual_vec_eq']['inner'] = True
             self.exit_verify = True
 
         u_d.equals(1.)
@@ -381,10 +407,10 @@ class Verifier(object):
         w_d.plus(v_d)
         zero = w_d.norm2
         if abs(zero) > EPS:
-            self.failures['dual_vec']['equals_value'] = True
-            self.failures['dual_vec']['equals_vector'] = True
-            self.failures['dual_vec']['plus'] = True
-            self.failures['dual_vec']['inner'] = True
+            self.failures['dual_vec_eq']['equals_value'] = True
+            self.failures['dual_vec_eq']['equals_vector'] = True
+            self.failures['dual_vec_eq']['plus'] = True
+            self.failures['dual_vec_eq']['inner'] = True
             self.exit_verify = True
 
         u_d.times(2.)
@@ -392,9 +418,9 @@ class Verifier(object):
         w_d.equals_ax_p_by(1./3., u_d, 2.0, v_d)
         zero = w_d.norm2
         if abs(zero) > EPS:
-            self.failures['dual_vec']['times'] = True
-            self.failures['dual_vec']['equals_ax_p_by'] = True
-            self.failures['dual_vec']['inner'] = True
+            self.failures['dual_vec_eq']['times'] = True
+            self.failures['dual_vec_eq']['equals_ax_p_by'] = True
+            self.failures['dual_vec_eq']['inner'] = True
             self.exit_verify = True
 
         u_d.equals(0.0)
@@ -403,19 +429,19 @@ class Verifier(object):
         w_d.plus(v_d)
         zero = w_d.norm2
         if abs(zero) > EPS:
-            self.failures['dual_vec']['equals_value'] = True
-            self.failures['dual_vec']['exp'] = True
-            self.failures['dual_vec']['plus'] = True
-            self.failures['dual_vec']['inner'] = True
+            self.failures['dual_vec_eq']['equals_value'] = True
+            self.failures['dual_vec_eq']['exp'] = True
+            self.failures['dual_vec_eq']['plus'] = True
+            self.failures['dual_vec_eq']['inner'] = True
             self.exit_verify = True
 
         u_d.equals(1.0)
         v_d.log(u_d)
         zero = v_d.norm2
         if abs(zero) > EPS:
-            self.failures['dual_vec']['equals_value'] = True
-            self.failures['dual_vec']['log'] = True
-            self.failures['dual_vec']['inner'] = True
+            self.failures['dual_vec_eq']['equals_value'] = True
+            self.failures['dual_vec_eq']['log'] = True
+            self.failures['dual_vec_eq']['inner'] = True
             self.exit_verify = True
 
         u_d.equals(2.0)
@@ -424,10 +450,82 @@ class Verifier(object):
         w_d.plus(u_d)
         zero = w_d.norm2
         if abs(zero) > EPS:
-            self.failures['dual_vec']['equals_value'] = True
-            self.failures['dual_vec']['pow'] = True
-            self.failures['dual_vec']['plus'] = True
-            self.failures['dual_vec']['inner'] = True
+            self.failures['dual_vec_eq']['equals_value'] = True
+            self.failures['dual_vec_eq']['pow'] = True
+            self.failures['dual_vec_eq']['plus'] = True
+            self.failures['dual_vec_eq']['inner'] = True
+            self.exit_verify = True
+
+    def _verify_dual_vec_in(self):
+        if not self.optns['dual_vec_in']:
+            return
+
+        u_d = self.ineq_factory.generate()
+        v_d = self.ineq_factory.generate()
+        w_d = self.ineq_factory.generate()
+
+        u_d.equals(10.0)
+        u_d.divide_by(u_d.norm2)
+        one = u_d.norm2
+        if abs(one) - 1 > EPS:
+            self.failures['dual_vec_in']['equals_value'] = True
+            self.failures['dual_vec_in']['times'] = True
+            self.failures['dual_vec_in']['inner'] = True
+            self.exit_verify = True
+
+        u_d.equals(1.)
+        v_d.equals(-1.)
+        w_d.equals(u_d)
+        w_d.plus(v_d)
+        zero = w_d.norm2
+        if abs(zero) > EPS:
+            self.failures['dual_vec_in']['equals_value'] = True
+            self.failures['dual_vec_in']['equals_vector'] = True
+            self.failures['dual_vec_in']['plus'] = True
+            self.failures['dual_vec_in']['inner'] = True
+            self.exit_verify = True
+
+        u_d.times(2.)
+        v_d.divide_by(3.)
+        w_d.equals_ax_p_by(1./3., u_d, 2.0, v_d)
+        zero = w_d.norm2
+        if abs(zero) > EPS:
+            self.failures['dual_vec_in']['times'] = True
+            self.failures['dual_vec_in']['equals_ax_p_by'] = True
+            self.failures['dual_vec_in']['inner'] = True
+            self.exit_verify = True
+
+        u_d.equals(0.0)
+        v_d.exp(u_d)
+        w_d.equals(-1.0)
+        w_d.plus(v_d)
+        zero = w_d.norm2
+        if abs(zero) > EPS:
+            self.failures['dual_vec_in']['equals_value'] = True
+            self.failures['dual_vec_in']['exp'] = True
+            self.failures['dual_vec_in']['plus'] = True
+            self.failures['dual_vec_in']['inner'] = True
+            self.exit_verify = True
+
+        u_d.equals(1.0)
+        v_d.log(u_d)
+        zero = v_d.norm2
+        if abs(zero) > EPS:
+            self.failures['dual_vec_in']['equals_value'] = True
+            self.failures['dual_vec_in']['log'] = True
+            self.failures['dual_vec_in']['inner'] = True
+            self.exit_verify = True
+
+        u_d.equals(2.0)
+        u_d.pow(2.0)
+        w_d.equals(-4.0)
+        w_d.plus(u_d)
+        zero = w_d.norm2
+        if abs(zero) > EPS:
+            self.failures['dual_vec_in']['equals_value'] = True
+            self.failures['dual_vec_in']['pow'] = True
+            self.failures['dual_vec_in']['plus'] = True
+            self.failures['dual_vec_in']['inner'] = True
             self.exit_verify = True
 
     def _verify_gradients(self):
@@ -649,8 +747,8 @@ class Verifier(object):
                     'WARNING: Fix multiply_dRdU() and check this test again!\n'
                 )
 
-    def _verify_cnstr_jac(self):
-        if not self.optns['cnstr_jac']:
+    def _verify_cnstr_jac_eq(self):
+        if not self.optns['cnstr_jac_eq']:
             return
 
         u_p = self.primal_factory.generate()
@@ -661,10 +759,10 @@ class Verifier(object):
         v_s = self.state_factory.generate()
         w_s = self.state_factory.generate()
         z_s = self.state_factory.generate()
-        v_d = self.dual_factory.generate()
-        x_d = self.dual_factory.generate()
-        y_d = self.dual_factory.generate()
-        z_d = self.dual_factory.generate()
+        v_d = self.eq_factory.generate()
+        x_d = self.eq_factory.generate()
+        y_d = self.eq_factory.generate()
+        z_d = self.eq_factory.generate()
 
         u_p.equals_init_design()
         u_s.equals_primal_solution(u_p)
@@ -675,7 +773,7 @@ class Verifier(object):
         z_p.equals(1.0)
         z_d.equals(1.0)
         v_d.equals(1./EPS)
-        dCdX(u_p, u_s).product(z_p, v_d)
+        dCEQdX(u_p, u_s).product(z_p, v_d)
         prod_norm = v_d.inner(z_d)
 
         epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
@@ -692,8 +790,8 @@ class Verifier(object):
 
         self.out_stream.write(
             '============================================================\n' +
-            'Constraint jacobian-vector product test (design):\n' +
-            'dC/dX * 1\n' +
+            'EQ Cnstr jacobian-vector product test (design):\n' +
+            'dCEQ/dX * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod_norm +
             '   FD product           : %f\n'%prod_norm_fd +
@@ -702,15 +800,15 @@ class Verifier(object):
         )
 
         if rel_error > epsilon_fd:
-            self.failures['cnstr_jac']['multiply_dCdX'] = True
+            self.failures['cnstr_jac_eq']['multiply_dCEQdX'] = True
             self.out_stream.write(
-                'WARNING: multiply_dCdX() or eval_constraints() ' +
+                'WARNING: multiply_dCEQdX() or eval_eq_cnstr() ' +
                 'may be inaccurate!\n'
             )
 
         z_d.equals(1.0)
         v_p.equals(1./EPS)
-        dCdX(u_p, u_s).T.product(z_d, v_p)
+        dCEQdX(u_p, u_s).T.product(z_d, v_p)
         prod = v_p.inner(z_p)
         prod_fd = y_d.inner(z_d)
         abs_error = abs(prod - prod_fd)
@@ -718,8 +816,8 @@ class Verifier(object):
 
         self.out_stream.write(
             '============================================================\n' +
-            'Constraint jacobian-vector transpose-product test (design): \n' +
-            '1^{T} dC/dX * 1\n' +
+            'EQ Cnstr jacobian-vector transpose-product test (design): \n' +
+            '1^{T} dCEQ/dX * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
@@ -728,19 +826,20 @@ class Verifier(object):
         )
 
         if rel_error > epsilon_fd:
-            self.failures['cnstr_jac']['multiply_dCdX_T'] = True
+            self.failures['cnstr_jac_eq']['multiply_dCEQdX_T'] = True
             self.out_stream.write(
-                'WARNING: multiply_dCdX_T() may be inaccurate!\n'
+                'WARNING: multiply_dCEQdX_T() may be inaccurate!\n'
             )
-            if self.failures['cnstr_jac']['multiply_dCdX']:
+            if self.failures['cnstr_jac_eq']['multiply_dCEQdX']:
                 self.out_stream.write(
-                    'WARNING: Fix multiply_dCdX() and check this test again!\n'
+                    'WARNING: Fix multiply_dCEQdX() and ' +
+                    'check this test again!\n'
                 )
 
         z_s.equals(1.0)
         z_d.equals(1.0)
         v_d.equals(1./EPS)
-        dCdU(u_p, u_s).product(z_s, v_d)
+        dCEQdU(u_p, u_s).product(z_s, v_d)
         prod_norm = v_d.inner(z_d)
         epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
         w_s.equals(z_s)
@@ -756,8 +855,8 @@ class Verifier(object):
 
         self.out_stream.write(
             '============================================================\n' +
-            'Constraint jacobian-vector product test (state):\n' +
-            'dC/dU * 1\n' +
+            'EQ Cnstr jacobian-vector product test (state):\n' +
+            'dCEQ/dU * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod_norm +
             '   FD product           : %f\n'%prod_norm_fd +
@@ -766,14 +865,14 @@ class Verifier(object):
         )
 
         if rel_error > epsilon_fd:
-            self.failures['cnstr_jac']['multiply_dCdU'] = True
+            self.failures['cnstr_jac_eq']['multiply_dCEQdU'] = True
             self.out_stream.write(
-                'WARNING: multiply_dCdU() or eval_constraints() ' +
+                'WARNING: multiply_dCEQdU() or eval_eq_cnstr() ' +
                 'may be inaccurate!\n'
             )
 
         v_s.equals(1./EPS)
-        dCdU(u_p, u_s).T.product(z_d, v_s)
+        dCEQdU(u_p, u_s).T.product(z_d, v_s)
         prod = v_s.inner(z_s)
         prod_fd = y_d.inner(z_d)
         abs_error = abs(prod - prod_fd)
@@ -781,8 +880,8 @@ class Verifier(object):
 
         self.out_stream.write(
             '============================================================\n' +
-            'Constraint jacobian-vector transpose-product test (state): \n' +
-            '1^{T} dC/dU * 1\n' +
+            'EQ Cnstr jacobian-vector transpose-product test (state): \n' +
+            '1^{T} dCEQ/dU * 1\n' +
             '   FD perturbation      : %e\n'%epsilon_fd +
             '   analytical product   : %f\n'%prod +
             '   FD product           : %f\n'%prod_fd +
@@ -791,13 +890,167 @@ class Verifier(object):
         )
 
         if rel_error > epsilon_fd:
-            self.failures['cnstr_jac']['multiply_dCdU_T'] = True
+            self.failures['cnstr_jac_eq']['multiply_dCEQdU_T'] = True
             self.out_stream.write(
-                'WARNING: multiply_dCdU_T() may be inaccurate!\n'
+                'WARNING: multiply_dCEQdU_T() may be inaccurate!\n'
             )
-            if self.failures['cnstr_jac']['multiply_dCdU']:
+            if self.failures['cnstr_jac_eq']['multiply_dCEQdU']:
                 self.out_stream.write(
-                    'WARNING: Fix multiply_dCdU() and check this test again!\n'
+                    'WARNING: Fix multiply_dCEQdU() and ' +
+                    'check this test again!\n'
+                )
+
+    def _verify_cnstr_jac_in(self):
+        if not self.optns['cnstr_jac_in']:
+            return
+
+        u_p = self.primal_factory.generate()
+        v_p = self.primal_factory.generate()
+        w_p = self.primal_factory.generate()
+        z_p = self.primal_factory.generate()
+        u_s = self.state_factory.generate()
+        v_s = self.state_factory.generate()
+        w_s = self.state_factory.generate()
+        z_s = self.state_factory.generate()
+        v_d = self.ineq_factory.generate()
+        x_d = self.ineq_factory.generate()
+        y_d = self.ineq_factory.generate()
+        z_d = self.ineq_factory.generate()
+
+        u_p.equals_init_design()
+        u_s.equals_primal_solution(u_p)
+        if self.factor_matrices:
+            factor_linear_system(u_p, u_s)
+        x_d.equals_constraints(u_p, u_s)
+
+        z_p.equals(1.0)
+        z_d.equals(1.0)
+        v_d.equals(1./EPS)
+        dCINdX(u_p, u_s).product(z_p, v_d)
+        prod_norm = v_d.inner(z_d)
+
+        epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
+        w_p.equals(z_p)
+        w_p.times(epsilon_fd)
+        w_p.plus(u_p)
+        y_d.equals_constraints(w_p, u_s)
+        y_d.minus(x_d)
+        y_d.divide_by(epsilon_fd)
+        prod_norm_fd = y_d.inner(z_d)
+        v_d.minus(y_d)
+        error = abs(v_d.inner(z_d))
+        rel_error = error/max(abs(prod_norm), EPS)
+
+        self.out_stream.write(
+            '============================================================\n' +
+            'INEQ Cnstr jacobian-vector product test (design):\n' +
+            'dCIN/dX * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %f\n'%prod_norm +
+            '   FD product           : %f\n'%prod_norm_fd +
+            '   absolute error       : %e\n'%error +
+            '   relative error       : %e\n'%rel_error
+        )
+
+        if rel_error > epsilon_fd:
+            self.failures['cnstr_jac_in']['multiply_dCINdX'] = True
+            self.out_stream.write(
+                'WARNING: multiply_dCINdX() or eval_ineq_cnstr() ' +
+                'may be inaccurate!\n'
+            )
+
+        z_d.equals(1.0)
+        v_p.equals(1./EPS)
+        dCINdX(u_p, u_s).T.product(z_d, v_p)
+        prod = v_p.inner(z_p)
+        prod_fd = y_d.inner(z_d)
+        abs_error = abs(prod - prod_fd)
+        rel_error = abs_error/max(abs(prod), EPS)
+
+        self.out_stream.write(
+            '============================================================\n' +
+            'INEQ Cnstr jacobian-vector transpose-product test (design): \n' +
+            '1^{T} dCIN/dX * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %f\n'%prod +
+            '   FD product           : %f\n'%prod_fd +
+            '   absolute error       : %e\n'%abs_error +
+            '   relative error       : %e\n'%rel_error
+        )
+
+        if rel_error > epsilon_fd:
+            self.failures['cnstr_jac_in']['multiply_dCINdX_T'] = True
+            self.out_stream.write(
+                'WARNING: multiply_dCINdX_T() may be inaccurate!\n'
+            )
+            if self.failures['cnstr_jac_in']['multiply_dCINdX']:
+                self.out_stream.write(
+                    'WARNING: Fix multiply_dCINdX() and ' +
+                    'check this test again!\n'
+                )
+
+        z_s.equals(1.0)
+        z_d.equals(1.0)
+        v_d.equals(1./EPS)
+        dCINdU(u_p, u_s).product(z_s, v_d)
+        prod_norm = v_d.inner(z_d)
+        epsilon_fd = calc_epsilon(u_s.norm2, z_s.norm2)
+        w_s.equals(z_s)
+        w_s.times(epsilon_fd)
+        w_s.plus(u_s)
+        y_d.equals_constraints(u_p, w_s)
+        y_d.minus(x_d)
+        y_d.divide_by(epsilon_fd)
+        prod_norm_fd = y_d.inner(z_d)
+        v_d.minus(y_d)
+        error = abs(v_d.inner(z_d))
+        rel_error = error/max(abs(prod_norm), EPS)
+
+        self.out_stream.write(
+            '============================================================\n' +
+            'INEQ Cnstr jacobian-vector product test (state):\n' +
+            'dCEQ/dU * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %f\n'%prod_norm +
+            '   FD product           : %f\n'%prod_norm_fd +
+            '   absolute error       : %e\n'%error +
+            '   relative error       : %e\n'%rel_error
+        )
+
+        if rel_error > epsilon_fd:
+            self.failures['cnstr_jac_in']['multiply_dCINdU'] = True
+            self.out_stream.write(
+                'WARNING: multiply_dCINdU() or eval_ineq_cnstr() ' +
+                'may be inaccurate!\n'
+            )
+
+        v_s.equals(1./EPS)
+        dCINdU(u_p, u_s).T.product(z_d, v_s)
+        prod = v_s.inner(z_s)
+        prod_fd = y_d.inner(z_d)
+        abs_error = abs(prod - prod_fd)
+        rel_error = abs_error/max(abs(prod), EPS)
+
+        self.out_stream.write(
+            '============================================================\n' +
+            'INEQ Cnstr jacobian-vector transpose-product test (state): \n' +
+            '1^{T} dCIN/dU * 1\n' +
+            '   FD perturbation      : %e\n'%epsilon_fd +
+            '   analytical product   : %f\n'%prod +
+            '   FD product           : %f\n'%prod_fd +
+            '   absolute error       : %e\n'%abs_error +
+            '   relative error       : %e\n'%rel_error
+        )
+
+        if rel_error > epsilon_fd:
+            self.failures['cnstr_jac_in']['multiply_dCINdU_T'] = True
+            self.out_stream.write(
+                'WARNING: multiply_dCINdU_T() may be inaccurate!\n'
+            )
+            if self.failures['cnstr_jac_in']['multiply_dCINdU']:
+                self.out_stream.write(
+                    'WARNING: Fix multiply_dCINdU() and ' +
+                    'check this test again!\n'
                 )
 
     def _verify_red_grad(self):

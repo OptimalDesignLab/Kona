@@ -17,13 +17,11 @@ class Optimizer(object):
     algorithm : OptimizationAlgorithm
     optns : dict, optional
     """
-    def __init__(self, solver, algorithm, ndv, neq=0, nineq=0, optns=None):
-        # complain if solver or algorithm types are wrong
-        # if not isinstance(solver, UserSolver):
-        #     raise TypeError('Kona.Optimizer() >> ' +
-        #                     'Unknown solver type!')
+    def __init__(self, solver, algorithm, ndv, neq=0, nineq=0, optns={}):
+
         # initialize optimization memory
         self._memory = KonaMemory(solver)
+
         # set default file handles
         self._optns = {
             'info_file' : 'kona_info.dat',
@@ -35,35 +33,22 @@ class Optimizer(object):
                 'out_file' : 'kona_verify.dat',
             }
         }
+
         # process the final options
-        if optns is None:
-            optns = {}
-        elif not isinstance(optns, dict):
+        if not isinstance(optns, dict):
             raise TypeError('Kona.Optimizer >> Options must be a dictionary!')
         self._process_options(optns)
+
         # get vector factories
         primal_factory = self._memory.primal_factory
         state_factory = self._memory.state_factory
         eq_factory = self._memory.eq_factory
         ineq_factory =  self._memory.ineq_factory
-        # check if this is a verification
-        if algorithm is Verifier:
-            self._optns['verify']['out_file'] = \
-                self._memory.open_file(self._optns['verify']['out_file'])
-            verifier_optns = self._optns['verify']
-            try:
-                verifier_optns['matrix_explicit'] = \
-                    self._optns['matrix_explicit']
-            except KeyError:
-                verifier_optns['matrix_explicit'] = False
-            self._algorithm = Verifier(
-                [primal_factory, state_factory, eq_factory, ineq_factory],
-                solver, verifier_optns)
-        else:
-            # otherwise initialize the optimization algorithm
-            self._algorithm = algorithm(
-                primal_factory, state_factory, eq_factory, ineq_factory,
-                self._optns)
+
+        # initialize the optimization algorithm
+        self._algorithm = algorithm(
+            primal_factory, state_factory, eq_factory, ineq_factory,
+            self._optns)
 
     def _process_options(self, optns):
         # this is a recursive dictionary merge function
@@ -86,6 +71,8 @@ class Optimizer(object):
             self._memory.open_file(self._optns['hist_file'])
         self._optns['krylov']['out_file'] = \
             self._memory.open_file(self._optns['krylov']['out_file'])
+        self._optns['verify']['out_file'] = \
+            self._memory.open_file(self._optns['verify']['out_file'])
 
     def set_design_bounds(self, lower=None, upper=None):
         """

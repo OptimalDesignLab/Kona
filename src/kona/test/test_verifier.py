@@ -13,15 +13,17 @@ class VerifierTestCase(unittest.TestCase):
 
         optns = {
             'verify' : {
-                'primal_vec'    : True,
-                'state_vec'     : True,
-                'dual_vec'      : True,
-                'gradients'     : True,
-                'pde_jac'       : True,
-                'cnstr_jac'     : True,
-                'red_grad'      : True,
-                'lin_solve'     : True,
-                'out_file'      : sys.stdout,
+                'primal_vec'     : True,
+                'state_vec'      : True,
+                'dual_vec_eq'    : True,
+                'dual_vec_in'    : True,
+                'gradients'      : True,
+                'pde_jac'        : True,
+                'cnstr_jac_eq'   : True,
+                'cnstr_jac_in  ' : True,
+                'red_grad'       : True,
+                'lin_solve'      : True,
+                'out_file'       : sys.stdout,
             },
         }
 
