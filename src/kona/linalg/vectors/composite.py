@@ -275,14 +275,20 @@ class ReducedKKTVector(CompositeVector):
         design_work : DesignVector
             Work vector for intermediate calculations.
         """
+        # get the design vector
+        if isinstance(x.primal, CompositePrimalVector):
+            design = x.primal.design
+        else:
+            design = x.primal
+        dual = x.dual
         # evaluate primal component
         self.primal.equals_lagrangian_total_gradient(
-            x.primal, state, x.dual, adjoint, design_work)
+            x.primal, state, dual, adjoint, design_work)
         # evaluate multiplier component
-        self.dual.equals_constraints(x.primal, state)
+        self.dual.equals_constraints(design, state)
         if isinstance(self.dual, DualVectorINEQ):
             self.dual.minus(self.primal.slack)
-        if isinstance(self.dual, CompositeDualVector):
+        elif isinstance(self.dual, CompositeDualVector):
             self.dual.ineq.minus(self.primal.slack)
 
 class CompositeDualVector(CompositeVector):
@@ -316,8 +322,8 @@ class CompositeDualVector(CompositeVector):
         super(CompositeDualVector, self).__init__([dual_eq, dual_ineq])
 
     def equals_constraints(self, at_primal, at_state):
-        self.eq.equals_constraints(at_primal.design, at_state)
-        self.ineq.equals_constraints(at_primal.design, at_state)
+        self.eq.equals_constraints(at_primal, at_state)
+        self.ineq.equals_constraints(at_primal, at_state)
 
 class CompositePrimalVector(CompositeVector):
     """
@@ -365,7 +371,7 @@ class CompositePrimalVector(CompositeVector):
             \\nabla_{primal} \\mathcal{L} =
             \\begin{bmatrix}
             \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\\\
-            -\\lambda^T e^s
+            -\\lambda^T S
             \\end{bmatrix}
 
         Parameters
@@ -388,10 +394,9 @@ class CompositePrimalVector(CompositeVector):
         self.design.equals_lagrangian_total_gradient(
             at_design, at_state, at_dual, at_adjoint, design_work)
         # compute the slack derivative of the lagrangian
-        self.slack.exp(at_slack)
+        self.slack.equals(at_slack)
         self.slack.times(at_dual)
         self.slack.times(-1.)
-        self.slack.restrict()
 
 # package imports at the bottom to prevent import errors
 import numpy as np

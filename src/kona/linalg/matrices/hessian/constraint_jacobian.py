@@ -1,6 +1,3 @@
-
-from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian.basic import BaseHessian
 
 class TotalConstraintJacobian(BaseHessian):
@@ -24,19 +21,25 @@ class TotalConstraintJacobian(BaseHessian):
         # get references to individual factories
         self.primal_factory = None
         self.state_factory = None
-        self.dual_factory = None
+        self.eq_factory = None
+        self.ineq_factory = None
         for factory in self.vec_fac:
             if factory._vec_type is DesignVector:
                 self.primal_factory = factory
             elif factory._vec_type is StateVector:
                 self.state_factory = factory
-            elif factory._vec_type is DualVector:
-                self.dual_factory = factory
+            elif factory._vec_type is DualVectorEQ:
+                self.eq_factory = factory
+            elif factory._vec_type is DualVectorINEQ:
+                self.ineq_factory = factory
 
         # request vector allocation
         self.primal_factory.request_num_vectors(1)
         self.state_factory.request_num_vectors(2)
-        self.dual_factory.request_num_vectors(1)
+        if self.eq_factory is not None:
+            self.eq_factory.request_num_vectors(1)
+        if self.ineq_factory is not None:
+            self.ineq_factory.request_num_vectors(1)
 
         # set misc settings
         self._approx = False
@@ -63,7 +66,18 @@ class TotalConstraintJacobian(BaseHessian):
             self.design_work = self.primal_factory.generate()
             self.state_work = self.state_factory.generate()
             self.adjoint_work = self.state_factory.generate()
-            self.dual_work = self.dual_factory.generate()
+            self.dual_work = None
+            if self.eq_factory is not None and self.ineq_factory is not None:
+                self.dual_work = CompositeDualVector(
+                    self.eq_factory.generate(), self.ineq_factory.generate())
+            elif self.eq_factory is not None:
+                self.dual_work = self.eq_factory.generate()
+            elif self.ineq_factory is not None:
+                self.dual_work = self.ineq_factory.generate()
+            else:
+                raise RuntimeError(
+                    "TotalConstraintJacobian >> " +
+                    "Must have at least one type of dual vector factory!")
             self._allocated = True
 
     def product(self, in_vec, out_vec):
@@ -80,15 +94,15 @@ class TotalConstraintJacobian(BaseHessian):
                 dRdU(self.at_design, self.at_state).solve(
                     self.state_work, self.adjoint_work, rel_tol=1e-8)
             # assemble the product
-            dCdX(self.at_design, self.at_state).product(in_vec, out_vec)
+            dCdX(self.at_design, self.at_state).product(
+                in_vec, out_vec)
             dCdU(self.at_design, self.at_state).product(
                 self.adjoint_work, self.dual_work)
             out_vec.plus(self.dual_work)
-
         else:
             # assemble the RHS for the adjoint system
             dCdU(self.at_design, self.at_state).T.product(
-                in_vec, self.state_work)
+                in_vec, self.state_work, state_work=self.adjoint_work)
             self.state_work.times(-1.)
             # approximately solve the linear system
             if self._approx:
@@ -107,3 +121,9 @@ class TotalConstraintJacobian(BaseHessian):
         # reset the approx and transpose flags at the end
         self._approx = False
         self._transposed = False
+
+# imports here to prevent circular errors
+from kona.linalg.vectors.common import DesignVector, StateVector
+from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
+from kona.linalg.vectors.composite import CompositeDualVector
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU

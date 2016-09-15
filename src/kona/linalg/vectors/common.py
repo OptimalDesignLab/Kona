@@ -308,8 +308,8 @@ class DesignVector(KonaVector):
         # add it to the objective partial
         self.plus(primal_work)
 
-    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_adjoint,
-                                         at_dual, primal_work):
+    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
+                                         at_adjoint, primal_work):
         """
         Computes in-place the total derivative of the Lagrangian.
 
