@@ -219,15 +219,14 @@ class ReducedKKTVector(CompositeVector):
 
     def __init__(self, primal_vec, dual_vec):
         if isinstance(primal_vec, PrimalVector):
-            if not isinstance(dual_vec, DualVectorEQ):
-                raise TypeError(
-                    'ReducedKKTVector() >> Mismatched dual vector. ' +
-                    'Must be DualVectorEQ!')
+            assert isinstance(dual_vec, DualVectorEQ), \
+                'ReducedKKTVector() >> Mismatched dual vector. ' + \
+                'Must be DualVectorEQ!'
         elif isinstance(primal_vec, CompositePrimalVector):
-            if not isinstance(dual_vec, CompositeDualVector):
-                raise TypeError(
-                    'ReducedKKTVector() >> Mismatched dual vector. ' +
-                    'Must be CompositeDualVector!')
+            assert isinstance(dual_vec, DualVectorINEQ) or \
+                   isinstance(dual_vec, CompositeDualVector), \
+                'ReducedKKTVector() >> Mismatched dual vector. ' + \
+                'Must be DualVecINEQ or CompositeDualVector!'
         else:
             raise TypeError(
                 'ReducedKKTVector() >> Invalid primal vector. ' +
@@ -281,7 +280,9 @@ class ReducedKKTVector(CompositeVector):
             x.primal, state, x.dual, adjoint, design_work)
         # evaluate multiplier component
         self.dual.equals_constraints(x.primal, state)
-        if isinstance(self.primal, CompositePrimalVector):
+        if isinstance(self.dual, DualVectorINEQ):
+            self.dual.minus(self.primal.slack)
+        if isinstance(self.dual, CompositeDualVector):
             self.dual.ineq.minus(self.primal.slack)
 
 class CompositeDualVector(CompositeVector):
@@ -393,5 +394,6 @@ class CompositePrimalVector(CompositeVector):
         self.slack.restrict()
 
 # package imports at the bottom to prevent import errors
+import numpy as np
 from kona.linalg.vectors.common import PrimalVector
 from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ

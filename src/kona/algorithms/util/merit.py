@@ -122,6 +122,7 @@ class ObjectiveMerit(MeritFunction):
         self.state_factory.request_num_vectors(2)
 
     def reset(self, search_dir, x_start, u_start, p_dot_grad):
+        # if user provided a state vector
         # if the internal vectors are not allocated, do it now
         if not self._allocated:
             self.x_trial = self.primal_factory.generate()
@@ -190,21 +191,30 @@ class L2QuadraticPenalty(MeritFunction):
     .. math::
 
         \\mathcal(M)(x, s) = f(x, u(x)) +
-        \\frac{1}{2} \\mu || c(x, u(x)) - e^s ||^2
+        \\frac{1}{2} \\mu || c_{eq}(x, u(x)) ||^2 +
+        \\frac{1}{2} \\mu || c_{in}(x, u(x)) - s ||^2
     """
-    def __init__(self, primal_factory, state_factory, dual_factory,
+    def __init__(self, primal_factory, state_factory=None,
+                 eq_factory=None, ineq_factory=None,
                  optns={}, out_file=sys.stdout):
         # trigger the base class initialization
         super(L2QuadraticPenalty, self).__init__(
             primal_factory, state_factory, optns, out_file)
 
         # store a pointer to the dual factory
-        self.dual_factory = dual_factory
+        if eq_factory is None and ineq_factory is None:
+            raise TypeError("L2QuadraticPenalty >> " +
+                            "Must provide at least one dual factory!")
+        self.eq_factory = eq_factory
+        self.ineq_factory = ineq_factory
 
         # request all necessary vectors
         self.primal_factory.request_num_vectors(2)
         self.state_factory.request_num_vectors(3)
-        self.dual_factory.request_num_vectors(3)
+        if self.eq_factory is not None:
+            self.eq_factory.request_num_vectors(1)
+        if self.ineq_factory is not None:
+            self.ineq_factory.request_num_vectors(3)
 
     def reset(self, kkt_start, u_start, search_dir, mu):
         # if the internal vectors are not allocated, do it now
@@ -214,9 +224,18 @@ class L2QuadraticPenalty(MeritFunction):
             self.u_trial = self.state_factory.generate()
             self.state_work = self.state_factory.generate()
             self.adjoint_work = self.state_factory.generate()
-            self.dual_work = self.dual_factory.generate()
-            self.slack_trial = self.dual_factory.generate()
-            self.slack_work = self.dual_factory.generate()
+            if self.eq_factory is not None:
+                self.cnstr_eq = self.eq_factory.generate()
+            else:
+                self.cnstr_eq = None
+            if self.ineq_factory is not None:
+                self.cnstr_ineq = self.ineq_factory.generate()
+                self.slack_trial = self.ineq_factory.generate()
+                self.slack_work = self.ineq_factory.generate()
+            else:
+                self.cnstr_ineq = None
+                self.slack_trial = None
+                self.slack_work = None
             self._allocated = True
 
         # store information for the new point the merit function is reset at
@@ -234,25 +253,29 @@ class L2QuadraticPenalty(MeritFunction):
             self.slack_start = None
             self.slack_step = None
 
-        # compute trial point
+        # set initial point into trial
         self.x_trial.equals(self.x_start)
         self.u_trial.equals(self.u_start)
-        if self.slack_start is not None:
-            self.slack_trial.equals(self.slack_start)
-        else:
-            self.slack_trial = None
 
         # evaluate constraints at the trial point
-        self.dual_work.equals_constraints(self.x_trial, self.u_trial)
-        if self.slack_trial is not None:
-            self.slack_work.exp(self.slack_trial)
-            self.slack_work.restrict()
-            self.dual_work.minus(self.slack_work)
+        if self.cnstr_eq is not None:
+            self.cnstr_eq.equals_constraints(self.x_trial, self.u_trial)
+        if self.cnstr_ineq is not None:
+            self.cnstr_ineq.equals_constraints(self.x_trial, self.u_trial)
+            self.slack_trial.equals(self.slack_start)
+            self.cnstr_ineq.minus(self.slack_trial)
 
         # evaluate merit function value
         obj_val = objective_value(self.x_trial, self.u_trial)
-        penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)
-        self.func_val = obj_val + penalty_term
+        if self.cnstr_eq is not None:
+            penalty_eq = 0.5*self.mu*(self.cnstr_eq.norm2**2)
+        else:
+            penalty_eq = 0.
+        if self.cnstr_ineq is not None:
+            penalty_ineq = 0.5*self.mu*(self.cnstr_ineq.norm2**2)
+        else:
+            penalty_ineq = 0.
+        self.func_val = obj_val + penalty_eq + penalty_ineq
         self.last_func_alpha = 0.0
 
     def eval_func(self, alpha):
@@ -264,18 +287,25 @@ class L2QuadraticPenalty(MeritFunction):
             self.u_trial.equals_primal_solution(self.x_trial)
 
             # evaluate constraints at the trial point
-            self.dual_work.equals_constraints(self.x_trial, self.u_trial)
-            if self.slack_trial is not None:
+            if self.cnstr_eq is not None:
+                self.cnstr_eq.equals_constraints(self.x_trial, self.u_trial)
+            if self.cnstr_ineq is not None:
+                self.cnstr_ineq.equals_constraints(self.x_trial, self.u_trial)
                 self.slack_trial.equals_ax_p_by(
                     1., self.slack_start, alpha, self.slack_step)
-                self.slack_work.exp(self.slack_trial)
-                self.slack_work.restrict()
-                self.dual_work.minus(self.slack_work)
+                self.cnstr_ineq.minus(self.slack_trial)
 
             # evaluate merit function value
             obj_val = objective_value(self.x_trial, self.u_trial)
-            penalty_term = 0.5*self.mu*(self.dual_work.norm2**2)
-            self.func_val = obj_val + penalty_term
+            if self.cnstr_eq is not None:
+                penalty_eq = 0.5 * self.mu * (self.cnstr_eq.norm2 ** 2)
+            else:
+                penalty_eq = 0.
+            if self.cnstr_ineq is not None:
+                penalty_ineq = 0.5 * self.mu * (self.cnstr_ineq.norm2 ** 2)
+            else:
+                penalty_ineq = 0.
+            self.func_val = obj_val + penalty_eq + penalty_ineq
             self.last_func_alpha = alpha
 
         return self.func_val
@@ -289,24 +319,32 @@ class AugmentedLagrangian(L2QuadraticPenalty):
     .. math::
 
         \\hat{\\mathcal{L}}(x, s) = f(x, u(x)) +
-        \\lambda^T \\left[c(x, u(x)) - e^s\\right]
-        + \\frac{1}{2} \\mu || c(x, u(x)) - e^s ||^2
+        \\lambda_{eq}^T c_{eq}(x, u(x)) +
+        \\lambda_{in}^T \\left[c_{in}(x, u(x)) - s\\right] +
+        \\frac{1}{2} \\mu || c_{eq}(x, u(x)) ||^2 +
+        \\frac{1}{2} \\mu || c_{in}(x, u(x)) - s ||^2
 
     Unlike the traditional augmented Lagrangian, the Kona version has the
     Lagrange multipliers and the slack variables fozen. This is done to make
     the merit function comparable to the predicted decrease produced by the
     FLECS solver.
     """
-    def __init__(self, primal_factory, state_factory, dual_factory,
+    def __init__(self, primal_factory, state_factory,
+                 eq_factory=None, ineq_factory=None,
                  optns={}, out_file=sys.stdout):
         # initialize the parent merit function
         super(AugmentedLagrangian, self).__init__(
-            primal_factory, state_factory, dual_factory, optns, out_file)
+            primal_factory, state_factory,
+            eq_factory, ineq_factory,
+            optns, out_file)
 
         self.freeze_mults = get_opt(optns, False, 'freeze_mults')
 
         # request an additional dual vector
-        self.dual_factory.request_num_vectors(1)
+        if self.eq_factory is not None:
+            self.eq_factory.request_num_vectors(1)
+        if self.ineq_factory is not None:
+            self.ineq_factory.request_num_vectors(1)
 
         # child allocation flag
         self._child_allocated = False
@@ -318,28 +356,61 @@ class AugmentedLagrangian(L2QuadraticPenalty):
 
         # if the internal vectors are not allocated, do it now
         if not self._child_allocated:
-            self.multipliers = self.dual_factory.generate()
+            if self.eq_factory is not None:
+                self.mult_eq = self.eq_factory.generate()
+            else:
+                self.mult_eq = None
+            if self.ineq_factory is not None:
+                self.mult_ineq = self.ineq_factory.generate()
+            else:
+                self.mult_eq = None
             self._child_allocated = True
 
         # store references to dual start and dual step
-        self.mult_start = kkt_start.dual
-        self.mult_step = search_dir.dual
+        if self.cnstr_eq is None:
+            self.mult_eq_start = None
+            self.mult_eq_step = None
+            self.mult_ineq_start = kkt_start.dual
+            self.mult_ineq_step = search_dir.dual
+        elif self.cnstr_ineq is None:
+            self.mult_eq_start = kkt_start.dual
+            self.mult_eq_step = search_dir.dual
+            self.mult_ineq_start = None
+            self.mult_ineq_step = None
+        else:
+            self.mult_eq_start = kkt_start.dual.eq
+            self.mult_eq_step = search_dir.dual.eq
+            self.mult_ineq_start = kkt_start.dual.ineq
+            self.mult_ineq_step = search_dir.dual.ineq
 
-        # save the Lagrange multipliers
-        self.multipliers.equals(self.mult_start)
-
-        # add the multiplier term on top of the parent merit value
-        self.func_val += self.multipliers.inner(self.dual_work)
+        # add multiplier terms to the function value
+        if self.cnstr_eq is not None:
+            self.mult_eq.equals(self.mult_eq_start)
+            self.func_val += self.mult_eq.inner(self.cnstr_eq)
+        if self.cnstr_ineq is not None:
+            self.mult_ineq.equals(self.mult_ineq_start)
+            self.func_val += self.mult_ineq.inner(self.cnstr_ineq)
 
     def eval_func(self, alpha):
         if abs(alpha - self.last_func_alpha) > EPS:
             # evaluate the parent merit function value
             self.func_val = super(AugmentedLagrangian, self).eval_func(alpha)
             # add the multiplier term on top of the parent merit value
-            if not self.freeze_mults:
-                self.multipliers.equals_ax_p_by(
-                    1., self.mult_start, alpha, self.mult_step)
-            self.func_val += self.multipliers.inner(self.dual_work)
+            if self.cnstr_eq is not None:
+                if not self.freeze_mults:
+                    self.mult_eq.equals_ax_p_by(
+                        1., self.mult_eq_start, alpha, self.mult_eq_step)
+                else:
+                    self.mult_eq.equals(self.mult_eq_start)
+                self.func_val += self.mult_eq.inner(self.cnstr_eq)
+                print self.func_val
+            if self.cnstr_ineq is not None:
+                if not self.freeze_mults:
+                    self.mult_ineq.equals_ax_p_by(
+                        1., self.mult_ineq_start, alpha, self.mult_ineq_step)
+                else:
+                    self.mult_ineq.equals(self.mult_ineq_start)
+                self.func_val += self.mult_ineq.inner(self.cnstr_ineq)
 
         return self.func_val
 

@@ -179,7 +179,7 @@ class Sellar(UserSolver):
         dRdU = np.array(
             [[1., 0.2],
              [-.5*y1**-.5, 1.]])
-        result.data = np.linalg.solve(dRdU, rhs_vec.data)
+        result.data[:] = np.linalg.solve(dRdU, rhs_vec.data)
         return 1
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, rel_tol, result):
@@ -187,7 +187,7 @@ class Sellar(UserSolver):
         dRdU = np.array(
             [[1., 0.2],
              [-.5*y1**-.5, 1.]])
-        result.data = np.linalg.solve(dRdU.T, rhs_vec.data)
+        result.data[:] = np.linalg.solve(dRdU.T, rhs_vec.data)
         return 1
 
     def init_design(self):
