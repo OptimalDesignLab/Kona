@@ -33,13 +33,13 @@ class KrylovUtilTestCase(unittest.TestCase):
         eval_at_norm = 1e-30
 
         out2 = calc_epsilon(eval_at_norm, mult_by_norm)
-        self.assertTrue(abs(out2 - 1.4901161193847656e-13) < 1e-10)
+        self.assertTrue(abs(out2 - 1.4901161193847657e-13) < 1e-10)
 
         mult_by_norm = 1
         eval_at_norm = 2
 
         out3 = calc_epsilon(eval_at_norm, mult_by_norm)
-        self.assertTrue(abs(out3 - 2*EPS) < 1e-5)
+        self.assertTrue(abs(out3 - np.sqrt(EPS)*2) < 1e-5)
 
     def test_eigen_decomp(self):
 
@@ -131,7 +131,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         km = KonaMemory(solver)
         pf = km.primal_factory
         pf.request_num_vectors(lanczos_size + 2)
-        df = km.dual_factory
+        df = km.eq_factory
         df.request_num_vectors(lanczos_size + 1)
         km.allocate_memory()
 
@@ -184,11 +184,11 @@ class KrylovUtilTestCase(unittest.TestCase):
         # secular function should vanish, and the step y should be -A\b
         radius = 106357.56613920075
         y, fnc, dfnc = secular_function(A, b, 0.0, radius)
-        self.assertFalse(abs(y[0] - 70306.51598209806) > 1e-5)
-        self.assertFalse(abs(y[1] - 71705.07008271456) > 1e-5)
-        self.assertFalse(abs(y[2] - 35032.96463715491) > 1e-5)
+        self.assertFalse(abs(y[0] - 70306.51597694) > 1e-5)
+        self.assertFalse(abs(y[1] - 71705.07007746) > 1e-5)
+        self.assertFalse(abs(y[2] - 35032.9646346) > 1e-5)
         self.assertFalse(abs(fnc) > 1e-12)
-        self.assertFalse(abs(dfnc + 0.9402244082089186) > 1e-12)
+        self.assertFalse(abs(dfnc + 0.940224408209) > 1e-12)
 
         # test secular function with lambda = 0.1 and delta = 10
         lamb = 0.1
@@ -197,8 +197,8 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertFalse(abs(y[0] - 5.280791785178089) > 1e-5)
         self.assertFalse(abs(y[1] - 6.941941330303563) > 1e-5)
         self.assertFalse(abs(y[2] - 7.485592503571139) > 1e-5)
-        self.assertFalse(abs(fnc - 0.01299787866032312) > 1e-12)
-        self.assertFalse(abs(dfnc + 0.8585317920163272) > 1e-12)
+        self.assertFalse(abs(fnc - 0.0129978786603) > 1e-12)
+        self.assertFalse(abs(dfnc + 0.858531792016) > 1e-12)
 
     def test_solve_trust_reduced(self):
         # first we test with the trust radius constraint inactive
