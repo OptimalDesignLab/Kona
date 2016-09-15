@@ -37,9 +37,9 @@ class MeritFunction(object):
 
         Parameters
         ----------
-        search_dir : PrimalVector
+        search_dir : DesignVector
             Search direction vector in the primal space.
-        x_start : PrimalVector
+        x_start : DesignVector
             Initial primal vector.
         u_start : StateVector
             State vector corresponding to ``x_start``.
@@ -98,19 +98,19 @@ class ObjectiveMerit(MeritFunction):
         Value of the objective at ``last_func_alpha``.
     p_dot_grad : float
         Value of :math:`\\langle p, \\nabla f \\rangle` at ``last_grad_alpha``.
-    x_start : PrimalVector
+    x_start : DesignVector
         Initial position of the primal variables, where :math:`\\alpha = 0`.
-    x_trial : PrimalVector
+    x_trial : DesignVector
         Trial position of the primal variables at a new alpha.
     u_trial : StateVector
         Trial position of the state variables at a new alpha.
-    search_dir : PrimalVector
+    search_dir : DesignVector
         The search direction vector.
     state_work : StateVector
         Work vector for state operations.
     adjoint_work : StateVector
         Work vector for adjoint operations.
-    design_work : PrimalVector
+    design_work : DesignVector
         Work vector for primal operations.
     """
 

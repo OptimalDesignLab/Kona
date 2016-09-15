@@ -16,7 +16,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         km.allocate_memory()
 
         # can't create bare KonaVectors because the memory manager doesn't
-        # like them, so I'll just use the PrimalVector to test the
+        # like them, so I'll just use the DesignVector to test the
         # KonaVectorMethods
         self.pv1 = km.primal_factory.generate()
         self.dv1 = km.eq_factory.generate()
@@ -51,13 +51,13 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
             self.assertEqual(
                 str(err),
                 "ReducedKKTVector() >> Invalid primal vector. " +
-                "Must be either PrimalVector or CompositePrimalVector!")
+                "Must be either DesignVector or CompositePrimalVector!")
         else:
             self.fail('TypeError expected')
 
         try:
             ReducedKKTVector(self.pv1, self.pv1)
-        except TypeError as err:
+        except AssertionError as err:
             self.assertEqual(
                 str(err),
                 "ReducedKKTVector() >> Mismatched dual vector. " +

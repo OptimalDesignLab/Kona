@@ -17,7 +17,7 @@ class VectorFactory(object):
         Number of vectors requested from this factory.
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    _vec_type : PrimalVector or StateVector or DualVector
+    _vec_type : DesignVector or StateVector or DualVector
         Kona abstracted vector type associated with this factory
     """
 
@@ -122,14 +122,14 @@ class KonaMemory(object):
 
         # allocate vec assignments
         self.vector_stack = {
-            PrimalVector : [],
+            DesignVector : [],
             StateVector : [],
             DualVectorEQ : [],
             DualVectorINEQ : [],
         }
 
         # prepare vector factories
-        self.primal_factory = VectorFactory(self, PrimalVector)
+        self.primal_factory = VectorFactory(self, DesignVector)
         self.state_factory = VectorFactory(self, StateVector)
         self.eq_factory = VectorFactory(self, DualVectorEQ)
         self.ineq_factory = VectorFactory(self, DualVectorINEQ)
@@ -187,7 +187,7 @@ class KonaMemory(object):
         if self.allocated:
             raise RuntimeError('Memory already allocated, can-not re-allocate')
 
-        self.vector_stack[PrimalVector] = \
+        self.vector_stack[DesignVector] = \
             [BaseVector(self.ndv) for i in range(self.primal_factory.num_vecs)]
         self.vector_stack[StateVector] = \
             self.solver.allocate_state(self.state_factory.num_vecs)

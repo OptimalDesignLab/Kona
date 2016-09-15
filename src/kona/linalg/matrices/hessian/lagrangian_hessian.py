@@ -1,6 +1,6 @@
 
 from kona.options import get_opt
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
@@ -28,7 +28,7 @@ class LagrangianHessian(BaseHessian):
         self.state_factory = None
         self.dual_factory = None
         for factory in self.vec_fac:
-            if factory._vec_type is PrimalVector:
+            if factory._vec_type is DesignVector:
                 self.primal_factory = factory
             elif factory._vec_type is StateVector:
                 self.state_factory = factory

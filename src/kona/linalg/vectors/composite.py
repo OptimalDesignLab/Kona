@@ -209,7 +209,7 @@ class ReducedKKTVector(CompositeVector):
     ----------
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    _primal : PrimalVector or CompositePrimalVector
+    _primal : DesignVector or CompositePrimalVector
         Primal component of the composite vector.
     _dual : DualVector
         Dual components of the composite vector.
@@ -218,7 +218,7 @@ class ReducedKKTVector(CompositeVector):
     init_dual = -0.01
 
     def __init__(self, primal_vec, dual_vec):
-        if isinstance(primal_vec, PrimalVector):
+        if isinstance(primal_vec, DesignVector):
             assert isinstance(dual_vec, DualVectorEQ), \
                 'ReducedKKTVector() >> Mismatched dual vector. ' + \
                 'Must be DualVectorEQ!'
@@ -230,7 +230,7 @@ class ReducedKKTVector(CompositeVector):
         else:
             raise TypeError(
                 'ReducedKKTVector() >> Invalid primal vector. ' +
-                'Must be either PrimalVector or CompositePrimalVector!')
+                'Must be either DesignVector or CompositePrimalVector!')
 
         self.primal = primal_vec
         self.dual = dual_vec
@@ -272,7 +272,7 @@ class ReducedKKTVector(CompositeVector):
             Evaluate KKT conditions at this state point.
         adjoint : StateVector
             Evaluate KKT conditions using this adjoint vector.
-        design_work : PrimalVector
+        design_work : DesignVector
             Work vector for intermediate calculations.
         """
         # evaluate primal component
@@ -327,7 +327,7 @@ class CompositePrimalVector(CompositeVector):
     ----------
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    design : PrimalVector
+    design : DesignVector
         Design component of the composite vector.
     slack : DualVectorINEQ
         Slack components of the composite vector.
@@ -336,7 +336,7 @@ class CompositePrimalVector(CompositeVector):
     init_slack = 0.0
 
     def __init__(self, primal_vec, dual_ineq):
-        if isinstance(primal_vec, PrimalVector):
+        if isinstance(primal_vec, DesignVector):
             self.design = primal_vec
         else:
             raise TypeError('CompositePrimalVector() >> ' +
@@ -378,7 +378,7 @@ class CompositePrimalVector(CompositeVector):
             Lagrange multipliers at which the derivative is computed.
         at_adjoint : StateVector
             Pre-computed adjoint variables for the Lagrangian.
-        design_work : PrimalVector
+        design_work : DesignVector
             Work vector in the design space.
         """
         # do some aliasing
@@ -395,5 +395,5 @@ class CompositePrimalVector(CompositeVector):
 
 # package imports at the bottom to prevent import errors
 import numpy as np
-from kona.linalg.vectors.common import PrimalVector
+from kona.linalg.vectors.common import DesignVector
 from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ

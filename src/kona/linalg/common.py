@@ -8,7 +8,7 @@ def current_solution(num_iter, curr_design, curr_state=None, curr_adj=None,
     ----------
     num_iter : int
         Current iteration of the optimization.
-    curr_design : PrimalVector
+    curr_design : DesignVector
         Current design variables.
     curr_state : StateVector, optional
         Current state variables.
@@ -50,7 +50,7 @@ def objective_value(at_design, at_state):
 
     Parameters
     ----------
-    at_design : PrimalVector
+    at_design : DesignVector
         Current design point.
     at_state : StateVector
         Current state point.
@@ -87,7 +87,7 @@ def factor_linear_system(at_design, at_state):
 
     Parameters
     ----------
-    at_design : PrimalVector
+    at_design : DesignVector
     at_state : StateVector
     """
     solver = at_design._memory.solver

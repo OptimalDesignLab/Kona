@@ -1,7 +1,7 @@
-PrimalVector, StateVector and DualVector
+DesignVector, StateVector and DualVector
 ========================================
 
-.. autoclass:: kona.linalg.vectors.common.PrimalVector
+.. autoclass:: kona.linalg.vectors.common.DesignVector
     :members:
     :undoc-members:
     :show-inheritance:

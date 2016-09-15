@@ -9,7 +9,7 @@ class OptimizationAlgorithm(object):
     Parameters
     ----------
     primal_factory : VectorFactory
-        PrimalVector factory.
+        DesignVector factory.
     state_factory : VectorFactory
         StateVector factory.
     dual_factory : VectorFactory

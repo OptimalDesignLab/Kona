@@ -7,7 +7,7 @@ class KonaMatrix(object):
 
     Parameters
     ----------
-    primal : PrimalVector
+    primal : DesignVector
     state : StateVector
     transposed : boolean, optional
 
@@ -36,7 +36,7 @@ class KonaMatrix(object):
 
         Parameters
         ----------
-        primal : PrimalVector
+        primal : DesignVector
         state : StateVector
         """
         self.primal = primal
@@ -82,14 +82,14 @@ class dRdX(KonaMatrix):
     def product(self, in_vec, out_vec):
         assert self._linearized
         if not self._transposed:
-            assert isinstance(in_vec, PrimalVector)
+            assert isinstance(in_vec, DesignVector)
             assert isinstance(out_vec, StateVector)
             self._solver.multiply_dRdX(
                 self.primal.base.data, self._state.base,
                 in_vec.base.data, out_vec.base)
         else:
             assert isinstance(in_vec, StateVector)
-            assert isinstance(out_vec, PrimalVector)
+            assert isinstance(out_vec, DesignVector)
             out_vec.base.data = self._solver.multiply_dRdX_T(
                 self.primal.base.data, self._state.base,
                 in_vec.base)
@@ -180,14 +180,14 @@ class dCEQdX(dCdX):
     def product(self, in_vec, out_vec):
         assert self._linearized
         if not self._transposed:
-            assert isinstance(in_vec, PrimalVector)
+            assert isinstance(in_vec, DesignVector)
             assert isinstance(out_vec, DualVectorEQ)
             out_vec.base.data = self._solver.multiply_dCEQdX(
                 self.primal.base.data, self._state.base,
                 in_vec.base.data,)
         else:
             assert isinstance(in_vec, DualVectorEQ)
-            assert isinstance(out_vec, PrimalVector)
+            assert isinstance(out_vec, DesignVector)
             out_vec.base.data = self._solver.multiply_dCEQdX_T(
                 self.primal.base.data, self._state.base,
                 in_vec.base.data)
@@ -218,14 +218,14 @@ class dCINdX(dCdX):
     def product(self, in_vec, out_vec):
         assert self._linearized
         if not self._transposed:
-            assert isinstance(in_vec, PrimalVector)
+            assert isinstance(in_vec, DesignVector)
             assert isinstance(out_vec, DualVectorINEQ)
             out_vec.base.data = self._solver.multiply_dCINdX(
                 self.primal.base.data, self._state.base,
                 in_vec.base.data,)
         else:
             assert isinstance(in_vec, DualVectorINEQ)
-            assert isinstance(out_vec, PrimalVector)
+            assert isinstance(out_vec, DesignVector)
             out_vec.base.data = self._solver.multiply_dCINdX_T(
                 self.primal.base.data, self._state.base,
                 in_vec.base.data)
@@ -264,5 +264,5 @@ class IdentityMatrix(KonaMatrix):
         out_vec.equals(in_vec)
 
 # package imports at the bottom to prevent import errors
-from kona.linalg.vectors.common import PrimalVector, StateVector
+from kona.linalg.vectors.common import DesignVector, StateVector
 from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ

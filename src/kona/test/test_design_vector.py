@@ -19,7 +19,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         km.allocate_memory()
 
         # can't create bear KonaVectors because the memory manager doesn't
-        # like them, so I'll just use the PrimalVector to test the
+        # like them, so I'll just use the DesignVector to test the
         # KonaVectorMethods
         self.pv = km.primal_factory.generate()
         self.sv = km.state_factory.generate()
@@ -31,7 +31,7 @@ class PrimalVectorTestCase(unittest.TestCase):
             self.assertEqual(
                 str(err),
                 "Vector type mismatch. " +
-                "Must be <class 'kona.linalg.vectors.common.PrimalVector'>")
+                "Must be <class 'kona.linalg.vectors.common.DesignVector'>")
         else:
             self.fail('TypeError expected')
 

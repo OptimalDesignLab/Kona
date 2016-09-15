@@ -30,7 +30,7 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.state_factory = None
         self.dual_factory = None
         for factory in self.vec_fac:
-            if factory._vec_type is PrimalVector:
+            if factory._vec_type is DesignVector:
                 self.primal_factory = factory
             elif factory._vec_type is StateVector:
                 self.state_factory = factory
@@ -152,7 +152,7 @@ class ReducedSchurPreconditioner(BaseHessian):
         out_design.plus(design_work[1])
 
 # imports here to prevent circular errors
-from kona.linalg.vectors.common import PrimalVector, StateVector, DualVector
+from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import TotalConstraintJacobian
 from kona.linalg.solvers.krylov import FGMRES

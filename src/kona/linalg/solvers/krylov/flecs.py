@@ -13,7 +13,7 @@ class FLECS(KrylovSolver):
     Attributes
     ----------
     primal_factory : VectorFactory
-        Factory for PrimalVector objects.
+        Factory for DesignVector objects.
     dual_factory : VectorFactory
         Factory for DualVector objects.
     mu : float
@@ -59,7 +59,7 @@ class FLECS(KrylovSolver):
         self.primal_factory = None
         self.dual_factory = None
         for factory in vector_factories:
-            if factory._vec_type is PrimalVector:
+            if factory._vec_type is DesignVector:
                 self.primal_factory = factory
             elif factory._vec_type is DualVector:
                 self.dual_factory = factory

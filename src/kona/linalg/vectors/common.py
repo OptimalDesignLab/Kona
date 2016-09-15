@@ -210,14 +210,14 @@ class KonaVector(object):
         """
         return self.base.infty
 
-class PrimalVector(KonaVector):
+class DesignVector(KonaVector):
     """
     Derived from the base abstracted vector. Contains member functions specific
     to design vectors.
     """
 
     def __init__(self, memory_obj, user_vector=None):
-        super(PrimalVector, self).__init__(memory_obj, user_vector)
+        super(DesignVector, self).__init__(memory_obj, user_vector)
         self.lb = self._memory.design_lb
         self.ub = self._memory.design_ub
 
@@ -277,7 +277,7 @@ class PrimalVector(KonaVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         at_state : StateVector
             Current state point.
@@ -292,13 +292,13 @@ class PrimalVector(KonaVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         at_state : StateVector
             Current state point.
         at_adjoint : StateVector
             Current adjoint variables.
-        primal_work : PrimalVector
+        primal_work : DesignVector
             Temporary work vector of Primal type.
         """
         # first compute the objective partial
@@ -315,7 +315,7 @@ class PrimalVector(KonaVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         at_state : StateVector
             Current state point.
@@ -323,7 +323,7 @@ class PrimalVector(KonaVector):
             Current lagrange multipliers.
         at_adjoint : StateVector
             Current adjoint variables for the Lagrangian (rhs = - dL/dU)
-        primal_work : PrimalVector
+        primal_work : DesignVector
             Temporary work vector of Primal type.
         """
         # first compute the total derivative of the objective
@@ -353,7 +353,7 @@ class StateVector(KonaVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         at_state : StateVector
             Current state point.
@@ -367,7 +367,7 @@ class StateVector(KonaVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         at_state : StateVector
             Current state point.
@@ -382,7 +382,7 @@ class StateVector(KonaVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         """
         cost = self._memory.solver.solve_nonlinear(
@@ -400,7 +400,7 @@ class StateVector(KonaVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         at_state : StateVector
             Current state point.
@@ -457,7 +457,7 @@ class DualVectorEQ(DualVector):
 
         Parameters
         ----------
-        primal_vector : PrimalVector
+        primal_vector : DesignVector
             Source vector for target state variable data.
         """
         self._memory.solver.copy_targstate_to_dual(
@@ -470,7 +470,7 @@ class DualVectorEQ(DualVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         at_state : StateVector
             Current state point.
@@ -487,7 +487,7 @@ class DualVectorINEQ(DualVector):
 
         Parameters
         ----------
-        at_primal : PrimalVector
+        at_primal : DesignVector
             Current primal point.
         at_state : StateVector
             Current state point.

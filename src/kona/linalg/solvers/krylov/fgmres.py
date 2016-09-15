@@ -1,19 +1,12 @@
-import numpy
-
-from kona.options import get_opt
-from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import \
-    EPS, write_header, write_history, solve_tri, \
-    generate_givens, apply_givens, mod_GS_normalize
 
 class FGMRES(KrylovSolver):
     """
     Flexible Generalized Minimum RESidual solver.
     """
 
-    def __init__(self, vector_factory, optns={}, dual_factory=None):
+    def __init__(self, vector_factory, optns={},
+                 eq_factory=None, ineq_factory=None):
         super(FGMRES, self).__init__(vector_factory, optns)
 
         # get tolerancing options
@@ -23,18 +16,37 @@ class FGMRES(KrylovSolver):
 
         # put in memory request
         self.vec_fac.request_num_vectors(2*self.max_iter + 1)
-        self.dual_fac = dual_factory
-        if self.dual_fac is not None:
-            self.dual_fac.request_num_vectors(4*self.max_iter + 2)
+        self.eq_fac = eq_factory
+        self.ineq_fac = ineq_factory
+        if self.eq_fac is not None:
+            self.eq_fac.request_num_vectors(2*self.max_iter + 1)
+        if self.ineq_fac is not None:
+            self.ineq_fac.request_num_vectors(4*self.max_iter + 2)
 
     def _generate_vector(self):
-        if self.dual_fac is None:
+        # if there are no constraints, just return design vectors
+        if self.eq_fac is None and self.ineq_fac is None:
             return self.vec_fac.generate()
+        # this is for only inequality constraints
+        elif self.eq_fac is None:
+            design = self.vec_fac.generate()
+            slack = self.ineq_fac.generate()
+            primal = CompositePrimalVector(design, slack)
+            dual = self.ineq_fac.generate()
+            return ReducedKKTVector(primal, dual)
+        # this is for only equality constraints
+        elif self.ineq_fac is None:
+            primal = self.vec_fac.generate()
+            dual = self.eq_fac.generate()
+            return ReducedKKTVector(primal, dual)
+        # and finally, this is for both types of constraints
         else:
             design = self.vec_fac.generate()
-            slack = self.dual_fac.generate()
+            slack = self.ineq_fac.generate()
             primal = CompositePrimalVector(design, slack)
-            dual = self.dual_fac.generate()
+            dual_eq = self.eq_fac.generate()
+            dual_ineq = self.ineq_fac.generate()
+            dual = CompositeDualVector(dual_eq, dual_ineq)
             return ReducedKKTVector(primal, dual)
 
     def solve(self, mat_vec, b, x, precond):
@@ -162,3 +174,13 @@ class FGMRES(KrylovSolver):
             return iters, true_res
         else:
             return iters, beta
+
+# imports at the bottom to prevent circular errors
+import numpy
+from kona.options import get_opt
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.vectors.composite import CompositeDualVector
+from kona.linalg.solvers.util import \
+    EPS, write_header, write_history, solve_tri, \
+    generate_givens, apply_givens, mod_GS_normalize

@@ -1,7 +1,7 @@
 import unittest
 
 from kona.linalg.memory import KonaMemory
-from kona.linalg import objective_value
+from kona.linalg.common import objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 
@@ -15,7 +15,7 @@ class L2PenaltyMeritTestCase(unittest.TestCase):
         self.km = KonaMemory(solver)
         self.pf = self.km.primal_factory
         self.sf = self.km.state_factory
-        self.df = self.km.dual_factory
+        self.df = self.km.ineq_factory
 
         self.pf.request_num_vectors(10)
         self.sf.request_num_vectors(10)
@@ -50,8 +50,6 @@ class L2PenaltyMeritTestCase(unittest.TestCase):
 
         self.cnstr.equals_constraints(
             self.kkt_start.primal.design, self.u_start)
-        self.slack_term.exp(self.kkt_start.primal.slack)
-        self.slack_term.restrict()
         self.cnstr.minus(self.slack_term)
 
         obj_val = objective_value(
@@ -75,8 +73,6 @@ class L2PenaltyMeritTestCase(unittest.TestCase):
         self.u_trial.equals_primal_solution(self.kkt_trial.primal.design)
         self.cnstr_trial.equals_constraints(
             self.kkt_trial.primal.design, self.u_trial)
-        self.slack_term.exp(self.kkt_trial.primal.slack)
-        self.slack_term.restrict()
         self.cnstr_trial.minus(self.slack_term)
         obj_val = objective_value(
             self.kkt_trial.primal.design, self.u_trial)

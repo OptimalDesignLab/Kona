@@ -42,7 +42,7 @@ class ReducedHessian(BaseHessian):
         self.primal_factory = None
         self.state_factory = None
         for factory in self.vec_fac:
-            if factory._vec_type is PrimalVector:
+            if factory._vec_type is DesignVector:
                 self.primal_factory = factory
             elif factory._vec_type is StateVector:
                 self.state_factory = factory
@@ -78,7 +78,7 @@ class ReducedHessian(BaseHessian):
 
         Parameters
         ----------
-        at_design : PrimalVector
+        at_design : DesignVector
             Design point at which the product is evaluated.
         at_state : StateVector
             State point at which the product is evaluated.
@@ -240,7 +240,7 @@ class ReducedHessian(BaseHessian):
 
         Parameters
         ----------
-        rhs : PrimalVector
+        rhs : DesignVector
             Right hand side vector for the system.
         solution : PrimalVector
             Solution of the system.
@@ -271,7 +271,7 @@ class ReducedHessian(BaseHessian):
 # imports here to prevent circular errors
 import numpy
 from kona.options import get_opt
-from kona.linalg.vectors.common import PrimalVector, StateVector
+from kona.linalg.vectors.common import DesignVector, StateVector
 from kona.linalg.matrices.common import dRdX, dRdU, IdentityMatrix
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import calc_epsilon
