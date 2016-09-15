@@ -10,7 +10,7 @@ from kona.linalg.memory import KonaMemory
 class STCGSolverTestCase(unittest.TestCase):
 
     def setUp(self):
-        solver = UserSolver(4,0,0)
+        solver = UserSolver(4,0,0,0)
         self.km = KonaMemory(solver)
         self.pf = self.km.primal_factory
         self.pf.request_num_vectors(7)
