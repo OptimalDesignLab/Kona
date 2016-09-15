@@ -15,7 +15,7 @@ class Simple2x2(UserSolver):
         self.dRdU = numpy.array([[1,1],[0,1]])
 
     def eval_obj(self, at_design, at_state):
-        return numpy.sum(at_state**2) + (at_design.data[0]-3)**2
+        return numpy.sum(at_state.data**2) + (at_design[0]-3)**2
 
     def eval_residual(self, at_design, at_state, store_here):
         p = at_design
@@ -34,7 +34,7 @@ class Simple2x2(UserSolver):
     def multiply_dRdU_T(self, at_design, at_state, in_vec, out_vec):
         out_vec.data[:] = self.dRdU.T.dot(in_vec.data)
 
-    def eval_dFdX(self, at_design, at_state, store_here):
+    def eval_dFdX(self, at_design, at_state):
         return numpy.array([2*at_design[0], 2*at_design[1]])
 
     def eval_dFdU(self, at_design, at_state, store_here):
