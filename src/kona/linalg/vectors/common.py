@@ -329,17 +329,8 @@ class DesignVector(KonaVector):
         # first compute the total derivative of the objective
         self.equals_total_gradient(at_primal, at_state, at_adjoint, primal_work)
         # add the lagrange multiplier product
-        if isinstance(at_dual, CompositeDualVector):
-            dCEQdX(at_primal, at_state).T.product(at_dual.eq, primal_work)
-            self.plus(primal_work)
-            dCINdX(at_primal, at_state).T.product(at_dual.ineq, primal_work)
-            self.plus(primal_work)
-        elif isinstance(at_dual, DualVectorEQ):
-            dCEQdX(at_primal, at_state).T.product(at_dual, primal_work)
-            self.plus(primal_work)
-        elif isinstance(at_dual, DualVectorINEQ):
-            dCINdX(at_primal, at_state).T.product(at_dual, primal_work)
-            self.plus(primal_work)
+        dCdX(at_primal, at_state).T.product(at_dual, primal_work)
+        self.plus(primal_work)
 
 class StateVector(KonaVector):
     """

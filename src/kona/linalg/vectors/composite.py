@@ -245,14 +245,14 @@ class ReducedKKTVector(CompositeVector):
         self.primal.equals_init_design()
         self.dual.equals(self.init_dual)
 
-    def equals_KKT_conditions(self, x, state, adjoint, design_work):
+    def equals_KKT_conditions(self, x, state, adjoint, design_work, barrier=None):
         """
         Calculates the total derivative of the Lagrangian
-        :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda^T (c(x, u) - e^s)` with
-        respect to :math:`\\begin{pmatrix}x && s && \\lambda\\end{pmatrix}^T`.
+        :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda_{eq}^T c_{eq}(x, u) + \\lambda_{ineq}^T (c_{ineq}(x, u) - s)` with
+        respect to :math:`\\begin{pmatrix}x && s && \\lambda_{eq} && \\lambda_{ineq}\\end{pmatrix}^T`.
         This total derivative represents the Karush-Kuhn-Tucker (KKT)
         convergence conditions for the optimization problem defined by
-        :math:`\\mathcal{L}(x, s, \\lambda)` where the stat variables
+        :math:`\\mathcal{L}(x, s, \\lambda_{eq}, \\lambda_{ineq})` where the stat variables
         :math:`u(x)` are treated as implicit functions of the design.
 
         The full expression of the KKT conditions are:
@@ -260,9 +260,10 @@ class ReducedKKTVector(CompositeVector):
         .. math::
             \\nabla \\mathcal{L} =
             \\begin{bmatrix}
-            \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\\\
-            -\\lambda^T e^s \\\\
-            c(x, u) - e^s \\end{bmatrix}
+            \\nabla_x f(x, u) + \\nabla_x c_{eq}(x, u)^T \\lambda_{eq} + \\nabla_x c_{inq}(x, u)^T \\lambda_{ineq} \\\\
+            \\muS^{-1}e - \\lambda_{ineq} \\\\
+            c_{eq}(x, u) \\\\
+            c_{ineq}(x, u) - s \\end{bmatrix}
 
         Parameters
         ----------
@@ -274,10 +275,16 @@ class ReducedKKTVector(CompositeVector):
             Evaluate KKT conditions using this adjoint vector.
         design_work : DesignVector
             Work vector for intermediate calculations.
+        barrier : float, optional
+            Log barrier coefficient for slack variable non-negativity.
         """
         # get the design vector
         if isinstance(x.primal, CompositePrimalVector):
             design = x.primal.design
+            if barrier is None:
+                raise ValueError("Barrier factor must be defined for slacks!")
+            else:
+                self.primal.barrier = barrier
         else:
             design = x.primal
         dual = x.dual
@@ -355,13 +362,14 @@ class CompositePrimalVector(CompositeVector):
                             'Unidentified dual vector.')
 
         super(CompositePrimalVector, self).__init__([primal_vec, dual_ineq])
+        self.barrier = None
 
     def equals_init_design(self):
         self.design.equals_init_design()
         self.slack.equals(self.init_slack)
 
-    def equals_lagrangian_total_gradient(self, at_primal, at_state,
-                                         at_dual, at_adjoint, design_work):
+    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
+                                         at_adjoint, design_work):
         """
         Computes the total primal derivative of the Lagrangian.
 
@@ -370,8 +378,8 @@ class CompositePrimalVector(CompositeVector):
         .. math::
             \\nabla_{primal} \\mathcal{L} =
             \\begin{bmatrix}
-            \\nabla_x f(x, u) + \\nabla_x c(x, u)^T \\lambda \\\\
-            -\\lambda^T S
+            \\nabla_x f(x, u) + \\nabla_x c_{eq}(x, u)^T \\lambda_{eq} + \\nabla_x c_{inq}(x, u)^T \\lambda_{ineq} \\\\
+            \\muS^{-1}e - \\lambda_{ineq}
             \\end{bmatrix}
 
         Parameters
@@ -387,16 +395,24 @@ class CompositePrimalVector(CompositeVector):
         design_work : DesignVector
             Work vector in the design space.
         """
+        # make sure the barrier factor is set
+        assert self.barrier is not None
         # do some aliasing
         at_design = at_primal.design
         at_slack = at_primal.slack
+        if isinstance(at_dual, CompositeDualVector):
+            at_dual_ineq = at_dual.ineq
+        else:
+            at_dual_ineq = at_dual
         # compute the design derivative of the lagrangian
         self.design.equals_lagrangian_total_gradient(
             at_design, at_state, at_dual, at_adjoint, design_work)
         # compute the slack derivative of the lagrangian
         self.slack.equals(at_slack)
-        self.slack.times(at_dual)
-        self.slack.times(-1.)
+        self.slack.times(self.barrier)
+        self.slack.minus(at_dual_ineq)
+        # reset the barrier to None
+        self.barrier = None
 
 # package imports at the bottom to prevent import errors
 import numpy as np
