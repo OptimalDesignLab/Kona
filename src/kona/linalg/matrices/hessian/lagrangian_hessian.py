@@ -1,13 +1,4 @@
-
-from kona.options import get_opt
-from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
-from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian.basic import BaseHessian
-from kona.linalg.matrices.hessian import AugmentedKKTMatrix
-from kona.linalg.solvers.util import calc_epsilon
-from kona.linalg.solvers.krylov import STCG
 
 class LagrangianHessian(BaseHessian):
     """
@@ -32,7 +23,7 @@ class LagrangianHessian(BaseHessian):
                 self.primal_factory = factory
             elif factory._vec_type is StateVector:
                 self.state_factory = factory
-            elif factory._vec_type is DualVector:
+            elif factory._vec_type is DualVectorINEQ:
                 self.dual_factory = factory
             else:
                 raise TypeError('Invalid vector factory!')
@@ -40,7 +31,8 @@ class LagrangianHessian(BaseHessian):
         # request vector allocation
         self.primal_factory.request_num_vectors(3)
         self.state_factory.request_num_vectors(6)
-        self.dual_factory.request_num_vectors(4)
+        if self.dual_factory is not None:
+            self.dual_factory.request_num_vectors(4)
 
         # set misc settings
         self._approx = False
@@ -122,10 +114,9 @@ class LagrangianHessian(BaseHessian):
 
         # if slacks exist, compute the slack term
         if self.at_slack is not None:
-            self.slack_term.exp(self.at_slack)
+            self.slack_term.equals(self.at_slack)
+            self.slack_term.pow(-1.)
             self.slack_term.times(self.at_dual)
-            self.slack_term.times(-1.)
-            self.slack_term.restrict()
 
     def multiply_W(self, in_vec, out_vec):
         # calculate the FD perturbation for the design
@@ -272,3 +263,14 @@ class LagrangianHessian(BaseHessian):
         # reset the krylov relative tolerance
         if rel_tol is not None:
             self.krylov.rel_tol = tmp_rel_tol
+
+# imports here to prevent circular errors
+from kona.options import get_opt
+from kona.linalg.vectors.common import DesignVector, StateVector
+from kona.linalg.vectors.composite import DualVectorINEQ
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
+from kona.linalg.matrices.hessian import AugmentedKKTMatrix
+from kona.linalg.solvers.util import calc_epsilon
+from kona.linalg.solvers.krylov import STCG

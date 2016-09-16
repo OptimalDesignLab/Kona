@@ -116,25 +116,38 @@ class QuasiNewtonKKTMatrix(BaseHessian):
             out_design = out_vec.primal.design
             in_slack = in_vec.primal.slack
             out_slack = out_vec.primal.slack
+            if isinstance(in_vec.dual, CompositeDualVector):
+                in_dual_ineq = in_vec.dual.ineq
+                out_dual_ineq = out_vec.dual.ineq
+            else:
+                in_dual_ineq = in_vec.dual
+                out_dual_ineq = out_vec.dual
         else:
             in_design = in_vec.primal
             out_design = out_vec.primal
             in_slack = None
 
-        # start with the quasi newton part of the product
+        # start with the optimality equation
+        # out_design = W*in_design + AT*in_dual
         self.quasi_newton.product(in_design, out_design)
-
-        # get the transposed cnstr jac product
         self.cnstr_jac.T.product(in_vec.dual, self.primal_work)
         out_design.plus(self.primal_work)
 
-        # get the forward cnstr jac product
+        # then do the compatibility equation
+        # out_dual = A*in_design
         self.cnstr_jac.product(in_design, out_vec.dual)
 
-        # now take care of the slack block
+        # finally deal with slack terms
         if in_slack is not None:
+            # first the slack equation
+            # out_slack = sigma*in_slack + in_dual_ineq
             out_slack.equals(in_slack)
             out_slack.times(self.slack_block)
+            out_slack.plus(in_dual_ineq)
+            # now modify the compatibility equation
+            # out_dual_ineq += in_slack
+            out_dual_ineq.plus(in_slack)
+
 
 # imports here to prevent circular errors
 from kona.options import get_opt

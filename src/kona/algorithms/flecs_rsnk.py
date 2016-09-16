@@ -79,13 +79,6 @@ class FLECS_RSNK(OptimizationAlgorithm):
             # use identity matrix product as preconditioner
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
-        elif self.precond == 'nested':
-            # initialize the nested preconditioner
-            self.nested = NestedKKTPreconditioner(
-                [self.primal_factory, self.state_factory, self.dual_factory],
-                reduced_optns)
-            # define preconditioner as a nested solution of the approximate KKT
-            self.precond = self.nested.solve
         elif self.precond == 'idf_schur':
             self.idf_schur = ReducedSchurPreconditioner(
                 [self.primal_factory, self.state_factory, self.dual_factory],
@@ -521,7 +514,6 @@ from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.matrices.preconds import NestedKKTPreconditioner
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS
 from kona.linalg.solvers.util import EPS

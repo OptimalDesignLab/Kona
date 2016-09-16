@@ -268,10 +268,10 @@ class dCdX(KonaMatrix):
                 out_vec.base.data[:] += self._solver.multiply_dCINdX_T(
                     self._primal.base.data, self._state.base,
                     in_vec.ineq.base.data)
-            elif isinstance(out_vec, DualVectorEQ):
+            elif isinstance(in_vec, DualVectorEQ):
                 dCEQdX(self._primal, self._state).T.product(
                     in_vec, out_vec)
-            elif isinstance(out_vec, DualVectorINEQ):
+            elif isinstance(in_vec, DualVectorINEQ):
                 dCINdX(self._primal, self._state).T.product(
                     in_vec, out_vec)
             else:

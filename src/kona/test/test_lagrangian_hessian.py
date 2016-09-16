@@ -23,7 +23,7 @@ class LagrangianHessianTestCase(unittest.TestCase):
         km = KonaMemory(solver)
         self.pf = km.primal_factory
         self.sf = km.state_factory
-        self.df = km.dual_factory
+        self.df = km.ineq_factory
 
         self.pf.request_num_vectors(6)
         self.sf.request_num_vectors(3)
