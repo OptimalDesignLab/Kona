@@ -106,24 +106,40 @@ class FLECS(KrylovSolver):
         # clear out all the vectors stored in V
         # the data goes back to the stack and is used again later
         for vector in self.V:
-            del vector.primal.design
-            del vector.primal.slack
-            del vector.primal
-            del vector.dual.eq
-            del vector.dual.ineq
-            del vector.dual
+            if self.eq_factory is not None and self.ineq_factory is not None:
+                del vector.primal.design
+                del vector.primal.slack
+                del vector.primal
+                del vector.dual.eq
+                del vector.dual.ineq
+                del vector.dual
+            elif self.eq_factory is not None:
+                del vector.primal
+                del vector.dual
+            elif self.ineq_factory is not None:
+                del vector.primal.design
+                del vector.primal.slack
+                del vector.dual
             del vector
         self.V = []
 
         # clear out all vectors stored in Z
         # the data goes back to the stack and is used again later
         for vector in self.Z:
-            del vector.primal.design
-            del vector.primal.slack
-            del vector.primal
-            del vector.dual.eq
-            del vector.dual.ineq
-            del vector.dual
+            if self.eq_factory is not None and self.ineq_factory is not None:
+                del vector.primal.design
+                del vector.primal.slack
+                del vector.primal
+                del vector.dual.eq
+                del vector.dual.ineq
+                del vector.dual
+            elif self.eq_factory is not None:
+                del vector.primal
+                del vector.dual
+            elif self.ineq_factory is not None:
+                del vector.primal.design
+                del vector.primal.slack
+                del vector.dual
             del vector
         self.Z = []
 
