@@ -10,8 +10,8 @@ class STCGRSNKTestCase(unittest.TestCase):
 
     def test_RSNK_with_Rosenbrock(self):
 
-        num_design = 2
-        solver = Rosenbrock(num_design)
+        ndv = 2
+        solver = Rosenbrock(ndv)
 
         optns = {
             'info_file' : 'kona_info.dat',
@@ -47,7 +47,7 @@ class STCGRSNKTestCase(unittest.TestCase):
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 
-        diff = abs(solver.curr_design - numpy.ones(num_design))
+        diff = abs(solver.curr_design - numpy.ones(ndv))
         self.assertTrue(max(diff) < 1e-5)
 
     def test_RSNK_with_Spiral(self):

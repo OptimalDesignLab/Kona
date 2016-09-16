@@ -880,6 +880,7 @@ class UserSolver(object):
         string, optional
             A string that that Kona will write into its info file.
         """
+        self.curr_design = curr_design
         return ""
 
 class UserSolverIDF(UserSolver):

@@ -36,18 +36,18 @@ class OptimizationAlgorithm(object):
     merit_func : MeritFunction
         Merit function for the optimization
     """
-    def __init__(self, primal_factory, state_factory, dual_factory,
+    def __init__(self, primal_factory, state_factory, eq_factory, ineq_factory,
                  optns={}):
         # set up vector factories
         self.primal_factory = primal_factory
         self.state_factory = state_factory
-        if dual_factory is not None:
-            self.dual_factory = dual_factory
-            self.constraint_tol = get_opt(optns, 1e-8, 'feas_tol')
+        self.eq_factory = eq_factory
+        self.ineq_factory = ineq_factory
 
         # set up max iterations and primal tolerance for convergence
         self.max_iter = get_opt(optns, 100, 'max_iter')
-        self.primal_tol = get_opt(optns, 1e-8, 'opt_tol')
+        self.primal_tol = get_opt(optns, 1e-6, 'opt_tol')
+        self.constraint_tol = get_opt(optns, 1e-6, 'feas_tol')
 
         # set up the info file
         self.info_file = get_opt(optns, sys.stdout, 'info_file')

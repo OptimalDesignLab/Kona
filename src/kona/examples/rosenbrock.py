@@ -4,13 +4,6 @@ from kona.user import UserSolver
 
 class Rosenbrock(UserSolver):
 
-    def __init__(self, ndv):
-        super(Rosenbrock, self).__init__(
-            num_design=dv,
-            num_state=0,
-            num_eq=0,
-            num_ineq=0)
-
     def eval_obj(self, at_design, at_state):
         x = at_design
         return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)

@@ -23,11 +23,10 @@ class STCG_RSNK(OptimizationAlgorithm):
     optns : dict, optional
     """
     def __init__(self, primal_factory, state_factory,
-                 dual_factory=None, optns={}):
+                 eq_factory, ineq_factory, optns={}):
         # trigger base class initialization
         super(STCG_RSNK, self).__init__(
-            primal_factory, state_factory, dual_factory, optns
-        )
+            primal_factory, state_factory, eq_factory, ineq_factory, optns)
 
         # number of vectors required in solve() method
         self.primal_factory.request_num_vectors(7)
@@ -155,8 +154,8 @@ class STCG_RSNK(OptimizationAlgorithm):
                     self.quasi_newton.add_correction(p, dJdX_old)
                 dJdX_old.equals(dJdX)
             # write history
-            current_solution(num_iter=self.iter, curr_design=state,
-                             curr_state=adjoint)
+            current_solution(num_iter=self.iter, curr_design=x,
+                             curr_state=state, curr_adj=adjoint)
             self._write_history(self.iter, grad_norm, obj, rho)
             # check convergence
             if grad_norm < grad_tol:

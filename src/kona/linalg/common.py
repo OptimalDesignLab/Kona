@@ -26,26 +26,35 @@ def current_solution(num_iter, curr_design, curr_state=None, curr_adj=None,
     """
 
     solver = curr_design._memory.solver
-    curr_design = curr_design.base.data
+    out_design = curr_design.base.data
 
     if curr_state is not None:
-        curr_state = curr_state.base
+        out_state = curr_state.base
+    else:
+        out_state = None
 
     if curr_adj is not None:
-        curr_adj = curr_adj.base
+        out_adj = curr_adj.base
+    else:
+        out_adj = None
 
     if curr_eq is not None:
-        curr_eq = curr_eq.base.data
+        out_eq = curr_eq.base.data
+    else:
+        out_eq = None
 
     if curr_ineq is not None:
-        curr_ineq = curr_ineq.base.data
+        out_ineq = curr_ineq.base.data
+    else:
+        out_ineq = None
 
     if curr_slack is not None:
-        curr_slack = curr_slack.base.data
+        out_slack = curr_slack.base.data
+    else:
+        out_slack = None
 
     return solver.current_solution(
-        num_iter, curr_design, curr_state, curr_adj,
-        curr_eq, curr_ineq, curr_slack)
+        num_iter, out_design, out_state, out_adj, out_eq, out_ineq, out_slack)
 
 def objective_value(at_design, at_state):
     """

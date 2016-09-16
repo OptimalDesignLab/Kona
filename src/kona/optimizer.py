@@ -38,7 +38,6 @@ class Optimizer(object):
         if not isinstance(optns, dict):
             raise TypeError('Kona.Optimizer >> Options must be a dictionary!')
         self._process_options(optns)
-        print optns
 
         # get vector factories
         primal_factory = self._memory.primal_factory
