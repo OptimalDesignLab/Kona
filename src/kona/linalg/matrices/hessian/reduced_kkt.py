@@ -1,11 +1,4 @@
-from kona.options import get_opt
-from kona.linalg.vectors.common import DesignVector, StateVector, DualVector
-from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
-from kona.linalg.matrices.hessian.basic import BaseHessian, QuasiNewtonApprox
-from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import calc_epsilon, EPS
+from kona.linalg.matrices.hessian.basic import BaseHessian
 
 class ReducedKKTMatrix(BaseHessian):
     """
@@ -16,33 +9,35 @@ class ReducedKKTMatrix(BaseHessian):
 
     .. math::
         \\begin{bmatrix}
-        \\nabla_x^2 \\mathcal{L} && 0 && \\nabla_x c^T \\\\
-        0 && -\\lambda^T diag(e^s) && -diag(e^s) \\\\
-        \\nabla_x c && -diag(e^s) && 0
+        \\nabla_x^2 \\mathcal{L} && 0 && \\nabla_x c_{eq}^T && \\nabla_x c_{ineq}^T \\\\
+        0 && \\Sigma && 0 && I \\\\
+        \\nabla_x c_{eq} && 0 && 0 && 0 \\\\
+        \\nabla_x c_{ineq} && I && 0 && 0
         \\end{bmatrix}
         \\begin{bmatrix}
         \\Delta x \\\\
         \\Delta s \\\\
-        \\Delta \\lambda
+        \\Delta \\lambda_{eq} \\\\
+        \\Delta \\lambda_{ineq}
         \\end{bmatrix}
         =
         \\begin{bmatrix}
-        -\\nabla_x \\mathcal{f} - \\lambda^T \\nabla_x c \\\\
-        \\lambda^T e^s \\\\
-        - c + e^s
+        -\\nabla_x \\mathcal{f} - \\lambda_{eq}^T \\nabla_x c_{eq} -\\lambda_{eq}^T \\nabla_x c_{eq} \\\\
+        \\lambda^T \\mu * S^{-1}e \\\\
+        - c_{eq} \\\\
+        - c_{ineq} + s
         \\end{bmatrix}
 
     where :math:`\\mathcal{L}` is the Lagrangian defined as:
 
     .. math::
         \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) +
-        \\lambda^T \\left[c(x, u(x)) - e^s\\right]
+        \\lambda_{eq}^T c_{eq}(x, u(x)) +
+        \\lambda_{ineq}^T \\left[c_{ineq}(x, u(x)) - s\\right] +
+        \\frac{1}{2}\\mu\\sum_{i=1}^{n_{ineq}}ln(s_i)
 
     Inequality constrained are handled via the slack variables :math:`s` and
-    the slack terms :math:`e^s` enforcing non-negativity. A restrict operator
-    in the user's `UserSolver` implementation sets the slack terms to zero for
-    equality constraints, such that this formulation can be exactly used for
-    equality constrained or mixed constrained problems.
+    the logarithmic barrier term enforcing non-negativity.
 
     .. note::
 
@@ -78,14 +73,17 @@ class ReducedKKTMatrix(BaseHessian):
         # get references to individual factories
         self.primal_factory = None
         self.state_factory = None
-        self.dual_factory = None
+        self.eq_factory = None
+        self.ineq_factory = None
         for factory in self.vec_fac:
             if factory._vec_type is DesignVector:
                 self.primal_factory = factory
             elif factory._vec_type is StateVector:
                 self.state_factory = factory
-            elif factory._vec_type is DualVector:
-                self.dual_factory = factory
+            elif factory._vec_type is DualVectorEQ:
+                self.eq_factory = factory
+            elif factory._vec_type is DualVectorINEQ:
+                self.ineq_factory = factory
 
         # set empty solver handle
         self.krylov = None
@@ -96,7 +94,10 @@ class ReducedKKTMatrix(BaseHessian):
         # request vector memory for future allocation
         self.primal_factory.request_num_vectors(3)
         self.state_factory.request_num_vectors(6)
-        self.dual_factory.request_num_vectors(3)
+        if self.eq_factory is not None:
+            self.eq_factory.request_num_vectors(3)
+        if self.ineq_factory is not None:
+            self.ineq_factory.request_num_vectors(3)
 
         # initialize abtract jacobians
         self.dRdX = dRdX()
@@ -112,12 +113,6 @@ class ReducedKKTMatrix(BaseHessian):
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.T.solve(rhs_vec, solution, rel_tol=rel_tol)
 
-    def set_quasi_newton(self, quasi_newton):
-        if isinstance(quasi_newton, QuasiNewtonApprox):
-            self.quasi_newton = quasi_newton
-        else:
-            raise TypeError('Object is not a valid quasi-Newton approximation')
-
     def set_krylov_solver(self, krylov_solver):
         if isinstance(krylov_solver, KrylovSolver):
             self.krylov = krylov_solver
@@ -126,25 +121,18 @@ class ReducedKKTMatrix(BaseHessian):
 
     def linearize(self, at_kkt, at_state, at_adjoint):
         """
-        An abstracted "linearization" method for the matrix.
-
-        This method does not actually factor any real matrices. It also does
-        not perform expensive linear or non-linear solves. It is used to update
-        internal vector references and perform basic calculations using only
-        cheap matrix-vector products.
+        Linearize the KKT matrix at the given KKT, state, adjoint and barrier
+        point. This method does not perform any factorizations or matrix
+        operations.
 
         Parameters
         ----------
-        at_design : DesignVector
-            Design point at which the product is evaluated.
+        at_kkt : ReducedKKTVector
+            KKT vector at which the product is evaluated
         at_state : StateVector
             State point at which the product is evaluated.
-        at_dual : DualVector
-            Lagrange multipliers at which the product is evaluated.
         at_adjoint : StateVector
             1st order adjoint variables at which the product is evaluated.
-        barrer : float
-            Log-barrier parameter used for slack equations.
         """
         # if this is the first ever linearization...
         if not self._allocated:
@@ -163,23 +151,42 @@ class ReducedKKTMatrix(BaseHessian):
             self.primal_work = self.primal_factory.generate()
 
             # generate dual vectors
-            self.dual_work = self.dual_factory.generate()
-            self.slack_work = self.dual_factory.generate()
+            if isinstance(at_kkt.dual, CompositeDualVector):
+                dual_eq = self.eq_factory.generate()
+                dual_ineq = self.ineq_factory.generate()
+                self.dual_work = CompositeDualVector(dual_eq, dual_ineq)
+            else:
+                self.dual_work = self.eq_factory.generate()
+            self.slack_block = None
+            if self.ineq_factory is not None:
+                self.slack_block = self.ineq_factory.generate()
 
             self._allocated = True
 
         # store the linearization point
+        self.at_dual = at_kkt.dual
         if isinstance(at_kkt.primal, CompositePrimalVector):
             self.at_design = at_kkt.primal.design
             self.at_slack = at_kkt.primal.slack
+            if isinstance(self.at_dual, CompositeDualVector):
+                self.at_dual_ineq = self.at_dual.ineq
+            else:
+                self.at_dual_ineq = self.at_dual
         else:
             self.at_design = at_kkt.primal
             self.at_slack = None
+            self.at_dual_ineq = None
         self.design_norm = self.at_design.norm2
         self.at_state = at_state
         self.state_norm = self.at_state.norm2
         self.at_adjoint = at_adjoint
         self.at_dual = at_kkt.dual
+
+        # pre compute the slack block
+        if self.slack_block is not None:
+            self.slack_block.equals(self.at_slack)
+            self.slack_block.pow(-1.)
+            self.slack_block.times(self.at_dual_ineq)
 
         # compute adjoint residual at the linearization
         self.dual_work.equals_constraints(self.at_design, self.at_state)
@@ -222,6 +229,8 @@ class ReducedKKTMatrix(BaseHessian):
         out_vec.equals(0.0)
 
         # do some aliasing to make the code cleanier
+        in_dual = in_vec.dual
+        out_dual = out_vec.dual
         if isinstance(in_vec.primal, CompositePrimalVector):
             if self.at_slack is None:
                 raise TypeError('No slack variables defined!')
@@ -229,13 +238,19 @@ class ReducedKKTMatrix(BaseHessian):
             in_slack = in_vec.primal.slack
             out_design = out_vec.primal.design
             out_slack = out_vec.primal.slack
+            if isinstance(in_dual, CompositeDualVector):
+                in_dual_ineq = in_dual.ineq
+                out_dual_ineq = out_dual.ineq
+            else:
+                in_dual_ineq = in_dual
+                out_dual_ineq = out_dual
         else:
             in_design = in_vec.primal
             in_slack = None
             out_design = out_vec.primal
             out_slack = None
-        in_dual = in_vec.dual
-        out_dual = out_vec.dual
+            in_dual_ineq = None
+            out_dual_ineq = None
 
         # modify the in_vec for inequality constraints
         self.dual_work.equals_constraints(self.at_design, self.at_state)
@@ -336,23 +351,22 @@ class ReducedKKTMatrix(BaseHessian):
 
         # add the slack term to the dual component
         if in_slack is not None:
-            # compute slack term (-e^s)
-            self.slack_work.exp(self.at_slack)
-            self.slack_work.times(-1.)
-            self.slack_work.restrict()
             # set slack output
-            # out_slack = (-e^s * delta_lambda)
-            out_slack.equals(in_dual)
-            out_slack.times(self.slack_work)
-            # add the slack contribution
-            # out_slack += (-e^s * lambda * delta_slack)
-            self.dual_work.equals(self.at_dual)
-            self.dual_work.times(self.slack_work)
-            self.dual_work.times(in_slack)
-            out_slack.plus(self.dual_work)
-
+            # out_slack = Sigma * in_slack + in_dual_ineq
+            out_slack.equals(in_slack)
+            out_slack.times(self.slack_block)
+            out_slack.plus(in_dual_ineq)
             # add the slack contribution to dual component
-            # out_dual += (-e^s * delta_slack)
-            self.dual_work.equals(in_slack)
-            self.dual_work.times(self.slack_work)
-            out_dual.plus(self.dual_work)
+            # out_dual_ineq += in_slack
+            out_dual_ineq.plus(in_slack)
+
+# imports here to prevent circular errors
+from kona.options import get_opt
+from kona.linalg.vectors.common import DesignVector, StateVector
+from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
+from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.vectors.composite import CompositeDualVector
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
+from kona.linalg.solvers.krylov.basic import KrylovSolver
+from kona.linalg.solvers.util import calc_epsilon, EPS

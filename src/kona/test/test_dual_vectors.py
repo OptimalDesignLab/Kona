@@ -1,9 +1,8 @@
 import unittest
 
+from dummy_solver import DummySolver
 from kona.linalg.memory import KonaMemory
 from kona.user import UserSolverIDF
-
-from dummy_solver import DummySolver
 
 class DualVectorEQTestCase(unittest.TestCase):
 
