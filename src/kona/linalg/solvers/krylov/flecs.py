@@ -57,16 +57,22 @@ class FLECS(KrylovSolver):
 
         # extract vector factories from the factory array
         self.primal_factory = None
-        self.dual_factory = None
+        self.eq_factory = None
+        self.ineq_factory = None
         for factory in vector_factories:
             if factory._vec_type is DesignVector:
                 self.primal_factory = factory
-            elif factory._vec_type is DualVector:
-                self.dual_factory = factory
+            elif factory._vec_type is DualVectorEQ:
+                self.eq_factory = factory
+            elif factory._vec_type is DualVectorINEQ:
+                self.ineq_factory = factory
 
         # put in memory request
         self.primal_factory.request_num_vectors(2*self.max_iter + 2)
-        self.dual_factory.request_num_vectors(2*(2*self.max_iter + 2))
+        if self.eq_factory is not None:
+            self.eq_factory.request_num_vectors(2*self.max_iter + 2)
+        if self.ineq_factory is not None:
+            self.ineq_factory.request_num_vectors(2*(2*self.max_iter + 2))
 
         # initialize vector holder arrays
         self.V = []
@@ -74,16 +80,27 @@ class FLECS(KrylovSolver):
 
     def _generate_vector(self):
         design = self.primal_factory.generate()
-        slack = self.dual_factory.generate()
-        primal = CompositePrimalVector(design, slack)
-        dual = self.dual_factory.generate()
+        if self.eq_factory is not None and self.ineq_factory is not None:
+            slack = self.ineq_factory.generate()
+            primal = CompositePrimalVector(design, slack)
+            dual_eq = self.eq_factory.generate()
+            dual_ineq = self.ineq_factory.generate()
+            dual = CompositeDualVector(dual_eq, dual_ineq)
+        elif self.eq_factory is not None:
+            primal = design
+            dual = self.eq_factory.generate()
+        elif self.ineq_factory is not None:
+            slack = self.ineq_factory.generate()
+            primal = CompositePrimalVector(design, slack)
+            dual = self.ineq_factory.generate()
         return ReducedKKTVector(primal, dual)
 
     def _validate_options(self):
         super(FLECS, self)._validate_options()
 
-        if (self.primal_factory is None) or (self.dual_factory is None):
-            raise TypeError('wrong vector factory types')
+        assert self.primal_factory is not None
+        if self.eq_factory is None:
+            assert self.ineq_factory is not None
 
     def _reset(self):
         # clear out all the vectors stored in V
@@ -92,6 +109,8 @@ class FLECS(KrylovSolver):
             del vector.primal.design
             del vector.primal.slack
             del vector.primal
+            del vector.dual.eq
+            del vector.dual.ineq
             del vector.dual
             del vector
         self.V = []
@@ -102,6 +121,8 @@ class FLECS(KrylovSolver):
             del vector.primal.design
             del vector.primal.slack
             del vector.primal
+            del vector.dual.eq
+            del vector.dual.ineq
             del vector.dual
             del vector
         self.Z = []

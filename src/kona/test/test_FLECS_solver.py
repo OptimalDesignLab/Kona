@@ -12,11 +12,11 @@ from kona.linalg.memory import KonaMemory
 class FLECSSolverTestCase(unittest.TestCase):
 
     def setUp(self):
-        solver = UserSolver(2,0,1)
+        solver = UserSolver(2,0,0,1)
         self.km = KonaMemory(solver)
         self.pf = self.km.primal_factory
         self.pf.request_num_vectors(2)
-        self.df = self.km.dual_factory
+        self.df = self.km.ineq_factory
         self.df.request_num_vectors(4)
         optns = {
             'max_iter' : 10,
@@ -77,7 +77,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.b.equals(1)
         # solve the system with FLECS
         self.krylov.radius = 100.0
-        self.krylov.mu = 10000.0
+        self.krylov.mu = 1000.0
         self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
         # calculate expected result
         self.b.equals(1)
