@@ -8,28 +8,26 @@ class CompositeStepRSNK(OptimizationAlgorithm):
     This algorithm uses a novel 2nd order adjoint formulation for constraint
     jacobian and constrained hessian products.
 
-    Inequality constraints are converted to equality constraints using slack
-    terms of the form :math:`e^s` where `s` are the slack variables.
-
     Parameters
     ----------
     primal_factory : VectorFactory
     state_factory : VectorFactory
-    dual_factory : VectorFactory
+    eq_factory : VectorFactory
+    ineq_factory : VectorFactory
     optns : dict, optional
     """
-    def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
+    def __init__(self, primal_factory, state_factory,
+                 eq_factory, ineq_factory, optns={}):
         # trigger base class initialization
         super(CompositeStepRSNK, self).__init__(
-            primal_factory, state_factory, dual_factory, optns)
+            primal_factory, state_factory, eq_factory, ineq_factory, optns)
 
         # number of vectors required in solve() method
         self.primal_factory.request_num_vectors(9)
         self.state_factory.request_num_vectors(4)
-        self.dual_factory.request_num_vectors(16)
+        self.eq_factory.request_num_vectors(16)
 
         # get general options
-        self.cnstr_tol = get_opt(optns, 1e-8, 'feas_tol')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # get trust region options
@@ -54,11 +52,11 @@ class CompositeStepRSNK(OptimizationAlgorithm):
         # initialize the KKT matrix definition
         normal_optns = get_opt(optns, {}, 'composite-step', 'normal-step')
         self.normal_KKT = AugmentedKKTMatrix(
-            [self.primal_factory, self.state_factory, self.dual_factory],
+            [self.primal_factory, self.state_factory, self.eq_factory],
             normal_optns)
         tangent_optns = get_opt(optns, {}, 'composite-step', 'tangent-step')
         self.tangent_KKT = LagrangianHessian(
-            [self.primal_factory, self.state_factory, self.dual_factory],
+            [self.primal_factory, self.state_factory, self.eq_factory],
             tangent_optns)
         self.tangent_KKT.set_projector(self.normal_KKT)
 
@@ -85,14 +83,15 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             '%11e'%self.radius + '\n'
         )
 
-    def _generate_composite_primal(self):
-        design = self.primal_factory.generate()
-        slack = self.dual_factory.generate()
-        return CompositePrimalVector(design, slack)
+    def _generate_primal(self):
+        return self.primal_factory.generate()
+
+    def _generate_dual(self):
+        return self.eq_factory.generate()
 
     def _generate_KKT_vector(self):
-        primal = self._generate_composite_primal()
-        dual = self.dual_factory.generate()
+        primal = self._generate_primal()
+        dual = self._generate_dual()
         return ReducedKKTVector(primal, dual)
 
     def _generate_all_memory(self):
@@ -103,8 +102,8 @@ class CompositeStepRSNK(OptimizationAlgorithm):
         self.kkt_work = self._generate_KKT_vector()
         self.normal_rhs = self._generate_KKT_vector()
         self.normal_step = self._generate_KKT_vector()
-        self.tangent_rhs = self._generate_composite_primal()
-        self.tangent_step = self._generate_composite_primal()
+        self.tangent_rhs = self._generate_primal()
+        self.tangent_step = self._generate_primal()
 
         # generate primal vectors
         self.design_work = self.primal_factory.generate()
@@ -117,8 +116,8 @@ class CompositeStepRSNK(OptimizationAlgorithm):
         self.adjoint_work = self.state_factory.generate()
 
         # generate dual vectors
-        self.dual_work = self.dual_factory.generate()
-        self.slack_work = self.dual_factory.generate()
+        self.dual_work = self.eq_factory.generate()
+        self.slack_work = self.eq_factory.generate()
 
     def solve(self):
         self._write_header()
@@ -155,23 +154,23 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
         # evaluate the initial design before starting outer iterations
         X.equals_init_guess()
-        if not state.equals_primal_solution(X.primal.design):
+        if not state.equals_primal_solution(X.primal):
             raise RuntimeError(
                 'Invalid initial guess! Nonlinear solution breakdown.')
 
         if self.factor_matrices and self.iter < self.max_iter:
-            factor_linear_system(X.primal.design, state)
+            factor_linear_system(X.primal, state)
 
         # perform an adjoint solution for the Lagrangian
-        state_work.equals_objective_partial(X.primal.design, state)
-        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
+        state_work.equals_objective_partial(X.primal, state)
+        dCdU(X.primal, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+        dRdU(X.primal, state).T.solve(state_work, adjoint)
 
         # send initial point info to the user
-        solver_info = current_solution(X.primal.design, state, adjoint, X.dual,
-                                       self.iter)
+        solver_info = current_solution(
+            self.iter, X.primal, state, adjoint, X.dual)
         if isinstance(solver_info, str):
             self.info_file.write('\n' + solver_info + '\n')
 
@@ -192,32 +191,22 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             self.info_file.write(
                 'primal vars        = %e\n'%X.primal.norm2)
             self.info_file.write(
-                '   design vars     = %e\n'%X.primal.design.norm2)
-            self.info_file.write(
-                '   slack vars      = %e\n'%X.primal.slack.norm2)
-            self.info_file.write(
                 'multipliers        = %e\n\n'%X.dual.norm2)
 
             if self.iter == 1:
                 # calculate initial norms
                 grad_norm0 = dLdX.primal.norm2
-                design_norm0 = dLdX.primal.design.norm2
-                slack_norm0 = dLdX.primal.slack.norm2
                 feas_norm0 = max(dLdX.dual.norm2, EPS)
                 kkt_norm0 = np.sqrt(feas_norm0**2 + grad_norm0**2)
 
                 # set current norms to initial
                 kkt_norm = kkt_norm0
                 grad_norm = grad_norm0
-                design_norm = design_norm0
-                slack_norm = slack_norm0
                 feas_norm = feas_norm0
 
                 # print out convergence norms
                 self.info_file.write(
                     'grad_norm0         = %e\n'%grad_norm0 +
-                    '   design_norm0    = %e\n'%design_norm0 +
-                    '   slack_norm0     = %e\n'%slack_norm0 +
                     'feas_norm0         = %e\n'%feas_norm0)
 
                 # calculate convergence tolerances
@@ -227,8 +216,6 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             else:
                 # calculate current norms
                 grad_norm = dLdX.primal.norm2
-                design_norm = dLdX.primal.design.norm2
-                slack_norm = dLdX.primal.slack.norm2
                 feas_norm = max(dLdX.dual.norm2, EPS)
                 kkt_norm = np.sqrt(feas_norm**2 + grad_norm**2)
 
@@ -236,13 +223,11 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                 self.info_file.write(
                     'grad_norm          = %e (%e <-- tolerance)\n'%(
                         grad_norm, grad_tol) +
-                    '   design_norm     = %e\n'%design_norm +
-                    '   slack_norm      = %e\n'%slack_norm +
                     'feas_norm          = %e (%e <-- tolerance)\n'%(
                         feas_norm, feas_tol))
 
             # write convergence history
-            obj_val = objective_value(X.primal.design, state)
+            obj_val = objective_value(X.primal, state)
             self._write_history(grad_norm, feas_norm, obj_val)
 
             # check for convergence
@@ -271,12 +256,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             # solve for the Lagrange multiplier estimates
             self.normal_KKT.solve(normal_rhs, P, self.krylov_tol)
 
-            # compute the slack term
-            slack_work.exp(X.primal.slack)
-            slack_work.restrict()
-
             # assemble the RHS vector for the normal-step solve
-            # rhs = [0, 0, -(c-e^s)]
             normal_rhs.equals(0.0)
             normal_rhs.dual.equals(dLdX.dual)
             normal_rhs.dual.times(-1.)
@@ -292,23 +272,14 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             # set trust radius settings for the tangent step STCG solver
             self.tangent_KKT.radius = np.sqrt(
                 self.radius**2 +
-                normal_step.primal.design.norm2 ** 2 +
-                normal_step.primal.slack.norm2 ** 2)
+                normal_step.primal.norm2 ** 2)
 
             # set up the RHS vector for the tangent-step solve
             # design component: -(W * normal_design + dL/dDesign)
             self.tangent_KKT.multiply_W(
-                normal_step.primal.design, tangent_rhs.design)
-            tangent_rhs.design.plus(dLdX.primal.design)
-            tangent_rhs.design.times(-1.)
-            # slack component: (Sigma * lambda)+(Sigma * Lambda * normal_slack)
-            tangent_rhs.slack.equals(normal_step.primal.slack)
-            tangent_rhs.slack.times(X.dual)
-            tangent_rhs.slack.times(slack_work)
-            dual_work.equals(X.dual)
-            dual_work.times(slack_work)
-            tangent_rhs.slack.plus(dual_work)
-            tangent_rhs.slack.restrict()
+                normal_step.primal, tangent_rhs)
+            tangent_rhs.plus(dLdX.primal)
+            tangent_rhs.times(-1.)
 
             # solve for the tangent step
             self.tangent_KKT.solve(
@@ -317,7 +288,6 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             # assemble the complete step
             P.primal.equals_ax_p_by(
                 1., normal_step.primal, 1, tangent_step)
-            P.primal.slack.restrict()
 
             # calculate predicted decrease in the merit function
             self.calc_pred_reduction()
@@ -347,26 +317,25 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                 # add the full step
                 X.primal.plus(P.primal)
                 X.dual.plus(P.dual)
-                X.primal.slack.restrict()
 
                 # solve states at the new step
-                state.equals_primal_solution(X.primal.design)
+                state.equals_primal_solution(X.primal)
 
                 # if this is a matrix-based problem, tell the solver to factor
                 # some important matrices to be used in the next iteration
                 if self.factor_matrices and self.iter < self.max_iter:
-                    factor_linear_system(X.primal.design, state)
+                    factor_linear_system(X.primal, state)
 
                 # perform an adjoint solution for the Lagrangian
-                state_work.equals_objective_partial(X.primal.design, state)
-                dCdU(X.primal.design, state).T.product(X.dual, adjoint)
+                state_work.equals_objective_partial(X.primal, state)
+                dCdU(X.primal, state).T.product(X.dual, adjoint)
                 state_work.plus(adjoint)
                 state_work.times(-1.)
-                dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+                dRdU(X.primal, state).T.solve(state_work, adjoint)
 
             # send current solution info to the user
-            solver_info = current_solution(X.primal.design, state, adjoint,
-                                           X.dual, self.iter)
+            solver_info = current_solution(
+                self.iter, X.primal, state, adjoint, X.dual)
             if isinstance(solver_info, str):
                 self.info_file.write('\n' + solver_info + '\n')
 
@@ -382,18 +351,14 @@ class CompositeStepRSNK(OptimizationAlgorithm):
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n\n'%self.iter)
 
-    def eval_merit(self, design, state, dual, cnstr):
-        return objective_value(design, state) \
+    def eval_merit(self, primal, state, dual, cnstr):
+        return objective_value(primal, state) \
             + dual.inner(cnstr) \
             + 0.5*self.mu*(cnstr.norm2**2)
 
     def calc_pred_reduction(self):
         # calculate predicted decrease in the augmented Lagrangian
-        self.normal_KKT.A.product(self.P.primal.design, self.dual_work)
-        self.slack_work.exp(self.X.primal.slack)
-        self.slack_work.restrict()
-        self.slack_work.times(self.P.primal.slack)
-        self.dual_work.minus(self.slack_work)
+        self.normal_KKT.A.product(self.P.primal, self.dual_work)
         self.dual_work.plus(self.dLdX.dual)
         self.tangent_rhs.minus(self.dLdX.primal)
         self.tangent_rhs.times(0.5)
@@ -432,37 +397,26 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
         # compute the merit value at the current step
         f_init = self.eval_merit(
-            X.primal.design, state, X.dual, dLdX.dual)
+            X.primal, state, X.dual, dLdX.dual)
 
         # compute the merit function derivative w.r.t. design
-        design_work[0].equals(dLdX.primal.design)
-        dCdX(X.primal.design, state).T.product(dLdX.dual, design_work[1])
+        design_work[0].equals(dLdX.primal)
+        dCdX(X.primal, state).T.product(dLdX.dual, design_work[1])
         design_work[1].times(self.mu)
         design_work[0].plus(design_work[1])
-        dCdU(X.primal.design, state).T.product(dLdX.dual, state_work)
+        dCdU(X.primal, state).T.product(dLdX.dual, state_work)
         state_work.times(-1.)
-        dRdU(X.primal.design, state).T.solve(state_work, adjoint_work)
-        dRdX(X.primal.design, state).T.product(adjoint_work, design_work[1])
+        dRdU(X.primal, state).T.solve(state_work, adjoint_work)
+        dRdX(X.primal, state).T.product(adjoint_work, design_work[1])
         design_work[1].times(self.mu)
         design_work[0].plus(design_work[1])
-
-        # compute the merit function derivative w.r.t. slacks
-        dual_work.exp(X.primal.slack)
-        dual_work.restrict()
-        dual_work.times(dLdX.dual)
-        dual_work.times(-self.mu)
-        dual_work.plus(dLdX.primal.slack)
 
         # compute the directional derivative for the merit function
-        p_dot_grad = \
-            design_work[0].inner(P.primal.design) \
-            + dual_work.inner(P.primal.slack)
+        p_dot_grad = design_work[0].inner(P.primal)
 
         self.info_file.write('\n')
         self.info_file.write(
             '   primal_step    = %e\n' % P.primal.norm2 +
-            '      design_step = %e\n' % P.primal.design.norm2 +
-            '      slack_step  = %e\n' % P.primal.slack.norm2 +
             '   lambda_step    = %e\n' % P.dual.norm2 +
             '\n' +
             '   p_dot_grad     = %e\n' % p_dot_grad)
@@ -490,21 +444,15 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             # calculate the next step
             kkt_work.primal.equals_ax_p_by(1., X.primal, alpha, P.primal)
             kkt_work.dual.equals_ax_p_by(1., X.dual, 1., P.dual)
-            kkt_work.primal.design.enforce_bounds()
-            kkt_work.primal.slack.restrict()
 
             # solve for the states
-            if state_work.equals_primal_solution(kkt_work.primal.design):
+            if state_work.equals_primal_solution(kkt_work.primal):
                 # evaluate constraints
-                dual_work.equals_constraints(
-                    kkt_work.primal.design, state_work)
-                slack_work.exp(kkt_work.primal.slack)
-                slack_work.restrict()
-                dual_work.minus(slack_work)
+                dual_work.equals_constraints(kkt_work.primal, state_work)
 
                 # calculate the merit function
                 f_next = self.eval_merit(
-                    kkt_work.primal.design, state_work,
+                    kkt_work.primal, state_work,
                     kkt_work.dual, dual_work)
 
                 # calculate sufficient decrease
@@ -544,15 +492,14 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             # factor some important matrices to be used in the next
             # iteration
             if self.factor_matrices and self.iter < self.max_iter:
-                factor_linear_system(X.primal.design, state)
+                factor_linear_system(X.primal, state)
 
             # perform an adjoint solution for the Lagrangian
-            state_work.equals_objective_partial(
-                X.primal.design, state)
-            dCdU(X.primal.design, state).T.product(X.dual, adjoint)
+            state_work.equals_objective_partial(X.primal, state)
+            dCdU(X.primal, state).T.product(X.dual, adjoint)
             state_work.plus(adjoint)
             state_work.times(-1.)
-            dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+            dRdU(X.primal, state).T.solve(state_work, adjoint)
 
             # flag for trust radius shrinking
             if alpha < 1:
@@ -606,7 +553,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
         # compute the merit value at the current step
         merit_init = self.eval_merit(
-            X.primal.design, state, X.dual, dLdX.dual)
+            X.primal, state, X.dual, dLdX.dual)
 
         # start trust region loop
         max_iter = 5
@@ -621,21 +568,16 @@ class CompositeStepRSNK(OptimizationAlgorithm):
 
             # get the new design point
             X.primal.plus(P.primal)
-            X.primal.design.enforce_bounds()
-            X.primal.slack.restrict()
             X.dual.plus(P.dual)
 
             # solve states at the new step
-            if state_work.equals_primal_solution(X.primal.design):
+            if state_work.equals_primal_solution(X.primal):
                 # evaluate the constraint terms at the new step
-                dual_work.equals_constraints(X.primal.design, state_work)
-                slack_work.exp(X.primal.slack)
-                slack_work.restrict()
-                dual_work.minus(slack_work)
+                dual_work.equals_constraints(X.primal, state_work)
 
                 # compute the merit value at the new step
                 merit_next = self.eval_merit(
-                    X.primal.design, state_work, X.dual, dual_work)
+                    X.primal, state_work, X.dual, dual_work)
 
                 # evaluate the quality of the FLECS model
                 rho = (merit_init - merit_next)/self.pred_reduction
@@ -649,8 +591,6 @@ class CompositeStepRSNK(OptimizationAlgorithm):
             self.info_file.write(
                 'Trust Region Step : iter %i\n' % iters +
                 '   primal_step    = %e\n' % P.primal.norm2 +
-                '      design_step = %e\n' % P.primal.design.norm2 +
-                '      slack_step  = %e\n' % P.primal.slack.norm2 +
                 '   lambda_step    = %e\n' % P.dual.norm2 +
                 '\n' +
                 '   merit_init     = %e\n' % merit_init +
@@ -682,25 +622,13 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                     # calculate the tangent step radius
                     self.tangent_KKT.radius = np.sqrt(
                         self.radius ** 2
-                        - normal_step.primal.design.norm2 ** 2
-                        - normal_step.primal.slack.norm2 ** 2)
-
-                    # calculate the slack term
-                    slack_work.exp(X.primal.slack)
-                    slack_work.restrict()
+                        - normal_step.primal.norm2 ** 2)
 
                     # set up the RHS vector for the tangent-step solve
                     self.tangent_KKT.multiply_W(
-                        normal_step.primal.design, tangent_rhs.design)
-                    tangent_rhs.design.plus(dLdX.primal.design)
-                    tangent_rhs.design.times(-1.)
-                    tangent_rhs.slack.equals(normal_step.primal.slack)
-                    tangent_rhs.slack.times(X.dual)
-                    tangent_rhs.slack.times(slack_work)
-                    dual_work.equals(X.dual)
-                    dual_work.times(slack_work)
-                    tangent_rhs.slack.plus(dual_work)
-                    tangent_rhs.slack.restrict()
+                        normal_step.primal, tangent_rhs)
+                    tangent_rhs.plus(dLdX.primal)
+                    tangent_rhs.times(-1.)
 
                     # solve for the tangent step
                     self.tangent_KKT.solve(
@@ -717,24 +645,22 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                 # model is okay -- accept primal step
                 self.info_file.write('\nStep accepted!\n')
                 X.primal.plus(P.primal)
-                X.primal.design.enforce_bounds()
-                X.primal.slack.restrict()
                 X.dual.plus(P.dual)
 
                 # solve states at the new step
-                state.equals_primal_solution(X.primal.design)
+                state.equals_primal_solution(X.primal)
 
                 # if this is a matrix-based problem, tell the solver to factor
                 # some important matrices to be used in the next iteration
                 if self.factor_matrices and self.iter < self.max_iter:
-                    factor_linear_system(X.primal.design, state)
+                    factor_linear_system(X.primal, state)
 
                 # perform an adjoint solution for the Lagrangian
-                state_work.equals_objective_partial(X.primal.design, state)
-                dCdU(X.primal.design, state).T.product(X.dual, adjoint)
+                state_work.equals_objective_partial(X.primal, state)
+                dCdU(X.primal, state).T.product(X.dual, adjoint)
                 state_work.plus(adjoint)
                 state_work.times(-1.)
-                dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+                dRdU(X.primal, state).T.solve(state_work, adjoint)
 
                 # check the trust radius
                 if self.tangent_KKT.trust_active:
@@ -763,7 +689,6 @@ import numpy as np
 from kona.options import get_opt
 from kona.linalg.common import current_solution, factor_linear_system, objective_value
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import dCdX, dCdU, dRdX, dRdU
 from kona.linalg.matrices.hessian import AugmentedKKTMatrix, LagrangianHessian
 from kona.linalg.solvers.util import EPS

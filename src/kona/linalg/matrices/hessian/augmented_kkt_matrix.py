@@ -115,14 +115,22 @@ class AugmentedKKTMatrix(BaseHessian):
             in_slack = in_vec.primal.slack
             out_slack = out_vec.primal.slack
             if isinstance(in_vec.dual, CompositeDualVector):
+                in_dual_eq = in_vec.dual.eq
+                out_dual_eq = out_vec.dual.eq
                 in_dual_ineq = in_vec.dual.ineq
                 out_dual_ineq = out_vec.dual.ineq
             else:
+                in_dual_eq = None
+                out_dual_eq = None
                 in_dual_ineq = in_vec.dual
                 out_dual_ineq = out_vec.dual
         else:
             in_design = in_vec.primal
             out_design = out_vec.primal
+            in_dual_eq = in_vec.dual
+            out_dual_eq = out_vec.dual
+            in_dual_ineq = None
+            out_dual_ineq = None
             in_slack = None
 
         # compute the design product

@@ -17,22 +17,25 @@ class LagrangianHessian(BaseHessian):
         # get references to individual factories
         self.primal_factory = None
         self.state_factory = None
-        self.dual_factory = None
+        self.eq_factory = None
+        self.ineq_factory = None
         for factory in self.vec_fac:
             if factory._vec_type is DesignVector:
                 self.primal_factory = factory
             elif factory._vec_type is StateVector:
                 self.state_factory = factory
+            elif factory._vec_type is DualVectorEQ:
+                self.ineq_factory = factory
             elif factory._vec_type is DualVectorINEQ:
-                self.dual_factory = factory
+                self.ineq_factory = factory
             else:
                 raise TypeError('Invalid vector factory!')
 
         # request vector allocation
         self.primal_factory.request_num_vectors(3)
         self.state_factory.request_num_vectors(6)
-        if self.dual_factory is not None:
-            self.dual_factory.request_num_vectors(4)
+        if self.eq_factory is not None:
+            self.eq_factory.request_num_vectors(4)
 
         # set misc settings
         self._approx = False
@@ -50,7 +53,7 @@ class LagrangianHessian(BaseHessian):
         self.krylov = STCG(
             self.primal_factory,
             optns=krylov_optns,
-            dual_factory=self.dual_factory)
+            dual_factory=self.eq_factory)
 
     @property
     def approx(self):
@@ -86,11 +89,24 @@ class LagrangianHessian(BaseHessian):
             self.reverse_adjoint = self.state_factory.generate()
             self.adjoint_res = self.state_factory.generate()
             self.pert_state = self.state_factory.generate()
-            if self.dual_factory is not None:
-                self.dual_work = self.dual_factory.generate()
-                self.slack_term = self.dual_factory.generate()
-                self.dual_in = self.dual_factory.generate()
-                self.dual_out = self.dual_factory.generate()
+            if self.eq_factory is not None and self.ineq_factory is not None:
+                self.dual_in = CompositeDualVector(
+                    self.eq_factory.generate(), self.ineq_factory.generate())
+                self.dual_out = CompositeDualVector(
+                    self.eq_factory.generate(), self.ineq_factory.generate())
+                self.dual_work = CompositeDualVector(
+                    self.eq_factory.generate(), self.ineq_factory.generate())
+                self.slack_term = self.ineq_factory.generate()
+            elif self.eq_factory is not None:
+                self.dual_in = self.eq_factory.generate()
+                self.dual_out = self.eq_factory.generate()
+                self.dual_work = self.eq_factory.generate()
+                self.slack_term = None
+            elif self.ineq_factory is not None:
+                self.dual_in = self.ineq_factory.generate()
+                self.dual_out = self.ineq_factory.generate()
+                self.dual_work = self.ineq_factory.generate()
+                self.slack_term = self.ineq_factory.generate()
             else:
                 self.dual_work = None
                 self.slack_term = None
@@ -272,9 +288,10 @@ class LagrangianHessian(BaseHessian):
 # imports here to prevent circular errors
 from kona.options import get_opt
 from kona.linalg.vectors.common import DesignVector, StateVector
-from kona.linalg.vectors.composite import DualVectorINEQ
+from kona.linalg.vectors.composite import DualVectorEQ, DualVectorINEQ
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.vectors.composite import CompositeDualVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian import AugmentedKKTMatrix
 from kona.linalg.solvers.util import calc_epsilon

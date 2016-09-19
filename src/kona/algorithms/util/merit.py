@@ -37,7 +37,7 @@ class MeritFunction(object):
 
         Parameters
         ----------
-        search_dir : DesignVector
+        search_dir : DesignVector or CompositePrimalVector
             Search direction vector in the primal space.
         x_start : DesignVector
             Initial primal vector.
@@ -119,21 +119,25 @@ class ObjectiveMerit(MeritFunction):
         super(ObjectiveMerit, self).__init__(primal_factory, state_factory,
                                              optns, out_file)
         self.primal_factory.request_num_vectors(2)
-        self.state_factory.request_num_vectors(2)
+        self.state_factory.request_num_vectors(3)
 
     def reset(self, search_dir, x_start, u_start, p_dot_grad):
+        assert isinstance(search_dir, DesignVector)
+        assert isinstance(x_start, DesignVector)
+        assert isinstance(u_start, StateVector)
         # if user provided a state vector
         # if the internal vectors are not allocated, do it now
         if not self._allocated:
             self.x_trial = self.primal_factory.generate()
             self.primal_work = self.primal_factory.generate()
+            self.u_trial = self.state_factory.generate()
             self.state_work = self.state_factory.generate()
             self.adjoint_work = self.state_factory.generate()
             self._allocated = True
         # store information for the new point the merit function is reset at
-        self.search_dir = search_dir
         self.x_start = x_start
-        self.u_trial = u_start
+        self.search_dir = search_dir
+        self.u_start = u_start
         self.func_val = objective_value(x_start, u_start)
         self.p_dot_grad = p_dot_grad
         self.last_func_alpha = 0.0
@@ -418,5 +422,5 @@ class AugmentedLagrangian(L2QuadraticPenalty):
 from kona.options import get_opt
 from kona.linalg.common import objective_value
 from kona.linalg.solvers.util import EPS
-from kona.linalg.matrices.common import dRdX
+from kona.linalg.vectors.common import *
 from kona.linalg.vectors.composite import CompositePrimalVector
