@@ -138,8 +138,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         primal_work = self.km.primal_factory.generate()
         at_adjoint = self.km.state_factory.generate()
         at_adjoint.equals(3)
-        self.pv.equals_total_gradient(
-            at_design, at_state, at_adjoint, primal_work)
+        self.pv.equals_total_gradient(at_design, at_state, at_adjoint)
         self.assertEqual(self.pv.inner(self.pv), 160.0)
 
     def test_equals_lagrangian_total_gradient(self):
@@ -152,8 +151,8 @@ class PrimalVectorTestCase(unittest.TestCase):
         at_adjoint.equals(3)
         at_dual = self.km.eq_factory.generate()
         at_dual.equals(4)
-        self.pv.equals_lagrangian_total_gradient(
-            at_design, at_state, at_dual, at_adjoint, primal_work)
+        self.pv.equals_lagrangian_total_gradient(at_design, at_state, at_dual,
+                                                 at_adjoint)
         self.assertEqual(self.pv.inner(self.pv), 19360.0)
 
     def test_enforce_bounds(self):

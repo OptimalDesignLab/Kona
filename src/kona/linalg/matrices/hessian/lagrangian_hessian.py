@@ -86,14 +86,19 @@ class LagrangianHessian(BaseHessian):
             self.reverse_adjoint = self.state_factory.generate()
             self.adjoint_res = self.state_factory.generate()
             self.pert_state = self.state_factory.generate()
-            self.dual_work = self.dual_factory.generate()
-            self.slack_term = self.dual_factory.generate()
-            self.dual_in = self.dual_factory.generate()
-            self.dual_out = self.dual_factory.generate()
+            if self.dual_factory is not None:
+                self.dual_work = self.dual_factory.generate()
+                self.slack_term = self.dual_factory.generate()
+                self.dual_in = self.dual_factory.generate()
+                self.dual_out = self.dual_factory.generate()
+            else:
+                self.dual_work = None
+                self.slack_term = None
+                self.dual_in = None
+                self.dual_out = None
             self._allocated = True
 
         # compute adjoint residual at the linearization
-        self.dual_work.equals_constraints(self.at_design, self.at_state)
         self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
         dRdU(self.at_design, self.at_state).T.product(
             self.at_adjoint, self.state_work)

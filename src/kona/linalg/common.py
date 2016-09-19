@@ -1,9 +1,13 @@
 import numpy as np
+from copy import deepcopy
+from kona.linalg.vectors.common import DesignVector, StateVector
+from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
+from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.vectors.composite import CompositeDualVector
 
-def current_solution(num_iter, curr_design, curr_state=None, curr_adj=None,
-                     curr_eq=None, curr_ineq=None, curr_slack=None):
+def current_solution(num_iter, curr_primal, curr_state=None, curr_adj=None,
+                     curr_dual=None):
     """
     Notify the solver of the current solution point.
 
@@ -11,58 +15,69 @@ def current_solution(num_iter, curr_design, curr_state=None, curr_adj=None,
     ----------
     num_iter : int
         Current iteration of the optimization.
-    curr_design : DesignVector
+    curr_primal : DesignVector or CompositePrimalVector
         Current design variables.
     curr_state : StateVector, optional
         Current state variables.
     curr_adj : StateVector, optional
         Current adjoint variables.
-    curr_eq : DualVectorEQ, optional
-        Current Lagrange multipliers for equality constraints.
-    curr_ineq : DualVectorINEQ, optional
-        Current Lagrange multipliers for inequality constraints.
-    curr_slack : DualVectorINEQ, optional
-        Current slack variables.
+    curr_dual : DualVectorEQ, DualVectorINEQ or CompositeDualVector
     """
+    if isinstance(curr_primal, CompositePrimalVector):
+        curr_design = curr_primal.design
+        out_slack = deepcopy(curr_primal.slack.base.data)
+        if isinstance(curr_dual, DualVectorINEQ):
+            out_eq = None
+            out_ineq = deepcopy(curr_dual.base.data)
+        elif isinstance(curr_dual, CompositeDualVector):
+            out_eq = deepcopy(curr_dual.eq.base.data)
+            out_ineq = deepcopy(curr_dual.ineq.base.data)
+        else:
+            raise TypeError("Invalid dual vector type: " +
+                            "must be DualVectorINEQ or CompositeDualVector!")
 
-    solver = curr_design._memory.solver
-    out_design = curr_design.base.data
-
-    if curr_state is not None:
-        out_state = curr_state.base
-    else:
-        out_state = None
-
-    if curr_adj is not None:
-        out_adj = curr_adj.base
-    else:
-        out_adj = None
-
-    if curr_eq is not None:
-        out_eq = curr_eq.base.data
-    else:
-        out_eq = None
-
-    if curr_ineq is not None:
-        out_ineq = curr_ineq.base.data
-    else:
+    elif isinstance(curr_primal, DesignVector):
+        curr_design = curr_primal
+        out_slack = None
+        if isinstance(curr_dual, DualVectorEQ):
+            out_eq = deepcopy(curr_dual.base.data)
+        elif curr_dual is None:
+            out_eq = None
+        else:
+            raise TypeError("Invalid dual vector type: must be DualVectorEQ!")
         out_ineq = None
 
-    if curr_slack is not None:
-        out_slack = curr_slack.base.data
     else:
-        out_slack = None
+        raise TypeError("Invalid primal vector type: " +
+                        "must be DesignVector or CompositePrimalVector!")
+
+    solver = curr_design._memory.solver
+    out_design = deepcopy(curr_design.base.data)
+
+    if isinstance(curr_state, StateVector):
+        out_state = curr_state.base
+    elif curr_state is None:
+        out_state = None
+    else:
+        raise TypeError("Invalid state vector type: must be StateVector!")
+
+    if isinstance(curr_adj, StateVector):
+        out_adj = curr_adj.base
+    elif curr_adj is None:
+        out_adj = None
+    else:
+        raise TypeError("Invalid adjoint vector type: must be StateVector!")
 
     return solver.current_solution(
         num_iter, out_design, out_state, out_adj, out_eq, out_ineq, out_slack)
 
-def objective_value(at_design, at_state):
+def objective_value(at_primal, at_state):
     """
     Evaluate the objective value the given Primal and State point.
 
     Parameters
     ----------
-    at_design : DesignVector
+    at_primal : DesignVector or CompositePrimalVector
         Current design point.
     at_state : StateVector
         Current state point.
@@ -72,6 +87,15 @@ def objective_value(at_design, at_state):
     float
         Objective function value.
     """
+    if isinstance(at_primal, CompositePrimalVector):
+        at_design = at_primal.design
+    elif isinstance(at_primal, DesignVector):
+        at_design = at_primal
+    else:
+        raise TypeError("Invalid primal vector type: " +
+                        "must be DesignVector or CompositePrimalVector!")
+    assert isinstance(at_state, StateVector), \
+        "Invalid state vector type: must be StateVector!"
 
     solver = at_design._memory.solver
 
@@ -87,7 +111,7 @@ def objective_value(at_design, at_state):
             'objective_value() >> solver.eval_obj() ' +
             'expected 2-tuple or float but was given %s'%type(result))
 
-def lagrangian_value(at_kkt, at_state, dual_work, barrier=None):
+def lagrangian_value(at_kkt, at_state, barrier=None):
     """
     Evaluate the lagrangian at the given KKT and state point.
 
@@ -106,11 +130,12 @@ def lagrangian_value(at_kkt, at_state, dual_work, barrier=None):
         Lagrangian value.
     """
     # do some vector aliasing
+    assert isinstance(at_kkt, ReducedKKTVector), \
+        "Invalid KKT vector type: must be ReducedKKTVector!"
     at_primal = at_kkt.primal
     at_dual = at_kkt.dual
     if isinstance(at_primal, CompositePrimalVector):
-        if barrier is None:
-            raise ValueError("lagrangian_value >> Missing arrier coefficient!")
+        assert barrier is not None, "Missing barrier coefficient!"
         at_design = at_kkt.primal.design
         at_slack = at_kkt.primal.slack
         if isinstance(at_dual, CompositeDualVector):
@@ -125,40 +150,47 @@ def lagrangian_value(at_kkt, at_state, dual_work, barrier=None):
         at_dual_eq = at_dual
         at_dual_ineq = None
 
+    # get solver handle
+    solver = at_design._memory.solver
+
     # evaluate objective
     lagrangian = objective_value(at_design, at_state)
-
-    # evaluate constraints
-    dual_work.equals_constraints(at_design, at_state)
 
     # add constraint terms
     if at_slack is not None:
         if at_dual_eq is not None:
-            lagrangian += at_dual_eq.inner(dual_work.eq)
-        dual_work.ineq.minus(at_slack)
-        lagrangian += at_dual_ineq.inner(dual_work.ineq)
+            eq_cnstr = solver.eval_eq_cnstr(
+                at_design.base.data, at_state.base)
+            lagrangian += np.dot(at_dual_eq.base.data, eq_cnstr)
+        ineq_cnstr = solver.eval_ineq_cnstr(at_design.base.data, at_state.base)
+        lagrangian += np.dot(at_dual_ineq.base.data, ineq_cnstr)
     else:
-        lagrangian += at_dual_eq.inner(dual_work)
+        eq_cnstr = solver.eval_eq_cnstr(
+            at_design.base.data, at_state.base)
+        lagrangian += np.dot(at_dual_eq.base.data, eq_cnstr)
 
     # add log barrier
-    lagrangian += 0.5*barrier*np.sum(np.log(at_slack.base.data))
+    if at_slack is not None:
+        lagrangian += 0.5 * barrier * np.sum(np.log(at_slack.base.data))
 
+    return lagrangian
 
-def factor_linear_system(at_design, at_state):
+def factor_linear_system(at_primal, at_state):
     """
     Trigger the solver to factor and store the dR/dU matrix and its
-    preconditioner, linearized at the given ``at_design`` and ``at_state``
+    preconditioner, linearized at the given ``at_primal`` and ``at_state``
     point.
 
     Parameters
     ----------
-    at_design : DesignVector
+    at_primal : DesignVector or CompositePrimalVector
     at_state : StateVector
     """
-    solver = at_design._memory.solver
+    if isinstance(at_primal, CompositePrimalVector):
+        at_design = at_primal.design
+    else:
+        at_design = at_primal
 
-    if solver != at_state._memory.solver:
-        raise MemoryError('objective_value() >> Primal and State ' +
-                          'vectors are not on the same memory manager!')
+    solver = at_design._memory.solver
 
     solver.factor_linear_system(at_design.base.data, at_state.base)

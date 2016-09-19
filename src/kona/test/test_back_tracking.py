@@ -40,7 +40,7 @@ class BackTrackingTestCase(unittest.TestCase):
         primal_work = self.pf.generate()
 
         dfdx = self.pf.generate()
-        dfdx.equals_total_gradient(at_design, at_state, adjoint, primal_work)
+        dfdx.equals_total_gradient(at_design, at_state, adjoint)
         self.bt.p_dot_dfdx = dfdx.inner(search_dir)
 
     def test_stops_after_one_iter(self):
@@ -61,7 +61,7 @@ class BackTrackingTestCase(unittest.TestCase):
         at_adjoint.equals_adjoint_solution(at_design, at_state, state_work)
 
         primal_work = self.pf.generate()
-        grad.equals_total_gradient(at_design, at_state, at_adjoint, primal_work)
+        grad.equals_total_gradient(at_design, at_state, at_adjoint)
 
         p_dot_grad = search_dir.inner(grad)
 
@@ -93,7 +93,7 @@ class BackTrackingTestCase(unittest.TestCase):
         at_adjoint.equals_adjoint_solution(at_design, at_state, state_work)
 
         primal_work = self.pf.generate()
-        grad.equals_total_gradient(at_design, at_state, at_adjoint, primal_work)
+        grad.equals_total_gradient(at_design, at_state, at_adjoint)
 
         p_dot_grad = search_dir.inner(grad)
 
@@ -126,7 +126,7 @@ class BackTrackingTestCase(unittest.TestCase):
         primal_work = self.pf.generate()
 
         dfdx = self.pf.generate()
-        dfdx.equals_total_gradient(at_design, at_state, adjoint, primal_work)
+        dfdx.equals_total_gradient(at_design, at_state, adjoint)
         self.bt.p_dot_dfdx = dfdx.inner(search_dir)
 
         self.merit.reset(search_dir, at_design, at_state, self.bt.p_dot_dfdx)
@@ -154,7 +154,7 @@ class BackTrackingTestCase(unittest.TestCase):
         at_adjoint.equals_adjoint_solution(at_design, at_state, state_work)
 
         primal_work = self.pf.generate()
-        grad.equals_total_gradient(at_design, at_state, at_adjoint, primal_work)
+        grad.equals_total_gradient(at_design, at_state, at_adjoint)
 
         p_dot_grad = search_dir.inner(grad)
 

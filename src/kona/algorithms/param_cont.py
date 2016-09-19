@@ -123,7 +123,7 @@ class ParameterContinuation(OptimizationAlgorithm):
         adj.equals_adjoint_solution(x, state, state_work)
 
         # compute initial gradient
-        dJdX.equals_total_gradient(x, state, adj, primal_work)
+        dJdX.equals_total_gradient(x, state, adj)
         grad_norm0 = dJdX.norm2
         self._write_header(self.primal_tol)
 
@@ -148,7 +148,7 @@ class ParameterContinuation(OptimizationAlgorithm):
             self.info_file.write('\n')
 
             # compute optimality metrics
-            dJdX.equals_total_gradient(x, state, adj, primal_work)
+            dJdX.equals_total_gradient(x, state, adj)
             dJdX.times(1./grad_norm0)
             grad_norm = dJdX.norm2
             self.info_file.write(
@@ -223,11 +223,14 @@ class ParameterContinuation(OptimizationAlgorithm):
                 self.info_file.write('   -------------------------------\n')
 
                 # save solution
-                current_solution(num_iter=total_iters + 1, curr_design=x,
-                                 curr_state=state, curr_adj=adj)
+                solver_info = current_solution(
+                    num_iter=total_iters + 1, curr_primal=x,
+                    curr_state=state, curr_adj=adj)
+                if isinstance(solver_info, str):
+                    self.info_file.write('\n' + solver_info + '\n')
 
                 # compute the homotopy map derivative
-                dJdX_hom.equals_total_gradient(x, state, adj, primal_work)
+                dJdX_hom.equals_total_gradient(x, state, adj)
                 dJdX_hom.times(1./grad_norm0)
                 opt_grad = dJdX_hom.norm2
                 dJdX_hom.times(self.lamb)

@@ -137,7 +137,7 @@ class STCG_RSNK(OptimizationAlgorithm):
             self.info_file.write('\n')
 
             # update quasi-newton
-            dJdX.equals_total_gradient(x, state, adjoint, primal_work)
+            dJdX.equals_total_gradient(x, state, adjoint)
             if i == 0:
                 grad_norm0 = dJdX.norm2
                 grad_norm = grad_norm0
@@ -154,8 +154,11 @@ class STCG_RSNK(OptimizationAlgorithm):
                     self.quasi_newton.add_correction(p, dJdX_old)
                 dJdX_old.equals(dJdX)
             # write history
-            current_solution(num_iter=self.iter, curr_design=x,
-                             curr_state=state, curr_adj=adjoint)
+            solver_info = current_solution(
+                num_iter=self.iter, curr_primal=x,
+                curr_state=state, curr_adj=adjoint)
+            if isinstance(solver_info, str):
+                self.info_file.write('\n' + solver_info + '\n')
             self._write_history(self.iter, grad_norm, obj, rho)
             # check convergence
             if grad_norm < grad_tol:

@@ -98,7 +98,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             if self.factor_matrices:
                 factor_linear_system(x, state)
             adjoint.equals_adjoint_solution(x, state, state_work)
-            dfdx.equals_total_gradient(x, state, adjoint, design_work)
+            dfdx.equals_total_gradient(x, state, adjoint)
             # check for convergence
             if i == 0:
                 grad_norm0 = dfdx.norm2
@@ -122,8 +122,10 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
                 self.approx_hessian.add_correction(p, dfdx_old)
                 dfdx_old.equals(dfdx)
             # write convergence history here
-            current_solution(
-                num_iter=self.iter, curr_design=x, curr_state=state)
+            solver_info = current_solution(
+                num_iter=self.iter, curr_primal=x, curr_state=state)
+            if isinstance(solver_info, str):
+                info.write('\n' + solver_info + '\n')
             info.write('\n')
             self._write_history(self.iter, grad_norm)
             # solve for search direction
@@ -140,8 +142,10 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
             self.iter += 1
 
         # optimization is finished, so print total number of iterations
-        current_solution(
-            num_iter=self.iter, curr_design=x, curr_state=state)
+        solver_info = current_solution(
+            num_iter=self.iter, curr_primal=x, curr_state=state)
+        if isinstance(solver_info, str):
+            info.write('\n' + solver_info + '\n')
         info.write('\n')
         self._write_history(self.iter, grad_norm)
         if converged:
