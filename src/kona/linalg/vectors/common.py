@@ -586,5 +586,4 @@ class DualVectorINEQ(DualVector):
 import numpy as np
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.vectors.composite import CompositeDualVector
 from kona.linalg.matrices.common import *

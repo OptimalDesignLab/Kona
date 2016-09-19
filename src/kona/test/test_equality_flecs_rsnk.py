@@ -9,7 +9,7 @@ class EqualityFLECSRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        feasible = True
+        feasible = False
         if feasible:
             init_x = [0.51, 0.52, 0.53]
         else:
@@ -61,7 +61,7 @@ class EqualityFLECSRSNKTestCase(unittest.TestCase):
 
         print solver.curr_design
 
-        expected = -1.*numpy.ones(solver.num_primal)
+        expected = -1.*numpy.ones(solver.num_design)
         diff = abs(solver.curr_design - expected)
         self.assertTrue(max(diff) < 1e-4)
 

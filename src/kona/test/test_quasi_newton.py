@@ -26,7 +26,7 @@ class QuasiNewtonTestCase(unittest.TestCase):
 
         optns = {'quasi_newton': {'type': None}}
         try:
-            ReducedSpaceQuasiNewton(self.pf, self.sf, None, optns)
+            ReducedSpaceQuasiNewton(self.pf, self.sf, None, None, optns)
         except BadKonaOption as err:
             self.assertEqual(
                 str(err),
@@ -34,7 +34,7 @@ class QuasiNewtonTestCase(unittest.TestCase):
 
         optns = {'quasi_newton': None}
         try:
-            ReducedSpaceQuasiNewton(self.pf, self.sf, None, optns)
+            ReducedSpaceQuasiNewton(self.pf, self.sf, None, None, optns)
         except BadKonaOption as err:
             self.assertEqual(
                 str(err),
@@ -42,7 +42,7 @@ class QuasiNewtonTestCase(unittest.TestCase):
 
         optns = {'quasi_newton': {'type': 25}}
         try:
-            ReducedSpaceQuasiNewton(self.pf, self.sf, None, optns)
+            ReducedSpaceQuasiNewton(self.pf, self.sf, None, None, optns)
         except BadKonaOption as err:
             self.assertEqual(
                 str(err),
@@ -50,12 +50,12 @@ class QuasiNewtonTestCase(unittest.TestCase):
 
         optns = {'quasi_newton': {'type': LimitedMemoryBFGS}}
         try:
-            ReducedSpaceQuasiNewton(self.pf, self.sf, None, optns)
+            ReducedSpaceQuasiNewton(self.pf, self.sf, None, None, optns)
         except:
             self.fail('No Error Expected')
 
         try:
-            ReducedSpaceQuasiNewton(self.pf, self.sf, None)
+            ReducedSpaceQuasiNewton(self.pf, self.sf, None, None)
         except:
             self.fail('No Error Expected')
 
@@ -63,7 +63,7 @@ class QuasiNewtonTestCase(unittest.TestCase):
 
         optns = {'quasi_newton': {'type': LimitedMemoryBFGS}}
         try:
-            ReducedSpaceQuasiNewton(self.pf, self.sf, None, optns)
+            ReducedSpaceQuasiNewton(self.pf, self.sf, None, None, optns)
         except BadKonaOption as err:
             self.assertEqual(
                 str(err),

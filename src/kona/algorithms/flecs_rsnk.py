@@ -172,16 +172,16 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
         # evaluate the initial design before starting outer iterations
         X.equals_init_guess()
-        state.equals_primal_solution(X.primal.design)
+        state.equals_primal_solution(X.primal)
         if self.factor_matrices and self.iter < self.max_iter:
-            factor_linear_system(X.primal.design, state)
+            factor_linear_system(X.primal, state)
 
         # perform an adjoint solution for the Lagrangian
-        state_work.equals_objective_partial(X.primal.design, state)
-        dCdU(X.primal.design, state).T.product(X.dual, adjoint)
+        state_work.equals_objective_partial(X.primal, state)
+        dCdU(X.primal, state).T.product(X.dual, adjoint)
         state_work.plus(adjoint)
         state_work.times(-1.)
-        dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+        dRdU(X.primal, state).T.solve(state_work, adjoint)
 
         # send initial point info to the user
         solver_info = current_solution(self.iter, X.primal, state, adjoint,
@@ -322,11 +322,11 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     factor_linear_system(X.primal, state)
 
                 # perform an adjoint solution for the Lagrangian
-                state_work.equals_objective_partial(X.primal.design, state)
-                dCdU(X.primal.design, state).T.product(X.dual, adjoint)
+                state_work.equals_objective_partial(X.primal, state)
+                dCdU(X.primal, state).T.product(X.dual, adjoint)
                 state_work.plus(adjoint)
                 state_work.times(-1.)
-                dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+                dRdU(X.primal, state).T.solve(state_work, adjoint)
 
             # send current solution info to the user
             solver_info = current_solution(
@@ -346,8 +346,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
             'Total number of nonlinear iterations: %i\n\n'%self.iter)
 
     def trust_step(self, X, state, adjoint, P, kkt_rhs, krylov_tol, feas_tol,
-                   primal_work, state_work, dual_work, slack_work,
-                   kkt_work, kkt_save):
+                   primal_work, state_work, dual_work, kkt_work, kkt_save):
         # start trust region loop
         max_iter = 6
         iters = 0
@@ -368,13 +367,9 @@ class FLECS_RSNK(OptimizationAlgorithm):
             if state_work.equals_primal_solution(kkt_work.primal):
                 # evaluate the constraint terms at the new step
                 dual_work.equals_constraints(
-                    kkt_work.primal.design, state_work)
-                slack_work.exp(kkt_work.primal.slack)
-                slack_work.times(-1.)
-                slack_work.restrict()
-                dual_work.plus(slack_work)
+                    kkt_work.primal, state_work)
                 # compute the merit value at the next step
-                merit_next = objective_value(kkt_work.primal.design, state) \
+                merit_next = objective_value(kkt_work.primal, state) \
                     + X.dual.inner(dual_work) \
                     + 0.5*self.mu*(dual_work.norm2**2)
                 # evaluate the quality of the FLECS model
@@ -386,8 +381,6 @@ class FLECS_RSNK(OptimizationAlgorithm):
             self.info_file.write(
                 'Trust Region Step : iter %i\n'%iters +
                 '   primal_step    = %e\n'%P.primal.norm2 +
-                '      design_step = %e\n'%P.primal.design.norm2 +
-                '      slack_step  = %e\n'%P.primal.slack.norm2 +
                 '   lambda_step    = %e\n'%P.dual.norm2 +
                 '\n' +
                 '   merit_init     = %e\n'%merit_init +
@@ -436,21 +429,19 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
                 # accept the new step entirely
                 X.plus(P)
-                X.primal.design.enforce_bounds()
-                X.primal.slack.restrict()
-                state.equals_primal_solution(X.primal.design)
+                state.equals_primal_solution(X.primal)
 
                 # if this is a matrix-based problem, tell the solver to factor
                 # some important matrices to be used in the next iteration
                 if self.factor_matrices and self.iter < self.max_iter:
-                    factor_linear_system(X.primal.design, state)
+                    factor_linear_system(X.primal, state)
 
                 # perform an adjoint solution for the Lagrangian
-                state_work.equals_objective_partial(X.primal.design, state)
-                dCdU(X.primal.design, state).T.product(X.dual, adjoint)
+                state_work.equals_objective_partial(X.primal, state)
+                dCdU(X.primal, state).T.product(X.dual, adjoint)
                 state_work.plus(adjoint)
                 state_work.times(-1.)
-                dRdU(X.primal.design, state).T.solve(state_work, adjoint)
+                dRdU(X.primal, state).T.solve(state_work, adjoint)
 
                 # check the trust radius
                 if self.krylov.trust_active:
@@ -477,8 +468,6 @@ from kona.options import BadKonaOption, get_opt
 from kona.linalg.common import current_solution, objective_value
 from kona.linalg.common import factor_linear_system
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.vectors.composite import CompositePrimalVector
-from kona.linalg.vectors.composite import CompositeDualVector
 from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.solvers.krylov import FLECS
