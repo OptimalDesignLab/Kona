@@ -3,10 +3,10 @@ from kona.algorithms.base_algorithm import OptimizationAlgorithm
 class ParameterContinuation(OptimizationAlgorithm):
 
     def __init__(self, primal_factory, state_factory,
-                 dual_factory=None, optns={}):
+                 eq_factory=None, ineq_factory=None, optns={}):
         # trigger base class initialization
         super(ParameterContinuation, self).__init__(
-            primal_factory, state_factory, dual_factory, optns
+            primal_factory, state_factory, eq_factory, ineq_factory, optns
         )
 
         # number of vectors required in solve() method
@@ -51,7 +51,7 @@ class ParameterContinuation(OptimizationAlgorithm):
         self.inner_maxiter = get_opt(optns, 50, 'homotopy', 'inner_maxiter')
         self.step = get_opt(
             optns, 0.05, 'homotopy', 'init_step')
-        self.nom_dcurve = get_opt(optns, 1.0, 'homotopy', 'nominal_step')
+        self.nom_dcurve = get_opt(optns, 1.0, 'homotopy', 'nominal_dist')
         self.nom_angl = get_opt(
             optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
         self.max_factor = get_opt(optns, 2.0, 'homotopy', 'max_factor')
@@ -223,8 +223,8 @@ class ParameterContinuation(OptimizationAlgorithm):
                 self.info_file.write('   -------------------------------\n')
 
                 # save solution
-                current_solution(num_iter=total_iters + 1, curr_design=state,
-                                 curr_state=adj)
+                current_solution(num_iter=total_iters + 1, curr_design=x,
+                                 curr_state=state, curr_adj=adj)
 
                 # compute the homotopy map derivative
                 dJdX_hom.equals_total_gradient(x, state, adj, primal_work)
@@ -310,6 +310,8 @@ class ParameterContinuation(OptimizationAlgorithm):
                 # revert solution
                 x.equals(x_save)
                 self.lamb = lamb_save
+                t.equals(t_save)
+                dlamb = dlamb_save
                 state.equals(state_save)
                 if self.factor_matrices:
                     factor_linear_system(x, state)

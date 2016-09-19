@@ -42,8 +42,14 @@ class Optimizer(object):
         # get vector factories
         primal_factory = self._memory.primal_factory
         state_factory = self._memory.state_factory
-        eq_factory = self._memory.eq_factory
-        ineq_factory =  self._memory.ineq_factory
+        if self._memory.neq > 0:
+            eq_factory = self._memory.eq_factory
+        else:
+            eq_factory = None
+        if self._memory.nineq > 0:
+            ineq_factory =  self._memory.ineq_factory
+        else:
+            ineq_factory = None
 
         # initialize the optimization algorithm
         self._algorithm = algorithm(

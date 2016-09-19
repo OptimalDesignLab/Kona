@@ -46,6 +46,14 @@ class Verifier(object):
         self.out_stream = get_opt(optns, sys.stdout, 'verify', 'out_file')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
+        # correct the options based on provided factories
+        if self.eq_factory is None:
+            self.optns['dual_vec_eq'] = False
+            self.optns['cnstr_jac_eq'] = False
+        if self.ineq_factory is None:
+            self.optns['dual_vec_ineq'] = False
+            self.optns['cnstr_jac_ineq'] = False
+
         # request vectors
         num_primal = 0
         num_state = 0

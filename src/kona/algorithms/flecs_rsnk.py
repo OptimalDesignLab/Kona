@@ -30,20 +30,23 @@ class FLECS_RSNK(OptimizationAlgorithm):
     dual_factory : VectorFactory
     optns : dict, optional
     """
-    def __init__(self, primal_factory, state_factory, dual_factory, optns={}):
+    def __init__(self, primal_factory, state_factory,
+                 eq_factory, ineq_factory, optns={}):
         # trigger base class initialization
         super(FLECS_RSNK, self).__init__(
-            primal_factory, state_factory, dual_factory, optns
+            primal_factory, state_factory, eq_factory, ineq_factory, optns
         )
 
         # number of vectors required in solve() method
         self.primal_factory.request_num_vectors(6 + 1)
         self.state_factory.request_num_vectors(3)
-        self.dual_factory.request_num_vectors(12 + 2)
+        if self.eq_factory is not None:
+            self.eq_factory.request_num_vectors(12 + 2)
+        if self.ineq_factory is not None:
+            self.ineq_factory.request_num_vectors(12 + 2)
 
-        # general RSNK options
+        # general options
         ############################################################
-        self.cnstr_tol = get_opt(optns, 1e-8, 'feas_tol')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # trust radius settings
@@ -51,6 +54,10 @@ class FLECS_RSNK(OptimizationAlgorithm):
         self.radius = get_opt(optns, 0.5, 'trust', 'init_radius')
         self.min_radius = get_opt(optns, 0.5/(2**3), 'trust', 'min_radius')
         self.max_radius = get_opt(optns, 0.5*(2**3), 'trust', 'max_radius')
+
+        # log barrier settings
+        ############################################################
+        self.barrier = 0.0
 
         # augmented Lagrangian settings
         ############################################################
@@ -66,7 +73,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
         reduced_optns = get_opt(optns, {}, 'rsnk')
         reduced_optns['out_file'] = self.info_file
         self.KKT_matrix = ReducedKKTMatrix(
-            [self.primal_factory, self.state_factory, self.dual_factory],
+            [self.primal_factory, self.state_factory,
+             self.eq_factory, self.ineq_factory],
             reduced_optns)
         self.mat_vec = self.KKT_matrix.product
 
@@ -79,11 +87,6 @@ class FLECS_RSNK(OptimizationAlgorithm):
             # use identity matrix product as preconditioner
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
-        elif self.precond == 'idf_schur':
-            self.idf_schur = ReducedSchurPreconditioner(
-                [self.primal_factory, self.state_factory, self.dual_factory],
-                reduced_optns)
-            self.precond = self.idf_schur.product
         else:
             raise BadKonaOption(optns, 'rsnk', 'precond')
 
@@ -97,7 +100,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
             'rel_tol'       : get_opt(optns, 1e-2, 'rsnk', 'rel_tol'),
         }
         self.krylov = FLECS(
-            [self.primal_factory, self.dual_factory],
+            [self.primal_factory, self.eq_factory, self.ineq_factory],
             krylov_optns)
 
         # get globalization options
@@ -136,11 +139,21 @@ class FLECS_RSNK(OptimizationAlgorithm):
             '%11e'%self.radius + '\n'
         )
 
-    def _generate_KKT_vector(self):
+    def _generate_vector(self):
         design = self.primal_factory.generate()
-        slack = self.dual_factory.generate()
-        primal = CompositePrimalVector(design, slack)
-        dual = self.dual_factory.generate()
+        if self.eq_factory is not None and self.ineq_factory is not None:
+            slack = self.ineq_factory.generate()
+            primal = CompositePrimalVector(design, slack)
+            dual_eq = self.eq_factory.generate()
+            dual_ineq = self.ineq_factory.generate()
+            dual = CompositeDualVector(dual_eq, dual_ineq)
+        elif self.eq_factory is not None:
+            primal = design
+            dual = self.eq_factory.generate()
+        elif self.ineq_factory is not None:
+            slack = self.ineq_factory.generate()
+            primal = CompositePrimalVector(design, slack)
+            dual = self.ineq_factory.generate()
         return ReducedKKTVector(primal, dual)
 
     def solve(self):
@@ -169,8 +182,17 @@ class FLECS_RSNK(OptimizationAlgorithm):
         adjoint = self.state_factory.generate()
 
         # generate dual vectors
-        dual_work = self.dual_factory.generate()
-        slack_work = self.dual_factory.generate()
+        if self.eq_factory is not None and self.ineq_factory is not None:
+            dual_eq = self.eq_factory.generate()
+            dual_ineq = self.ineq_factory.generate()
+            dual_work = CompositeDualVector(dual_eq, dual_ineq)
+            slack_work = self.ineq_factory.generate()
+        elif self.eq_factory is not None:
+            dual_work = self.eq_factory.generate()
+            slack_work = None
+        elif self.ineq_factory is not None:
+            dual_work = self.ineq_factory.generate()
+            slack_work = self.ineq_factory.generate()
 
         # initialize basic data for outer iterations
         converged = False
@@ -303,13 +325,6 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
             # linearize the KKT matrix
             self.KKT_matrix.linearize(X, state, adjoint)
-
-            # propagate options through the preconditioners
-            if self.nested is not None:
-                self.nested.linearize(X, state, adjoint)
-
-            if self.idf_schur is not None:
-                self.idf_schur.linearize(X, state)
 
             # move the vector to the RHS
             kkt_rhs.equals(dLdX)
@@ -509,11 +524,12 @@ class FLECS_RSNK(OptimizationAlgorithm):
 # imports here to prevent circular errors
 import numpy as np
 from kona.options import BadKonaOption, get_opt
-from kona.linalg.common import current_solution, factor_linear_system, objective_value
+from kona.linalg.common import current_solution, objective_value
+from kona.linalg.common import factor_linear_system
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
+from kona.linalg.vectors.composite import CompositeDualVector
 from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
-from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS
 from kona.linalg.solvers.util import EPS
