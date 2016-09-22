@@ -54,7 +54,7 @@ class TotalConstraintJacobianTestCase(unittest.TestCase):
         state_work.plus(adjoint)
         state_work.times(-1.)
         dRdU(X.primal.design, state).T.solve(state_work, adjoint)
-        dLdX.equals_KKT_conditions(X, state, adjoint, primal_work, 0.0)
+        dLdX.equals_KKT_conditions(X, state, adjoint, 0.0)
 
         epsilon_fd = 1e-6
         X.primal.design.equals_ax_p_by(
@@ -65,7 +65,7 @@ class TotalConstraintJacobianTestCase(unittest.TestCase):
         state_work.plus(adjoint)
         state_work.times(-1.)
         dRdU(X.primal.design, state).T.solve(state_work, adjoint)
-        dLdX_pert.equals_KKT_conditions(X, state, adjoint, primal_work, 0.0)
+        dLdX_pert.equals_KKT_conditions(X, state, adjoint, 0.0)
 
         dLdX_pert.minus(dLdX)
         dLdX_pert.divide_by(epsilon_fd)

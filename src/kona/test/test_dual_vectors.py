@@ -25,7 +25,7 @@ class DualVectorEQTestCase(unittest.TestCase):
         at_state = self.sv
         at_state.equals(2)
         self.dv.equals_constraints(at_design, at_state)
-        self.assertEqual(self.dv.inner(self.dv), 9000)
+        self.assertEqual(self.dv.inner(self.dv), 1000)
 
 class DualVectorINEQTestCase(unittest.TestCase):
 
@@ -48,7 +48,7 @@ class DualVectorINEQTestCase(unittest.TestCase):
         at_state = self.sv
         at_state.equals(2)
         self.dv.equals_constraints(at_design, at_state)
-        self.assertEqual(self.dv.inner(self.dv), 9000)
+        self.assertEqual(self.dv.inner(self.dv), 1000)
 
 class DualVectorEQTestCaseIDF(unittest.TestCase):
 

@@ -12,7 +12,7 @@ class DummySolver(UserSolver):
             num_design, num_state, num_eq, num_ineq)
 
     def eval_obj(self, at_design, at_state):
-        return numpy.sum(at_design) + numpy.sum(at_state.data)
+        return numpy.sum(at_design) - numpy.sum(at_state.data)
 
     def eval_residual(self, at_design, at_state, store_here):
         store_here.data[:] = at_design[:] + at_state.data[:]
@@ -74,7 +74,7 @@ class DummySolver(UserSolver):
         return numpy.ones(self.num_design)
 
     def eval_dFdU(self, at_design, at_state, store_here):
-        store_here.data[:] = 1.0
+        store_here.data[:] = -1.0
 
     def init_design(self):
         return numpy.ones(self.num_design)*10.

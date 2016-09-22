@@ -197,7 +197,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
             self.iter += 1
 
             # evaluate optimality, feasibility and KKT norms
-            dLdX.equals_KKT_conditions(X, state, adjoint, primal_work)
+            dLdX.equals_KKT_conditions(X, state, adjoint)
             # print info on current point
             self.info_file.write(
                 '==========================================================\n' +

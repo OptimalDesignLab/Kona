@@ -11,6 +11,11 @@ class CompositeVector(object):
         if not isinstance(vec, type(self)):
             raise TypeError('CompositeVector() >> ' +
                             'Wrong vector type. Must be %s' % type(self))
+        else:
+            for i in xrange(len(self._vectors)):
+                if not isinstance(vec._vectors[i], type(self._vectors[i])):
+                    raise TypeError('CompositeVector() >> ' +
+                                    'Mismatched internal vectors!')
 
     def equals(self, rhs):
         """
@@ -228,7 +233,7 @@ class ReducedKKTVector(CompositeVector):
                 'ReducedKKTVector() >> Mismatched dual vector. ' + \
                 'Must be DualVecINEQ or CompositeDualVector!'
         else:
-            raise TypeError(
+            raise AssertionError(
                 'ReducedKKTVector() >> Invalid primal vector. ' +
                 'Must be either DesignVector or CompositePrimalVector!')
 
@@ -245,7 +250,7 @@ class ReducedKKTVector(CompositeVector):
         self.primal.equals_init_design()
         self.dual.equals(self.init_dual)
 
-    def equals_KKT_conditions(self, x, state, adjoint, design_work, barrier=None):
+    def equals_KKT_conditions(self, x, state, adjoint, barrier=None):
         """
         Calculates the total derivative of the Lagrangian
         :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda_{eq}^T c_{eq}(x, u) + \\lambda_{ineq}^T (c_{ineq}(x, u) - s)` with
@@ -273,30 +278,32 @@ class ReducedKKTVector(CompositeVector):
             Evaluate KKT conditions at this state point.
         adjoint : StateVector
             Evaluate KKT conditions using this adjoint vector.
-        design_work : DesignVector
-            Work vector for intermediate calculations.
         barrier : float, optional
             Log barrier coefficient for slack variable non-negativity.
         """
         # get the design vector
-        if isinstance(x.primal, CompositePrimalVector):
+        if isinstance(self.primal, CompositePrimalVector):
+            assert isinstance(x.primal, CompositePrimalVector), \
+                "ReducedKKTVector() >> KKT point must include slack variables!"
+            assert barrier is not None, \
+                "ReducedKKTVector() >> Barrier factor must be defined!"
             design = x.primal.design
-            if barrier is None:
-                raise ValueError("Barrier factor must be defined for slacks!")
-            else:
-                self.primal.barrier = barrier
+            self.primal.barrier = barrier
         else:
+            assert isinstance(x.primal, DesignVector), \
+                "ReducedKKTVector() >> KKT point cannot include slacks!"
             design = x.primal
         dual = x.dual
+
         # evaluate primal component
-        self.primal.equals_lagrangian_total_gradient(x.primal, state, dual,
-                                                     adjoint)
+        self.primal.equals_lagrangian_total_gradient(
+            x.primal, state, dual, adjoint)
         # evaluate multiplier component
         self.dual.equals_constraints(design, state)
         if isinstance(self.dual, DualVectorINEQ):
-            self.dual.minus(self.primal.slack)
+            self.dual.minus(x.primal.slack)
         elif isinstance(self.dual, CompositeDualVector):
-            self.dual.ineq.minus(self.primal.slack)
+            self.dual.ineq.minus(x.primal.slack)
 
 class CompositeDualVector(CompositeVector):
     """
