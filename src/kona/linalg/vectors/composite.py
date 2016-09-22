@@ -353,7 +353,7 @@ class CompositePrimalVector(CompositeVector):
         Slack components of the composite vector.
     """
 
-    init_slack = 0.0
+    init_slack = 1.0
 
     def __init__(self, primal_vec, dual_ineq):
         if isinstance(primal_vec, DesignVector):
@@ -413,6 +413,7 @@ class CompositePrimalVector(CompositeVector):
             self, at_state, at_dual, at_adjoint)
         # compute the slack derivative of the lagrangian
         self.slack.equals(at_slack)
+        self.slack.pow(-1.)
         self.slack.times(self.barrier)
         self.slack.minus(at_dual_ineq)
         # reset the barrier to None

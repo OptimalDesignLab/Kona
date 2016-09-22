@@ -116,7 +116,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         err = self.pv1.base.data - 10 * np.ones(10)
         self.assertEqual(np.linalg.norm(err), 0)
 
-        err = self.slack1.base.data
+        err = self.slack1.base.data - np.ones(5)
         self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.eq1.base.data - self.rkkt_vec1.init_dual * (np.ones(5))
@@ -131,7 +131,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         err = self.pv2.base.data - 10 * np.ones(10)
         self.assertEqual(np.linalg.norm(err), 0)
 
-        err = self.slack2.base.data
+        err = self.slack2.base.data - np.ones(5)
         self.assertEqual(np.linalg.norm(err), 0)
 
         err = self.ineq2.base.data - self.rkkt_vec1.init_dual * (np.ones(5))
@@ -154,12 +154,12 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.state_work.times(-1.)
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
         self.rkkt_vec1.equals_KKT_conditions(
-            self.at_kkt1, self.state, self.adjoint, 0.0)
+            self.at_kkt1, self.state, self.adjoint, 0.5)
 
         # check results
         exp_dLdX_norm = np.sqrt(10. * 20.**2)
         self.assertEqual(self.rkkt_vec1.primal.design.norm2, exp_dLdX_norm)
-        exp_dLdS_norm = np.sqrt(5.)
+        exp_dLdS_norm = np.sqrt(5. * 0.5**2)
         self.assertEqual(self.rkkt_vec1.primal.slack.norm2, exp_dLdS_norm)
         exp_dLdEq_norm = np.sqrt(5. * 200.**2)
         self.assertEqual(self.rkkt_vec1.dual.eq.norm2, exp_dLdEq_norm)
@@ -174,12 +174,12 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.state_work.times(-1.)
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
         self.rkkt_vec2.equals_KKT_conditions(
-            self.at_kkt2, self.state, self.adjoint, 0.0)
+            self.at_kkt2, self.state, self.adjoint, 0.5)
 
         # check results
         exp_dLdX_norm = np.sqrt(10. * 10. ** 2)
         self.assertEqual(self.rkkt_vec2.primal.design.norm2, exp_dLdX_norm)
-        exp_dLdS_norm = np.sqrt(5.)
+        exp_dLdS_norm = np.sqrt(5. * 0.5**2)
         self.assertEqual(self.rkkt_vec2.primal.slack.norm2, exp_dLdS_norm)
         exp_dLdIn_norm = np.sqrt(5. * 199. ** 2)
         self.assertEqual(self.rkkt_vec2.dual.norm2, exp_dLdIn_norm)
