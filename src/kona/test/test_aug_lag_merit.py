@@ -40,7 +40,6 @@ class AugLagMeritTestCase(unittest.TestCase):
         self.u_trial = self.sf.generate()
         self.cnstr = self.df.generate()
         self.cnstr_trial = self.df.generate()
-        self.slack_term = self.df.generate()
 
         self.search_dir.equals(1.0)
 
@@ -49,8 +48,8 @@ class AugLagMeritTestCase(unittest.TestCase):
         self.u_start.equals_primal_solution(self.kkt_start.primal.design)
 
         self.cnstr.equals_constraints(
-            self.kkt_start.primal.design, self.u_start)
-        self.cnstr.minus(self.slack_term)
+            self.kkt_start.primal, self.u_start)
+        self.cnstr.minus(self.kkt_start.primal.slack)
 
         obj_val = objective_value(
             self.kkt_start.primal.design, self.u_start)
@@ -60,6 +59,7 @@ class AugLagMeritTestCase(unittest.TestCase):
 
     def test_init_func(self):
         self.merit.reset(self.kkt_start, self.u_start, self.search_dir, self.mu)
+        print abs(self.merit.func_val-self.merit_val_init)
         self.assertTrue(abs(self.merit.func_val-self.merit_val_init) <= 1e-10)
 
     def test_eval_func(self):

@@ -13,10 +13,11 @@ class CompositeVector(object):
                             'Wrong vector type. Must be %s' % type(self))
         else:
             for i in xrange(len(self._vectors)):
-                if not isinstance(vec._vectors[i], type(self._vectors[i])):
-                    raise TypeError('CompositeVector() >> ' +
-                                    'Mismatched internal vectors!')
-
+                try:
+                    self._vectors[i]._check_type(vec._vectors[i])
+                except TypeError:
+                    raise TypeError("CompositeVector() >> " +
+                                    "Mismatched internal vectors!")
     def equals(self, rhs):
         """
         Used as the assignment operator.
@@ -307,18 +308,18 @@ class ReducedKKTVector(CompositeVector):
 
 class CompositeDualVector(CompositeVector):
     """
-        A composite vector representing a combined equality and inequality
-        constraints.
+    A composite vector representing a combined equality and inequality
+    constraints.
 
-        Parameters
-        ----------
-        _memory : KonaMemory
-            All-knowing Kona memory manager.
-        eq : DualVectorEQ
-            Equality constraints.
-        ineq : DualVectorINEQ
-            Inequality Constraints
-        """
+    Parameters
+    ----------
+    _memory : KonaMemory
+        All-knowing Kona memory manager.
+    eq : DualVectorEQ
+        Equality constraints.
+    ineq : DualVectorINEQ
+        Inequality Constraints
+    """
 
     def __init__(self, dual_eq, dual_ineq):
         if isinstance(dual_eq, DualVectorEQ):
@@ -336,6 +337,16 @@ class CompositeDualVector(CompositeVector):
         super(CompositeDualVector, self).__init__([dual_eq, dual_ineq])
 
     def equals_constraints(self, at_primal, at_state):
+        """
+        Evaluate equality and inequality constraints in-place.
+
+        Parameters
+        ----------
+        at_primal : DesignVector or CompositePrimalVector
+            Primal evaluation point.
+        at_state : StateVector
+            State evaluation point.
+        """
         self.eq.equals_constraints(at_primal, at_state)
         self.ineq.equals_constraints(at_primal, at_state)
 
@@ -401,7 +412,8 @@ class CompositePrimalVector(CompositeVector):
             Pre-computed adjoint variables for the Lagrangian.
         """
         # make sure the barrier factor is set
-        assert self.barrier is not None
+        assert self.barrier is not None, \
+            "CompositePrimalVector() >> Barrier factor must be set!"
         # do some aliasing
         at_slack = at_primal.slack
         if isinstance(at_dual, CompositeDualVector):
