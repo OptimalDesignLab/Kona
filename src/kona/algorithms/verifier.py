@@ -1069,7 +1069,7 @@ class Verifier(object):
         J = objective_value(u_p, u_s)
 
         v_s.equals_objective_partial(u_p, u_s)
-        v_s.equals_adjoint_solution(u_p, u_s, w_s)
+        v_s.equals_objective_adjoint(u_p, u_s, w_s)
         v_p.equals_total_gradient(u_p, u_s, v_s)
         z_p.equals(1.0)
         prod = z_p.inner(v_p)

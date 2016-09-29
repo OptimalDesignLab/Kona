@@ -63,24 +63,37 @@ class ParameterContinuation(OptimizationAlgorithm):
             '# outer' + ' '*5 +
             '  inner' + ' '*5 +
             '   cost' + ' '*5 +
+            'objective   ' + ' ' * 5 +
             'opt grad    ' + ' '*5 +
-            'objective   ' + ' '*5 +
+            'homotopy    ' + ' ' * 5 +
             'hom grad    ' + ' '*5 +
-            'homotopy    ' + ' '*5 +
             'lambda      ' + ' '*5 +
             '\n'
         )
 
-    def _write_history(self, outer, inner, opt_grad, obj, hom_grad, hom):
+    def _write_outer(self, outer, obj, opt_norm):
         self.hist_file.write(
-            '%7i'%outer + ' '*5 +
-            '%7i'%inner + ' '*5 +
-            '%7i'%self.primal_factory._memory.cost + ' '*5 +
-            '%11e'%opt_grad + ' '*5 +
-            '%11e'%obj + ' '*5 +
-            '%11e'%hom_grad + ' '*5 +
-            '%11e'%hom + ' '*5 +
-            '%11e'%self.lamb + ' '*5 +
+            '%7i' % outer + ' ' * 5 +
+            ' '*7 + ' ' * 5 +
+            '%7i' % self.primal_factory._memory.cost + ' ' * 5 +
+            '%11e' % obj + ' ' * 5 +
+            '%11e' % opt_norm + ' ' * 5 +
+            ' '*11 + ' ' * 5 +
+            ' '*11 + ' ' * 5 +
+            '%11e' % self.lamb + ' ' * 5 +
+            '\n'
+        )
+
+    def _write_inner(self, outer, inner, hom, hom_opt):
+        self.hist_file.write(
+            '%7i' % outer + ' ' * 5 +
+            '%7i' % inner + ' ' * 5 +
+            '%7i' % self.primal_factory._memory.cost + ' ' * 5 +
+            ' '*11 + ' ' * 5 +
+            ' '*11 + ' ' * 5 +
+            '%11e' % hom + ' ' * 5 +
+            '%11e' % hom_opt + ' ' * 5 +
+            '%11e' % self.lamb + ' ' * 5 +
             '\n'
         )
 
@@ -120,7 +133,7 @@ class ParameterContinuation(OptimizationAlgorithm):
             factor_linear_system(x, state)
 
         # solve for objective adjoint
-        adj.equals_adjoint_solution(x, state, state_work)
+        adj.equals_objective_adjoint(x, state, state_work)
 
         # compute initial gradient
         dJdX.equals_total_gradient(x, state, adj)
@@ -130,7 +143,6 @@ class ParameterContinuation(OptimizationAlgorithm):
         # define a homotopy mat-vec at the current lambda
         def mat_vec(in_vec, out_vec):
             self.hessian.product(in_vec, out_vec)
-            out_vec.times(self.lamb/grad_norm0)
             primal_work.equals(in_vec)
             primal_work.times(1. - self.lamb)
             out_vec.plus(primal_work)
@@ -148,11 +160,16 @@ class ParameterContinuation(OptimizationAlgorithm):
             self.info_file.write('\n')
 
             # compute optimality metrics
-            dJdX.equals_total_gradient(x, state, adj)
-            dJdX.times(1./grad_norm0)
+            adj.equals_objective_adjoint(
+                x, state, state_work, scale=1./grad_norm0)
+            dJdX.equals_total_gradient(x, state, adj, scale=1./grad_norm0)
             grad_norm = dJdX.norm2
             self.info_file.write(
                 'grad_norm : grad_tol = %e : %e\n'%(grad_norm, self.primal_tol))
+
+            # write history
+            obj = objective_value(x, state)
+            self._write_outer(outer_iters+1, obj, grad_norm)
 
             # check convergence
             if grad_norm < self.primal_tol:
@@ -183,7 +200,7 @@ class ParameterContinuation(OptimizationAlgorithm):
 
             # solve for the predictor step (tangent vector)
             t.equals(0.0)
-            self.hessian.linearize(x, state, adj)
+            self.hessian.linearize(x, state, adj, scale=self.lamb/grad_norm0)
             self.krylov.solve(mat_vec, rhs_vec, t, self.precond)
 
             # normalize the tangent vector
@@ -210,7 +227,6 @@ class ParameterContinuation(OptimizationAlgorithm):
             if self.factor_matrices:
                 factor_linear_system(x, state)
             adj_save.equals(adj)
-            adj.equals_adjoint_solution(x, state, state_work)
 
             # START CORRECTOR (Newton) ITERATIONS
             #####################################
@@ -222,18 +238,11 @@ class ParameterContinuation(OptimizationAlgorithm):
                 self.info_file.write('   Inner Newton iteration %i\n'%(i+1))
                 self.info_file.write('   -------------------------------\n')
 
-                # save solution
-                solver_info = current_solution(
-                    num_iter=total_iters + 1, curr_primal=x,
-                    curr_state=state, curr_adj=adj)
-                if isinstance(solver_info, str):
-                    self.info_file.write('\n' + solver_info + '\n')
-
                 # compute the homotopy map derivative
-                dJdX_hom.equals_total_gradient(x, state, adj)
-                dJdX_hom.times(1./grad_norm0)
-                opt_grad = dJdX_hom.norm2
-                dJdX_hom.times(self.lamb)
+                adj.equals_objective_adjoint(
+                    x, state, state_work, scale=self.lamb/grad_norm0)
+                dJdX_hom.equals_total_gradient(
+                    x, state, adj, scale=self.lamb/grad_norm0)
                 primal_work.equals(x)
                 primal_work.minus(x0)
                 xTx = primal_work.inner(primal_work)
@@ -244,20 +253,26 @@ class ParameterContinuation(OptimizationAlgorithm):
                 if i == 0:
                     newt_norm0 = dJdX_hom.norm2
                     newt_tol = self.inner_tol * newt_norm0
-                    if newt_tol < self.primal_tol:
+                    if newt_tol < self.primal_tol or self.lamb == 1.0:
                         newt_tol = self.primal_tol
                 newt_norm = dJdX_hom.norm2
                 self.info_file.write(
                     '   newt_norm : newt_tol = %e : %e\n'%(
                         newt_norm, newt_tol))
 
+                # compute homotopy map value and write history
                 obj = objective_value(x, state)
                 hom = self.lamb*obj/grad_norm0
                 hom += 0.5*(1 - self.lamb)*xTx
-                self._write_history(
-                    outer_iters+1, inner_iters+1,
-                    opt_grad, obj,
-                    dJdX_hom.norm2, hom)
+                self._write_inner(
+                    outer_iters+1, inner_iters+1, hom, newt_norm)
+
+                # send solution to solver
+                solver_info = current_solution(
+                    num_iter=total_iters + 1, curr_primal=x,
+                    curr_state=state, curr_adj=adj)
+                if isinstance(solver_info, str):
+                    self.info_file.write('\n' + solver_info + '\n')
 
                 # check convergence
                 if newt_norm < newt_tol:
@@ -269,7 +284,8 @@ class ParameterContinuation(OptimizationAlgorithm):
                 total_iters += 1
 
                 # linearize the hessian at the new point
-                self.hessian.linearize(x, state, adj)
+                self.hessian.linearize(
+                    x, state, adj, scale=self.lamb/grad_norm0)
 
                 # define the RHS vector for the homotopy system
                 dJdX_hom.times(-1.)
@@ -285,7 +301,7 @@ class ParameterContinuation(OptimizationAlgorithm):
                     raise RuntimeError('Newton step failed!')
                 if self.factor_matrices:
                     factor_linear_system(x, state)
-                adj.equals_adjoint_solution(x, state, state_work)
+                adj.equals_objective_adjoint(x, state, state_work)
 
             # compute distance to curve and step angles
             self.info_file.write('\n')
@@ -307,7 +323,7 @@ class ParameterContinuation(OptimizationAlgorithm):
             dfac = max(min(dfac, self.max_factor), self.min_factor)
 
             # if deceleration factor hit the upper limit
-            if dfac == self.max_factor:
+            if dfac == self.max_factor and self.lamb < 1.0:
                 self.info_file.write(
                     'High curvature! Reverting solution...\n')
                 # revert solution
@@ -318,7 +334,6 @@ class ParameterContinuation(OptimizationAlgorithm):
                 state.equals(state_save)
                 if self.factor_matrices:
                     factor_linear_system(x, state)
-                adj.equals(adj_save)
 
             # update iteration counters
             outer_iters += 1

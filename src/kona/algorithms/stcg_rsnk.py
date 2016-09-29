@@ -120,7 +120,7 @@ class STCG_RSNK(OptimizationAlgorithm):
         if not state.equals_primal_solution(x):
             raise RuntimeError('Invalid initial point! State-solve failed.')
         # solve for adjoint
-        adjoint.equals_adjoint_solution(x, state, state_work)
+        adjoint.equals_objective_adjoint(x, state, state_work)
         # get objective value
         obj = objective_value(x, state)
 
@@ -191,7 +191,7 @@ class STCG_RSNK(OptimizationAlgorithm):
             if self.globalization is None:
                 state.equals_primal_solution(x)
                 obj = objective_value(x, state)
-                adjoint.equals_adjoint_solution(x, state, state_work)
+                adjoint.equals_objective_adjoint(x, state, state_work)
             elif self.globalization == 'trust':
                 # compute the actual reduction and trust parameter rho
                 obj_old = obj
@@ -211,7 +211,7 @@ class STCG_RSNK(OptimizationAlgorithm):
                     self.radius *= 0.25
                     self.info_file.write('new radius = %f\n'%self.radius)
                 else:
-                    adjoint.equals_adjoint_solution(x, state, state_work)
+                    adjoint.equals_objective_adjoint(x, state, state_work)
                     if active and rho > 0.75:
                         self.radius = min(2*self.radius, self.max_radius)
                         self.info_file.write('new radius = %f\n'%self.radius)

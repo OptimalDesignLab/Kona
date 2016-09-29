@@ -80,7 +80,7 @@ class ReducedKKTMatrixTestCase(unittest.TestCase):
         X.primal.base.data[2] = 0.53
         X.dual.equals(-1.)
         state.equals_primal_solution(X.primal)
-        adjoint.equals_adjoint_solution(X.primal, state, state_work)
+        adjoint.equals_objective_adjoint(X.primal, state, state_work)
         self.KKT_matrix.linearize(X, state, adjoint)
         self.KKT_matrix.product(in_vec, out_vec)
 

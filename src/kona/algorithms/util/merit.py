@@ -167,12 +167,12 @@ class ObjectiveMerit(MeritFunction):
             self.x_trial.enforce_bounds()
             self.u_trial.equals_primal_solution(self.x_trial)
             # calculate objective partial
-            self.primal_work.equals_objective_partial(
-                self.x_trial, self.u_trial)
+            self.primal_work.equals_objective_partial(self.x_trial,
+                                                      self.u_trial)
             # add contribution from objective partial
             self.p_dot_grad = self.search_dir.inner(self.primal_work)
             # calculate adjoint
-            self.adjoint_work.equals_adjoint_solution(
+            self.adjoint_work.equals_objective_adjoint(
                 self.x_trial, self.u_trial, self.state_work)
             # create dR/dX jacobian wrapper
             jacobian = dRdX(self.x_trial, self.u_trial)

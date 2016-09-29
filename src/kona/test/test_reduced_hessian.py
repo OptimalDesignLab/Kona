@@ -42,14 +42,14 @@ class ReducedHessianTestCase(unittest.TestCase):
         init_design = 1.0
         x.equals(init_design)
         state.equals_primal_solution(x)
-        adjoint.equals_adjoint_solution(x, state, state_work)
+        adjoint.equals_objective_adjoint(x, state, state_work)
         dJdX.equals_total_gradient(x, state, adjoint)
         # calculate total derivative at perturbed bdesign
         epsilon_fd = 1e-5
         v.equals(2.0)
         x.equals_ax_p_by(1.0, x, epsilon_fd, v)
         state.equals_primal_solution(x)
-        adjoint.equals_adjoint_solution(x, state, state_work)
+        adjoint.equals_objective_adjoint(x, state, state_work)
         dJdX_pert.equals_total_gradient(x, state, adjoint)
         # calculate directional derivative of the total derivative
         # this is the FD approximation of the Hessian-vector product
@@ -59,7 +59,7 @@ class ReducedHessianTestCase(unittest.TestCase):
         # reset the design point and linearize the Hessian
         x.equals(init_design)
         state.equals_primal_solution(x)
-        adjoint.equals_adjoint_solution(x, state, state_work)
+        adjoint.equals_objective_adjoint(x, state, state_work)
         self.hessian.linearize(x, state, adjoint)
 
         # perform the hessian-vector product

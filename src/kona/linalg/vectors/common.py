@@ -272,7 +272,7 @@ class DesignVector(KonaVector):
         """
         self.base.data[:] = self._memory.solver.init_design()
 
-    def equals_objective_partial(self, at_primal, at_state):
+    def equals_objective_partial(self, at_primal, at_state, scale=1.0):
         """
         Computes in-place the partial derivative of the objective function with
         respect to design variables.
@@ -283,6 +283,8 @@ class DesignVector(KonaVector):
             Current primal point.
         at_state : StateVector
             Current state point.
+        scale : float, optional
+            Scaling for the objective function.
         """
         if isinstance(at_primal, CompositePrimalVector):
             at_design = at_primal.design
@@ -296,8 +298,9 @@ class DesignVector(KonaVector):
             "Invalid state vector type: must be StateVector!"
         self.base.data[:] = self._memory.solver.eval_dFdX(
             at_design.base.data, at_state.base)
+        self.times(scale)
 
-    def equals_total_gradient(self, at_primal, at_state, at_adjoint):
+    def equals_total_gradient(self, at_primal, at_state, at_adjoint, scale=1.0):
         """
         Computes in-place the total derivative of the objective function.
 
@@ -309,6 +312,8 @@ class DesignVector(KonaVector):
             Current state point.
         at_adjoint : StateVector
             Current adjoint variables.
+        scale : float, optional
+            Scaling for the objective function.
         """
         if isinstance(at_primal, CompositePrimalVector):
             at_design = at_primal.design
@@ -325,12 +330,14 @@ class DesignVector(KonaVector):
 
         # first compute the objective partial
         self.equals_objective_partial(at_design, at_state)
+        self.times(scale)
         # multiply the adjoint variables with the jacobian
         self.base.data[:] += self._memory.solver.multiply_dRdX_T(
             at_design.base.data, at_state.base, at_adjoint.base)
 
-    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
-                                         at_adjoint):
+    def equals_lagrangian_total_gradient(
+            self, at_primal, at_state, at_dual, at_adjoint,
+            obj_scale=1.0, cnstr_scale=1.0):
         """
         Computes in-place the total derivative of the Lagrangian.
 
@@ -344,6 +351,10 @@ class DesignVector(KonaVector):
             Current lagrange multipliers.
         at_adjoint : StateVector
             Current adjoint variables for the Lagrangian (rhs = - dL/dU)
+        obj_scale : float, optional
+            Scaling for the objective function.
+        cnstr_scale : float, optional
+            Scaling for the constraints.
         """
         if isinstance(at_primal, CompositePrimalVector):
             at_design = at_primal.design
@@ -372,22 +383,24 @@ class DesignVector(KonaVector):
         assert isinstance(at_adjoint, StateVector), \
             "Invalid adjoint vector type: must be StateVector!"
         # first compute the total derivative of the objective
-        self.equals_total_gradient(at_primal, at_state, at_adjoint)
+        self.equals_total_gradient(at_primal, at_state, at_adjoint, obj_scale)
         # add the lagrange multiplier products for equality constraints
         if at_dual_eq is not None:
             self.base.data[:] += self._memory.solver.multiply_dCEQdX_T(
-                at_design.base.data, at_state.base, at_dual_eq.base.data)
+                at_design.base.data, at_state.base, at_dual_eq.base.data) * \
+                cnstr_scale
         # now do it for inequality constraints
         if at_dual_ineq is not None:
             self.base.data[:] += self._memory.solver.multiply_dCINdX_T(
-                at_design.base.data, at_state.base, at_dual_ineq.base.data)
+                at_design.base.data, at_state.base, at_dual_ineq.base.data) * \
+                cnstr_scale
 
 class StateVector(KonaVector):
     """
     Derived from the base abstracted vector. Contains member functions specific
     to state vectors.
     """
-    def equals_objective_partial(self, at_primal, at_state):
+    def equals_objective_partial(self, at_primal, at_state, scale=1.0):
         """
         Computes in-place the partial derivative of the objective function with
         respect to state variables.
@@ -398,6 +411,8 @@ class StateVector(KonaVector):
             Current primal point.
         at_state : StateVector
             Current state point.
+        scale : float, optional
+            Scaling for the objective function.
         """
         if isinstance(at_primal, CompositePrimalVector):
             at_design = at_primal.design
@@ -411,6 +426,7 @@ class StateVector(KonaVector):
             "Invalid state vector type: must be StateVector!"
         self._memory.solver.eval_dFdU(
             at_design.base.data, at_state.base, self.base)
+        self.times(scale)
 
     def equals_residual(self, at_primal, at_state):
         """
@@ -462,27 +478,54 @@ class StateVector(KonaVector):
         else:
             return True
 
-    def equals_adjoint_solution(self, at_primal, at_state, state_work):
+    def equals_objective_adjoint(self, at_primal, at_state, state_work,
+                                 scale=1.0):
         """
         Computes in-place the adjoint variables for the objective function,
         linearized at the given primal and state points.
 
         Parameters
         ----------
-        at_primal : DesignVector
+        at_primal : DesignVector or CompositePrimalVector
             Current primal point.
         at_state : StateVector
             Current state point.
         state_work : StateVector
             Temporary work vector of State type.
+        scale : float, optional
+            Scaling for the objective function.
         """
         assert isinstance(state_work, StateVector), \
             "Invalid work vector type: must be StateVector!"
         state_work.equals_objective_partial(at_primal, at_state)
-        state_work.times(-1) # negative of the objective partial (-dF/dU)
+        state_work.times(-scale) # RHS = (-scale * dF/dU)
         dRdU(at_primal, at_state).T.solve(state_work, self)
 
-    def equals_lagrangian_adjoint(self, at_kkt, at_state, state_work):
+    def equals_constraint_adjoint(self, at_primal, at_state, at_dual,
+                                  state_work, scale=1.0):
+        """
+        Computes in-place the adjoint variables for the constraint terms in the
+        Lagrangian.
+
+        Parameters
+        ----------
+        at_primal : DesignVector or CompositePrimalVector
+            Current primal point.
+        at_state : StateVector
+            Current state point.
+        state_work : StateVector
+            Temporary work vector of State type.
+        scale : float, optional
+            Scaling for the constraints.
+        """
+        assert isinstance(state_work, StateVector), \
+            "Invalid work vector type: must be StateVector!"
+        dCdU(at_primal, at_state).T.product(at_dual, state_work, self)
+        state_work.times(-scale) # RHS = (-scale * dual^T * dC/dU)
+        dRdU(at_primal, at_state).T.solve(state_work, self)
+
+    def equals_lagrangian_adjoint(self, at_kkt, at_state, state_work,
+                                  obj_scale=1.0, cnstr_scale=1.0):
         """
         Computes in-place the adjoint variables for the augmented Lagrangian,
         linearized at the given KKT vector and state points.
@@ -497,16 +540,26 @@ class StateVector(KonaVector):
             Temporary work vector of State type.
         state_work : StateVector
             Temporary work vector of State type.
+        obj_scale : float, optional
+            Scaling for the objective function.
+        cnstr_scale : float, optional
+            Scaling for the constraints.
         """
         # assemble the right hand side for the Lagrangian adjoint solve
         assert isinstance(at_kkt, ReducedKKTVector), \
             "Invalid KKT vector: must be ReducedKKTVector!"
         at_primal = at_kkt.primal
         at_dual = at_kkt.dual
-        state_work.equals_objective_partial(at_primal, at_state)
+        # get the constraint contribution
         dCdU(at_primal, at_state).T.product(at_dual, self, state_work)
-        # perform adjoint solution
+        self.times(cnstr_scale)
+        # get objective partial
+        state_work.equals_objective_partial(at_primal, at_state)
+        state_work.times(obj_scale)
+        # form the adjoint RHS
+        state_work.plus(self)
         state_work.times(-1.)
+        # solve the adjoint system
         dRdU(at_primal, at_state).T.solve(state_work, self)
 
 class DualVector(KonaVector):
@@ -529,7 +582,7 @@ class DualVectorEQ(DualVector):
         self._memory.solver.copy_targstate_to_dual(
             primal_vector.base.data, self.base.data)
 
-    def equals_constraints(self, at_primal, at_state):
+    def equals_constraints(self, at_primal, at_state, scale=1.0):
         """
         Evaluate all equality constraints at the given primal and state points,
         and store the result in-place.
@@ -540,6 +593,8 @@ class DualVectorEQ(DualVector):
             Current primal point.
         at_state : StateVector
             Current state point.
+        scale : float, optional
+            Scaling for the constraints.
         """
         if isinstance(at_primal, CompositePrimalVector):
             at_design = at_primal.design
@@ -549,14 +604,17 @@ class DualVectorEQ(DualVector):
             raise AssertionError(
                 "Invalid primal vector type: " +
                 "must be DesignVector or CompositePrimalVector!")
+
         assert isinstance(at_state, StateVector), \
             "Invalid state vector type: must be StateVector!"
+
         self.base.data[:] = self._memory.solver.eval_eq_cnstr(
             at_design.base.data, at_state.base)
+        self.times(scale)
 
 class DualVectorINEQ(DualVector):
 
-    def equals_constraints(self, at_primal, at_state):
+    def equals_constraints(self, at_primal, at_state, scale=1.0):
         """
         Evaluate all in-equality constraints at the given primal and state
         points, and store the result in-place.
@@ -567,6 +625,8 @@ class DualVectorINEQ(DualVector):
             Current primal point.
         at_state : StateVector
             Current state point.
+        scale : float, optional
+            Scaling for the constraints.
         """
         if isinstance(at_primal, CompositePrimalVector):
             at_design = at_primal.design
@@ -576,10 +636,13 @@ class DualVectorINEQ(DualVector):
             raise AssertionError(
                 "Invalid primal vector type: " +
                 "must be DesignVector or CompositePrimalVector!")
+
         assert isinstance(at_state, StateVector), \
             "Invalid state vector type: must be StateVector!"
+
         self.base.data[:] = self._memory.solver.eval_ineq_cnstr(
             at_design.base.data, at_state.base)
+        self.times(scale)
 
 
 # package imports at the bottom to prevent import errors

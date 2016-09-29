@@ -67,7 +67,7 @@ class ReducedHessian(BaseHessian):
         else:
             raise TypeError('Object is not a valid QuasiNewtonApprox')
 
-    def linearize(self, at_design, at_state, at_adjoint):
+    def linearize(self, at_design, at_state, at_adjoint, scale=1.0):
         """
         An abstracted "linearization" method for the matrix.
 
@@ -93,6 +93,7 @@ class ReducedHessian(BaseHessian):
         self.at_state = at_state
         self.state_norm = self.at_state.norm2
         self.at_adjoint = at_adjoint
+        self.scale = scale
 
         # if this is the first ever linearization...
         if not self._allocated:
@@ -114,14 +115,15 @@ class ReducedHessian(BaseHessian):
             self._allocated = True
 
         # compute adjoint residual at the linearization
-        self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
+        self.adjoint_res.equals_objective_partial(
+            self.at_design, self.at_state, scale=self.scale)
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[0])
         self.adjoint_res.plus(self.state_work[0])
 
         # compute reduced gradient at the linearization
         self.reduced_grad.equals_objective_partial(
-            self.at_design, self.at_state)
+            self.at_design, self.at_state, scale=self.scale)
         self.dRdX.linearize(self.at_design, self.at_state)
         self.dRdX.T.product(self.at_adjoint, self.primal_work[0])
         self.reduced_grad.plus(self.primal_work[0])
@@ -144,7 +146,8 @@ class ReducedHessian(BaseHessian):
         self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec)
 
         # compute total gradient at the perturbed design
-        out_vec.equals_objective_partial(self.pert_design, self.at_state)
+        out_vec.equals_objective_partial(self.pert_design, self.at_state,
+                                         scale=self.scale)
         self.dRdX.linearize(self.pert_design, self.at_state)
         self.dRdX.T.product(self.at_adjoint, self.primal_work[0])
         out_vec.plus(self.primal_work[0])
@@ -173,7 +176,7 @@ class ReducedHessian(BaseHessian):
 
         # calculate total (dg/dx)^T*w using FD
         self.state_work[0].equals_objective_partial(
-            self.pert_design, self.at_state)
+            self.pert_design, self.at_state, scale=self.scale)
         self.dRdU.linearize(self.pert_design, self.at_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[1])
         self.state_work[0].plus(self.state_work[1])
@@ -189,7 +192,7 @@ class ReducedHessian(BaseHessian):
 
         # calculate total (dS/du)^T*z using FD
         self.state_work[2].equals_objective_partial(
-            self.at_design, self.state_work[1])
+            self.at_design, self.state_work[1], scale=self.scale)
         self.state_work[3].equals_ax_p_by(
             -1./epsilon_fd, self.state_work[2], 1./epsilon_fd, self.adjoint_res)
         self.dRdU.linearize(self.at_design, self.state_work[1])
@@ -215,7 +218,7 @@ class ReducedHessian(BaseHessian):
 
         # apply w_adj to the cross-derivative part of the jacobian
         self.primal_work[0].equals_objective_partial(
-            self.at_design, self.state_work[1])
+            self.at_design, self.state_work[1], scale=self.scale)
         self.dRdX.linearize(self.at_design, self.state_work[1])
         self.dRdX.T.product(self.at_adjoint, self.primal_work[1])
         self.primal_work[0].plus(self.primal_work[1])

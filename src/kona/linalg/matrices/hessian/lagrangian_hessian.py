@@ -124,8 +124,8 @@ class LagrangianHessian(BaseHessian):
         self.adjoint_res.plus(self.state_work)
 
         # compute reduced gradient at the linearization
-        self.reduced_grad.equals_objective_partial(
-            self.at_design, self.at_state)
+        self.reduced_grad.equals_objective_partial(self.at_design,
+                                                   self.at_state)
         dRdX(self.at_design, self.at_state).T.product(
             self.at_adjoint, self.design_work)
         self.reduced_grad.plus(self.design_work)
@@ -177,8 +177,8 @@ class LagrangianHessian(BaseHessian):
         # build RHS for second adjoint system
 
         # STEP 1: perturb design, evaluate adjoint residual, take difference
-        self.adjoint_work.equals_objective_partial(
-            self.pert_design, self.at_state)
+        self.adjoint_work.equals_objective_partial(self.pert_design,
+                                                   self.at_state)
         dRdU(self.pert_design, self.at_state).T.product(
             self.at_adjoint, self.state_work)
         self.adjoint_work.plus(self.state_work)
@@ -189,8 +189,8 @@ class LagrangianHessian(BaseHessian):
         self.adjoint_work.divide_by(epsilon_fd)
 
         # STEP 2: perturb state, evaluate adjoint residual, take difference
-        self.reverse_adjoint.equals_objective_partial(
-            self.at_design, self.pert_state)
+        self.reverse_adjoint.equals_objective_partial(self.at_design,
+                                                      self.pert_state)
         dRdU(self.at_design, self.pert_state).T.product(
             self.at_adjoint, self.state_work)
         self.reverse_adjoint.plus(self.state_work)
@@ -218,8 +218,8 @@ class LagrangianHessian(BaseHessian):
         out_vec.plus(self.design_work)
 
         # apply the Lagrangian adjoint to the cross-derivative part of Hessian
-        self.design_work.equals_objective_partial(
-            self.at_design, self.pert_state)
+        self.design_work.equals_objective_partial(self.at_design,
+                                                  self.pert_state)
         dRdX(self.at_design, self.pert_state).T.product(
             self.at_adjoint, self.pert_design)
         self.design_work.plus(self.pert_design)

@@ -119,7 +119,8 @@ class ReducedKKTMatrix(BaseHessian):
         else:
             raise TypeError('Solver is not a valid KrylovSolver')
 
-    def linearize(self, at_kkt, at_state, at_adjoint):
+    def linearize(self, at_kkt, at_state, at_adjoint,
+                  obj_scale=1.0, cnstr_scale=1.0):
         """
         Linearize the KKT matrix at the given KKT, state, adjoint and barrier
         point. This method does not perform any factorizations or matrix
@@ -133,6 +134,10 @@ class ReducedKKTMatrix(BaseHessian):
             State point at which the product is evaluated.
         at_adjoint : StateVector
             1st order adjoint variables at which the product is evaluated.
+        obj_scale : float, optional
+            Factor by which the objective component of the product is scaled.
+        cnstr_scale : float, optional
+            Factor by which the constraint component of the product is scaled.
         """
         # if this is the first ever linearization...
         if not self._allocated:
@@ -182,6 +187,10 @@ class ReducedKKTMatrix(BaseHessian):
         self.at_adjoint = at_adjoint
         self.at_dual = at_kkt.dual
 
+        # store scales
+        self.obj_scale = obj_scale
+        self.cnstr_scale = cnstr_scale
+
         # pre compute the slack block
         if self.slack_block is not None:
             self.slack_block.equals(self.at_slack)
@@ -191,21 +200,25 @@ class ReducedKKTMatrix(BaseHessian):
         # compute adjoint residual at the linearization
         self.dual_work.equals_constraints(self.at_design, self.at_state)
         self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
+        self.adjoint_res.times(self.obj_scale)
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[0])
         self.adjoint_res.plus(self.state_work[0])
         self.dCdU.linearize(self.at_design, self.at_state)
         self.dCdU.T.product(self.at_dual, self.state_work[0])
+        self.state_work[0].times(self.cnstr_scale)
         self.adjoint_res.plus(self.state_work[0])
 
         # compute reduced gradient at the linearization
-        self.reduced_grad.equals_objective_partial(
-            self.at_design, self.at_state)
+        self.reduced_grad.equals_objective_partial(self.at_design,
+                                                   self.at_state)
+        self.reduced_grad.times(self.obj_scale)
         self.dRdX.linearize(self.at_design, self.at_state)
         self.dRdX.T.product(self.at_adjoint, self.primal_work)
         self.reduced_grad.plus(self.primal_work)
         self.dCdX.linearize(self.at_design, self.at_state)
         self.dCdX.T.product(self.at_dual, self.primal_work)
+        self.primal_work.times(self.cnstr_scale)
         self.reduced_grad.plus(self.primal_work)
 
     def product(self, in_vec, out_vec):
@@ -252,9 +265,6 @@ class ReducedKKTMatrix(BaseHessian):
             in_dual_ineq = None
             out_dual_ineq = None
 
-        # modify the in_vec for inequality constraints
-        self.dual_work.equals_constraints(self.at_design, self.at_state)
-
         # calculate appropriate FD perturbation for design
         epsilon_fd = calc_epsilon(self.design_norm, in_design.norm2)
 
@@ -278,14 +288,16 @@ class ReducedKKTMatrix(BaseHessian):
 
         # first part of LHS: evaluate the adjoint equation residual at
         # perturbed design and state
-        self.state_work[0].equals_objective_partial(
-            self.pert_design, self.state_work[2])
+        self.state_work[0].equals_objective_partial(self.pert_design,
+                                                    self.state_work[2])
+        self.state_work[0].times(self.obj_scale)
         pert_state = self.state_work[2] # aliasing for readability
         self.dRdU.linearize(self.pert_design, pert_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[1])
         self.state_work[0].plus(self.state_work[1])
         self.dCdU.linearize(self.pert_design, pert_state)
         self.dCdU.T.product(self.at_dual, self.state_work[1])
+        self.state_work[1].times(self.cnstr_scale)
         self.state_work[0].plus(self.state_work[1])
 
         # at this point state_work[0] should contain the perturbed adjoint
@@ -299,6 +311,7 @@ class ReducedKKTMatrix(BaseHessian):
         # second part of LHS: (dC/dU) * in_vec.dual
         self.dCdU.linearize(self.at_design, self.at_state)
         self.dCdU.T.product(in_dual, self.state_work[1])
+        self.state_work[1].times(self.cnstr_scale)
 
         # assemble final RHS
         self.state_work[0].minus(self.state_work[1])
@@ -318,11 +331,13 @@ class ReducedKKTMatrix(BaseHessian):
             1.0, self.at_adjoint, epsilon_fd, self.lambda_adj)
         pert_adjoint = self.state_work[1] # aliasing for readability
         out_design.equals_objective_partial(self.pert_design, pert_state)
+        out_design.times(self.obj_scale)
         self.dRdX.linearize(self.pert_design, pert_state)
         self.dRdX.T.product(pert_adjoint, self.primal_work)
         out_design.plus(self.primal_work)
         self.dCdX.linearize(self.pert_design, pert_state)
         self.dCdX.T.product(self.at_dual, self.primal_work)
+        self.primal_work.times(self.cnstr_scale)
         out_design.plus(self.primal_work)
 
         # take difference with unperturbed conditions
@@ -333,14 +348,17 @@ class ReducedKKTMatrix(BaseHessian):
         # the dual part needs no FD
         self.dCdX.linearize(self.at_design, self.at_state)
         self.dCdX.T.product(in_dual, self.primal_work)
+        self.primal_work.times(self.cnstr_scale)
         out_design.plus(self.primal_work)
 
         # evaluate dual part of product:
         # C = dC/dX*in_vec + dC/dU*w_adj
         self.dCdX.linearize(self.at_design, self.at_state)
         self.dCdX.product(in_design, out_vec.dual)
+        out_vec.dual.times(self.cnstr_scale)
         self.dCdU.linearize(self.at_design, self.at_state)
         self.dCdU.product(self.w_adj, self.dual_work)
+        self.dual_work.times(self.cnstr_scale)
         out_dual.plus(self.dual_work)
         out_dual.times(self.feas_scale)
 
@@ -361,6 +379,7 @@ class ReducedKKTMatrix(BaseHessian):
             out_dual_ineq.plus(in_slack)
 
 # imports here to prevent circular errors
+from numbers import Number
 from kona.options import get_opt
 from kona.linalg.vectors.common import DesignVector, StateVector
 from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ

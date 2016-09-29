@@ -251,7 +251,8 @@ class ReducedKKTVector(CompositeVector):
         self.primal.equals_init_design()
         self.dual.equals(self.init_dual)
 
-    def equals_KKT_conditions(self, x, state, adjoint, barrier=None):
+    def equals_KKT_conditions(self, x, state, adjoint, barrier=None,
+                              obj_scale=1.0, cnstr_scale=1.0):
         """
         Calculates the total derivative of the Lagrangian
         :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda_{eq}^T c_{eq}(x, u) + \\lambda_{ineq}^T (c_{ineq}(x, u) - s)` with
@@ -281,6 +282,10 @@ class ReducedKKTVector(CompositeVector):
             Evaluate KKT conditions using this adjoint vector.
         barrier : float, optional
             Log barrier coefficient for slack variable non-negativity.
+        obj_scale : float, optional
+            Scaling for the objective function.
+        cnstr_scale : float, optional
+            Scaling for the constraints.
         """
         # get the design vector
         if isinstance(self.primal, CompositePrimalVector):
@@ -298,9 +303,9 @@ class ReducedKKTVector(CompositeVector):
 
         # evaluate primal component
         self.primal.equals_lagrangian_total_gradient(
-            x.primal, state, dual, adjoint)
+            x.primal, state, dual, adjoint, obj_scale, cnstr_scale)
         # evaluate multiplier component
-        self.dual.equals_constraints(design, state)
+        self.dual.equals_constraints(design, state, cnstr_scale)
         if isinstance(self.dual, DualVectorINEQ):
             self.dual.minus(x.primal.slack)
         elif isinstance(self.dual, CompositeDualVector):
@@ -336,7 +341,7 @@ class CompositeDualVector(CompositeVector):
 
         super(CompositeDualVector, self).__init__([dual_eq, dual_ineq])
 
-    def equals_constraints(self, at_primal, at_state):
+    def equals_constraints(self, at_primal, at_state, scale=1.0):
         """
         Evaluate equality and inequality constraints in-place.
 
@@ -346,9 +351,11 @@ class CompositeDualVector(CompositeVector):
             Primal evaluation point.
         at_state : StateVector
             State evaluation point.
+        scale : float, optional
+            Scaling for the constraints.
         """
-        self.eq.equals_constraints(at_primal, at_state)
-        self.ineq.equals_constraints(at_primal, at_state)
+        self.eq.equals_constraints(at_primal, at_state, scale)
+        self.ineq.equals_constraints(at_primal, at_state, scale)
 
 class CompositePrimalVector(CompositeVector):
     """
@@ -386,8 +393,9 @@ class CompositePrimalVector(CompositeVector):
         self.design.equals_init_design()
         self.slack.equals(self.init_slack)
 
-    def equals_lagrangian_total_gradient(self, at_primal, at_state, at_dual,
-                                         at_adjoint):
+    def equals_lagrangian_total_gradient(
+            self, at_primal, at_state, at_dual, at_adjoint,
+            obj_scale=1.0, cnstr_scale=1.0):
         """
         Computes the total primal derivative of the Lagrangian.
 
@@ -410,6 +418,10 @@ class CompositePrimalVector(CompositeVector):
             Lagrange multipliers at which the derivative is computed.
         at_adjoint : StateVector
             Pre-computed adjoint variables for the Lagrangian.
+        obj_scale : float, optional
+            Scaling for the objective function.
+        cnstr_scale : float, optional
+            Scaling for the constraints.
         """
         # make sure the barrier factor is set
         assert self.barrier is not None, \
@@ -422,7 +434,7 @@ class CompositePrimalVector(CompositeVector):
             at_dual_ineq = at_dual
         # compute the design derivative of the lagrangian
         self.design.equals_lagrangian_total_gradient(
-            self, at_state, at_dual, at_adjoint)
+            self, at_state, at_dual, at_adjoint, obj_scale, cnstr_scale)
         # compute the slack derivative of the lagrangian
         self.slack.equals(at_slack)
         self.slack.pow(-1.)

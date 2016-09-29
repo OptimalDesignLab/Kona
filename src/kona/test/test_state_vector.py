@@ -46,7 +46,7 @@ class StateVectorTestCase(unittest.TestCase):
         at_state = self.sv_work
         at_state.equals(2)
         state_work = self.km.state_factory.generate()
-        self.sv.equals_adjoint_solution(at_design, at_state, state_work)
+        self.sv.equals_objective_adjoint(at_design, at_state, state_work)
         self.assertEqual(self.sv.inner(self.sv), 10.0)
 
 if __name__ == "__main__":

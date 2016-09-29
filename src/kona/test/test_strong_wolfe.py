@@ -35,7 +35,7 @@ class StrongWolfeTestCase(unittest.TestCase):
         state_work = self.sf.generate()
 
         adjoint = self.sf.generate()
-        adjoint.equals_adjoint_solution(at_design, at_state, state_work)
+        adjoint.equals_objective_adjoint(at_design, at_state, state_work)
 
         primal_work = self.pf.generate()
 
@@ -58,7 +58,7 @@ class StrongWolfeTestCase(unittest.TestCase):
         state_work = self.sf.generate()
 
         adjoint = self.sf.generate()
-        adjoint.equals_adjoint_solution(at_design, at_state, state_work)
+        adjoint.equals_objective_adjoint(at_design, at_state, state_work)
 
         primal_work = self.pf.generate()
 
@@ -87,7 +87,7 @@ class StrongWolfeTestCase(unittest.TestCase):
         grad = self.pf.generate()
         at_adjoint = self.sf.generate()
         state_work = self.sf.generate()
-        at_adjoint.equals_adjoint_solution(at_design, at_state, state_work)
+        at_adjoint.equals_objective_adjoint(at_design, at_state, state_work)
 
         primal_work = self.pf.generate()
         grad.equals_total_gradient(at_design, at_state, at_adjoint)

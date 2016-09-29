@@ -33,7 +33,7 @@ class ObjectiveMeritTestCase(unittest.TestCase):
         grad = self.pf.generate()
         adjoint = self.sf.generate()
         state_work = self.sf.generate()
-        adjoint.equals_adjoint_solution(x_start, u_start, state_work)
+        adjoint.equals_objective_adjoint(x_start, u_start, state_work)
 
         primal_work = self.pf.generate()
         grad.equals_total_gradient(x_start, u_start, adjoint)
@@ -64,7 +64,7 @@ class ObjectiveMeritTestCase(unittest.TestCase):
         u_expected.equals_primal_solution(x_expected)
         adjoint = self.sf.generate()
         state_work = self.sf.generate()
-        adjoint.equals_adjoint_solution(x_expected, u_expected, state_work)
+        adjoint.equals_objective_adjoint(x_expected, u_expected, state_work)
         primal_work = self.pf.generate()
         grad = self.pf.generate()
         grad.equals_total_gradient(x_expected, u_expected, adjoint)

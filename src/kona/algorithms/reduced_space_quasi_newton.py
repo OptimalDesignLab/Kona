@@ -98,7 +98,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
                 info.write('WARNING: Nonlinear solution failed to converge!\n')
             if self.factor_matrices:
                 factor_linear_system(x, state)
-            adjoint.equals_adjoint_solution(x, state, state_work)
+            adjoint.equals_objective_adjoint(x, state, state_work)
             dfdx.equals_total_gradient(x, state, adjoint)
             # check for convergence
             if i == 0:
