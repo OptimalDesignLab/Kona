@@ -803,7 +803,7 @@ class UserSolver(object):
         """
         if rhs_vec.data == 0.:
             result.data[:] = 0.
-        return 0
+        return 1
 
     def solve_adjoint(self, at_design, at_state, rhs_vec, tol, result):
         """
@@ -846,7 +846,7 @@ class UserSolver(object):
         """
         if rhs_vec.data == 0.:
             result.data[:] = 0.
-        return 0
+        return 1
 
     def current_solution(self, num_iter, curr_design, curr_state, curr_adj,
                          curr_eq, curr_ineq, curr_slack):

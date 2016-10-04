@@ -1,16 +1,16 @@
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
-class ParameterContinuation(OptimizationAlgorithm):
+class PredictorCorrector(OptimizationAlgorithm):
 
     def __init__(self, primal_factory, state_factory,
                  eq_factory=None, ineq_factory=None, optns={}):
         # trigger base class initialization
-        super(ParameterContinuation, self).__init__(
+        super(PredictorCorrector, self).__init__(
             primal_factory, state_factory, eq_factory, ineq_factory, optns
         )
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(11)
+        self.primal_factory.request_num_vectors(12)
         self.state_factory.request_num_vectors(5)
 
         # general options
@@ -46,7 +46,7 @@ class ParameterContinuation(OptimizationAlgorithm):
 
         # homotopy options
         ############################################################
-        self.lamb = get_opt(optns, 0.0, 'homotopy', 'lambda')
+        self.lamb = 0.0
         self.inner_tol = get_opt(optns, 1e-2, 'homotopy', 'inner_tol')
         self.inner_maxiter = get_opt(optns, 50, 'homotopy', 'inner_maxiter')
         self.step = get_opt(
@@ -74,28 +74,35 @@ class ParameterContinuation(OptimizationAlgorithm):
     def _write_outer(self, outer, obj, opt_norm):
         self.hist_file.write(
             '%7i' % outer + ' ' * 5 +
-            ' '*7 + ' ' * 5 +
+            '-'*7 + ' ' * 5 +
             '%7i' % self.primal_factory._memory.cost + ' ' * 5 +
             '%11e' % obj + ' ' * 5 +
             '%11e' % opt_norm + ' ' * 5 +
-            ' '*11 + ' ' * 5 +
-            ' '*11 + ' ' * 5 +
+            '-'*11 + ' ' * 5 +
+            '-'*11 + ' ' * 5 +
             '%11e' % self.lamb + ' ' * 5 +
             '\n'
         )
 
-    def _write_inner(self, outer, inner, hom, hom_opt):
+    def _write_inner(self, outer, inner, obj, opt_norm, hom, hom_opt):
         self.hist_file.write(
             '%7i' % outer + ' ' * 5 +
             '%7i' % inner + ' ' * 5 +
             '%7i' % self.primal_factory._memory.cost + ' ' * 5 +
-            ' '*11 + ' ' * 5 +
-            ' '*11 + ' ' * 5 +
+            '%11e' % obj + ' ' * 5 +
+            '%11e' % opt_norm + ' ' * 5 +
             '%11e' % hom + ' ' * 5 +
             '%11e' % hom_opt + ' ' * 5 +
             '%11e' % self.lamb + ' ' * 5 +
             '\n'
         )
+
+    def _mat_vec(self, in_vec, out_vec):
+        self.hessian.product(in_vec, out_vec)
+        out_vec.times(self.lamb)
+        self.prod_work.equals(in_vec)
+        self.prod_work.times(1. - self.lamb)
+        out_vec.plus(self.prod_work)
 
     def solve(self):
         self.info_file.write(
@@ -117,6 +124,7 @@ class ParameterContinuation(OptimizationAlgorithm):
         rhs_vec = self.primal_factory.generate()
         t = self.primal_factory.generate()
         t_save = self.primal_factory.generate()
+        self.prod_work = self.primal_factory.generate()
 
         state = self.state_factory.generate()
         state_work = self.state_factory.generate()
@@ -138,20 +146,39 @@ class ParameterContinuation(OptimizationAlgorithm):
         # compute initial gradient
         dJdX.equals_total_gradient(x, state, adj)
         grad_norm0 = dJdX.norm2
-        self._write_header(self.primal_tol)
+        grad_fac = 1. / grad_norm0
+        dJdX.times(grad_fac)
+        grad_tol = grad_norm0 * grad_fac * self.primal_tol
+        self._write_header(grad_tol)
 
-        # define a homotopy mat-vec at the current lambda
-        def mat_vec(in_vec, out_vec):
-            self.hessian.product(in_vec, out_vec)
-            primal_work.equals(in_vec)
-            primal_work.times(1. - self.lamb)
-            out_vec.plus(primal_work)
+        # write the initial conditions
+        obj0 = objective_value(x, state)
+        self._write_outer(0, obj0, grad_norm0)
+
+        # set up the predictor RHS
+        rhs_vec.equals(dJdX)
+        primal_work.equals(x)
+        primal_work.minus(x0)
+        primal_work.times(-1.)
+        rhs_vec.plus(primal_work)
+        rhs_vec.times(-1.)
+
+        # compute initial tangent vector
+        adj.times(grad_fac)
+        self.hessian.linearize(x, state, adj, scale=grad_fac)
+        t.equals(0.0)
+        self.krylov.solve(self._mat_vec, rhs_vec, t, self.precond)
+
+        # normalize tangent vector
+        tnorm = np.sqrt(t.inner(t) + 1.0)
+        t.times(1. / tnorm)
+        dlamb = 1. / tnorm
 
         # START PREDICTOR ITERATIONS
         ############################
-        outer_iters = 0
+        outer_iters = 1
         total_iters = 0
-        while self.lamb < 1.0 and outer_iters < self.max_iter:
+        while self.lamb < 1.0 and outer_iters <= self.max_iter:
 
             self.info_file.write(
                 '==================================================\n')
@@ -160,78 +187,40 @@ class ParameterContinuation(OptimizationAlgorithm):
             self.info_file.write('\n')
 
             # compute optimality metrics
-            adj.equals_objective_adjoint(
-                x, state, state_work, scale=1./grad_norm0)
-            dJdX.equals_total_gradient(x, state, adj, scale=1./grad_norm0)
             grad_norm = dJdX.norm2
             self.info_file.write(
                 'grad_norm : grad_tol = %e : %e\n'%(grad_norm, self.primal_tol))
 
-            # write history
-            obj = objective_value(x, state)
-            self._write_outer(outer_iters+1, obj, grad_norm)
-
-            # check convergence
-            if grad_norm < self.primal_tol:
-                break
-
-            # compute the predictor RHS
-            rhs_vec.equals(dJdX)
-            primal_work.equals(x)
-            primal_work.minus(x0)
-            primal_work.times(-1.)
-            rhs_vec.plus(primal_work)
-            rhs_vec.times(-1.)
-
-            # initialize dfac, dx and dlamb with values
-            if outer_iters == 0:
-                t.equals(0.0)
-                dlamb = 1.
-                dfac = 1.0
-
-            # apply the deceleration factor
-            self.info_file.write('factor        = %f\n'%dfac)
-            self.step /= dfac
-            self.info_file.write('step len      = %f\n'%self.step)
-
-            # save dx and dlamb from previous iteration
+            # save current solution in case we need to revert
+            x_save.equals(x)
+            state_save.equals(state)
+            adj_save.equals(adj)
             t_save.equals(t)
             dlamb_save = dlamb
-
-            # solve for the predictor step (tangent vector)
-            t.equals(0.0)
-            self.hessian.linearize(x, state, adj, scale=self.lamb/grad_norm0)
-            self.krylov.solve(mat_vec, rhs_vec, t, self.precond)
-
-            # normalize the tangent vector
-            tnorm = np.sqrt(t.inner(t) + 1.)
-            t.times(1./tnorm)
-            dlamb = 1./tnorm
-
-            # update lambda
-            self.info_file.write('d_lambda      = %f\n'%(dlamb * self.step))
             lamb_save = self.lamb
+
+            # take a predictor step
+            x.equals_ax_p_by(1.0, x, self.step, t)
             self.lamb += dlamb * self.step
             if self.lamb > 1.0:
                 self.lamb = 1.0
-            self.info_file.write('lambda        = %f\n'%self.lamb)
+            self.info_file.write('\nlamb          = %f\n' % self.lamb)
 
-            # take the predictor step
-            x_save.equals(x)
-            x.equals_ax_p_by(1.0, x, self.step, t)
-
-            # update state and adjoint
-            state_save.equals(state)
+            # solve states
             if not state.equals_primal_solution(x):
-                raise RuntimeError('Predictor step failed!')
+                raise RuntimeError(
+                    'Invalid predictor point! State-solve failed.')
             if self.factor_matrices:
                 factor_linear_system(x, state)
-            adj_save.equals(adj)
+
+            # solve for objective adjoint
+            adj.equals_objective_adjoint(x, state, state_work, scale=grad_fac)
 
             # START CORRECTOR (Newton) ITERATIONS
             #####################################
             max_newton = self.inner_maxiter
             inner_iters = 0
+            dx_newt.equals(0.0)
             for i in xrange(max_newton):
 
                 self.info_file.write('\n')
@@ -239,10 +228,10 @@ class ParameterContinuation(OptimizationAlgorithm):
                 self.info_file.write('   -------------------------------\n')
 
                 # compute the homotopy map derivative
-                adj.equals_objective_adjoint(
-                    x, state, state_work, scale=self.lamb/grad_norm0)
-                dJdX_hom.equals_total_gradient(
-                    x, state, adj, scale=self.lamb/grad_norm0)
+                dJdX.equals_total_gradient(
+                    x, state, adj, scale=grad_fac)
+                dJdX_hom.equals(dJdX)
+                dJdX_hom.times(self.lamb)
                 primal_work.equals(x)
                 primal_work.minus(x0)
                 xTx = primal_work.inner(primal_work)
@@ -264,35 +253,33 @@ class ParameterContinuation(OptimizationAlgorithm):
                 obj = objective_value(x, state)
                 hom = self.lamb*obj/grad_norm0
                 hom += 0.5*(1 - self.lamb)*xTx
+                grad_norm = dJdX.norm2
                 self._write_inner(
-                    outer_iters+1, inner_iters+1, hom, newt_norm)
+                    outer_iters, inner_iters,
+                    obj, grad_norm,
+                    hom, newt_norm)
 
                 # send solution to solver
                 solver_info = current_solution(
                     num_iter=total_iters + 1, curr_primal=x,
                     curr_state=state, curr_adj=adj)
-                if isinstance(solver_info, str):
+                if isinstance(solver_info, str) and solver_info != '':
                     self.info_file.write('\n' + solver_info + '\n')
 
                 # check convergence
-                if newt_norm < newt_tol:
-                    self.info_file.write('   Corrector step converged!\n')
+                if newt_norm <= newt_tol:
+                    self.info_file.write('\n   Corrector step converged!\n')
                     break
 
-                # advance iter counter
-                inner_iters += 1
-                total_iters += 1
-
                 # linearize the hessian at the new point
-                self.hessian.linearize(
-                    x, state, adj, scale=self.lamb/grad_norm0)
+                self.hessian.linearize(x, state, adj, scale=grad_fac)
 
                 # define the RHS vector for the homotopy system
                 dJdX_hom.times(-1.)
 
                 # solve the system
                 dx.equals(0.0)
-                self.krylov.solve(mat_vec, dJdX_hom, dx, self.precond)
+                self.krylov.solve(self._mat_vec, dJdX_hom, dx, self.precond)
                 dx_newt.plus(dx)
 
                 # update the design
@@ -301,7 +288,38 @@ class ParameterContinuation(OptimizationAlgorithm):
                     raise RuntimeError('Newton step failed!')
                 if self.factor_matrices:
                     factor_linear_system(x, state)
-                adj.equals_objective_adjoint(x, state, state_work)
+                adj.equals_objective_adjoint(
+                    x, state, state_work, scale=grad_fac)
+
+                # advance iter counter
+                inner_iters += 1
+                total_iters += 1
+
+            # if we finished the corrector step at mu=1, we're done!
+            if self.lamb == 1.:
+                self.info_file.write('\n>> Optimization DONE! <<\n')
+                return
+
+            # COMPUTE NEW TANGENT VECTOR
+            ############################
+
+            # set up the predictor RHS
+            rhs_vec.equals(dJdX)
+            primal_work.equals(x)
+            primal_work.minus(x0)
+            primal_work.times(-1.)
+            rhs_vec.plus(primal_work)
+            rhs_vec.times(-1.)
+
+            # solve for the new tangent vector
+            self.hessian.linearize(x, state, adj, scale=grad_fac)
+            t.equals(0.0)
+            self.krylov.solve(self._mat_vec, rhs_vec, t, self.precond)
+
+            # normalize tangent vector
+            tnorm = np.sqrt(t.inner(t) + 1.0)
+            t.times(1. / tnorm)
+            dlamb = 1. / tnorm
 
             # compute distance to curve and step angles
             self.info_file.write('\n')
@@ -310,11 +328,7 @@ class ParameterContinuation(OptimizationAlgorithm):
                 'dist to curve = %e\n'%dcurve)
 
             # compute angle
-            if outer_iters == 0:
-                angl = 0.0
-            else:
-                angl = np.arccos(
-                    t.inner(t_save) + (dlamb * dlamb_save))
+            angl = np.arccos(t.inner(t_save) + (dlamb * dlamb_save))
             self.info_file.write(
                 'angle         = %f\n'%(angl*180./np.pi))
 
@@ -322,8 +336,13 @@ class ParameterContinuation(OptimizationAlgorithm):
             dfac = max(np.sqrt(dcurve/self.nom_dcurve), angl/self.nom_angl)
             dfac = max(min(dfac, self.max_factor), self.min_factor)
 
+            # apply the deceleration factor
+            self.info_file.write('factor        = %f\n' % dfac)
+            self.step /= dfac
+            self.info_file.write('step len      = %f\n' % self.step)
+
             # if deceleration factor hit the upper limit
-            if dfac == self.max_factor and self.lamb < 1.0:
+            if dfac == self.max_factor:
                 self.info_file.write(
                     'High curvature! Reverting solution...\n')
                 # revert solution
@@ -332,6 +351,7 @@ class ParameterContinuation(OptimizationAlgorithm):
                 t.equals(t_save)
                 dlamb = dlamb_save
                 state.equals(state_save)
+                adj.equals(adj_save)
                 if self.factor_matrices:
                     factor_linear_system(x, state)
 
