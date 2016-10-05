@@ -27,7 +27,7 @@ class PredictorCorrectorCnstrTestCase(unittest.TestCase):
                 'inner_tol' : 1e-2,
                 'inner_maxiter' : 50,
                 'nominal_dist' : 10.0,
-                'nominal_angle' : 22.0*np.pi/180.,
+                'nominal_angle' : 10.0*np.pi/180.,
             },
 
             'rsnk' : {
