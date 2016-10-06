@@ -221,7 +221,7 @@ class ReducedKKTVector(CompositeVector):
         Dual components of the composite vector.
     """
 
-    init_dual = -0.01
+    init_dual = 0.0
 
     def __init__(self, primal_vec, dual_vec):
         if isinstance(primal_vec, DesignVector):

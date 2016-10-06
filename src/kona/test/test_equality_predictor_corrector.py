@@ -25,8 +25,8 @@ class PredictorCorrectorCnstrTestCase(unittest.TestCase):
 
             'homotopy' : {
                 'inner_tol' : 1e-2,
-                'inner_maxiter' : 50,
-                'nominal_dist' : 10.0,
+                'inner_maxiter' : 20,
+                'nominal_dist' : 1.0,
                 'nominal_angle' : 10.0*np.pi/180.,
             },
 

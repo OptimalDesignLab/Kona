@@ -11,8 +11,8 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
         # number of vectors required in solve() method
         self.primal_factory.request_num_vectors(12)
-        self.state_factory.request_num_vectors(6)
-        self.eq_factory.request_num_vectors(13)
+        self.state_factory.request_num_vectors(5)
+        self.eq_factory.request_num_vectors(12)
 
         # general options
         ############################################################
@@ -48,7 +48,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
         # homotopy options
         ############################################################
-        self.mu = 0.0
+        self.mu = 1.0
         self.inner_tol = get_opt(optns, 1e-2, 'homotopy', 'inner_tol')
         self.inner_maxiter = get_opt(optns, 50, 'homotopy', 'inner_maxiter')
         self.step = get_opt(
@@ -121,11 +121,13 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
     def _mat_vec(self, in_vec, out_vec):
         self.hessian.product(in_vec, out_vec)
-        out_vec.times(self.mu)
+        out_vec.times(1. - self.mu)
+
         self.prod_work.equals(in_vec)
-        self.prod_work.dual.times(-1.)
-        self.prod_work.times(1 - self.mu)
-        out_vec.plus(self.prod_work)
+        self.prod_work.times(self.mu)
+
+        out_vec.primal.plus(self.prod_work.primal)
+        out_vec.dual.minus(self.prod_work.dual)
 
     def solve(self):
         self.info_file.write(
@@ -140,6 +142,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         x0 = self._generate_kkt()
         x_save = self._generate_kkt()
         dJdX = self._generate_kkt()
+        dJdX_save = self._generate_kkt()
         dJdX_hom = self._generate_kkt()
         dx = self._generate_kkt()
         dx_newt = self._generate_kkt()
@@ -153,11 +156,9 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         state_save = self.state_factory.generate()
         adj = self.state_factory.generate()
         adj_save = self.state_factory.generate()
-        adj_obj = self.state_factory.generate()
 
         primal_work = self._generate_primal()
 
-        c0 = self._generate_dual()
         dual_work = self._generate_dual()
 
         # initialize the problem at the starting point
@@ -169,71 +170,73 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             factor_linear_system(x.primal, state)
 
         # compute scaling factors
-        adj_obj.equals_objective_adjoint(x.primal, state, state_work)
-        primal_work.equals_total_gradient(x.primal, state, adj_obj)
+        adj_save.equals_objective_adjoint(x.primal, state, state_work)
+        primal_work.equals_total_gradient(x.primal, state, adj_save)
+        dual_work.equals_constraints(x.primal, state)
         obj_norm0 = primal_work.norm2
-        c0.equals_constraints(x.primal, state)
-        cnstr_norm0 = c0.norm2
+        cnstr_norm0 = dual_work.norm2
         obj_fac = 1./obj_norm0
-        cnstr_fac = 1./cnstr_norm0
+        cnstr_fac = 1.
 
         # compute the lagrangian adjoint
         adj.equals_lagrangian_adjoint(
-            x, state, state_work,
-            obj_scale=obj_fac, cnstr_scale=cnstr_fac)
+            x, state, state_work, obj_scale=obj_fac, cnstr_scale=cnstr_fac)
 
         # compute initial KKT conditions
         dJdX.equals_KKT_conditions(
-            x, state, adj,
-            obj_scale=obj_fac, cnstr_scale=cnstr_fac)
+            x, state, adj, obj_scale=obj_fac, cnstr_scale=cnstr_fac)
 
         # compute convergence metrics
         opt_norm0 = dJdX.primal.norm2
         feas_norm0 = dJdX.dual.norm2
-        opt_tol = opt_norm0 * self.primal_tol
-        feas_tol = feas_norm0 * self.cnstr_tol
+        opt_tol = self.primal_tol
+        feas_tol = self.cnstr_tol
         self._write_header(opt_tol, feas_tol)
 
         # write the initial point
-        obj0 = objective_value(x.primal, state)
+        obj0 = obj_fac * objective_value(x.primal, state)
         self._write_outer(0, obj0, opt_norm0, feas_norm0)
         self.hist_file.write('\n')
 
-        # set up predictor RHS
+        # compute the rhs vector for the predictor problem
         rhs_vec.equals(dJdX)
-        primal_work.equals(x.primal)
-        primal_work.minus(x0.primal)
-        primal_work.times(-1.)
-        rhs_vec.primal.plus(primal_work)
-        dual_work.equals(x.dual)
-        dual_work.minus(x0.dual)
-        rhs_vec.dual.plus(dual_work)
         rhs_vec.times(-1.)
 
-        # linearize the KKT matrix and solve for the initial tangent vector
+        primal_work.equals(x.primal)
+        primal_work.minus(x0.primal)
+        rhs_vec.primal.plus(primal_work)
+
+        dual_work.equals(x.dual)
+        dual_work.minus(x0.dual)
+        rhs_vec.dual.minus(dual_work)
+
+        # compute the tangent vector
+        t.equals(0.0)
         self.hessian.linearize(
             x, state, adj,
             obj_scale=obj_fac, cnstr_scale=cnstr_fac)
-        t.equals(0.0)
         self.krylov.solve(self._mat_vec, rhs_vec, t, self.precond)
 
         # normalize tangent vector
         tnorm = np.sqrt(t.inner(t) + 1.0)
         t.times(1./tnorm)
-        dmu = 1./tnorm
+        dmu = -1./tnorm
 
         # START OUTER ITERATIONS
         #########################
         outer_iters = 1
         total_iters = 0
-        while self.mu < 1.0 and outer_iters <= self.max_iter:
+        while self.mu > 0.0 and outer_iters <= self.max_iter:
 
             self.info_file.write(
                 '==================================================\n')
             self.info_file.write(
-                'Outer Homotopy iteration %i\n'%(outer_iters+1))
+                'Outer Homotopy iteration %i\n'%(outer_iters))
             self.info_file.write('\n')
 
+            dJdX.equals_KKT_conditions(
+                x, state, adj,
+                obj_scale=obj_fac, cnstr_scale=cnstr_fac)
             opt_norm = dJdX.primal.norm2
             feas_norm = dJdX.dual.norm2
             self.info_file.write(
@@ -246,6 +249,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             x_save.equals(x)
             state_save.equals(state)
             adj_save.equals(adj)
+            dJdX_save.equals(dJdX)
             t_save.equals(t)
             dmu_save = dmu
             mu_save = self.mu
@@ -253,9 +257,9 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             # take a predictor step
             x.equals_ax_p_by(1.0, x, self.step, t)
             self.mu += dmu * self.step
-            if self.mu > 1.0:
-                self.mu = 1.0
-            self.info_file.write('\nmu            = %f\n'%self.mu)
+            if self.mu < 0.0:
+                self.mu = 0.0
+            self.info_file.write('\nmu after pred  = %f\n'%self.mu)
 
             # solve states
             if not state.equals_primal_solution(x.primal):
@@ -264,10 +268,9 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             if self.factor_matrices:
                 factor_linear_system(x.primal, state)
 
-            # solve adjoint
+            # compute adjoint
             adj.equals_lagrangian_adjoint(
-                x, state, state_work,
-                obj_scale=obj_fac, cnstr_scale=cnstr_fac)
+                x, state, state_work, obj_scale=obj_fac, cnstr_scale=cnstr_fac)
 
             # START CORRECTOR (Newton) ITERATIONS
             #####################################
@@ -280,21 +283,25 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                 self.info_file.write('   Inner Newton iteration %i\n'%(i+1))
                 self.info_file.write('   -------------------------------\n')
 
-                # compute the homotopy map derivatives
+                # compute the KKT conditions
                 dJdX.equals_KKT_conditions(
                     x, state, adj,
                     obj_scale=obj_fac, cnstr_scale=cnstr_fac)
                 dJdX_hom.equals(dJdX)
-                dJdX_hom.times(self.mu)
+                dJdX_hom.times(1. - self.mu)
+
+                # add the primal homotopy term
                 primal_work.equals(x.primal)
                 primal_work.minus(x0.primal)
-                xTx = primal_work.norm2**2
-                primal_work.times(1. - self.mu)
+                xTx = primal_work.inner(primal_work)
+                primal_work.times(self.mu)
                 dJdX_hom.primal.plus(primal_work)
+
+                # add the dual homotopy term
                 dual_work.equals(x.dual)
                 dual_work.minus(x0.dual)
-                mTm = dual_work.norm2**2
-                dual_work.times(1. - self.mu)
+                mTm = dual_work.inner(dual_work)
+                dual_work.times(self.mu)
                 dJdX_hom.dual.minus(dual_work)
 
                 # get convergence norms
@@ -303,13 +310,13 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                     hom_opt_norm0 = dJdX_hom.primal.norm2
                     hom_opt_norm = hom_opt_norm0
                     hom_opt_tol = self.inner_tol * hom_opt_norm0
-                    if hom_opt_tol < opt_tol or self.mu == 1.0:
+                    if hom_opt_tol < opt_tol or self.mu == 0.0:
                         hom_opt_tol = opt_tol
                     # compute feasibility norms
                     hom_feas_norm0 = dJdX_hom.dual.norm2
                     hom_feas_norm = hom_feas_norm0
                     hom_feas_tol = self.inner_tol * hom_feas_norm0
-                    if hom_feas_tol < feas_tol or self.mu == 1.0:
+                    if hom_feas_tol < feas_tol or self.mu == 0.0:
                         hom_feas_tol = feas_tol
                 else:
                     hom_opt_norm = dJdX_hom.primal.norm2
@@ -321,10 +328,10 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                         hom_feas_norm, hom_feas_tol))
 
                 # write inner history
-                obj = objective_value(x.primal, state)
-                hom = self.mu * obj_fac * obj
-                hom += 0.5*(1 - self.mu) * xTx
-                hom -= 0.5*(1 - self.mu) * mTm
+                obj = obj_fac * objective_value(x.primal, state)
+                hom = (1. - self.mu) * obj
+                hom += 0.5 * self.mu * xTx
+                hom -= 0.5 * self.mu * mTm
                 opt_norm = dJdX.primal.norm2
                 feas_norm = dJdX.dual.norm2
                 self._write_inner(
@@ -383,14 +390,15 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
             # assemble the predictor RHS
             rhs_vec.equals(dJdX)
+            rhs_vec.times(-1.)
+
             primal_work.equals(x.primal)
             primal_work.minus(x0.primal)
-            primal_work.times(-1.)
             rhs_vec.primal.plus(primal_work)
+
             dual_work.equals(x.dual)
             dual_work.minus(x0.dual)
-            rhs_vec.dual.plus(dual_work)
-            rhs_vec.times(-1.)
+            rhs_vec.dual.minus(dual_work)
 
             # compute the new tangent vector and predictor step
             t.equals(0.0)
@@ -402,7 +410,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             # normalize the tangent vector
             tnorm = np.sqrt(t.inner(t) + 1.0)
             t.times(1./tnorm)
-            dmu = 1./tnorm
+            dmu = -1./tnorm
 
             # compute distance to curve
             self.info_file.write('\n')
@@ -436,6 +444,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                 dmu = dmu_save
                 state.equals(state_save)
                 adj.equals(adj_save)
+                dJdX.equals(dJdX_save)
                 if self.factor_matrices:
                     factor_linear_system(x.primal, state)
 
