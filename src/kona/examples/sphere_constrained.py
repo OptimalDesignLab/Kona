@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 
 from kona.user import UserSolver
 
@@ -19,6 +20,9 @@ class SphereConstrained(UserSolver):
                 num_eq=0,
                 num_ineq=1)
         self.init_x = np.array(init_x)
+        self.iters = []
+        self.design_points = []
+        self.dual_points = []
 
     def eval_obj(self, at_design, at_state):
         return at_design[0] + at_design[1] + at_design[2]
@@ -92,3 +96,10 @@ class SphereConstrained(UserSolver):
 
     def init_design(self):
         return self.init_x
+
+    def current_solution(self, num_iter, curr_design, curr_state, curr_adj,
+                         curr_eq, curr_ineq, curr_slack):
+        self.curr_design = deepcopy(curr_design)
+        self.iters.append(num_iter)
+        self.design_points.append(deepcopy(curr_design))
+        self.dual_points.append(deepcopy(curr_eq))

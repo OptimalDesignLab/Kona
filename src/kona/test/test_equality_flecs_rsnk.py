@@ -9,11 +9,7 @@ class EqualityFLECSRSNKTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
 
-        feasible = False
-        if feasible:
-            init_x = [0.51, 0.52, 0.53]
-        else:
-            init_x = [1.51, 1.52, 1.53]
+        init_x = [-2.51, -2.52, -2.53]
 
         solver = SphereConstrained(init_x=init_x, ineq=False)
 

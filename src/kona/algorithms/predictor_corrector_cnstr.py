@@ -52,59 +52,82 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         self.inner_tol = get_opt(optns, 1e-2, 'homotopy', 'inner_tol')
         self.inner_maxiter = get_opt(optns, 50, 'homotopy', 'inner_maxiter')
         self.step = get_opt(
-            optns, 0.05, 'homotopy', 'init_step')
+            optns, 0.1, 'homotopy', 'init_step')
         self.nom_dcurve = get_opt(optns, 1.0, 'homotopy', 'nominal_dist')
         self.nom_angl = get_opt(
             optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
         self.max_factor = get_opt(optns, 2.0, 'homotopy', 'max_factor')
-        self.min_factor = get_opt(optns, 0.5, 'homotopy', 'min_factor')
+        self.min_factor = get_opt(optns, 1./3., 'homotopy', 'min_factor')
 
     def _write_header(self, opt_tol, feas_tol):
         self.hist_file.write(
             '# Kona Param. Contn. convergence history ' +
             '(opt tol = %e | feas tol = %e)\n'%(opt_tol, feas_tol) +
             '# outer' + ' '*5 +
-            '  inner' + ' '*5 +
-            '   cost' + ' '*5 +
-            'objective   ' + ' ' * 5 +
-            'opt norm    ' + ' '*5 +
-            'feas norm   ' + ' '*5 +
-            'homotopy    ' + ' ' * 5 +
-            'hom opt     ' + ' '*5 +
-            'hom feas    ' + ' '*5 +
-            'mu          ' + ' '*5 +
+            'inner' + ' '*5 +
+            ' cost' + ' '*5 +
+            ' objective' + ' ' * 5 +
+            'lagrangian' + ' ' * 5 +
+            '  opt norm' + ' '*5 +
+            ' feas norm' + ' '*5 +
+            '  homotopy' + ' ' * 5 +
+            '   hom opt' + ' '*5 +
+            '  hom feas' + ' '*5 +
+            'mu        ' + ' '*5 +
             '\n'
         )
 
-    def _write_outer(self, outer, obj, opt_norm, feas_norm):
+    def _write_outer(self, outer, obj, lag, opt_norm, feas_norm):
+        if obj < 0.:
+            obj_fmt = '%.3e'%obj
+        else:
+            obj_fmt = ' %.3e'%obj
+        if lag < 0.:
+            lag_fmt = '%.3e'%lag
+        else:
+            lag_fmt = ' %.3e'%lag
         self.hist_file.write(
             '%7i' % outer + ' ' * 5 +
-            '-'*7 + ' ' * 5 +
-            '%7i' % self.primal_factory._memory.cost + ' ' * 5 +
-            '%11e' % obj + ' ' * 5 +
-            '%11e' % opt_norm + ' ' * 5 +
-            '%11e' % feas_norm + ' ' * 5 +
-            '-'*12 + ' ' * 5 +
-            '-'*12 + ' ' * 5 +
-            '-'*12 + ' ' * 5 +
-            '%11e' % self.mu + ' ' * 5 +
+            '-'*5 + ' ' * 5 +
+            '%5i' % self.primal_factory._memory.cost + ' ' * 5 +
+            obj_fmt + ' ' * 5 +
+            lag_fmt + ' ' * 5 +
+            '%.4e' % opt_norm + ' ' * 5 +
+            '%.4e' % feas_norm + ' ' * 5 +
+            '-'*10 + ' ' * 5 +
+            '-'*10 + ' ' * 5 +
+            '-'*10 + ' ' * 5 +
+            '%1.4f' % self.mu + ' ' * 5 +
             '\n'
         )
 
     def _write_inner(self, outer, inner,
-                     obj, opt_norm, feas_norm,
+                     obj, lag, opt_norm, feas_norm,
                      hom, hom_opt, hom_feas):
+        if obj < 0.:
+            obj_fmt = '%.3e'%obj
+        else:
+            obj_fmt = ' %.3e'%obj
+        if lag < 0.:
+            lag_fmt = '%.3e'%lag
+        else:
+            lag_fmt = ' %.3e'%lag
+        if hom < 0.:
+            hom_fmt = '%.3e'%hom
+        else:
+            hom_fmt = ' %.3e'%hom
         self.hist_file.write(
             '%7i' % outer + ' ' * 5 +
-            '%7i' % inner + ' ' * 5 +
-            '%7i' % self.primal_factory._memory.cost + ' ' * 5 +
-            '%11e' % obj + ' ' * 5 +
-            '%11e' % opt_norm + ' ' * 5 +
-            '%11e' % feas_norm + ' ' * 5 +
-            '%11e' % hom + ' ' * 5 +
-            '%11e' % hom_opt + ' ' * 5 +
-            '%11e' % hom_feas + ' ' * 5 +
-            '%11e' % self.mu + ' ' * 5 +
+            '%5i' % inner + ' ' * 5 +
+            '%5i' % self.primal_factory._memory.cost + ' ' * 5 +
+            obj_fmt + ' ' * 5 +
+            lag_fmt + ' ' * 5 +
+            '%.4e' % opt_norm + ' ' * 5 +
+            '%.4e' % feas_norm + ' ' * 5 +
+            hom_fmt + ' ' * 5 +
+            '%.4e' % hom_opt + ' ' * 5 +
+            '%.4e' % hom_feas + ' ' * 5 +
+            '%1.4f' % self.mu + ' ' * 5 +
             '\n'
         )
 
@@ -186,6 +209,13 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         dJdX.equals_KKT_conditions(
             x, state, adj, obj_scale=obj_fac, cnstr_scale=cnstr_fac)
 
+        # send solution to solver
+        solver_info = current_solution(
+            num_iter=0, curr_primal=x.primal,
+            curr_state=state, curr_adj=adj, curr_dual=x.dual)
+        if isinstance(solver_info, str) and solver_info != '':
+            self.info_file.write('\n' + solver_info + '\n')
+
         # compute convergence metrics
         opt_norm0 = dJdX.primal.norm2
         feas_norm0 = dJdX.dual.norm2
@@ -194,8 +224,9 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         self._write_header(opt_tol, feas_tol)
 
         # write the initial point
-        obj0 = obj_fac * objective_value(x.primal, state)
-        self._write_outer(0, obj0, opt_norm0, feas_norm0)
+        obj0 = objective_value(x.primal, state)
+        lag0 = obj_fac * obj0 + cnstr_fac * x0.dual.inner(dJdX.dual)
+        self._write_outer(0, obj0, lag0, opt_norm0, feas_norm0)
         self.hist_file.write('\n')
 
         # compute the rhs vector for the predictor problem
@@ -328,23 +359,15 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                         hom_feas_norm, hom_feas_tol))
 
                 # write inner history
-                obj = obj_fac * objective_value(x.primal, state)
-                hom = (1. - self.mu) * obj
-                hom += 0.5 * self.mu * xTx
-                hom -= 0.5 * self.mu * mTm
+                obj = objective_value(x.primal, state)
+                lag = obj_fac * obj + cnstr_fac * x.dual.inner(dJdX.dual)
+                hom = (1. - self.mu) * lag + 0.5 * self.mu * (xTx - mTm)
                 opt_norm = dJdX.primal.norm2
                 feas_norm = dJdX.dual.norm2
                 self._write_inner(
                     outer_iters, inner_iters,
-                    obj, opt_norm, feas_norm,
+                    obj, lag, opt_norm, feas_norm,
                     hom, hom_opt_norm, hom_feas_norm)
-
-                # save solution
-                solver_info = current_solution(
-                    num_iter=total_iters + 1, curr_primal=x.primal,
-                    curr_state=state, curr_adj=adj, curr_dual=x.dual)
-                if isinstance(solver_info, str) and solver_info != '':
-                    self.info_file.write('\n' + solver_info + '\n')
 
                 # check convergence
                 if hom_opt_norm <= hom_opt_tol and hom_feas_norm <= hom_feas_tol:
@@ -381,8 +404,14 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                 total_iters += 1
 
             # if we finished the corrector step at mu=1, we're done!
-            if self.mu == 1.:
+            if self.mu == 0.0:
                 self.info_file.write('\n>> Optimization DONE! <<\n')
+                # send solution to solver
+                solver_info = current_solution(
+                    num_iter=outer_iters, curr_primal=x.primal,
+                    curr_state=state, curr_adj=adj, curr_dual=x.dual)
+                if isinstance(solver_info, str) and solver_info != '':
+                    self.info_file.write('\n' + solver_info + '\n')
                 return
 
             # COMPUTE NEW TANGENT VECTOR
@@ -447,6 +476,13 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                 dJdX.equals(dJdX_save)
                 if self.factor_matrices:
                     factor_linear_system(x.primal, state)
+            else:
+                # this step is accepted so send it to user
+                solver_info = current_solution(
+                    num_iter=outer_iters, curr_primal=x.primal,
+                    curr_state=state, curr_adj=adj, curr_dual=x.dual)
+                if isinstance(solver_info, str) and solver_info != '':
+                    self.info_file.write('\n' + solver_info + '\n')
 
             # advance iteration counter
             outer_iters += 1
