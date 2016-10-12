@@ -5,20 +5,20 @@ class GCROT(KrylovSolver):
     Generalized Conjugate Residual method with Orthogonalization, Truncated
     """
 
-    def __init__(self, vector_factory, optns={},
+    def __init__(self, vector_factory, optns=None,
                  eq_factory=None, ineq_factory=None):
         super(GCROT, self).__init__(vector_factory, optns)
 
         # get relative tolerance
-        self.rel_tol = get_opt(optns, 1e-5, 'rel_tol')
-        self.abs_tol = get_opt(optns, 1e-8, 'abs_tol')
+        self.rel_tol = get_opt(self.optns, 1e-5, 'rel_tol')
+        self.abs_tol = get_opt(self.optns, 1e-8, 'abs_tol')
 
         # get maximum number of recycled vectors, and set current
-        self.max_recycle = get_opt(optns, 10, 'max_recycle')
+        self.max_recycle = get_opt(self.optns, 10, 'max_recycle')
         self.num_stored = 0
         self.ptr = 0 # index of oldest vector in recycled subspace
-        self.max_outer = get_opt(optns, 10, 'max_outer')
-        self.max_krylov = get_opt(optns, 50, 'max_matvec')
+        self.max_outer = get_opt(self.optns, 10, 'max_outer')
+        self.max_krylov = get_opt(self.optns, 50, 'max_matvec')
 
         # put in memory request
         num_vectors = 2*self.max_iter + 2*self.max_recycle + 4

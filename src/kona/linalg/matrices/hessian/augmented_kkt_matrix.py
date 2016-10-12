@@ -17,7 +17,7 @@ class AugmentedKKTMatrix(BaseHessian):
 
     This matrix is used to solve the normal-step in a composite-step algorithm.
     """
-    def __init__(self, vector_factories, optns={}):
+    def __init__(self, vector_factories, optns=None):
         super(AugmentedKKTMatrix, self).__init__(vector_factories, optns)
 
         # get references to individual factories
@@ -38,13 +38,13 @@ class AugmentedKKTMatrix(BaseHessian):
                 raise TypeError('Invalid vector factory!')
 
         # decide which krylov solver we use
-        self.use_gcrot = get_opt(optns, True, 'use_gcrot')
+        self.use_gcrot = get_opt(self.optns, True, 'use_gcrot')
 
         # initialize the constraint jacobian
         self.A = TotalConstraintJacobian(vector_factories)
 
         # get preconditioner options
-        self.precond = get_opt(optns, None, 'precond')
+        self.precond = get_opt(self.optns, None, 'precond')
         if self.precond is None:
             self.nested_svd = None
             eye = IdentityMatrix()
@@ -57,14 +57,14 @@ class AugmentedKKTMatrix(BaseHessian):
         if self.use_gcrot:
             krylov_optns = {
                 'out_file' : get_opt(
-                    optns, 'kona_normal_gcrot.dat', 'out_file'),
-                'subspace_size' : get_opt(optns, 10, 'subspace_size'),
-                'max_recycle' : get_opt(optns, 10, 'max_recycle'),
-                'max_outer' : get_opt(optns, 10, 'max_outer'),
-                'max_matvec' : get_opt(optns, 50, 'max_matvec'),
-                'check_res' : get_opt(optns, True, 'check_res'),
-                'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
-                'abs_tol' : get_opt(optns, 1e-5, 'abs_tol')
+                    self.optns, 'kona_normal_gcrot.dat', 'out_file'),
+                'subspace_size' : get_opt(self.optns, 10, 'subspace_size'),
+                'max_recycle' : get_opt(self.optns, 10, 'max_recycle'),
+                'max_outer' : get_opt(self.optns, 10, 'max_outer'),
+                'max_matvec' : get_opt(self.optns, 50, 'max_matvec'),
+                'check_res' : get_opt(self.optns, True, 'check_res'),
+                'rel_tol' : get_opt(self.optns, 1e-3, 'rel_tol'),
+                'abs_tol' : get_opt(self.optns, 1e-5, 'abs_tol')
             }
             self.krylov = GCROT(
                 self.primal_factory,
@@ -74,11 +74,11 @@ class AugmentedKKTMatrix(BaseHessian):
         else:
             krylov_optns = {
                 'out_file' : get_opt(
-                    optns, 'kona_normal_fgmres.dat', 'out_file'),
-                'subspace_size' : get_opt(optns, 10, 'subspace_size'),
-                'check_res' : get_opt(optns, True, 'check_res'),
-                'rel_tol' : get_opt(optns, 1e-3, 'rel_tol'),
-                'abs_tol' : get_opt(optns, 1e-5, 'abs_tol')
+                    self.optns, 'kona_normal_fgmres.dat', 'out_file'),
+                'subspace_size' : get_opt(self.optns, 10, 'subspace_size'),
+                'check_res' : get_opt(self.optns, True, 'check_res'),
+                'rel_tol' : get_opt(self.optns, 1e-3, 'rel_tol'),
+                'abs_tol' : get_opt(self.optns, 1e-5, 'abs_tol')
             }
             self.krylov = FGMRES(
                 self.primal_factory,

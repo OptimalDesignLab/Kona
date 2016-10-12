@@ -930,9 +930,9 @@ class UserSolverIDF(UserSolver):
         self.num_real_ceq = num_eq
         super(UserSolverIDF, self).__init__(
             self.num_real_design + num_idf,
-            num_state,
-            self.num_real_ceq + num_idf,
-            num_ineq)
+            num_state=num_state,
+            num_eq=self.num_real_ceq + num_idf,
+            num_ineq=num_ineq)
 
     def restrict_design(self, opType, target):
         """

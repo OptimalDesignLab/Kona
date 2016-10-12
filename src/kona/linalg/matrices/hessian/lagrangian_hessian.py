@@ -11,7 +11,7 @@ class LagrangianHessian(BaseHessian):
     If slack terms are present, it will also perform a product with the slack
     derivative of the Lagrangian.
     """
-    def __init__(self, vector_factories, optns={}):
+    def __init__(self, vector_factories, optns=None):
         super(LagrangianHessian, self).__init__(vector_factories, optns)
 
         # get references to individual factories
@@ -44,11 +44,11 @@ class LagrangianHessian(BaseHessian):
 
         # initialize the internal krylov method
         krylov_optns = {
-            'out_file' : get_opt(optns, 'kona_tangent_stcg.dat', 'out_file'),
-            'subspace_size' : get_opt(optns, 20, 'subspace_size'),
+            'out_file' : get_opt(self.optns, 'kona_tangent_stcg.dat', 'out_file'),
+            'subspace_size' : get_opt(self.optns, 20, 'subspace_size'),
             'proj_cg'  : True,
-            'check_res' : get_opt(optns, True, 'check_res'),
-            'rel_tol'  : get_opt(optns, 1e-3, 'rel_tol'),
+            'check_res' : get_opt(self.optns, True, 'check_res'),
+            'rel_tol'  : get_opt(self.optns, 1e-3, 'rel_tol'),
         }
         self.krylov = STCG(
             self.primal_factory,

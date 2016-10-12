@@ -31,7 +31,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
     optns : dict, optional
     """
     def __init__(self, primal_factory, state_factory,
-                 eq_factory, ineq_factory, optns={}):
+                 eq_factory, ineq_factory, optns=None):
         # trigger base class initialization
         super(FLECS_RSNK, self).__init__(
             primal_factory, state_factory, eq_factory, ineq_factory, optns
@@ -44,26 +44,26 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
         # general options
         ############################################################
-        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
+        self.factor_matrices = get_opt(self.optns, False, 'matrix_explicit')
 
         # trust radius settings
         ############################################################
-        self.radius = get_opt(optns, 0.5, 'trust', 'init_radius')
-        self.min_radius = get_opt(optns, 0.5/(2**3), 'trust', 'min_radius')
-        self.max_radius = get_opt(optns, 0.5*(2**3), 'trust', 'max_radius')
+        self.radius = get_opt(self.optns, 0.5, 'trust', 'init_radius')
+        self.min_radius = get_opt(self.optns, 0.5/(2**3), 'trust', 'min_radius')
+        self.max_radius = get_opt(self.optns, 0.5*(2**3), 'trust', 'max_radius')
 
         # augmented Lagrangian settings
         ############################################################
-        self.mu = get_opt(optns, 1.0, 'penalty', 'mu_init')
+        self.mu = get_opt(self.optns, 1.0, 'penalty', 'mu_init')
         self.mu_init = self.mu
-        self.mu_pow = get_opt(optns, 0.5, 'penalty', 'mu_pow')
-        self.mu_max = get_opt(optns, 1e5, 'penalty', 'mu_max')
+        self.mu_pow = get_opt(self.optns, 0.5, 'penalty', 'mu_pow')
+        self.mu_max = get_opt(self.optns, 1e5, 'penalty', 'mu_max')
         self.eta = 1./(self.mu**0.1)
 
         # reduced KKT settings
         ############################################################
-        self.nu = get_opt(optns, 0.95, 'rsnk', 'nu')
-        reduced_optns = get_opt(optns, {}, 'rsnk')
+        self.nu = get_opt(self.optns, 0.95, 'rsnk', 'nu')
+        reduced_optns = get_opt(self.optns, {}, 'rsnk')
         reduced_optns['out_file'] = self.info_file
         self.KKT_matrix = ReducedKKTMatrix(
             [self.primal_factory, self.state_factory,
@@ -73,7 +73,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
         # KKT system preconditiner settings
         ############################################################
-        self.precond = get_opt(optns, None, 'rsnk', 'precond')
+        self.precond = get_opt(self.optns, None, 'rsnk', 'precond')
         self.idf_schur = None
         self.nested = None
         if self.precond is None:
@@ -81,16 +81,16 @@ class FLECS_RSNK(OptimizationAlgorithm):
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
         else:
-            raise BadKonaOption(optns, 'rsnk', 'precond')
+            raise BadKonaOption(self.optns, 'rsnk', 'precond')
 
         # krylov solver settings
         ############################################################
         krylov_optns = {
             'krylov_file'   : get_opt(
-                optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
-            'subspace_size' : get_opt(optns, 10, 'rsnk', 'subspace_size'),
-            'check_res'     : get_opt(optns, True, 'rsnk', 'check_res'),
-            'rel_tol'       : get_opt(optns, 1e-2, 'rsnk', 'rel_tol'),
+                self.optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
+            'subspace_size' : get_opt(self.optns, 10, 'rsnk', 'subspace_size'),
+            'check_res'     : get_opt(self.optns, True, 'rsnk', 'check_res'),
+            'rel_tol'       : get_opt(self.optns, 1e-2, 'rsnk', 'rel_tol'),
         }
         self.krylov = FLECS(
             [self.primal_factory, self.eq_factory],
@@ -98,7 +98,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
         # get globalization options
         ############################################################
-        self.globalization = get_opt(optns, 'trust', 'globalization')
+        self.globalization = get_opt(self.optns, 'trust', 'globalization')
         if self.globalization is None:
             self.trust_region = False
         elif self.globalization == 'trust':

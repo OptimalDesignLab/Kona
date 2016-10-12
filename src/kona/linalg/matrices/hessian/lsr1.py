@@ -16,14 +16,14 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         ?
     """
 
-    def __init__(self, vector_factory, optns={}):
+    def __init__(self, vector_factory, optns=None):
         super(LimitedMemorySR1, self).__init__(vector_factory, optns)
 
         self.lambda0 = 0
 
         self.threshold = 1.e-8
 
-        self.max_stored = get_opt(optns, 10, 'max_stored')
+        self.max_stored = get_opt(self.optns, 10, 'max_stored')
 
         vector_factory.request_num_vectors(3*self.max_stored + 4)
 

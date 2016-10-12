@@ -37,11 +37,11 @@ class FLECS(KrylovSolver):
         Optiona dictionary
     """
 
-    def __init__(self, vector_factories, optns={}):
+    def __init__(self, vector_factories, optns=None):
         super(FLECS, self).__init__(vector_factories, optns)
 
-        self.rel_tol = get_opt(optns, 1e-2, 'rel_tol')
-        self.abs_tol = get_opt(optns, 1e-5, 'abs_tol')
+        self.rel_tol = get_opt(self.optns, 1e-2, 'rel_tol')
+        self.abs_tol = get_opt(self.optns, 1e-5, 'abs_tol')
 
         # set a default trust radius
         # NOTE: this will be set by the optimization algorithm later
@@ -52,8 +52,8 @@ class FLECS(KrylovSolver):
         self.mu = 0.1
 
         # get scalings
-        self.grad_scale = get_opt(optns, 1.0, 'grad_scale')
-        self.feas_scale = get_opt(optns, 1.0, 'feas_scale')
+        self.grad_scale = get_opt(self.optns, 1.0, 'grad_scale')
+        self.feas_scale = get_opt(self.optns, 1.0, 'feas_scale')
 
         # extract vector factories from the factory array
         self.primal_factory = None

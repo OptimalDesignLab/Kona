@@ -3,7 +3,7 @@ from kona.algorithms.base_algorithm import OptimizationAlgorithm
 class PredictorCorrector(OptimizationAlgorithm):
 
     def __init__(self, primal_factory, state_factory,
-                 eq_factory=None, ineq_factory=None, optns={}):
+                 eq_factory=None, ineq_factory=None, optns=None):
         # trigger base class initialization
         super(PredictorCorrector, self).__init__(
             primal_factory, state_factory, eq_factory, ineq_factory, optns
@@ -15,7 +15,7 @@ class PredictorCorrector(OptimizationAlgorithm):
 
         # general options
         ############################################################
-        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
+        self.factor_matrices = get_opt(self.optns, False, 'matrix_explicit')
 
         # reduced hessian settings
         ############################################################
@@ -25,37 +25,37 @@ class PredictorCorrector(OptimizationAlgorithm):
 
         # hessian preconditiner settings
         ############################################################
-        self.precond = get_opt(optns, None, 'rsnk', 'precond')
+        self.precond = get_opt(self.optns, None, 'rsnk', 'precond')
         if self.precond is None:
             # use identity matrix product as preconditioner
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
         else:
-            raise BadKonaOption(optns, 'rsnk', 'precond')
+            raise BadKonaOption(self.optns, 'rsnk', 'precond')
 
         # krylov solver settings
         ############################################################
         krylov_optns = {
             'krylov_file'   : get_opt(
-                optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
-            'subspace_size' : get_opt(optns, 10, 'rsnk', 'subspace_size'),
-            'check_res'     : get_opt(optns, True, 'rsnk', 'check_res'),
-            'rel_tol'       : get_opt(optns, 1e-2, 'rsnk', 'rel_tol'),
+                self.optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
+            'subspace_size' : get_opt(self.optns, 10, 'rsnk', 'subspace_size'),
+            'check_res'     : get_opt(self.optns, True, 'rsnk', 'check_res'),
+            'rel_tol'       : get_opt(self.optns, 1e-2, 'rsnk', 'rel_tol'),
         }
         self.krylov = FGMRES(self.primal_factory, krylov_optns)
 
         # homotopy options
         ############################################################
         self.lamb = 0.0
-        self.inner_tol = get_opt(optns, 1e-2, 'homotopy', 'inner_tol')
-        self.inner_maxiter = get_opt(optns, 50, 'homotopy', 'inner_maxiter')
+        self.inner_tol = get_opt(self.optns, 1e-2, 'homotopy', 'inner_tol')
+        self.inner_maxiter = get_opt(self.optns, 50, 'homotopy', 'inner_maxiter')
         self.step = get_opt(
-            optns, 0.05, 'homotopy', 'init_step')
-        self.nom_dcurve = get_opt(optns, 1.0, 'homotopy', 'nominal_dist')
+            self.optns, 0.05, 'homotopy', 'init_step')
+        self.nom_dcurve = get_opt(self.optns, 1.0, 'homotopy', 'nominal_dist')
         self.nom_angl = get_opt(
-            optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
-        self.max_factor = get_opt(optns, 2.0, 'homotopy', 'max_factor')
-        self.min_factor = get_opt(optns, 0.5, 'homotopy', 'min_factor')
+            self.optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
+        self.max_factor = get_opt(self.optns, 2.0, 'homotopy', 'max_factor')
+        self.min_factor = get_opt(self.optns, 0.5, 'homotopy', 'min_factor')
 
     def _write_header(self, tol):
         self.hist_file.write(

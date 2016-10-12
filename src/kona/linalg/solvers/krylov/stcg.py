@@ -10,18 +10,18 @@ class STCG(KrylovSolver):
         Trust region radius.
     proj_cg : boolean
     """
-    def __init__(self, vector_factory, optns={}, dual_factory=None):
+    def __init__(self, vector_factory, optns=None, dual_factory=None):
         super(STCG, self).__init__(vector_factory, optns)
 
-        self.rel_tol = get_opt(optns, 1e-5, 'rel_tol')
-        self.abs_tol = get_opt(optns, 1e-12, 'abs_tol')
+        self.rel_tol = get_opt(self.optns, 1e-5, 'rel_tol')
+        self.abs_tol = get_opt(self.optns, 1e-12, 'abs_tol')
 
         # set a default trust radius
         # NOTE: the trust radius is set by the optimization algorithm
         self.radius = 1.0
 
         # get other options
-        self.proj_cg = get_opt(optns, False, 'proj_cg')
+        self.proj_cg = get_opt(self.optns, False, 'proj_cg')
 
         # set factory and request vectors needed in solve() method
         self.vec_fac.request_num_vectors(7)

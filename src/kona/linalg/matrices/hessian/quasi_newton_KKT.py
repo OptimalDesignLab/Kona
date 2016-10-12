@@ -6,19 +6,19 @@ class QuasiNewtonKKTMatrix(BaseHessian):
     Lagrangian Hessian, and a 2nd order adjoint formulation for the constraint
     jacobian.
     """
-    def __init__(self, vector_factories, optns={}):
+    def __init__(self, vector_factories, optns=None):
 
         super(QuasiNewtonKKTMatrix, self).__init__(vector_factories, optns)
 
         # read reduced options
-        self.product_fac = get_opt(optns, 0.001, 'product_fac')
+        self.product_fac = get_opt(self.optns, 0.001, 'product_fac')
         self.product_tol = 1.0
-        self.lamb = get_opt(optns, 0.0, 'lambda')
-        self.scale = get_opt(optns, 1.0, 'scale')
-        self.grad_scale = get_opt(optns, 1.0, 'grad_scale')
-        self.feas_scale = get_opt(optns, 1.0, 'feas_scale')
-        self.dynamic_tol = get_opt(optns, False, 'dynamic_tol')
-        max_stored = get_opt(optns, 10, 'max_stored')
+        self.lamb = get_opt(self.optns, 0.0, 'lambda')
+        self.scale = get_opt(self.optns, 1.0, 'scale')
+        self.grad_scale = get_opt(self.optns, 1.0, 'grad_scale')
+        self.feas_scale = get_opt(self.optns, 1.0, 'feas_scale')
+        self.dynamic_tol = get_opt(self.optns, False, 'dynamic_tol')
+        max_stored = get_opt(self.optns, 10, 'max_stored')
 
         # get references to individual factories
         self.primal_factory = None

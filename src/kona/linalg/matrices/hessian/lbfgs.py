@@ -13,14 +13,14 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         Curvature.
     """
 
-    def __init__(self, vector_factory, optns={}):
+    def __init__(self, vector_factory, optns=None):
         super(LimitedMemoryBFGS, self).__init__(vector_factory, optns)
 
         self.lambda0 = 0
         self.s_dot_s_list = []
         self.s_dot_y_list = []
 
-        self.max_stored = get_opt(optns, 10, 'max_stored')
+        self.max_stored = get_opt(self.optns, 10, 'max_stored')
 
         vector_factory.request_num_vectors(2*self.max_stored)
 

@@ -3,20 +3,20 @@ from kona.algorithms.base_algorithm import OptimizationAlgorithm
 class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
     def __init__(self, primal_factory, state_factory,
-                 eq_factory=None, ineq_factory=None, optns={}):
+                 eq_factory=None, ineq_factory=None, optns=None):
         # trigger base class initialization
         super(PredictorCorrectorCnstr, self).__init__(
             primal_factory, state_factory, eq_factory, ineq_factory, optns
         )
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(12)
+        self.primal_factory.request_num_vectors(13)
         self.state_factory.request_num_vectors(5)
-        self.eq_factory.request_num_vectors(12)
+        self.eq_factory.request_num_vectors(13)
 
         # general options
         ############################################################
-        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
+        self.factor_matrices = get_opt(self.optns, False, 'matrix_explicit')
 
         # reduced hessian settings
         ############################################################
@@ -26,22 +26,22 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
         # hessian preconditiner settings
         ############################################################
-        self.precond = get_opt(optns, None, 'rsnk', 'precond')
+        self.precond = get_opt(self.optns, None, 'rsnk', 'precond')
         if self.precond is None:
             # use identity matrix product as preconditioner
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
         else:
-            raise BadKonaOption(optns, 'rsnk', 'precond')
+            raise BadKonaOption(self.optns, 'rsnk', 'precond')
 
         # krylov solver settings
         ############################################################
         krylov_optns = {
             'krylov_file'   : get_opt(
-                optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
-            'subspace_size' : get_opt(optns, 10, 'rsnk', 'subspace_size'),
-            'check_res'     : get_opt(optns, True, 'rsnk', 'check_res'),
-            'rel_tol'       : get_opt(optns, 1e-2, 'rsnk', 'rel_tol'),
+                self.optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
+            'subspace_size' : get_opt(self.optns, 10, 'rsnk', 'subspace_size'),
+            'check_res'     : get_opt(self.optns, True, 'rsnk', 'check_res'),
+            'rel_tol'       : get_opt(self.optns, 1e-2, 'rsnk', 'rel_tol'),
         }
         self.krylov = FGMRES(self.primal_factory, krylov_optns,
                              eq_factory=self.eq_factory, ineq_factory=None)
@@ -49,15 +49,15 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         # homotopy options
         ############################################################
         self.mu = 1.0
-        self.inner_tol = get_opt(optns, 1e-2, 'homotopy', 'inner_tol')
-        self.inner_maxiter = get_opt(optns, 50, 'homotopy', 'inner_maxiter')
+        self.inner_tol = get_opt(self.optns, 1e-2, 'homotopy', 'inner_tol')
+        self.inner_maxiter = get_opt(self.optns, 50, 'homotopy', 'inner_maxiter')
         self.step = get_opt(
-            optns, 0.1, 'homotopy', 'init_step')
-        self.nom_dcurve = get_opt(optns, 1.0, 'homotopy', 'nominal_dist')
+            self.optns, 0.1, 'homotopy', 'init_step')
+        self.nom_dcurve = get_opt(self.optns, 1.0, 'homotopy', 'nominal_dist')
         self.nom_angl = get_opt(
-            optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
-        self.max_factor = get_opt(optns, 2.0, 'homotopy', 'max_factor')
-        self.min_factor = get_opt(optns, 1./3., 'homotopy', 'min_factor')
+            self.optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
+        self.max_factor = get_opt(self.optns, 2.0, 'homotopy', 'max_factor')
+        self.min_factor = get_opt(self.optns, 0.5, 'homotopy', 'min_factor')
 
     def _write_header(self, opt_tol, feas_tol):
         self.hist_file.write(
@@ -184,6 +184,12 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
         dual_work = self._generate_dual()
 
+        self.info_file.write(
+            '# of design vars = %i\n' % len(primal_work.base.data) +
+            '# of eq cnstr    = %i\n' % len(dual_work.base.data) +
+            '\n'
+        )
+
         # initialize the problem at the starting point
         x0.equals_init_guess()
         x.equals(x0)
@@ -195,9 +201,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         # compute scaling factors
         adj_save.equals_objective_adjoint(x.primal, state, state_work)
         primal_work.equals_total_gradient(x.primal, state, adj_save)
-        dual_work.equals_constraints(x.primal, state)
         obj_norm0 = primal_work.norm2
-        cnstr_norm0 = dual_work.norm2
         obj_fac = 1./obj_norm0
         cnstr_fac = 1.
 

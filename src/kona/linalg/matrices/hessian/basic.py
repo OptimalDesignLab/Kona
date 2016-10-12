@@ -16,9 +16,14 @@ class BaseHessian(object):
     out_file : file
         File stream for data output.
     """
-    def __init__(self, vector_factory, optns={}):
+    def __init__(self, vector_factory, optns=None):
         self.vec_fac = vector_factory
-        self.out_file = get_opt(optns, sys.stdout, 'out_file')
+        if optns is None:
+            self.optns = {}
+        else:
+            assert type(optns) is dict, "Invalid options! Must be a dictionary."
+            self.optns = optns
+        self.out_file = get_opt(self.optns, sys.stdout, 'out_file')
         if isinstance(self.out_file, str):
             try:
                 _memory = self.vec_fac._memory

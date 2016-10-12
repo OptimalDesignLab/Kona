@@ -12,7 +12,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         Line search object for globalization.
     """
     def __init__(self, primal_factory, state_factory,
-                 eq_factory, ineq_factory, optns={}):
+                 eq_factory, ineq_factory, optns=None):
         # trigger base class initialization
         super(ReducedSpaceQuasiNewton, self).__init__(
             primal_factory, state_factory, eq_factory, ineq_factory, optns)
@@ -21,40 +21,40 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         self.state_factory.request_num_vectors(3)
 
         # check if this problem is matrix-explicit
-        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
+        self.factor_matrices = get_opt(self.optns, False, 'matrix_explicit')
 
         # set the type of quasi-Newton method
         try:
             approx_hessian = get_opt(
-                optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
-            hessian_optns = get_opt(optns, {}, 'quasi_newton')
+                self.optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
+            hessian_optns = get_opt(self.optns, {}, 'quasi_newton')
             hessian_optns['out_file'] = self.info_file
             self.approx_hessian = approx_hessian(
                 self.primal_factory, hessian_optns)
         except Exception:
-            raise BadKonaOption(optns, 'quasi_newton','type')
+            raise BadKonaOption(self.optns, 'quasi_newton','type')
 
         # set the type of line-search algorithm and merit function
-        self.globalization = get_opt(optns, 'linesearch', 'globalization')
+        self.globalization = get_opt(self.optns, 'linesearch', 'globalization')
         if self.globalization is not None:
             try:
                 line_search_alg = get_opt(
-                    optns, StrongWolfe, 'lineseach', 'type')
-                line_search_opt = get_opt(optns, {}, 'linesearch')
+                    self.optns, StrongWolfe, 'lineseach', 'type')
+                line_search_opt = get_opt(self.optns, {}, 'linesearch')
                 self.line_search = line_search_alg(
                     line_search_opt, self.info_file)
             except Exception:
-                raise BadKonaOption(optns, 'linesearch', 'type')
+                raise BadKonaOption(self.optns, 'linesearch', 'type')
             merit_type = get_opt(
-                optns, ObjectiveMerit, 'merit_function', 'type')
+                self.optns, ObjectiveMerit, 'merit_function', 'type')
             if merit_type is ObjectiveMerit:
                 try:
-                    merit_opt = get_opt(optns, {}, 'merit_function')
+                    merit_opt = get_opt(self.optns, {}, 'merit_function')
                     self.merit_func = merit_type(
                         primal_factory, state_factory,
                         merit_opt, self.info_file)
                 except Exception:
-                    raise BadKonaOption(optns, 'merit_function')
+                    raise BadKonaOption(self.optns, 'merit_function')
             else:
                 raise TypeError('Invalid merit function!')
 

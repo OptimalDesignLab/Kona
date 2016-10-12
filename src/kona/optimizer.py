@@ -17,7 +17,7 @@ class Optimizer(object):
     algorithm : OptimizationAlgorithm
     optns : dict, optional
     """
-    def __init__(self, solver, algorithm, optns={}):
+    def __init__(self, solver, algorithm, optns=None):
 
         # initialize optimization memory
         self._memory = KonaMemory(solver)
@@ -35,6 +35,8 @@ class Optimizer(object):
         }
 
         # process the final options
+        if optns is None:
+            optns = {}
         if not isinstance(optns, dict):
             raise TypeError('Kona.Optimizer >> Options must be a dictionary!')
         self._process_options(optns)

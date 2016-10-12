@@ -20,18 +20,18 @@ class ReducedHessian(BaseHessian):
     quasi_newton : QuasiNewtonApproximation -like
         QN Hessian object to be used as preconditioner.
     """
-    def __init__(self, vector_factories, optns={}):
+    def __init__(self, vector_factories, optns=None):
         super(ReducedHessian, self).__init__(vector_factories, optns)
 
         # read reduced options
-        self.product_fac = get_opt(optns, 0.001, 'product_fac')
-        self.lamb = get_opt(optns, 0.0, 'lambda')
-        self.scale = get_opt(optns, 1.0, 'scale')
-        self.nu = get_opt(optns, 0.95, 'nu')
-        self.dynamic_tol = get_opt(optns, False, 'dynamic_tol')
+        self.product_fac = get_opt(self.optns, 0.001, 'product_fac')
+        self.lamb = get_opt(self.optns, 0.0, 'lambda')
+        self.scale = get_opt(self.optns, 1.0, 'scale')
+        self.nu = get_opt(self.optns, 0.95, 'nu')
+        self.dynamic_tol = get_opt(self.optns, False, 'dynamic_tol')
 
         # preconditioner and solver settings
-        self.precond = get_opt(optns, None, 'precond')
+        self.precond = get_opt(self.optns, None, 'precond')
         self.quasi_newton = None
         self.krylov = None
 

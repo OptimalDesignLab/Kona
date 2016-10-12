@@ -23,7 +23,7 @@ class STCG_RSNK(OptimizationAlgorithm):
     optns : dict, optional
     """
     def __init__(self, primal_factory, state_factory,
-                 eq_factory, ineq_factory, optns={}):
+                 eq_factory, ineq_factory, optns=None):
         # trigger base class initialization
         super(STCG_RSNK, self).__init__(
             primal_factory, state_factory, eq_factory, ineq_factory, optns)
@@ -33,18 +33,18 @@ class STCG_RSNK(OptimizationAlgorithm):
         self.state_factory.request_num_vectors(8)
 
         # get other options
-        self.globalization = get_opt(optns, 'trust', 'globalization')
-        self.radius = get_opt(optns, 1.0, 'trust', 'init_radius')
-        self.max_radius = get_opt(optns, 1.0, 'trust', 'max_radius')
-        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
+        self.globalization = get_opt(self.optns, 'trust', 'globalization')
+        self.radius = get_opt(self.optns, 1.0, 'trust', 'init_radius')
+        self.max_radius = get_opt(self.optns, 1.0, 'trust', 'max_radius')
+        self.factor_matrices = get_opt(self.optns, False, 'matrix_explicit')
 
         # set the krylov solver
         krylov_optns = {
             'krylov_file'   : get_opt(
-                optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
-            'subspace_size' : get_opt(optns, 10, 'rsnk', 'subspace_size'),
-            'check_res'     : get_opt(optns, True, 'rsnk', 'check_res'),
-            'rel_tol'       : get_opt(optns, 1e-2, 'rsnk', 'rel_tol'),
+                self.optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
+            'subspace_size' : get_opt(self.optns, 10, 'rsnk', 'subspace_size'),
+            'check_res'     : get_opt(self.optns, True, 'rsnk', 'check_res'),
+            'rel_tol'       : get_opt(self.optns, 1e-2, 'rsnk', 'rel_tol'),
         }
 
         if self.globalization is None:
@@ -57,7 +57,7 @@ class STCG_RSNK(OptimizationAlgorithm):
         self.krylov.radius = self.radius
 
         # initialize the ReducedHessian approximation
-        reduced_optns = get_opt(optns, {}, 'rsnk')
+        reduced_optns = get_opt(self.optns, {}, 'rsnk')
         reduced_optns['out_file'] = self.info_file
         self.hessian = ReducedHessian(
             [self.primal_factory, self.state_factory], reduced_optns)
@@ -66,17 +66,17 @@ class STCG_RSNK(OptimizationAlgorithm):
         self.hessian.set_krylov_solver(self.krylov)
 
         # initialize the preconditioner to the ReducedHessian
-        self.precond = get_opt(optns, None, 'rsnk', 'precond')
+        self.precond = get_opt(self.optns, None, 'rsnk', 'precond')
         if self.precond == 'quasi_newton':
             # set the type of quasi-Newton method
             try:
                 quasi_newton = get_opt(
-                    optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
-                qn_optns = get_opt(optns, {}, 'quasi_newton')
+                    self.optns, LimitedMemoryBFGS, 'quasi_newton', 'type')
+                qn_optns = get_opt(self.optns, {}, 'quasi_newton')
                 qn_optns['out_file'] = self.info_file
                 self.quasi_newton = quasi_newton(self.primal_factory, qn_optns)
             except Exception:
-                raise BadKonaOption(optns, 'quasi_newton','type')
+                raise BadKonaOption(self.optns, 'quasi_newton','type')
             self.precond = self.quasi_newton.solve
             self.hessian.quasi_newton = self.quasi_newton
         else:

@@ -16,7 +16,7 @@ class TotalConstraintJacobian(BaseHessian):
         Approximate/inexact matrix.
     """
     def __init__(self, vector_factories):
-        super(TotalConstraintJacobian, self).__init__(vector_factories, {})
+        super(TotalConstraintJacobian, self).__init__(vector_factories, None)
 
         # get references to individual factories
         self.primal_factory = None

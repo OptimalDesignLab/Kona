@@ -17,7 +17,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
     optns : dict, optional
     """
     def __init__(self, primal_factory, state_factory,
-                 eq_factory, ineq_factory, optns={}):
+                 eq_factory, ineq_factory, optns=None):
         # trigger base class initialization
         super(CompositeStepRSNK, self).__init__(
             primal_factory, state_factory, eq_factory, ineq_factory, optns)
@@ -28,20 +28,20 @@ class CompositeStepRSNK(OptimizationAlgorithm):
         self.eq_factory.request_num_vectors(16)
 
         # get general options
-        self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
+        self.factor_matrices = get_opt(self.optns, False, 'matrix_explicit')
 
         # get trust region options
-        self.radius = get_opt(optns, 0.5, 'trust', 'init_radius')
-        self.min_radius = get_opt(optns, 0.5/(2**3), 'trust', 'min_radius')
-        self.max_radius = get_opt(optns, 0.5*(2**3), 'trust', 'max_radius')
+        self.radius = get_opt(self.optns, 0.5, 'trust', 'init_radius')
+        self.min_radius = get_opt(self.optns, 0.5/(2**3), 'trust', 'min_radius')
+        self.max_radius = get_opt(self.optns, 0.5*(2**3), 'trust', 'max_radius')
 
         # get penalty parameter options
-        self.mu = get_opt(optns, 1.0, 'penalty', 'mu_init')
-        self.mu_pow = get_opt(optns, 1e-8, 'penalty', 'mu_pow')
-        self.mu_max = get_opt(optns, 1e4, 'penalty', 'mu_max')
+        self.mu = get_opt(self.optns, 1.0, 'penalty', 'mu_init')
+        self.mu_pow = get_opt(self.optns, 1e-8, 'penalty', 'mu_pow')
+        self.mu_max = get_opt(self.optns, 1e4, 'penalty', 'mu_max')
 
         # get globalization type
-        self.globalization = get_opt(optns, 'linesearch', 'globalization')
+        self.globalization = get_opt(self.optns, 'linesearch', 'globalization')
 
         if self.globalization not in ['trust', 'linesearch', None]:
             raise TypeError(
@@ -50,11 +50,11 @@ class CompositeStepRSNK(OptimizationAlgorithm):
                 'If you want to skip globalization, set to None.')
 
         # initialize the KKT matrix definition
-        normal_optns = get_opt(optns, {}, 'composite-step', 'normal-step')
+        normal_optns = get_opt(self.optns, {}, 'composite-step', 'normal-step')
         self.normal_KKT = AugmentedKKTMatrix(
             [self.primal_factory, self.state_factory, self.eq_factory],
             normal_optns)
-        tangent_optns = get_opt(optns, {}, 'composite-step', 'tangent-step')
+        tangent_optns = get_opt(self.optns, {}, 'composite-step', 'tangent-step')
         self.tangent_KKT = LagrangianHessian(
             [self.primal_factory, self.state_factory, self.eq_factory],
             tangent_optns)

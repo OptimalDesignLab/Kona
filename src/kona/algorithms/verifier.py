@@ -20,12 +20,18 @@ class Verifier(object):
     optns : dict
     """
     def __init__(self, primal_factory, state_factory, eq_factory, ineq_factory,
-                 optns={}):
-        # extract vector factories
+                 optns=None):
+        # set up vector factories
         self.primal_factory = primal_factory
         self.state_factory = state_factory
         self.eq_factory = eq_factory
         self.ineq_factory = ineq_factory
+
+        # create empty options dict
+        if optns is None:
+            optns = {}
+        else:
+            assert type(optns) is dict, "Invalid options! Must be a dictionary."
 
         # store solver handle
         self.solver = self.primal_factory._memory.solver
