@@ -5,7 +5,7 @@ from kona.linalg.memory import KonaMemory
 from kona.user import UserSolverIDF
 from dummy_solver import DummySolver
 
-class PrimalVectorTestCase(unittest.TestCase):
+class DesignVectorTestCase(unittest.TestCase):
 
     def setUp(self):
         solver = DummySolver(10, 10, 0)
@@ -161,7 +161,7 @@ class PrimalVectorTestCase(unittest.TestCase):
         zero = self.pv.norm2
         self.assertEqual(zero, 0.0)
 
-class TestCasePrimalVectorIDF(unittest.TestCase):
+class TestCaseDesignVectorIDF(unittest.TestCase):
 
     def setUp(self):
         solver = UserSolverIDF(5, 10, 10)
@@ -188,12 +188,12 @@ class TestCasePrimalVectorIDF(unittest.TestCase):
         expected_prod = 5.*5.*10
         self.assertEqual(inner_prod, expected_prod)
 
-    def test_convert(self):
-        self.pv.equals(1)
-        self.dv.equals(2)
-        self.pv.convert(self.dv)
-        inner_prod = self.pv.inner(self.pv)
-        expected_prod = 2.*2.*10
+    def test_convert_to_dual(self):
+        self.pv.equals(2)
+        self.dv.equals(1)
+        self.pv.convert_to_dual(self.dv)
+        inner_prod = self.dv.inner(self.dv)
+        expected_prod = 40.
         self.assertEqual(inner_prod, expected_prod)
 
 if __name__ == "__main__":

@@ -53,7 +53,7 @@ class DualVectorINEQTestCase(unittest.TestCase):
 class DualVectorEQTestCaseIDF(unittest.TestCase):
 
     def setUp(self):
-        solver = UserSolverIDF(5, 10, 0)
+        solver = UserSolverIDF(5, 10, 10)
         self.km = km = KonaMemory(solver)
 
         km.primal_factory.request_num_vectors(1)
@@ -65,10 +65,13 @@ class DualVectorEQTestCaseIDF(unittest.TestCase):
         self.sv = km.state_factory.generate()
         self.dv = km.eq_factory.generate()
 
-    def test_convert(self):
+    def test_convert_to_primal(self):
         self.pv.equals(5)
         self.dv.equals(1)
-        self.dv.convert(self.pv)
+        self.dv.convert_to_design(self.pv)
+        inner_prod = self.pv.inner(self.pv)
+        expected_prod = 10.
+        self.assertEqual(inner_prod, expected_prod)
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,7 +7,6 @@ class QuasiNewtonKKTMatrix(BaseHessian):
     jacobian.
     """
     def __init__(self, vector_factories, optns=None):
-
         super(QuasiNewtonKKTMatrix, self).__init__(vector_factories, optns)
 
         # read reduced options
@@ -19,21 +18,6 @@ class QuasiNewtonKKTMatrix(BaseHessian):
         self.feas_scale = get_opt(self.optns, 1.0, 'feas_scale')
         self.dynamic_tol = get_opt(self.optns, False, 'dynamic_tol')
         max_stored = get_opt(self.optns, 10, 'max_stored')
-
-        # get references to individual factories
-        self.primal_factory = None
-        self.state_factory = None
-        self.eq_factory = None
-        self.ineq_factory = None
-        for factory in self.vec_fac:
-            if factory._vec_type is DesignVector:
-                self.primal_factory = factory
-            elif factory._vec_type is StateVector:
-                self.state_factory = factory
-            elif factory._vec_type is DualVectorEQ:
-                self.eq_factory = factory
-            elif factory._vec_type is DualVectorINEQ:
-                self.ineq_factory = factory
 
         # set empty solver handle
         self.krylov = None

@@ -18,21 +18,6 @@ class TotalConstraintJacobian(BaseHessian):
     def __init__(self, vector_factories):
         super(TotalConstraintJacobian, self).__init__(vector_factories, None)
 
-        # get references to individual factories
-        self.primal_factory = None
-        self.state_factory = None
-        self.eq_factory = None
-        self.ineq_factory = None
-        for factory in self.vec_fac:
-            if factory._vec_type is DesignVector:
-                self.primal_factory = factory
-            elif factory._vec_type is StateVector:
-                self.state_factory = factory
-            elif factory._vec_type is DualVectorEQ:
-                self.eq_factory = factory
-            elif factory._vec_type is DualVectorINEQ:
-                self.ineq_factory = factory
-
         # request vector allocation
         self.primal_factory.request_num_vectors(1)
         self.state_factory.request_num_vectors(2)
@@ -56,10 +41,11 @@ class TotalConstraintJacobian(BaseHessian):
         self._transposed = True
         return self
 
-    def linearize(self, at_design, at_state):
+    def linearize(self, at_design, at_state, scale=1.0):
         # store references to the evaluation point
         self.at_design = at_design
         self.at_state = at_state
+        self.scale = 1.0
 
         # if this is the first linearization, produce some work vectors
         if not self._allocated:
@@ -96,13 +82,16 @@ class TotalConstraintJacobian(BaseHessian):
             # assemble the product
             dCdX(self.at_design, self.at_state).product(
                 in_vec, out_vec)
+            out_vec.times(self.scale)
             dCdU(self.at_design, self.at_state).product(
                 self.adjoint_work, self.dual_work)
+            self.dual_work.times(self.scale)
             out_vec.plus(self.dual_work)
         else:
             # assemble the RHS for the adjoint system
             dCdU(self.at_design, self.at_state).T.product(
-                in_vec, self.state_work, state_work=self.adjoint_work)
+                in_vec, self.state_work)
+            self.state_work.times(self.scale)
             self.state_work.times(-1.)
             # approximately solve the linear system
             if self._approx:
@@ -114,6 +103,7 @@ class TotalConstraintJacobian(BaseHessian):
             # assemble the final product
             dCdX(self.at_design, self.at_state).T.product(
                 in_vec, out_vec)
+            out_vec.times(self.scale)
             dRdX(self.at_design, self.at_state).T.product(
                 self.adjoint_work, self.design_work)
             out_vec.plus(self.design_work)

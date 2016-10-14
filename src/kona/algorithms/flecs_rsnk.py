@@ -75,11 +75,14 @@ class FLECS_RSNK(OptimizationAlgorithm):
         ############################################################
         self.precond = get_opt(self.optns, None, 'rsnk', 'precond')
         self.idf_schur = None
-        self.nested = None
         if self.precond is None:
             # use identity matrix product as preconditioner
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
+        elif self.precond is 'idf_schur':
+            self.idf_schur = ReducedSchurPreconditioner(
+                [primal_factory, state_factory, eq_factory, ineq_factory])
+            self.precond = self.idf_schur.product
         else:
             raise BadKonaOption(self.optns, 'rsnk', 'precond')
 
@@ -283,6 +286,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
             # linearize the KKT matrix
             self.KKT_matrix.linearize(X, state, adjoint)
+            if self.idf_schur is not None:
+                self.idf_schur.linearize(X, state)
 
             # move the vector to the RHS
             kkt_rhs.equals(dLdX)
@@ -470,5 +475,6 @@ from kona.linalg.common import factor_linear_system
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
+from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS
 from kona.linalg.solvers.util import EPS

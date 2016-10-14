@@ -17,12 +17,14 @@ class BaseHessian(object):
         File stream for data output.
     """
     def __init__(self, vector_factory, optns=None):
-        self.vec_fac = vector_factory
+        # get options dict
         if optns is None:
             self.optns = {}
         else:
             assert type(optns) is dict, "Invalid options! Must be a dictionary."
             self.optns = optns
+
+        # get output file
         self.out_file = get_opt(self.optns, sys.stdout, 'out_file')
         if isinstance(self.out_file, str):
             try:
@@ -30,6 +32,26 @@ class BaseHessian(object):
             except Exception:
                 _memory = self.vec_fac[0]._memory
             self.out_file = _memory.open_file(self.out_file)
+
+        # get references to individual factories
+        self.vec_fac = vector_factory
+        self.primal_factory = None
+        self.state_factory = None
+        self.eq_factory = None
+        self.ineq_factory = None
+        if type(self.vec_fac) is list:
+            for factory in self.vec_fac:
+                if factory is not None:
+                    if factory._vec_type is DesignVector:
+                        self.primal_factory = factory
+                    elif factory._vec_type is StateVector:
+                        self.state_factory = factory
+                    elif factory._vec_type is DualVectorEQ:
+                        self.eq_factory = factory
+                    elif factory._vec_type is DualVectorINEQ:
+                        self.ineq_factory = factory
+                    else:
+                        raise TypeError('Invalid vector factory!')
 
     def product(self, in_vec, out_vec):
         """
@@ -77,6 +99,8 @@ class QuasiNewtonApprox(BaseHessian):
     """
 
     def __init__(self, vector_factory, optns={}):
+        assert isinstance(vector_factory, VectorFactory), \
+            "LimitedMemoryBFGS() >> Invalid vector factory!"
         super(QuasiNewtonApprox, self).__init__(vector_factory, optns)
         self.max_stored = get_opt(optns, 10, 'max_stored')
 
@@ -100,3 +124,6 @@ class QuasiNewtonApprox(BaseHessian):
 # imports at the bottom to prevent circular import errors
 import sys
 from kona.options import get_opt
+from kona.linalg.memory import VectorFactory
+from kona.linalg.vectors.common import DesignVector, StateVector
+from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ

@@ -27,10 +27,15 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         # hessian preconditiner settings
         ############################################################
         self.precond = get_opt(self.optns, None, 'rsnk', 'precond')
+        self.idf_schur = None
         if self.precond is None:
             # use identity matrix product as preconditioner
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
+        elif self.precond is 'idf_schur':
+            self.idf_schur = ReducedSchurPreconditioner(
+                [primal_factory, state_factory, eq_factory, ineq_factory])
+            self.precond = self.idf_schur.product
         else:
             raise BadKonaOption(self.optns, 'rsnk', 'precond')
 
@@ -152,6 +157,18 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         out_vec.primal.plus(self.prod_work.primal)
         out_vec.dual.minus(self.prod_work.dual)
 
+    def _precond(self, in_vec, out_vec):
+        if self.mu < 1.:
+            self.precond(in_vec, out_vec)
+            out_vec.times(1./(1. - self.mu))
+
+        if self.mu > 0.:
+            self.prod_work.equals(in_vec)
+            self.prod_work.times(1./self.mu)
+
+            out_vec.primal.plus(self.prod_work.primal)
+            out_vec.dual.minus(self.prod_work.dual)
+
     def solve(self):
         self.info_file.write(
             '\n' +
@@ -250,7 +267,9 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         self.hessian.linearize(
             x, state, adj,
             obj_scale=obj_fac, cnstr_scale=cnstr_fac)
-        self.krylov.solve(self._mat_vec, rhs_vec, t, self.precond)
+        if self.idf_schur is not None:
+            self.idf_schur.linearize(x, state, scale=cnstr_fac)
+        self.krylov.solve(self._mat_vec, rhs_vec, t, self._precond)
 
         # normalize tangent vector
         tnorm = np.sqrt(t.inner(t) + 1.0)
@@ -382,13 +401,15 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                 self.hessian.linearize(
                     x, state, adj,
                     obj_scale=obj_fac, cnstr_scale=cnstr_fac)
+                if self.idf_schur is not None:
+                    self.idf_schur.linearize(x, state, scale=cnstr_fac)
 
                 # define the RHS vector for the homotopy system
                 dJdX_hom.times(-1.)
 
                 # solve the system
                 dx.equals(0.0)
-                self.krylov.solve(self._mat_vec, dJdX_hom, dx, self.precond)
+                self.krylov.solve(self._mat_vec, dJdX_hom, dx, self._precond)
                 dx_newt.plus(dx)
 
                 # update the design
@@ -500,4 +521,5 @@ from kona.linalg.common import current_solution, factor_linear_system, objective
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
+from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FGMRES

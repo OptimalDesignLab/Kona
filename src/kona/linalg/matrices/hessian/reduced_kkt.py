@@ -70,21 +70,6 @@ class ReducedKKTMatrix(BaseHessian):
         self.feas_scale = get_opt(self.optns, 1.0, 'feas_scale')
         self.dynamic_tol = get_opt(self.optns, False, 'dynamic_tol')
 
-        # get references to individual factories
-        self.primal_factory = None
-        self.state_factory = None
-        self.eq_factory = None
-        self.ineq_factory = None
-        for factory in self.vec_fac:
-            if factory._vec_type is DesignVector:
-                self.primal_factory = factory
-            elif factory._vec_type is StateVector:
-                self.state_factory = factory
-            elif factory._vec_type is DualVectorEQ:
-                self.eq_factory = factory
-            elif factory._vec_type is DualVectorINEQ:
-                self.ineq_factory = factory
-
         # set empty solver handle
         self.krylov = None
 
@@ -199,8 +184,8 @@ class ReducedKKTMatrix(BaseHessian):
 
         # compute adjoint residual at the linearization
         self.dual_work.equals_constraints(self.at_design, self.at_state)
-        self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
-        self.adjoint_res.times(self.obj_scale)
+        self.adjoint_res.equals_objective_partial(
+            self.at_design, self.at_state, scale=self.obj_scale)
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[0])
         self.adjoint_res.plus(self.state_work[0])
@@ -210,9 +195,8 @@ class ReducedKKTMatrix(BaseHessian):
         self.adjoint_res.plus(self.state_work[0])
 
         # compute reduced gradient at the linearization
-        self.reduced_grad.equals_objective_partial(self.at_design,
-                                                   self.at_state)
-        self.reduced_grad.times(self.obj_scale)
+        self.reduced_grad.equals_objective_partial(
+            self.at_design, self.at_state, scale=self.obj_scale)
         self.dRdX.linearize(self.at_design, self.at_state)
         self.dRdX.T.product(self.at_adjoint, self.primal_work)
         self.reduced_grad.plus(self.primal_work)
@@ -288,9 +272,8 @@ class ReducedKKTMatrix(BaseHessian):
 
         # first part of LHS: evaluate the adjoint equation residual at
         # perturbed design and state
-        self.state_work[0].equals_objective_partial(self.pert_design,
-                                                    self.state_work[2])
-        self.state_work[0].times(self.obj_scale)
+        self.state_work[0].equals_objective_partial(
+            self.pert_design, self.state_work[2], scale=self.obj_scale)
         pert_state = self.state_work[2] # aliasing for readability
         self.dRdU.linearize(self.pert_design, pert_state)
         self.dRdU.T.product(self.at_adjoint, self.state_work[1])
@@ -330,8 +313,8 @@ class ReducedKKTMatrix(BaseHessian):
         self.state_work[1].equals_ax_p_by(
             1.0, self.at_adjoint, epsilon_fd, self.lambda_adj)
         pert_adjoint = self.state_work[1] # aliasing for readability
-        out_design.equals_objective_partial(self.pert_design, pert_state)
-        out_design.times(self.obj_scale)
+        out_design.equals_objective_partial(
+            self.pert_design, pert_state, scale=self.obj_scale)
         self.dRdX.linearize(self.pert_design, pert_state)
         self.dRdX.T.product(pert_adjoint, self.primal_work)
         out_design.plus(self.primal_work)

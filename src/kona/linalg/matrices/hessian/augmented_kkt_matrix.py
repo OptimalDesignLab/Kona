@@ -20,23 +20,6 @@ class AugmentedKKTMatrix(BaseHessian):
     def __init__(self, vector_factories, optns=None):
         super(AugmentedKKTMatrix, self).__init__(vector_factories, optns)
 
-        # get references to individual factories
-        self.primal_factory = None
-        self.state_factory = None
-        self.eq_factory = None
-        self.ineq_factory = None
-        for factory in self.vec_fac:
-            if factory._vec_type is DesignVector:
-                self.primal_factory = factory
-            elif factory._vec_type is StateVector:
-                self.state_factory = factory
-            elif factory._vec_type is DualVectorEQ:
-                self.eq_factory = factory
-            elif factory._vec_type is DualVectorINEQ:
-                self.eq_factory = factory
-            else:
-                raise TypeError('Invalid vector factory!')
-
         # decide which krylov solver we use
         self.use_gcrot = get_opt(self.optns, True, 'use_gcrot')
 

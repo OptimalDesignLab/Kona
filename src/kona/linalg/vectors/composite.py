@@ -341,6 +341,18 @@ class CompositeDualVector(CompositeVector):
 
         super(CompositeDualVector, self).__init__([dual_eq, dual_ineq])
 
+    def convert_to_design(self, primal_vector):
+        if isinstance(primal_vector, CompositePrimalVector):
+            design_vector = primal_vector.design
+        elif isinstance(primal_vector, DesignVector):
+            design_vector = primal_vector
+        else:
+            raise AssertionError(
+                "CompositeDualVector() >> " +
+                "Target vector must be either DesignVector " +
+                "or CompositePrimalVector!")
+        self.eq.convert_to_design(design_vector)
+
     def equals_constraints(self, at_primal, at_state, scale=1.0):
         """
         Evaluate equality and inequality constraints in-place.
@@ -388,6 +400,17 @@ class CompositePrimalVector(CompositeVector):
 
         super(CompositePrimalVector, self).__init__([primal_vec, dual_ineq])
         self.barrier = None
+
+    def restrict_to_design(self):
+        self.design.restrict_to_design()
+
+    def restrict_to_target(self):
+        self.design.restrict_to_target()
+
+    def convert_to_dual(self, dual_vector):
+        assert isinstance(dual_vector, CompositeDualVector), \
+            "CompositePrimalvector() >> Dual vector must be composite!"
+        self.design.convert_to_dual(dual_vector.eq)
 
     def equals_init_design(self):
         self.design.equals_init_design()

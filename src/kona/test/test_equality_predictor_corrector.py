@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import unittest
 
 from kona import Optimizer
@@ -57,77 +54,81 @@ class PredictorCorrectorCnstrTestCase(unittest.TestCase):
         diff = abs(solver.curr_design - expected)
         self.assertTrue(max(diff) < 1e-4)
 
-        file = open('./kona_hist.dat', 'r')
-        data = np.loadtxt(file, usecols=(0, 3, 10))
-        outers = data[:, 0]
-        obj_dump = data[:, 1]
-        mu_dump = data[:, 2]
+        # import matplotlib
+        # matplotlib.use('Agg')
+        # import matplotlib.pyplot as plt
 
-        mu = []
-        obj = []
-        idx = 0
-        for i in range(len(outers)):
-            if outers[i] == solver.iters[idx]:
-                idx += 1
-                mu.append(mu_dump[i])
-                obj.append(obj_dump[i])
-                if idx > len(solver.iters) - 1:
-                    break
-
-        x = []
-        y = []
-        z = []
-        lamb = []
-        for i in range(len(solver.design_points)):
-            x.append(solver.design_points[i][0])
-            y.append(solver.design_points[i][1])
-            z.append(solver.design_points[i][2])
-            lamb.append(solver.dual_points[i][0])
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        obj_curv = ax.plot(mu, obj, '-kx')
-        ax.set_xlim([mu[0], mu[-1]])
-        ax.set_xlabel('mu')
-        ax.set_ylabel('objective')
-        plt.savefig('obj_curv.png')
-        plt.close()
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        x_curv = ax.plot(mu, x, '-bx')
-        ax.set_xlim([mu[0], mu[-1]])
-        ax.set_xlabel('mu')
-        ax.set_ylabel('x')
-        plt.savefig('x_curv.png')
-        plt.close()
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        y_curv = ax.plot(mu, y, '-rx')
-        ax.set_xlim([mu[0], mu[-1]])
-        ax.set_xlabel('mu')
-        ax.set_ylabel('y')
-        plt.savefig('y_curv.png')
-        plt.close()
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        z_curv = ax.plot(mu, z, '-gx')
-        ax.set_xlim([mu[0], mu[-1]])
-        ax.set_xlabel('mu')
-        ax.set_ylabel('z')
-        plt.savefig('z_curv.png')
-        plt.close()
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        lamb_curv = ax.plot(mu, lamb, '-kx')
-        ax.set_xlim([mu[0], mu[-1]])
-        ax.set_xlabel('mu')
-        ax.set_ylabel('multiplier')
-        plt.savefig('lamb_curv.png')
-        plt.close()
+        # file = open('./kona_hist.dat', 'r')
+        # data = np.loadtxt(file, usecols=(0, 3, 10))
+        # outers = data[:, 0]
+        # obj_dump = data[:, 1]
+        # mu_dump = data[:, 2]
+        #
+        # mu = []
+        # obj = []
+        # idx = 0
+        # for i in range(len(outers)):
+        #     if outers[i] == solver.iters[idx]:
+        #         idx += 1
+        #         mu.append(mu_dump[i])
+        #         obj.append(obj_dump[i])
+        #         if idx > len(solver.iters) - 1:
+        #             break
+        #
+        # x = []
+        # y = []
+        # z = []
+        # lamb = []
+        # for i in range(len(solver.design_points)):
+        #     x.append(solver.design_points[i][0])
+        #     y.append(solver.design_points[i][1])
+        #     z.append(solver.design_points[i][2])
+        #     lamb.append(solver.dual_points[i][0])
+        #
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # obj_curv = ax.plot(mu, obj, '-kx')
+        # ax.set_xlim([mu[0], mu[-1]])
+        # ax.set_xlabel('mu')
+        # ax.set_ylabel('objective')
+        # plt.savefig('obj_curv.png')
+        # plt.close()
+        #
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # x_curv = ax.plot(mu, x, '-bx')
+        # ax.set_xlim([mu[0], mu[-1]])
+        # ax.set_xlabel('mu')
+        # ax.set_ylabel('x')
+        # plt.savefig('x_curv.png')
+        # plt.close()
+        #
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # y_curv = ax.plot(mu, y, '-rx')
+        # ax.set_xlim([mu[0], mu[-1]])
+        # ax.set_xlabel('mu')
+        # ax.set_ylabel('y')
+        # plt.savefig('y_curv.png')
+        # plt.close()
+        #
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # z_curv = ax.plot(mu, z, '-gx')
+        # ax.set_xlim([mu[0], mu[-1]])
+        # ax.set_xlabel('mu')
+        # ax.set_ylabel('z')
+        # plt.savefig('z_curv.png')
+        # plt.close()
+        #
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # lamb_curv = ax.plot(mu, lamb, '-kx')
+        # ax.set_xlim([mu[0], mu[-1]])
+        # ax.set_xlabel('mu')
+        # ax.set_ylabel('multiplier')
+        # plt.savefig('lamb_curv.png')
+        # plt.close()
 
 
 if __name__ == "__main__":

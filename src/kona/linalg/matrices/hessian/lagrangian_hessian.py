@@ -14,23 +14,6 @@ class LagrangianHessian(BaseHessian):
     def __init__(self, vector_factories, optns=None):
         super(LagrangianHessian, self).__init__(vector_factories, optns)
 
-        # get references to individual factories
-        self.primal_factory = None
-        self.state_factory = None
-        self.eq_factory = None
-        self.ineq_factory = None
-        for factory in self.vec_fac:
-            if factory._vec_type is DesignVector:
-                self.primal_factory = factory
-            elif factory._vec_type is StateVector:
-                self.state_factory = factory
-            elif factory._vec_type is DualVectorEQ:
-                self.ineq_factory = factory
-            elif factory._vec_type is DualVectorINEQ:
-                self.ineq_factory = factory
-            else:
-                raise TypeError('Invalid vector factory!')
-
         # request vector allocation
         self.primal_factory.request_num_vectors(3)
         self.state_factory.request_num_vectors(6)
@@ -66,7 +49,8 @@ class LagrangianHessian(BaseHessian):
         else:
             raise TypeError('Invalid null-space projector!')
 
-    def linearize(self, X, at_state, at_adjoint):
+    def linearize(self, X, at_state, at_adjoint,
+                  obj_scale=1.0, cnstr_scale=1.0):
         # store references to the evaluation point
         if isinstance(X.primal, CompositePrimalVector):
             self.at_design = X.primal.design
@@ -114,23 +98,33 @@ class LagrangianHessian(BaseHessian):
                 self.dual_out = None
             self._allocated = True
 
+        # reset radius
+        self.radius = None
+
+        # store scales
+        self.obj_scale = obj_scale
+        self.cnstr_scale = cnstr_scale
+
         # compute adjoint residual at the linearization
-        self.adjoint_res.equals_objective_partial(self.at_design, self.at_state)
+        self.adjoint_res.equals_objective_partial(
+            self.at_design, self.at_state, scale=self.obj_scale)
         dRdU(self.at_design, self.at_state).T.product(
             self.at_adjoint, self.state_work)
         self.adjoint_res.plus(self.state_work)
         dCdU(self.at_design, self.at_state).T.product(
             self.at_dual, self.state_work)
+        self.state_work.times(self.cnstr_scale)
         self.adjoint_res.plus(self.state_work)
 
         # compute reduced gradient at the linearization
-        self.reduced_grad.equals_objective_partial(self.at_design,
-                                                   self.at_state)
+        self.reduced_grad.equals_objective_partial(
+            self.at_design, self.at_state, scale=self.obj_scale)
         dRdX(self.at_design, self.at_state).T.product(
             self.at_adjoint, self.design_work)
         self.reduced_grad.plus(self.design_work)
         dCdX(self.at_design, self.at_state).T.product(
             self.at_dual, self.design_work)
+        self.design_work.times(self.cnstr_scale)
         self.reduced_grad.plus(self.design_work)
 
         # if slacks exist, compute the slack term
@@ -148,12 +142,14 @@ class LagrangianHessian(BaseHessian):
             1.0, self.at_design, epsilon_fd, in_vec)
 
         # compute partial (d^2 L/dx^2)*in_vec and store in out_vec
-        out_vec.equals_objective_partial(self.pert_design, self.at_state)
+        out_vec.equals_objective_partial(
+            self.pert_design, self.at_state, scale=self.obj_scale)
         dRdX(self.pert_design, self.at_state).T.product(
             self.at_adjoint, self.design_work)
         out_vec.plus(self.design_work)
         dCdX(self.pert_design, self.at_state).T.product(
             self.at_dual, self.design_work)
+        self.design_work.times(self.cnstr_scale)
         out_vec.plus(self.design_work)
         out_vec.minus(self.reduced_grad)
         out_vec.divide_by(epsilon_fd)
@@ -177,25 +173,27 @@ class LagrangianHessian(BaseHessian):
         # build RHS for second adjoint system
 
         # STEP 1: perturb design, evaluate adjoint residual, take difference
-        self.adjoint_work.equals_objective_partial(self.pert_design,
-                                                   self.at_state)
+        self.adjoint_work.equals_objective_partial(
+            self.pert_design, self.at_state, scale=self.obj_scale)
         dRdU(self.pert_design, self.at_state).T.product(
             self.at_adjoint, self.state_work)
         self.adjoint_work.plus(self.state_work)
         dCdU(self.pert_design, self.at_state).T.product(
             self.at_dual, self.state_work)
+        self.state_work.times(self.cnstr_scale)
         self.adjoint_work.plus(self.state_work)
         self.adjoint_work.minus(self.adjoint_res)
         self.adjoint_work.divide_by(epsilon_fd)
 
         # STEP 2: perturb state, evaluate adjoint residual, take difference
-        self.reverse_adjoint.equals_objective_partial(self.at_design,
-                                                      self.pert_state)
+        self.reverse_adjoint.equals_objective_partial(
+            self.at_design, self.pert_state, scale=self.obj_scale)
         dRdU(self.at_design, self.pert_state).T.product(
             self.at_adjoint, self.state_work)
         self.reverse_adjoint.plus(self.state_work)
         dCdU(self.at_design, self.pert_state).T.product(
             self.at_dual, self.state_work)
+        self.state_work.times(self.cnstr_scale)
         self.reverse_adjoint.plus(self.state_work)
         self.reverse_adjoint.minus(self.adjoint_res)
         self.reverse_adjoint.divide_by(epsilon_fd)
@@ -218,13 +216,14 @@ class LagrangianHessian(BaseHessian):
         out_vec.plus(self.design_work)
 
         # apply the Lagrangian adjoint to the cross-derivative part of Hessian
-        self.design_work.equals_objective_partial(self.at_design,
-                                                  self.pert_state)
+        self.design_work.equals_objective_partial(
+            self.at_design, self.pert_state, scale=self.obj_scale)
         dRdX(self.at_design, self.pert_state).T.product(
             self.at_adjoint, self.pert_design)
         self.design_work.plus(self.pert_design)
         dCdX(self.at_design, self.pert_state).T.product(
             self.at_dual, self.pert_design)
+        self.pert_design.times(self.cnstr_scale)
         self.design_work.plus(self.pert_design)
         self.design_work.minus(self.reduced_grad)
         self.design_work.divide_by(epsilon_fd)

@@ -116,6 +116,16 @@ class KonaMemory(object):
         self.nineq = solver.num_ineq
         self.rank = self.solver.get_rank()
 
+        # check if this is an IDF problem
+        if isinstance(self.solver, UserSolverIDF):
+            self.num_real_design = self.solver.num_real_design
+            self.num_real_ceq = self.solver.num_real_ceq
+        elif isinstance(self.solver, UserSolver):
+            self.num_real_design = None
+            self.num_real_ceq = None
+        else:
+            raise TypeError("Solver must be based on UserSolver or UserSolverIDF!")
+
         # empty design bounds
         self.design_lb = None
         self.design_ub = None
@@ -202,5 +212,5 @@ class KonaMemory(object):
         return KonaFile(filename, self.rank)
 
 # imports at the bottom to prevent circular errors
-from kona.user import BaseVector
+from kona.user import BaseVector, UserSolver, UserSolverIDF
 from kona.linalg.vectors.common import *

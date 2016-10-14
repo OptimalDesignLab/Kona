@@ -104,6 +104,16 @@ class PredictorCorrector(OptimizationAlgorithm):
         self.prod_work.times(1. - self.lamb)
         out_vec.plus(self.prod_work)
 
+    def _precond(self, in_vec, out_vec):
+        if self.lamb > 0:
+            self.precond(in_vec, out_vec)
+            out_vec.times(1./self.lamb)
+
+        if self.lamb < 1.:
+            self.prod_work.equals(in_vec)
+            self.prod_work.times(1./(1. - self.lamb))
+            out_vec.plus(self.prod_work)
+
     def solve(self):
         self.info_file.write(
             '\n' +

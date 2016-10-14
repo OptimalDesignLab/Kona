@@ -38,15 +38,6 @@ class ReducedHessian(BaseHessian):
         # reset the linearization flag
         self._allocated = False
 
-        # get references to individual factories
-        self.primal_factory = None
-        self.state_factory = None
-        for factory in self.vec_fac:
-            if factory._vec_type is DesignVector:
-                self.primal_factory = factory
-            elif factory._vec_type is StateVector:
-                self.state_factory = factory
-
         # request vector memory for future allocation
         self.primal_factory.request_num_vectors(4)
         self.state_factory.request_num_vectors(7)
