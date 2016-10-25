@@ -457,7 +457,7 @@ class CompositePrimalVector(CompositeVector):
             at_dual_ineq = at_dual
         # compute the design derivative of the lagrangian
         self.design.equals_lagrangian_total_gradient(
-            self, at_state, at_dual, at_adjoint, obj_scale, cnstr_scale)
+            at_primal, at_state, at_dual, at_adjoint, obj_scale, cnstr_scale)
         # compute the slack derivative of the lagrangian
         self.slack.equals(at_slack)
         self.slack.pow(-1.)

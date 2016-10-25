@@ -33,6 +33,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
         elif self.precond is 'idf_schur':
+            self.info_file.write("Using IDF-Schur Preconditioner...\n")
             self.idf_schur = ReducedSchurPreconditioner(
                 [primal_factory, state_factory, eq_factory, ineq_factory])
             self.precond = self.idf_schur.product
@@ -56,11 +57,9 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         self.mu = 1.0
         self.inner_tol = get_opt(self.optns, 1e-2, 'homotopy', 'inner_tol')
         self.inner_maxiter = get_opt(self.optns, 50, 'homotopy', 'inner_maxiter')
-        self.step = get_opt(
-            self.optns, 0.1, 'homotopy', 'init_step')
+        self.step = get_opt(self.optns, 0.1, 'homotopy', 'init_step')
         self.nom_dcurve = get_opt(self.optns, 1.0, 'homotopy', 'nominal_dist')
-        self.nom_angl = get_opt(
-            self.optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
+        self.nom_angl = get_opt(self.optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
         self.max_factor = get_opt(self.optns, 2.0, 'homotopy', 'max_factor')
         self.min_factor = get_opt(self.optns, 0.5, 'homotopy', 'min_factor')
 
@@ -106,7 +105,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             '\n'
         )
 
-    def _write_inner(self, outer, inner,
+    def _write_inner(self, outer, inner, 
                      obj, lag, opt_norm, feas_norm,
                      hom, hom_opt, hom_feas):
         if obj < 0.:
@@ -161,6 +160,8 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         if self.mu < 1.:
             self.precond(in_vec, out_vec)
             out_vec.times(1./(1. - self.mu))
+        else:
+            out_vec.equals(0.0)
 
         if self.mu > 0.:
             self.prod_work.equals(in_vec)
@@ -268,7 +269,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             x, state, adj,
             obj_scale=obj_fac, cnstr_scale=cnstr_fac)
         if self.idf_schur is not None:
-            self.idf_schur.linearize(x, state, scale=cnstr_fac)
+            self.idf_schur.linearize(x.primal, state, scale=cnstr_fac)
         self.krylov.solve(self._mat_vec, rhs_vec, t, self._precond)
 
         # normalize tangent vector
@@ -402,7 +403,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                     x, state, adj,
                     obj_scale=obj_fac, cnstr_scale=cnstr_fac)
                 if self.idf_schur is not None:
-                    self.idf_schur.linearize(x, state, scale=cnstr_fac)
+                    self.idf_schur.linearize(x.primal, state, scale=cnstr_fac)
 
                 # define the RHS vector for the homotopy system
                 dJdX_hom.times(-1.)

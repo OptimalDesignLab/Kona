@@ -1,3 +1,4 @@
+EPS = 1e-12
 
 class Verifier(object):
     """
@@ -326,7 +327,7 @@ class Verifier(object):
         u_s.equals(10.0)
         u_s.divide_by(u_s.norm2)
         one = u_s.norm2
-        if abs(one) - 1 > EPS:
+        if one - 1. > EPS:
             self.failures['state_vec']['equals_value'] = True
             self.failures['state_vec']['times'] = True
             self.failures['state_vec']['inner'] = True
@@ -1168,6 +1169,6 @@ class Verifier(object):
 import sys
 from kona.options import get_opt
 from kona.linalg.common import objective_value, factor_linear_system
-from kona.linalg.solvers.util import calc_epsilon, EPS
+from kona.linalg.solvers.util import calc_epsilon
 from kona.linalg.matrices.common import dRdX, dRdU
 from kona.linalg.matrices.common import dCEQdX, dCEQdU, dCINdX, dCINdU

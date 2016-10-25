@@ -124,7 +124,8 @@ class KonaMemory(object):
             self.num_real_design = None
             self.num_real_ceq = None
         else:
-            raise TypeError("Solver must be based on UserSolver or UserSolverIDF!")
+            raise TypeError(
+                "Solver must be based on UserSolver or UserSolverIDF!")
 
         # empty design bounds
         self.design_lb = None

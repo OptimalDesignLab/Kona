@@ -180,11 +180,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
             factor_linear_system(X.primal, state)
 
         # perform an adjoint solution for the Lagrangian
-        state_work.equals_objective_partial(X.primal, state)
-        dCdU(X.primal, state).T.product(X.dual, adjoint)
-        state_work.plus(adjoint)
-        state_work.times(-1.)
-        dRdU(X.primal, state).T.solve(state_work, adjoint)
+        adjoint.equals_lagrangian_adjoint(X, state, state_work)
 
         # send initial point info to the user
         solver_info = current_solution(self.iter, X.primal, state, adjoint,
@@ -228,8 +224,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     'feas_norm0         = %e\n'%self.feas_norm0)
 
                 # calculate convergence tolerances
-                grad_tol = self.primal_tol * max(self.grad_norm0, 1e-3)
-                feas_tol = self.cnstr_tol * max(self.feas_norm0, 1e-3)
+                grad_tol = self.primal_tol
+                feas_tol = self.cnstr_tol
 
             else:
                 # calculate current norms
@@ -287,7 +283,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
             # linearize the KKT matrix
             self.KKT_matrix.linearize(X, state, adjoint)
             if self.idf_schur is not None:
-                self.idf_schur.linearize(X, state)
+                self.idf_schur.linearize(X.primal, state)
 
             # move the vector to the RHS
             kkt_rhs.equals(dLdX)
@@ -327,11 +323,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     factor_linear_system(X.primal, state)
 
                 # perform an adjoint solution for the Lagrangian
-                state_work.equals_objective_partial(X.primal, state)
-                dCdU(X.primal, state).T.product(X.dual, adjoint)
-                state_work.plus(adjoint)
-                state_work.times(-1.)
-                dRdU(X.primal, state).T.solve(state_work, adjoint)
+                adjoint.equals_lagrangian_adjoint(X, state, state_work)
 
             # send current solution info to the user
             solver_info = current_solution(
@@ -423,7 +415,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
                             '%f\n'%self.radius)
                         self.krylov.radius = self.radius
                         self.krylov.re_solve(kkt_rhs, P)
-                        self.radius = self.krylov.radius
+                        # self.radius = self.krylov.radius
             else:
                 if iters == 2:
                     # 2nd order correction worked -- yay!
@@ -442,11 +434,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     factor_linear_system(X.primal, state)
 
                 # perform an adjoint solution for the Lagrangian
-                state_work.equals_objective_partial(X.primal, state)
-                dCdU(X.primal, state).T.product(X.dual, adjoint)
-                state_work.plus(adjoint)
-                state_work.times(-1.)
-                dRdU(X.primal, state).T.solve(state_work, adjoint)
+                adjoint.equals_lagrangian_adjoint(X, state, state_work)
 
                 # check the trust radius
                 if self.krylov.trust_active:
@@ -454,7 +442,9 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     self.info_file.write('Trust radius active...\n')
                     if rho >= 0.5:
                         # model is good enough -- increase radius
-                        self.radius = min(2.*P.primal.norm2, self.max_radius)
+                        self.radius = min(
+                            max(2.*P.primal.norm2, self.min_radius),
+                            self.max_radius)
                         # self.radius = min(2.*self.radius, self.max_radius)
                         self.info_file.write(
                             '   Radius increased -> %f\n'%self.radius)
@@ -473,7 +463,7 @@ from kona.options import BadKonaOption, get_opt
 from kona.linalg.common import current_solution, objective_value
 from kona.linalg.common import factor_linear_system
 from kona.linalg.vectors.composite import ReducedKKTVector
-from kona.linalg.matrices.common import dCdU, dRdU, IdentityMatrix
+from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS

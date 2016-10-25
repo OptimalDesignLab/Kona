@@ -10,7 +10,7 @@ class IDFSchurTestCase(unittest.TestCase):
 
     def test_with_simple_idf(self):
 
-        solver = SimpleIDF(num_disc=5, init_x=5)
+        solver = SimpleIDF(num_disc=5, init_x=1, approx_inv=False)
 
         optns = {
             'info_file' : 'kona_info.dat',
@@ -26,8 +26,8 @@ class IDFSchurTestCase(unittest.TestCase):
             },
 
             'penalty' : {
-                'mu_init' : 0.1,
-                'mu_pow' : 0.1,
+                'mu_init' : 100.0,
+                'mu_pow' : 0.5,
                 'mu_max' : 1e5,
             },
 
@@ -35,7 +35,7 @@ class IDFSchurTestCase(unittest.TestCase):
                 'inner_tol': 1e-2,
                 'inner_maxiter': 20,
                 'nominal_dist': 10.0,
-                'nominal_angle': 15.0 * np.pi / 180.,
+                'nominal_angle': 20.0 * np.pi / 180.,
             },
 
             'rsnk' : {
@@ -71,7 +71,9 @@ class IDFSchurTestCase(unittest.TestCase):
             },
         }
 
+        # algorithm = FLECS_RSNK
         algorithm = PredictorCorrectorCnstr
+        # algorithm = Verifier
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 

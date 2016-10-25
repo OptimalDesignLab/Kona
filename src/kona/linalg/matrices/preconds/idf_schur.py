@@ -36,8 +36,14 @@ class ReducedSchurPreconditioner(BaseHessian):
             self.ineq_factory.request_num_vectors(1)
 
         # initialize the internal FGMRES solver
-        self.krylov = FGMRES(self.primal_factory)
-        self.krylov.out_file = KonaFile('kona_schur.dat', 0)
+        krylov_opts = {
+            'subspace_size' : 10,
+            'rel_tol' : 1e-2,
+            'check_res' :  False,
+            'check_LS_grad' : False,
+            'krylov_file' : KonaFile(
+                'kona_schur.dat', self.primal_factory._memory.rank)}
+        self.krylov = FGMRES(self.primal_factory, optns=krylov_opts)
         self.max_iter = 15
 
         # initialize an identity preconditioner
@@ -52,46 +58,38 @@ class ReducedSchurPreconditioner(BaseHessian):
         self._allocated = False
 
     def prod_design(self, in_vec, out_vec):
-        # in_vec = DesignVector
-        # out_vec = DesignVector
         self.design_prod.equals(in_vec)
         self.design_prod.restrict_to_design()
         self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
+        out_vec.equals(0.0)
         self.dual_prod.convert_to_design(out_vec)
 
     def prod_target(self, in_vec, out_vec):
-        # in_vec = DesignVector
-        # out_vec = DesignVector
         self.design_prod.equals(in_vec)
         self.design_prod.restrict_to_target()
         self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
+        out_vec.equals(0.0)
         self.dual_prod.convert_to_design(out_vec)
 
     def prod_design_t(self, in_vec, out_vec):
-        # in_vec = DualVectorEQ or CompositeDualVector
-        # out_vec = DualVectorEQ or CompositeDualVector
+        self.dual_prod.equals(0.0)
         in_vec.convert_to_dual(self.dual_prod)
         self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
         out_vec.restrict_to_design()
 
     def prod_target_t(self, in_vec, out_vec):
-        # in_vec = DualVectorEQ or CompositeDualVector
-        # out_vec = DualVectorEQ or CompositeDualVector
+        self.dual_prod.equals(0.0)
         in_vec.convert_to_dual(self.dual_prod)
         self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
         out_vec.restrict_to_target()
 
-    def linearize(self, at_KKT, at_state, scale=1.0):
+    def linearize(self, at_primal, at_state, scale=1.0):
         # store references to the evaluation point
-        try:
-            self.at_design = at_KKT.primal.design
-            self.at_slack = at_KKT.primal.slack
-        except Exception:
-            self.at_design = at_KKT.primal
-            self.at_slack = None
+        if isinstance(at_primal, CompositePrimalVector):
+            self.at_design = at_primal.design
+        else:
+            self.at_design = at_primal
         self.at_state = at_state
-        self.at_dual = at_KKT.dual
-        self.at_KKT = at_KKT
 
         # save the scaling on constraint terms
         self.scale = scale
@@ -125,11 +123,6 @@ class ReducedSchurPreconditioner(BaseHessian):
         out_dual = out_vec.dual
         design_work = self.design_work
 
-        # set solver settings
-        rel_tol = 0.01
-        self.krylov.rel_tol = rel_tol
-        self.krylov.check_res = False
-
         out_design.equals(0.0)
         out_dual.equals(0.0)
 
@@ -159,8 +152,7 @@ class ReducedSchurPreconditioner(BaseHessian):
         out_design.plus(design_work[1])
 
 # imports here to prevent circular errors
-from kona.linalg.vectors.common import DesignVector, StateVector
-from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
+from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.vectors.composite import CompositeDualVector
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import TotalConstraintJacobian
