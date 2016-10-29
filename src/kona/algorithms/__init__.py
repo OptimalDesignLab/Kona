@@ -5,6 +5,5 @@ from flecs_rsnk import FLECS_RSNK
 from composite_step_rsnk import CompositeStepRSNK
 from predictor_corrector import PredictorCorrector
 from predictor_corrector_cnstr import PredictorCorrectorCnstr
-from monolithic_homotopy_cnstr import MonolithicHomotopyCnstr
 from verifier import Verifier
 import util
