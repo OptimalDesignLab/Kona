@@ -341,17 +341,15 @@ class CompositeDualVector(CompositeVector):
 
         super(CompositeDualVector, self).__init__([dual_eq, dual_ineq])
 
+    def restrict_to_regular(self):
+        self.eq.restrict_to_regular()
+
+    def restrict_to_idf(self):
+        self.eq.restrict_to_idf()
+        self.ineq.equals(0.0)
+
     def convert_to_design(self, primal_vector):
-        if isinstance(primal_vector, CompositePrimalVector):
-            design_vector = primal_vector.design
-        elif isinstance(primal_vector, DesignVector):
-            design_vector = primal_vector
-        else:
-            raise AssertionError(
-                "CompositeDualVector() >> " +
-                "Target vector must be either DesignVector " +
-                "or CompositePrimalVector!")
-        self.eq.convert_to_design(design_vector)
+        self.eq.convert_to_design(primal_vector)
 
     def equals_constraints(self, at_primal, at_state, scale=1.0):
         """
@@ -406,11 +404,10 @@ class CompositePrimalVector(CompositeVector):
 
     def restrict_to_target(self):
         self.design.restrict_to_target()
+        self.slack.equals(0.0)
 
     def convert_to_dual(self, dual_vector):
-        assert isinstance(dual_vector, CompositeDualVector), \
-            "CompositePrimalvector() >> Dual vector must be composite!"
-        self.design.convert_to_dual(dual_vector.eq)
+        self.design.convert_to_dual(dual_vector)
 
     def equals_init_design(self):
         self.design.equals_init_design()

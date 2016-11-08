@@ -63,6 +63,7 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
         out_vec.equals(0.0)
         self.dual_prod.convert_to_design(out_vec)
+        out_vec.times(1.-self.mu)
 
     def prod_target(self, in_vec, out_vec):
         self.design_prod.equals(in_vec)
@@ -70,20 +71,23 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
         out_vec.equals(0.0)
         self.dual_prod.convert_to_design(out_vec)
+        out_vec.equals_ax_p_by(1-self.mu, out_vec, 1., self.design_prod)
 
     def prod_design_t(self, in_vec, out_vec):
         self.dual_prod.equals(0.0)
         in_vec.convert_to_dual(self.dual_prod)
         self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
         out_vec.restrict_to_design()
+        out_vec.times(1.-self.mu)
 
     def prod_target_t(self, in_vec, out_vec):
         self.dual_prod.equals(0.0)
         in_vec.convert_to_dual(self.dual_prod)
         self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
+        out_vec.equals_ax_p_by(1.-self.mu, out_vec, self.mu, in_vec)
         out_vec.restrict_to_target()
 
-    def linearize(self, at_primal, at_state, scale=1.0):
+    def linearize(self, at_primal, at_state, scale=1.0, homotopy=0.0):
         # store references to the evaluation point
         if isinstance(at_primal, CompositePrimalVector):
             self.at_design = at_primal.design
@@ -94,21 +98,26 @@ class ReducedSchurPreconditioner(BaseHessian):
         # save the scaling on constraint terms
         self.scale = scale
 
+        # save the homotopy coefficient
+        self.mu = homotopy
+
         # linearize the constraint jacobian
         self.cnstr_jac.linearize(self.at_design, self.at_state, scale=self.scale)
 
         # if this is the first linearization, allocate some useful vectors
         if not self._allocated:
+            # design vectors
             self.design_prod = self.primal_factory.generate()
+            self.design_work = []
+            for i in xrange(2):
+                self.design_work.append(self.primal_factory.generate())
+            # dual vectors
             self.dual_prod = None
             if self.eq_factory is not None and self.ineq_factory is not None:
                 self.dual_prod = CompositeDualVector(
                     self.eq_factory.generate(), self.ineq_factory.generate())
             else:
                 self.dual_prod = self.eq_factory.generate()
-            self.design_work = []
-            for i in xrange(2):
-                self.design_work.append(self.primal_factory.generate())
 
     def product(self, in_vec, out_vec):
         # do some aliasing
@@ -126,7 +135,7 @@ class ReducedSchurPreconditioner(BaseHessian):
         out_design.equals(0.0)
         out_dual.equals(0.0)
 
-        # Step 1: Solve (dC/dy)^T in_dual = (u_design)_(target subspace)
+        # Step 1: Solve [(1-mu)*A_t^T - mu*I] v_lamb = u_t
         design_work[1].equals(in_design)
         design_work[1].restrict_to_target()
         design_work[0].equals(0.0)
@@ -134,15 +143,12 @@ class ReducedSchurPreconditioner(BaseHessian):
             self.prod_target_t, design_work[1], design_work[0], self.precond)
         design_work[0].convert_to_dual(out_dual)
 
-        # Step 2: Compute (out_design)_(design subspace) =
-        # (in_design)_(design subspace) - (dC/dx)^T * out_dual
+        # Step 2: Compute v_d = u_d - (1-mu) * A_d^T * v_lamb
         self.prod_design_t(design_work[0], out_design)
-        fac = 1.0 # /(1.0 + self.diag)
-        out_design.equals_ax_p_by(-fac, out_design, fac, in_design)
+        out_design.equals_ax_p_by(-1., out_design, 1., in_design)
         out_design.restrict_to_design()
 
-        # Step 3: Solve (dC/dy) (out_design)_(target subspace) =
-        # in_dual - (dC/dx) (out_design)_(design subspace)
+        # Step 3: Solve [(1-mu)*A_t - mu*I] v_t = u_dual - (1-mu) * A_d * v_d
         self.prod_design(out_design, design_work[0])
         in_dual.convert_to_design(design_work[1])
         design_work[0].equals_ax_p_by(-1., design_work[0], 1., design_work[1])

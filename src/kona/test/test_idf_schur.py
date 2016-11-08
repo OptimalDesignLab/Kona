@@ -14,7 +14,7 @@ class IDFSchurTestCase(unittest.TestCase):
 
         optns = {
             'info_file' : 'kona_info.dat',
-            'max_iter' : 50,
+            'max_iter' : 100,
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
             'globalization' : 'trust',
@@ -39,7 +39,7 @@ class IDFSchurTestCase(unittest.TestCase):
             },
 
             'rsnk' : {
-                'precond'       : None,
+                'precond'       : 'idf_schur',
                 # rsnk algorithm settings
                 'dynamic_tol'   : False,
                 'nu'            : 0.95,
@@ -53,7 +53,7 @@ class IDFSchurTestCase(unittest.TestCase):
                 'krylov_file'   : 'kona_krylov.dat',
                 'subspace_size' : 10,
                 'check_res'     : True,
-                'rel_tol'       : 0.00095,
+                'rel_tol'       : 0.0095,
             },
 
             'verify': {

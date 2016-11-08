@@ -95,3 +95,6 @@ nosetests.json
 
 # Atom config file
 .sync-config.cson
+
+# Sublime config file
+sftp-config.json

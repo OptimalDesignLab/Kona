@@ -227,9 +227,8 @@ class DesignVector(KonaVector):
 
         Used only for IDF problems.
         """
-        assert self._memory.num_real_design is not None, \
-            "Restrict failed! Not an IDF problem!"
-        self.base.data[self._memory.num_real_design:] = 0.
+        if self._memory.num_real_design is not None:
+            self.base.data[self._memory.num_real_design:] = 0.
 
     def restrict_to_target(self):
         """
@@ -237,9 +236,8 @@ class DesignVector(KonaVector):
 
         Used only for IDF problems.
         """
-        assert self._memory.num_real_design is not None, \
-            "Restrict failed! Not an IDF problem!"
-        self.base.data[:self._memory.num_real_design] = 0.
+        if self._memory.num_real_design is not None:
+            self.base.data[:self._memory.num_real_design] = 0.
 
     def convert_to_dual(self, dual_vector):
         """
@@ -258,10 +256,10 @@ class DesignVector(KonaVector):
             raise AssertionError(
                 "Invalid dual vector: " +
                 "must be DualVectorEQ or CompositeDualVector!")
-        assert self._memory.num_real_design is not None, \
-            "Conversion failed! Not an IDF problem!"
-        eq_vec.base.data[self._memory.num_real_ceq:] = \
-            self.base.data[self._memory.num_real_design:]
+        dual_vector.equals(0.0)
+        if self._memory.num_real_design is not None:
+            eq_vec.base.data[self._memory.num_real_ceq:] = \
+                self.base.data[self._memory.num_real_design:]
 
     def enforce_bounds(self):
         """
@@ -577,9 +575,28 @@ class DualVector(KonaVector):
 
 class DualVectorEQ(DualVector):
 
+    def restrict_to_regular(self):
+        """
+        Set IDF constraints terms to zero, leaving regular dual terms untouched.
+
+        Used only for IDF problems.
+        """
+        if self._memory.num_real_ceq is not None:
+            self.base.data[self._memory.num_real_ceq:] = 0.
+
+    def restrict_to_idf(self):
+        """
+        Set regular dual terms to zero, leaving IDF constraint terms untouched.
+
+        Used only for IDF problems.
+        """
+        if self._memory.num_real_ceq is not None:
+            self.base.data[:self._memory.num_real_ceq] = 0.
+
     def convert_to_design(self, primal_vector):
         """
         Copy target state variables from the dual vector into the given design vector.
+
         Parameters
         ----------
         design_vector : DesignVector
@@ -593,11 +610,11 @@ class DualVectorEQ(DualVector):
             raise AssertionError(
                 "Invalid primal vector: " +
                 "must be DesignVector or CompositePrimalVector!")
-        assert self._memory.num_real_design is not None, \
-            "Conversion failed! Not an IDF problem!"
-        design_vector.base.data[:self._memory.num_real_design] = 0.
-        design_vector.base.data[self._memory.num_real_design:] = \
-            self.base.data[self._memory.num_real_ceq:]
+        primal_vector.equals(0.0)
+        if self._memory.num_real_design is not None:
+            design_vector.base.data[:self._memory.num_real_design] = 0.
+            design_vector.base.data[self._memory.num_real_design:] = \
+                self.base.data[self._memory.num_real_ceq:]
 
     def equals_constraints(self, at_primal, at_state, scale=1.0):
         """
