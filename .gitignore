@@ -92,3 +92,6 @@ target/
 # PyCharm temporary folders and files
 .idea/
 nosetests.json
+
+# Sublime configs
+sftp-config.json
