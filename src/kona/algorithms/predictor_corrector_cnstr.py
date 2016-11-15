@@ -395,8 +395,6 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                     self.prod_work2.primal.restrict_to_target()
                     self.prod_work2.dual.restrict_to_idf()
                     self.prod_work2.plus(self.prod_work1)
-                    print self.prod_work2.primal.base.data
-                    print self.prod_work2.dual.base.data
                     dJdX_hom.times(self.prod_work2)
 
                 # get the regularization component of the homotopy
@@ -407,8 +405,6 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                 self.prod_work1.equals(x)
                 self.prod_work1.minus(x0)
                 self.prod_work1.times(self.hom_weight)
-                print self.prod_work2.primal.base.data
-                print self.prod_work2.dual.base.data
                 self.prod_work1.times(self.prod_work2)
                 dJdX_hom.plus(self.prod_work1)
 
