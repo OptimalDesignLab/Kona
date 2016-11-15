@@ -76,7 +76,7 @@ class KonaVector(object):
         vector : KonaVector
             Vector to be subtracted.
         """
-        if vector == self: # special case...
+        if vector == self:  # special case...
             self.equals(0)
 
         assert isinstance(vector, type(self))
@@ -186,7 +186,7 @@ class KonaVector(object):
         return self.base.inner(vector.base)
 
     @property
-    def norm2(self): # this takes the L2 norm of the vector
+    def norm2(self):  # this takes the L2 norm of the vector
         """
         Computes the L2 (Euclidian) norm of the vector.
 
@@ -238,6 +238,8 @@ class DesignVector(KonaVector):
         """
         if self._memory.num_real_design is not None:
             self.base.data[:self._memory.num_real_design] = 0.
+        else:
+            self.base.data[:] = 0.
 
     def convert_to_dual(self, dual_vector):
         """
@@ -592,6 +594,8 @@ class DualVectorEQ(DualVector):
         """
         if self._memory.num_real_ceq is not None:
             self.base.data[:self._memory.num_real_ceq] = 0.
+        else:
+            self.base.data[:] = 0.
 
     def convert_to_design(self, primal_vector):
         """

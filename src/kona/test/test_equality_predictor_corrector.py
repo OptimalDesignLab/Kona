@@ -22,7 +22,7 @@ class PredictorCorrectorCnstrTestCase(unittest.TestCase):
             'homotopy' : {
                 'inner_tol' : 1e-2,
                 'inner_maxiter' : 20,
-                'nominal_dist' : 1.0,
+                'nominal_dist' : 5.0,
                 'nominal_angle' : 15.0*np.pi/180.,
             },
 
@@ -40,7 +40,7 @@ class PredictorCorrectorCnstrTestCase(unittest.TestCase):
                 # FLECS solver settings
                 'krylov_file'   : 'kona_krylov.dat',
                 'subspace_size' : 10,
-                'rel_tol'       : 0.0095,
+                'rel_tol'       : 1e-6,
             },
         }
 

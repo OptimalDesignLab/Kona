@@ -10,9 +10,9 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         )
 
         # number of vectors required in solve() method
-        self.primal_factory.request_num_vectors(13)
+        self.primal_factory.request_num_vectors(14)
         self.state_factory.request_num_vectors(5)
-        self.eq_factory.request_num_vectors(13)
+        self.eq_factory.request_num_vectors(14)
 
         # general options
         ############################################################
@@ -34,9 +34,10 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             self.precond = self.eye.product
         elif self.precond is 'idf_schur':
             self.info_file.write("Using IDF-Schur Preconditioner...\n")
+            self.eye = IdentityMatrix()
             self.idf_schur = ReducedSchurPreconditioner(
                 [primal_factory, state_factory, eq_factory, ineq_factory])
-            self.precond = self.idf_schur.product
+            self.precond = self.eye.product
         else:
             raise BadKonaOption(self.optns, 'rsnk', 'precond')
 
@@ -62,6 +63,8 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         self.nom_angl = get_opt(self.optns, 5.0*np.pi/180., 'homotopy', 'nominal_angle')
         self.max_factor = get_opt(self.optns, 2.0, 'homotopy', 'max_factor')
         self.min_factor = get_opt(self.optns, 0.5, 'homotopy', 'min_factor')
+        self.idf_hom = get_opt(self.optns, False, 'homotopy', 'idf_hom')
+        self.hom_weight = get_opt(self.optns, 1., 'homotopy', 'weight')
 
     def _write_header(self, opt_tol, feas_tol):
         self.hist_file.write(
@@ -74,7 +77,6 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             'lagrangian' + ' ' * 5 +
             '  opt norm' + ' '*5 +
             ' feas norm' + ' '*5 +
-            '  homotopy' + ' ' * 5 +
             '   hom opt' + ' '*5 +
             '  hom feas' + ' '*5 +
             'mu        ' + ' '*5 +
@@ -100,14 +102,13 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             '%.4e' % feas_norm + ' ' * 5 +
             '-'*10 + ' ' * 5 +
             '-'*10 + ' ' * 5 +
-            '-'*10 + ' ' * 5 +
             '%1.4f' % self.mu + ' ' * 5 +
             '\n'
         )
 
     def _write_inner(self, outer, inner, 
                      obj, lag, opt_norm, feas_norm,
-                     hom, hom_opt, hom_feas):
+                     hom_opt, hom_feas):
         if obj < 0.:
             obj_fmt = '%.3e'%obj
         else:
@@ -116,10 +117,6 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             lag_fmt = '%.3e'%lag
         else:
             lag_fmt = ' %.3e'%lag
-        if hom < 0.:
-            hom_fmt = '%.3e'%hom
-        else:
-            hom_fmt = ' %.3e'%hom
         self.hist_file.write(
             '%7i' % outer + ' ' * 5 +
             '%5i' % inner + ' ' * 5 +
@@ -128,7 +125,6 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             lag_fmt + ' ' * 5 +
             '%.4e' % opt_norm + ' ' * 5 +
             '%.4e' % feas_norm + ' ' * 5 +
-            hom_fmt + ' ' * 5 +
             '%.4e' % hom_opt + ' ' * 5 +
             '%.4e' % hom_feas + ' ' * 5 +
             '%1.4f' % self.mu + ' ' * 5 +
@@ -149,32 +145,42 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
     def _mat_vec(self, in_vec, out_vec):
         out_vec.equals(0.0)
         self.hessian.product(in_vec, out_vec)
-        out_vec.times(1. - self.mu)
 
-        self.prod_work.primal.equals(in_vec.primal)
-        self.prod_work.primal.times(self.mu)
-        self.prod_work.primal.restrict_to_design()
-        out_vec.primal.plus(self.prod_work.primal)
+        if self.idf_hom:
+            out_vec.times(1. - self.mu)
+        else:
+            self.prod_work1.equals(1. - self.mu)
+            self.prod_work1.primal.restrict_to_design()
+            self.prod_work1.dual.restrict_to_regular()
+            self.prod_work2.equals(1.0)
+            self.prod_work2.primal.restrict_to_target()
+            self.prod_work2.dual.restrict_to_idf()
+            self.prod_work2.plus(self.prod_work1)
+            out_vec.times(self.prod_work2)
 
-        self.prod_work.dual.equals(in_vec.dual)
-        self.prod_work.dual.convert_to_design(self.prod_work.primal)
-        self.prod_work.primal.times(self.mu)
-        self.prod_work.primal.restrict_to_target()
-        out_vec.primal.plus(self.prod_work.primal)
+        self.prod_work2.primal.equals(self.mu)
+        self.prod_work2.dual.equals(-self.mu)
+        self.prod_work2.primal.restrict_to_design()
+        self.prod_work2.dual.restrict_to_regular()
+        self.prod_work1.equals(in_vec)
+        self.prod_work1.times(self.hom_weight)
+        self.prod_work1.times(self.prod_work2)
+        out_vec.plus(self.prod_work1)
 
-        self.prod_work.dual.equals(in_vec.dual)
-        self.prod_work.dual.times(self.mu)
-        self.prod_work.dual.restrict_to_regular()
-        out_vec.dual.minus(self.prod_work.dual)
+        if self.idf_hom:
+            self.prod_work1.equals(0.0)
+            self.prod_work1.dual.equals(in_vec.dual)
+            self.prod_work1.dual.convert_to_design(self.prod_work1.primal)
+            self.prod_work1.primal.times(self.mu*self.hom_weight)
+            self.prod_work1.primal.restrict_to_target()
+            out_vec.primal.plus(self.prod_work1.primal)
 
-        self.prod_work.primal.equals(in_vec.primal)
-        self.prod_work.primal.convert_to_dual(self.prod_work.dual)
-        self.prod_work.dual.times(self.mu)
-        self.prod_work.dual.restrict_to_idf()
-        out_vec.dual.plus(self.prod_work.dual)
-
-    def _precond(self, in_vec, out_vec):
-        self.precond(in_vec, out_vec)
+            self.prod_work1.equals(0.0)
+            self.prod_work1.primal.equals(in_vec.primal)
+            self.prod_work1.primal.convert_to_dual(self.prod_work1.dual)
+            self.prod_work1.dual.times(self.mu*self.hom_weight)
+            self.prod_work1.dual.restrict_to_idf()
+            out_vec.dual.plus(self.prod_work1.dual)
 
     def solve(self):
         self.info_file.write(
@@ -196,7 +202,8 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         rhs_vec = self._generate_kkt()
         t = self._generate_kkt()
         t_save = self._generate_kkt()
-        self.prod_work = self._generate_kkt()
+        self.prod_work1 = self._generate_kkt()
+        self.prod_work2 = self._generate_kkt()
 
         state = self.state_factory.generate()
         state_work = self.state_factory.generate()
@@ -227,7 +234,9 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         primal_work.equals_total_gradient(x.primal, state, adj_save)
         obj_norm0 = primal_work.norm2
         obj_fac = 1./obj_norm0
-        cnstr_fac = 1.
+        dual_work.equals_constraints(x.primal, state)
+        cnstr_norm0 = dual_work.norm2
+        cnstr_fac = 1./cnstr_norm0
 
         # compute the lagrangian adjoint
         adj.equals_lagrangian_adjoint(
@@ -261,37 +270,47 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         rhs_vec.equals(dJdX)
         rhs_vec.times(-1.)
 
-        primal_work.equals(x.primal)
-        primal_work.minus(x0.primal)
-        primal_work.restrict_to_design()
-        rhs_vec.primal.plus(primal_work)
+        if not self.idf_hom:
+            rhs_vec.primal.restrict_to_design()
+            rhs_vec.dual.restrict_to_regular()
 
-        dual_work.equals(x.dual)
-        dual_work.restrict_to_idf()
-        dual_work.convert_to_design(primal_work)
-        primal_work.restrict_to_target()
-        rhs_vec.primal.plus(primal_work)
+        self.prod_work2.primal.equals(1.0)
+        self.prod_work2.dual.equals(-1.0)
+        self.prod_work2.primal.restrict_to_design()
+        self.prod_work2.dual.restrict_to_regular()
+        self.prod_work1.equals(x)
+        self.prod_work1.minus(x0)
+        self.prod_work1.times(self.hom_weight)
+        self.prod_work1.times(self.prod_work2)
+        rhs_vec.plus(self.prod_work1)
 
-        dual_work.equals(x.dual)
-        dual_work.minus(x0.dual)
-        dual_work.restrict_to_regular()
-        rhs_vec.dual.minus(dual_work)
+        if self.idf_hom:
+            dual_work.equals(x.dual)
+            dual_work.restrict_to_idf()
+            primal_work.equals(0.0)
+            dual_work.convert_to_design(primal_work)
+            primal_work.restrict_to_target()
+            primal_work.times(self.hom_weight)
+            rhs_vec.primal.plus(primal_work)
 
-        primal_work.equals(x.primal)
-        primal_work.minus(x0.primal)
-        primal_work.restrict_to_target()
-        primal_work.convert_to_dual(dual_work)
-        dual_work.restrict_to_idf()
-        rhs_vec.dual.plus(dual_work)
+            primal_work.equals(x.primal)
+            primal_work.minus(x0.primal)
+            primal_work.restrict_to_target()
+            dual_work.equals(0.0)
+            primal_work.convert_to_dual(dual_work)
+            dual_work.restrict_to_idf()
+            dual_work.times(self.hom_weight)
+            rhs_vec.dual.plus(dual_work)
 
         # compute the tangent vector
         t.equals(0.0)
         self.hessian.linearize(
             x, state, adj,
             obj_scale=obj_fac, cnstr_scale=cnstr_fac)
-        if self.idf_schur is not None:
+        if self.idf_hom and self.idf_schur is not None:
             self.idf_schur.linearize(x.primal, state, scale=cnstr_fac, homotopy=self.mu)
-        self.krylov.solve(self._mat_vec, rhs_vec, t, self._precond)
+            self.precond = self.idf_schur.product
+        self.krylov.solve(self._mat_vec, rhs_vec, t, self.precond)
 
         # normalize tangent vector
         tnorm = np.sqrt(t.inner(t) + 1.0)
@@ -364,51 +383,56 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                     x, state, adj,
                     obj_scale=obj_fac, cnstr_scale=cnstr_fac)
                 dJdX_hom.equals(dJdX)
-                dJdX_hom.times(1. - self.mu)
 
-                # add the design homotopy contribution to dJdX.primal
-                primal_work.equals(x.primal)
-                primal_work.minus(x0.primal)
-                primal_work.restrict_to_design()
-                xTx = primal_work.inner(primal_work)
-                primal_work.times(self.mu)
-                dJdX_hom.primal.plus(primal_work)
+                # get the lagrangian component of the homotopy
+                if self.idf_hom:
+                    dJdX_hom.times(1. - self.mu)
+                else:
+                    self.prod_work1.equals(1. - self.mu)
+                    self.prod_work1.primal.restrict_to_design()
+                    self.prod_work1.dual.restrict_to_regular()
+                    self.prod_work2.equals(1.0)
+                    self.prod_work2.primal.restrict_to_target()
+                    self.prod_work2.dual.restrict_to_idf()
+                    self.prod_work2.plus(self.prod_work1)
+                    print self.prod_work2.primal.base.data
+                    print self.prod_work2.dual.base.data
+                    dJdX_hom.times(self.prod_work2)
 
-                # add the IDF homotopy contribution to dJdX.primal
-                # NOTE: this does nothing if the problem is not IDF
-                dual_work.equals(x.dual)
-                dual_work.restrict_to_idf()
-                dual_work.times(self.mu)
-                dual_work.convert_to_design(primal_work)
-                primal_work.restrict_to_target()
-                dJdX_hom.primal.plus(primal_work)
+                # get the regularization component of the homotopy
+                self.prod_work2.primal.equals(self.mu)
+                self.prod_work2.dual.equals(-self.mu)
+                self.prod_work2.primal.restrict_to_design()
+                self.prod_work2.dual.restrict_to_regular()
+                self.prod_work1.equals(x)
+                self.prod_work1.minus(x0)
+                self.prod_work1.times(self.hom_weight)
+                print self.prod_work2.primal.base.data
+                print self.prod_work2.dual.base.data
+                self.prod_work1.times(self.prod_work2)
+                dJdX_hom.plus(self.prod_work1)
 
-                # add the dual homotopy contribution to dJdX.dual
-                dual_work.equals(x.dual)
-                dual_work.minus(x0.dual)
-                dual_work.restrict_to_regular()
-                mTm = dual_work.inner(dual_work)
-                dual_work.times(self.mu)
-                dJdX_hom.dual.minus(dual_work)
+                if self.idf_hom:
+                    # add the IDF homotopy contribution to dJdX.primal
+                    # NOTE: this does nothing if the problem is not IDF
+                    dual_work.equals(x.dual)
+                    dual_work.restrict_to_idf()
+                    dual_work.times(self.mu*self.hom_weight)
+                    primal_work.equals(0.0)
+                    dual_work.convert_to_design(primal_work)
+                    primal_work.restrict_to_target()
+                    dJdX_hom.primal.plus(primal_work)
 
-                # add the IDF homotopy contribution to dJdX.dual
-                # NOTE: this does nothing if the problem is not IDF
-                primal_work.equals(x.primal)
-                primal_work.minus(x0.primal)
-                primal_work.restrict_to_target()
-                primal_work.times(self.mu)
-                primal_work.convert_to_dual(dual_work)
-                dual_work.restrict_to_idf()
-                dJdX_hom.dual.plus(dual_work)
-
-                # compute the scalar IDF homotopy term value
-                self.prod_work.primal.equals(x.primal)
-                self.prod_work.primal.minus(x0.primal)
-                self.prod_work.primal.restrict_to_target()
-                dual_work.equals(x.dual)
-                dual_work.convert_to_design(primal_work)
-                primal_work.restrict_to_target()
-                mTx = primal_work.inner(self.prod_work.primal)
+                    # add the IDF homotopy contribution to dJdX.dual
+                    # NOTE: this does nothing if the problem is not IDF
+                    primal_work.equals(x.primal)
+                    primal_work.minus(x0.primal)
+                    primal_work.restrict_to_target()
+                    primal_work.times(self.mu*self.hom_weight)
+                    dual_work.equals(0.0)
+                    primal_work.convert_to_dual(dual_work)
+                    dual_work.restrict_to_idf()
+                    dJdX_hom.dual.plus(dual_work)
 
                 # get convergence norms
                 if inner_iters == 0:
@@ -435,14 +459,13 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
                 # write inner history
                 obj = objective_value(x.primal, state)
-                lag = obj_fac * obj + cnstr_fac * x.dual.inner(dJdX.dual)
-                hom = (1. - self.mu) * lag + 0.5 * self.mu * (xTx - mTm + 2*mTx)
+                lag = obj + x.dual.inner(dJdX.dual)
                 opt_norm = dJdX.primal.norm2
                 feas_norm = dJdX.dual.norm2
                 self._write_inner(
                     outer_iters, inner_iters,
                     obj, lag, opt_norm, feas_norm,
-                    hom, hom_opt_norm, hom_feas_norm)
+                    hom_opt_norm, hom_feas_norm)
 
                 # check convergence
                 if hom_opt_norm <= hom_opt_tol and hom_feas_norm <= hom_feas_tol:
@@ -454,15 +477,17 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
                     x, state, adj,
                     obj_scale=obj_fac, cnstr_scale=cnstr_fac)
                 if self.idf_schur is not None:
-                    self.idf_schur.linearize(
-                        x.primal, state, scale=cnstr_fac, homotopy=self.mu)
+                    if self.idf_hom or self.mu == 0.0:
+                        self.idf_schur.linearize(
+                            x.primal, state, scale=cnstr_fac, homotopy=self.mu)
+                        self.precond = self.idf_schur.product
 
                 # define the RHS vector for the homotopy system
                 dJdX_hom.times(-1.)
 
                 # solve the system
                 dx.equals(0.0)
-                self.krylov.solve(self._mat_vec, dJdX_hom, dx, self._precond)
+                self.krylov.solve(self._mat_vec, dJdX_hom, dx, self.precond)
                 dx_newt.plus(dx)
 
                 # update the design
@@ -474,8 +499,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
 
                 # compute the adjoint
                 adj.equals_lagrangian_adjoint(
-                    x, state, state_work,
-                    obj_scale=obj_fac, cnstr_scale=cnstr_fac)
+                    x, state, state_work, obj_scale=obj_fac, cnstr_scale=cnstr_fac)
 
                 # advance iter counter
                 inner_iters += 1
@@ -499,37 +523,47 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             rhs_vec.equals(dJdX)
             rhs_vec.times(-1.)
 
-            primal_work.equals(x.primal)
-            primal_work.minus(x0.primal)
-            primal_work.restrict_to_design()
-            rhs_vec.primal.plus(primal_work)
+            if not self.idf_hom:
+                rhs_vec.primal.restrict_to_design()
+                rhs_vec.dual.restrict_to_regular()
 
-            dual_work.equals(x.dual)
-            dual_work.restrict_to_idf()
-            dual_work.convert_to_design(primal_work)
-            primal_work.restrict_to_target()
-            rhs_vec.primal.plus(primal_work)
+            self.prod_work2.primal.equals(1.0)
+            self.prod_work2.dual.equals(-1.0)
+            self.prod_work2.primal.restrict_to_design()
+            self.prod_work2.dual.restrict_to_regular()
+            self.prod_work1.equals(x)
+            self.prod_work1.minus(x0)
+            self.prod_work1.times(self.hom_weight)
+            self.prod_work1.times(self.prod_work2)
+            rhs_vec.plus(self.prod_work1)
 
-            dual_work.equals(x.dual)
-            dual_work.minus(x0.dual)
-            dual_work.restrict_to_regular()
-            rhs_vec.dual.minus(dual_work)
+            if self.idf_hom:
+                dual_work.equals(x.dual)
+                dual_work.restrict_to_idf()
+                primal_work.equals(0.0)
+                dual_work.convert_to_design(primal_work)
+                primal_work.restrict_to_target()
+                primal_work.times(self.hom_weight)
+                rhs_vec.primal.plus(primal_work)
 
-            primal_work.equals(x.primal)
-            primal_work.minus(x0.primal)
-            primal_work.restrict_to_target()
-            primal_work.convert_to_dual(dual_work)
-            dual_work.restrict_to_idf()
-            rhs_vec.dual.plus(dual_work)
+                primal_work.equals(x.primal)
+                primal_work.minus(x0.primal)
+                primal_work.restrict_to_target()
+                dual_work.equals(0.0)
+                primal_work.convert_to_dual(dual_work)
+                dual_work.restrict_to_idf()
+                dual_work.times(self.hom_weight)
+                rhs_vec.dual.plus(dual_work)
 
             # compute the new tangent vector and predictor step
             t.equals(0.0)
             self.hessian.linearize(
                 x, state, adj,
                 obj_scale=obj_fac, cnstr_scale=cnstr_fac)
-            if self.idf_schur is not None:
+            if self.idf_hom and self.idf_schur is not None:
                 self.idf_schur.linearize(
                     x.primal, state, scale=cnstr_fac, homotopy=self.mu)
+                self.precond = self.idf_schur.product
             self.krylov.solve(self._mat_vec, rhs_vec, t, self.precond)
 
             # normalize the tangent vector
