@@ -71,7 +71,7 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
         out_vec.equals(0.0)
         self.dual_prod.convert_to_design(out_vec)
-        out_vec.equals_ax_p_by(1-self.mu, out_vec, 1., self.design_prod)
+        out_vec.equals_ax_p_by(1-self.mu, out_vec, -self.mu, self.design_prod)
 
     def prod_design_t(self, in_vec, out_vec):
         self.dual_prod.equals(0.0)
@@ -84,7 +84,7 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.dual_prod.equals(0.0)
         in_vec.convert_to_dual(self.dual_prod)
         self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
-        out_vec.equals_ax_p_by(1.-self.mu, out_vec, self.mu, in_vec)
+        out_vec.equals_ax_p_by(1.-self.mu, out_vec, -self.mu, in_vec)
         out_vec.restrict_to_target()
 
     def linearize(self, at_primal, at_state, scale=1.0, homotopy=0.0):
@@ -135,7 +135,7 @@ class ReducedSchurPreconditioner(BaseHessian):
         out_design.equals(0.0)
         out_dual.equals(0.0)
 
-        # Step 1: Solve [(1-mu)*A_t^T - mu*I] v_lamb = u_t
+        # Step 1: Solve [(1-mu)*A_t^T + mu*I] v_idf = u_t
         design_work[1].equals(in_design)
         design_work[1].restrict_to_target()
         design_work[0].equals(0.0)
@@ -143,19 +143,27 @@ class ReducedSchurPreconditioner(BaseHessian):
             self.prod_target_t, design_work[1], design_work[0], self.precond)
         design_work[0].convert_to_dual(out_dual)
 
-        # Step 2: Compute v_d = u_d - (1-mu) * A_d^T * v_lamb
+        # Step 2: Compute v_d = u_d - (1-mu) * A_d^T * v_idf
+        out_dual.convert_to_design(design_work[0])
         self.prod_design_t(design_work[0], out_design)
-        out_design.equals_ax_p_by(-1., out_design, 1., in_design)
+        out_design.equals_ax_p_by(1., in_design, -1., out_design)
         out_design.restrict_to_design()
 
-        # Step 3: Solve [(1-mu)*A_t - mu*I] v_t = u_dual - (1-mu) * A_d * v_d
+        # Step 3: Solve [(1-mu)*A_t + mu*I] v_t = u_idf - (1-mu) * A_d * v_d
         self.prod_design(out_design, design_work[0])
         in_dual.convert_to_design(design_work[1])
-        design_work[0].equals_ax_p_by(-1., design_work[0], 1., design_work[1])
+        design_work[0].equals_ax_p_by(1., design_work[1], -1., design_work[0])
         design_work[1].equals(0.0)
         self.krylov.solve(
             self.prod_target, design_work[0], design_work[1], self.precond)
+        design_work[1].restrict_to_target()
         out_design.plus(design_work[1])
+        
+        # Step 4: v_lamb = u_lamb
+        self.dual_prod.equals(in_dual)
+        self.dual_prod.restrict_to_regular()
+        out_dual.restrict_to_idf()
+        out_dual.plus(self.dual_prod)
 
 # imports here to prevent circular errors
 from kona.linalg.vectors.composite import CompositePrimalVector
