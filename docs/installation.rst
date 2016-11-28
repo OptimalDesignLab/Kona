@@ -20,7 +20,7 @@ a multidimensional Rosenbrock problem using the reduced-space Newton-Krylov
     solver = kona.examples.Rosenbrock(2)
 
     # get the optimization algorithm handle -- do not initialize
-    algorithm = kona.algorithms.ReducedSpaceNewtonKrylov
+    algorithm = kona.algorithms.STCG_RSNK
 
     # options dictionary -- we only need convergence tolerance for now
     optns = {

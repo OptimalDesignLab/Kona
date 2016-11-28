@@ -102,15 +102,14 @@ class FLECS_RSNK(OptimizationAlgorithm):
         # get globalization options
         ############################################################
         self.globalization = get_opt(self.optns, 'trust', 'globalization')
-        if self.globalization is None:
-            self.trust_region = False
-        elif self.globalization == 'trust':
-            self.trust_region = True
-        else:
+        if self.globalization not in ['trust', 'filter']:
             raise TypeError(
                 'Invalid globalization! ' +
                 'Can only use \'trust\'. ' +
                 'If you want to skip globalization, set to None.')
+        else:
+            if self.globalization == 'filter':
+                self.filter = SimpleFilter()
 
     def _write_header(self):
         self.hist_file.write(
@@ -297,7 +296,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
             self.radius = self.krylov.radius
 
             # apply globalization
-            if self.trust_region:
+            if self.globalization == 'trust':
                 old_flag = min_radius_active
                 success, min_radius_active = self.trust_step(
                     X, state, adjoint, P, kkt_rhs, krylov_tol, feas_tol,
@@ -309,6 +308,22 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     self.info_file.write(
                         'Trust radius breakdown! Terminating...\n')
                     break
+            elif self.globalization == 'filter':
+                old_flag = min_radius_active
+                success, min_radius_active = self.filter_step(
+                    X, state, P, kkt_rhs, kkt_work, state_work, dual_work)
+
+                # watchdog on trust region failures
+                if min_radius_active and old_flag:
+                    self.info_file.write(
+                        'Trust radius breakdown! Terminating...\n')
+                    break
+                
+                # if filter was successful, compute adjoint for next iteration
+                if success:
+                    if self.factor_matrices and self.iter < self.max_iter:
+                        factor_linear_system(X.primal, state)
+                    adjoint.equals_lagrangian_adjoint(X, state, state_work)
             else:
                 # accept step
                 X.primal.plus(P.primal)
@@ -341,6 +356,92 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n\n'%self.iter)
+        
+    def filter_step(self, X, state, P, kkt_rhs, kkt_work, state_work, dual_work):
+        filter_success = False
+        min_radius_active = False
+        max_filter_iter = 3
+        for i in xrange(max_filter_iter):
+            self.info_file.write('\nFilter Step : iter %i\n'%i+1)
+            X.plus(P)
+            state_work.equals(state)  # save state for reverting later
+            
+            solve_failed = False
+            if state.equals_primal_solution(X.primal):
+                obj = objective_value(X.primal, state)
+                dual_work.equals_constraints(X.primal, state)
+                cnstr_norm = dual_work.norm2
+                if self.filter.dominates(obj, cnstr_norm):
+                    # point is acceptable so just check radius and break out
+                    self.info_file.write(
+                        '   New point accepted!\n')
+                    if i == 0 and self.krylov.trust_active and self.radius < self.max_radius:
+                        self.radius = min(2*self.radius, self.max_radius)
+                        self.krylov.radius = self.radius
+                        self.info_file.write(
+                            '   Radius increased -> %f\n'%self.radius)
+                    filter_success = True
+                    break
+                else:
+                    # point is not acceptable, revert step
+                    X.minus(P)
+                    state.equals(state_work)
+            else:
+                # state solve failed, revert step
+                self.info_file.write(
+                    '   State-solve failed!\n')
+                solve_failed = True
+                X.minus(P)
+                state.equals(state_work)
+    
+            # at the first iteration, try a second-order correction
+            if i == 0 and not solve_failed:
+                kkt_work.equals(P)
+                self.info_file.write(
+                    '   Attempting a second order correction...')
+                self.krylov.apply_correction(dual_work, P)
+                X.plus(P)
+                if state.equals_primal_solution(X.primal):
+                    obj = objective_value(X.primal, state)
+                    dual_work.equals_constraints(X.primal, state)
+                    cnstr_norm = dual_work.norm2
+                    if self.filter.dominates(obj, cnstr_norm):
+                        # point is acceptable so just break out
+                        self.info_file.write(
+                            'SUCCESS!\n')
+                        self.info_file.write(
+                            '   New point accepted!\n')
+                        filter_success = True
+                        break
+                    else:
+                        # point is still not acceptable, revert step
+                        X.minus(P)
+                        state.equals(state_work)
+                        self.info_file.write(
+                            'FAILED!\n')
+                else:
+                    # state solve failed, revert step
+                    self.info_file.write(
+                        '   State-solve failed!\n')
+                    X.minus(P)
+                    state.equals(state_work)
+    
+            # if we got here, filter has dominated the point
+            self.info_file.write('   New point rejected!\n')
+            # shrink radius and re-solve
+            if self.radius == self.min_radius:
+                self.info_file.write('   Reached minimum radius! Exiting filter...\n')
+                min_radius_active = True
+                break
+            else:
+                self.radius = max(0.25*self.radius, self.min_radius)
+                self.info_file.write('   Radius reduced -> %f!\n'%self.radius)
+                self.krylov.radius = self.radius
+                self.info_file.write('   Re-solving step...\n')
+                self.krylov.re_solve(kkt_rhs, P)
+        
+        self.info_file.write('\n')
+        return filter_success, min_radius_active
 
     def trust_step(self, X, state, adjoint, P, kkt_rhs, krylov_tol, feas_tol,
                    primal_work, state_work, dual_work, kkt_work, kkt_save):
@@ -468,3 +569,4 @@ from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.krylov import FLECS
 from kona.linalg.solvers.util import EPS
+from kona.algorithms.util.filter import SimpleFilter

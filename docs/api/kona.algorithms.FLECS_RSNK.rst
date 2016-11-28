@@ -1,5 +1,5 @@
-FLECS_RSNK
-==========
+Equality Constrained FLECS-based RSNK
+=====================================
 
 .. autoclass:: kona.algorithms.FLECS_RSNK
     :members:

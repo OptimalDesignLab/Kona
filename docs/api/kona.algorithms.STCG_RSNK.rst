@@ -1,5 +1,5 @@
-STCG_RSNK
-=========
+Unconstrained STCG-based RSNK
+=============================
 
 .. autoclass:: kona.algorithms.STCG_RSNK
     :members:

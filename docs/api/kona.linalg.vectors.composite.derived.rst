@@ -13,3 +13,8 @@ CompositePrimalVector
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. autoclass:: kona.linalg.vectors.composite.CompositeDualVector
+    :members:
+    :undoc-members:
+    :show-inheritance:

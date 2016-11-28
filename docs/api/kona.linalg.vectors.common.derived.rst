@@ -11,7 +11,12 @@ DesignVector, StateVector and DualVector
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: kona.linalg.vectors.common.DualVector
+.. autoclass:: kona.linalg.vectors.common.DualVectorEQ
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: kona.linalg.vectors.common.DualVectorINEQ
     :members:
     :undoc-members:
     :show-inheritance:

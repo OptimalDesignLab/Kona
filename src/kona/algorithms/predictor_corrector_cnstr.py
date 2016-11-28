@@ -272,7 +272,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
         rhs_vec.times(-1.)
 
         if not self.idf_hom:
-            rhs_vec.primal.restrict_to_design()
+            rhs_vec.primal.restrict_to_design() 
             rhs_vec.dual.restrict_to_regular()
 
         self.prod_work2.primal.equals(1.0)

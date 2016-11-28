@@ -1,7 +1,7 @@
-Unconstrained Reduced-Space Quasi-Newton
+Equality Constrained Predictor-Corrector
 ========================================
 
-.. autoclass:: kona.algorithms.ReducedSpaceQuasiNewton
+.. autoclass:: kona.algorithms.PredictorCorrectorCnstr
     :members:
     :undoc-members:
     :show-inheritance:
