@@ -49,12 +49,25 @@ class STCG_RSNK(OptimizationAlgorithm):
 
         if self.globalization is None:
             self.info_file.write(
-                ">> WARNING: Globalization is turned off. " +
-                "Solving with FGMRES. <<\n")
+                ">> WARNING: Globalization is turned off! <<\n")
             self.krylov = FGMRES(self.primal_factory, krylov_optns)
         else:
             self.krylov = STCG(self.primal_factory, krylov_optns)
-        self.krylov.radius = self.radius
+            self.krylov.radius = self.radius
+            if self.globalization == 'linesearch':
+                try:
+                    line_search_alg = get_opt(
+                        self.optns, StrongWolfe, 'linesearch', 'type')
+                    line_search_opt = get_opt(self.optns, {}, 'linesearch')
+                    self.line_search = line_search_alg(
+                        line_search_opt, out_file=self.info_file)
+                except Exception:
+                    raise BadKonaOption(self.optns, 'linesearch', 'type')
+                self.merit_func = ObjectiveMerit(
+                    primal_factory, state_factory,
+                    {}, self.info_file)
+            elif self.globalization != 'trust':
+                raise BadKonaOption(self.optns, 'globalization')
 
         # initialize the ReducedHessian approximation
         reduced_optns = get_opt(self.optns, {}, 'rsnk')
@@ -129,6 +142,7 @@ class STCG_RSNK(OptimizationAlgorithm):
         self._write_header()
         self.iter = 0
         rho = 0.0
+        converged = False
         for i in xrange(self.max_iter):
 
             self.info_file.write(
@@ -215,6 +229,20 @@ class STCG_RSNK(OptimizationAlgorithm):
                     if active and rho > 0.75:
                         self.radius = min(2*self.radius, self.max_radius)
                         self.info_file.write('new radius = %f\n'%self.radius)
+            elif self.globalization == 'linesearch':
+                # perform line search along the new direction
+                p_dot_djdx = p.inner(dJdX)
+                self.merit_func.reset(p, x, state, p_dot_djdx)
+                alpha, _ = self.line_search.find_step_length(self.merit_func)
+                # apply the step onto the primal space
+                x.equals_ax_p_by(1.0, x, alpha, p)
+                # adjust trust radius
+                if alpha == self.line_search.alpha_max and active:
+                    self.radius = min(2*self.radius, self.max_radius)
+                    self.info_file.write('new radius = %f\n'%self.radius)
+                elif alpha <= 0.25:
+                    self.radius *= 0.25
+                    self.info_file.write('new radius = %f\n'%self.radius)
             else:
                 raise TypeError("Wrong globalization type!")
 
@@ -222,6 +250,7 @@ class STCG_RSNK(OptimizationAlgorithm):
                 factor_linear_system(x, state)
 
             self.iter += 1
+            self.info_file.write('\n')
         #####################
         # END THE NEWTON LOOP
 
@@ -240,3 +269,5 @@ from kona.linalg.common import current_solution, objective_value, factor_linear_
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS, ReducedHessian
 from kona.linalg.solvers.krylov import STCG, FGMRES
+from kona.algorithms.util.linesearch import StrongWolfe
+from kona.algorithms.util.merit import ObjectiveMerit

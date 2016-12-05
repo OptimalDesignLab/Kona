@@ -102,12 +102,21 @@ class Optimizer(object):
             assert isinstance(upper, (np.float, np.int))
             self._memory.design_ub = upper
 
-    def solve(self):
+    def solve(self, print_opts=False):
+        # print options
+        if print_opts:
+            self._optns['info_file'].write('\n')
+            self._optns['info_file'].write('Kona Options\n')
+            self._optns['info_file'].write('===========================================\n')
+            print_dict(self._optns, out_file=self._optns['info_file'])
+            self._optns['info_file'].write('\n')
+        # allocate memory and run the optimization
         self._memory.allocate_memory()
         self._algorithm.solve()
 
 # package imports at the bottom to prevent circular import errors
 import collections
 import numpy as np
+from kona.options import print_dict
 from kona.user import UserSolver
 from kona.linalg.memory import KonaMemory

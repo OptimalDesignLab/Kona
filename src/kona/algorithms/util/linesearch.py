@@ -8,8 +8,7 @@ from kona.algorithms.util.merit import MeritFunction
 #                        Step Interpolation Functions                          #
 ################################################################################
 
-def quadratic_step(alpha_low, alpha_hi, f_low, f_hi,
-                   df_low, out_file=sys.stdout):
+def quadratic_step(alpha_low, alpha_hi, f_low, f_hi, df_low):
     """
     Finds a new step between ``alpha_low`` and ``alpha_hi`` using quadratic
     interpolation.
@@ -26,8 +25,6 @@ def quadratic_step(alpha_low, alpha_hi, f_low, f_hi,
         Function value at upper bound.
     df_low : float
         Function derivative at lower bound.
-    out : file object, optional
-        File/data stream to write outputs.
 
     Returns
     -------
@@ -89,7 +86,7 @@ class LineSearch(object):
         if not (0 < self.decr_cond < 1):
             raise ValueError('suff_cond must be 0 < suff_cond < 1')
 
-    def find_step_length(self):
+    def find_step_length(self, merit):
         """
         Find an appropriate step size for the given merit function that leads
         to the minimum in the search direction.
@@ -125,9 +122,10 @@ class BackTracking(LineSearch):
     p_dot_dfdx : float
         Value of :math:`\\langle p, \\nabla f \\rangle` at current step.
     """
-    def __init__(self, optns={}, out_file=None):
+    def __init__(self, optns={}, out_file=sys.stdout):
         super(BackTracking, self).__init__(optns, out_file)
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
+        self.alpha_max = self.alpha_init
         self.alpha_min = get_opt(optns, 1e-4, 'alpha_min')
         self.rdtn_factor = get_opt(optns, 0.5, 'rdtn_factor')
         self.p_dot_dfdx = 0.0
@@ -155,17 +153,31 @@ class BackTracking(LineSearch):
         alpha = self.alpha_init
         self.f_init = merit.eval_func(alpha)
 
+        self.out_file.write('\n')
+
         n_iter = 0
         while (alpha > self.alpha_min) and (n_iter < self.max_iter):
+
+            self.out_file.write('   Backtracking Linesearch : iter %i\n'%(n_iter + 1))
+            self.out_file.write('   ---------------------------------\n')
+            
             f_sufficient = self.f_init + self.decr_cond*alpha*self.p_dot_dfdx
             self.f = merit.eval_func(alpha)
+            
+            self.out_file.write('   merit val  = %e\n'%self.f)
+            self.out_file.write('   sufficient = %e\n'%f_sufficient)
+            
             if self.f <= f_sufficient:
+                self.out_file.write('\nStep found!\n')
                 return alpha, n_iter
             else:
                 alpha *= self.rdtn_factor
             n_iter += 1
+            
+            self.out_file.write('\n')
 
         # if we got here, linesearch failed
+        self.out_file.write('\nLinesearch failed!\n')
         return self.alpha_min, self.max_iter
 
 ################################################################################
@@ -210,19 +222,28 @@ class StrongWolfe(LineSearch):
         # alpha_max, so we will return alpha_max
         if (alpha_low == alpha_hi) and (alpha_low == self.alpha_max):
             return self.alpha_max, 0
+        
+        self.out_file.write('\n')
 
         # START OF BIG FOR-LOOP
         for i in xrange(self.max_iter):
+            
+            self.out_file.write('    Strong-Wolfe Zoom : iter %i\n'%(i+1))
 
             # user interpolation to get the new step
-            alpha_new = quadratic_step(
-                alpha_low, alpha_hi, phi_low, phi_hi, dphi_low)
+            alpha_new = quadratic_step(alpha_low, alpha_hi, phi_low, phi_hi, dphi_low)
             # evaluate the merit function at the interpolated step
             phi_new = merit.eval_func(alpha_new)
 
             # check if this step violates sufficient decrease
             phi_sufficient = self.phi_init + \
                 self.decr_cond*alpha_new*self.dphi_init
+
+            self.out_file.write('    phi low        = %e\n'%phi_low)
+            self.out_file.write('    phi hi         = %e\n'%phi_hi)
+            self.out_file.write('    phi new        = %e\n'%phi_new)
+            self.out_file.write('    phi sufficient = %e\n'%phi_sufficient)
+            
             if (phi_new > phi_sufficient) and (phi_new >= phi_low):
                 alpha_hi = alpha_new
                 phi_hi = phi_new
@@ -230,8 +251,9 @@ class StrongWolfe(LineSearch):
             else:
                 # now we evaluate merit grad and check curvature condition
                 dphi_new = merit.eval_grad(alpha_new)
-                if (abs(dphi_new) <= -self.curv_cond*self.dphi_init):
+                if abs(dphi_new) <= -self.curv_cond*self.dphi_init:
                     # we also satisfied curvature condition, so we can stop
+                    self.out_file.write('\nStep found!\n')
                     return alpha_new, i
                 elif dphi_new*(alpha_hi - alpha_low) >= 0:
                     # curvature condition was not satisfied
@@ -244,13 +266,14 @@ class StrongWolfe(LineSearch):
                 alpha_low = alpha_new
                 phi_low = phi_new
                 dphi_low = dphi_new
+            
+            self.out_file.write('\n')
 
         # END OF BIG FOR-LOOP
         phi_sufficient = self.phi_init + self.decr_cond*alpha_new*self.dphi_init
         if phi_new < phi_sufficient:
             self.out_file.write(
-                '>> WARNING << StrongWolfe._zoom(): ' +
-                'Step found but curvature condition not met. >> WARNING <<\n')
+                '\n>> WARNING : Step found but curvature condition not met! <<\n')
             return alpha_new, i
 
         # if we got here then we didn't find a step
@@ -276,8 +299,13 @@ class StrongWolfe(LineSearch):
         quad_coeff = 0.0
         self.deriv_hi = False
 
+        self.out_file.write('\n')
+
         # START OF BIG FOR-LOOP
         for i in xrange(self.max_iter):
+
+            self.out_file.write('  Strong-Wolfe Line Search : iter %i\n'%(i+1))
+            self.out_file.write('  ----------------------------------\n')
 
             # get new step
             if i == 0:
@@ -300,6 +328,11 @@ class StrongWolfe(LineSearch):
             # if new step violates sufficient decrease, call zoom
             phi_sufficient = self.phi_init + \
                 self.decr_cond*alpha_new*self.dphi_init
+
+            self.out_file.write('  phi old        = %e\n'%(phi_old))
+            self.out_file.write('  phi new        = %e\n'%(phi_new))
+            self.out_file.write('  phi sufficient = %e\n'%(phi_sufficient))
+            
             if (phi_new > phi_sufficient) or ((i > 0) and (phi_new >= phi_old)):
                 dphi_new = 0.0
                 self.deriv_hi = False
@@ -315,6 +348,7 @@ class StrongWolfe(LineSearch):
 
                 # if curvature condition is satisfied, return alpha_old
                 if self.curv_cond > 1.e-6:
+                    self.out_file.write('\nStep found!\n')
                     return alpha_new, i
 
                 # a very small curvature is supicious, check for local minimum
@@ -337,6 +371,7 @@ class StrongWolfe(LineSearch):
                             alpha_new + self.alpha_max*1.e-6)
                     else:
                         # if neither perturbation worked, we have a true minimum
+                        self.out_file.write('\nStep found!\n')
                         return alpha_new, i
 
             # check if new gradient is positive
@@ -354,6 +389,8 @@ class StrongWolfe(LineSearch):
             alpha_old = alpha_new
             phi_old = phi_new
             dphi_old = dphi_new
+
+            self.out_file.write('\n')
 
         # END OF BIG FOR-LOOP
 

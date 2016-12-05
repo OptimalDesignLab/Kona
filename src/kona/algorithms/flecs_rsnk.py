@@ -362,7 +362,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
         min_radius_active = False
         max_filter_iter = 3
         for i in xrange(max_filter_iter):
-            self.info_file.write('\nFilter Step : iter %i\n'%i+1)
+            self.info_file.write('\nFilter Step : iter %i\n'%(i+1))
             X.plus(P)
             state_work.equals(state)  # save state for reverting later
             

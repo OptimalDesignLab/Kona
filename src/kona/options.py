@@ -1,3 +1,5 @@
+import sys
+
 def make_optn_key_str(keys):
     return "".join(["['%s']"%k for k in keys])
 
@@ -26,6 +28,15 @@ def get_opt(optns, default, *keys):
     if isinstance(val, dict) and bool(val) and bool(keys):
         return get_opt(val, default, *keys)
     return val
+
+def print_dict(obj, pre='', out_file=sys.stdout):
+    for k, v in obj.items():
+        if hasattr(v, '__iter__'):
+            out_file.write('%s%s : {\n'%(pre, k))
+            print_dict(v, pre='%s  '%pre, out_file=out_file)
+            out_file.write('%s}\n'%pre)
+        else:
+            out_file.write('%s%s : %s\n'%(pre, k, v))
 
 class BadKonaOption(Exception):
     """
