@@ -41,7 +41,7 @@ class FLECS(KrylovSolver):
         super(FLECS, self).__init__(vector_factories, optns)
 
         self.rel_tol = get_opt(self.optns, 1e-2, 'rel_tol')
-        self.abs_tol = get_opt(self.optns, 1e-5, 'abs_tol')
+        self.abs_tol = get_opt(self.optns, 1e-12, 'abs_tol')
 
         # set a default trust radius
         # NOTE: this will be set by the optimization algorithm later

@@ -20,10 +20,13 @@ class LagrangianHessian(BaseHessian):
         if self.eq_factory is not None:
             self.eq_factory.request_num_vectors(4)
 
-        # set misc settings
+        # set misc flags
         self._approx = False
         self._transposed = False
         self._allocated = False
+        
+        # get 2nd order adjoint tolerances
+        self.product_tol = get_opt(self.optns, 1e-6, 'product_tol')
 
         # initialize the internal krylov method
         krylov_optns = {
@@ -161,8 +164,9 @@ class LagrangianHessian(BaseHessian):
             dRdU(self.at_design, self.at_state).precond(
                 self.state_work, self.forward_adjoint)
         else:
+            rel_tol = self.product_tol/max(self.state_work.norm2, EPS)
             dRdU(self.at_design, self.at_state).solve(
-                self.state_work, self.forward_adjoint, rel_tol=1e-8)
+                self.state_work, self.forward_adjoint, rel_tol=rel_tol)
 
         # compute the FD perturbation for the states
         epsilon_fd = calc_epsilon(
@@ -205,8 +209,9 @@ class LagrangianHessian(BaseHessian):
             dRdU(self.at_design, self.at_state).T.precond(
                 self.adjoint_work, self.reverse_adjoint)
         else:
+            rel_tol = self.product_tol/max(self.adjoint_work.norm2, EPS)
             dRdU(self.at_design, self.at_state).T.solve(
-                self.adjoint_work, self.reverse_adjoint, rel_tol=1e-8)
+                self.adjoint_work, self.reverse_adjoint, rel_tol=rel_tol)
 
         # now we can assemble the remaining pieces of the Hessian-vector product
 
@@ -293,5 +298,5 @@ from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.vectors.composite import CompositeDualVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
 from kona.linalg.matrices.hessian import AugmentedKKTMatrix
-from kona.linalg.solvers.util import calc_epsilon
+from kona.linalg.solvers.util import calc_epsilon, EPS
 from kona.linalg.solvers.krylov import STCG

@@ -118,7 +118,7 @@ class ObjectiveMerit(MeritFunction):
                  optns={}, out_file=sys.stdout):
         super(ObjectiveMerit, self).__init__(primal_factory, state_factory,
                                              optns, out_file)
-        self.primal_factory.request_num_vectors(2)
+        self.primal_factory.request_num_vectors(4)
         self.state_factory.request_num_vectors(3)
 
     def reset(self, search_dir, x_start, u_start, p_dot_grad):
@@ -128,16 +128,17 @@ class ObjectiveMerit(MeritFunction):
         # if user provided a state vector
         # if the internal vectors are not allocated, do it now
         if not self._allocated:
+            self.x_start = self.primal_factory.generate()
             self.x_trial = self.primal_factory.generate()
+            self.search_dir = self.primal_factory.generate()
             self.primal_work = self.primal_factory.generate()
             self.u_trial = self.state_factory.generate()
             self.state_work = self.state_factory.generate()
             self.adjoint_work = self.state_factory.generate()
             self._allocated = True
         # store information for the new point the merit function is reset at
-        self.x_start = x_start
-        self.search_dir = search_dir
-        self.u_start = u_start
+        self.x_start.equals(x_start)
+        self.search_dir.equals(search_dir)
         self.func_val = objective_value(x_start, u_start)
         self.p_dot_grad = p_dot_grad
         self.last_func_alpha = 0.0
@@ -149,10 +150,11 @@ class ObjectiveMerit(MeritFunction):
             # calculate the trial primal and state vectors
             self.x_trial.equals_ax_p_by(
                 1.0, self.x_start, alpha, self.search_dir)
-            self.x_trial.enforce_bounds()
-            self.u_trial.equals_primal_solution(self.x_trial)
-            # calculate and return the raw objective function
-            self.func_val = objective_value(self.x_trial, self.u_trial)
+            if self.u_trial.equals_primal_solution(self.x_trial):
+                # calculate and return the raw objective function
+                self.func_val = objective_value(self.x_trial, self.u_trial)
+            else:
+                self.func_val = np.nan
             # store last used alpha
             self.last_func_alpha = alpha
 
@@ -419,6 +421,7 @@ class AugmentedLagrangian(L2QuadraticPenalty):
         return self.func_val
 
 # imports here to prevent circular errors
+import numpy as np
 from kona.options import get_opt
 from kona.linalg.common import objective_value
 from kona.linalg.solvers.util import EPS

@@ -7,6 +7,7 @@ except Exception:
     scipy_exists = False
 
 EPS = np.finfo(np.float64).eps
+EPS32 = np.finfo(np.float32).eps
 
 def abs_sign(x, y):
     """

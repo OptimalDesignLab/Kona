@@ -11,7 +11,7 @@ class FGMRES(KrylovSolver):
 
         # get tolerancing options
         self.rel_tol = get_opt(self.optns, 1e-3, 'rel_tol')
-        self.abs_tol = get_opt(self.optns, 1e-8, 'abs_tol')
+        self.abs_tol = get_opt(self.optns, 1e-12, 'abs_tol')
         self.check_LSgrad = get_opt(self.optns, False, 'check_LSgrad')
 
         # put in memory request

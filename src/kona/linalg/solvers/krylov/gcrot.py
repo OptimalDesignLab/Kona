@@ -11,7 +11,7 @@ class GCROT(KrylovSolver):
 
         # get relative tolerance
         self.rel_tol = get_opt(self.optns, 1e-5, 'rel_tol')
-        self.abs_tol = get_opt(self.optns, 1e-8, 'abs_tol')
+        self.abs_tol = get_opt(self.optns, 1e-12, 'abs_tol')
 
         # get maximum number of recycled vectors, and set current
         self.max_recycle = get_opt(self.optns, 10, 'max_recycle')

@@ -26,10 +26,13 @@ class TotalConstraintJacobian(BaseHessian):
         if self.ineq_factory is not None:
             self.ineq_factory.request_num_vectors(1)
 
-        # set misc settings
+        # set misc flags
         self._approx = False
         self._transposed = False
         self._allocated = False
+        
+        # get 2nd order adjoint tolerance
+        self.product_tol = get_opt(self.optns, 1e-6, 'product_tol')
 
     @property
     def approx(self):
@@ -77,8 +80,9 @@ class TotalConstraintJacobian(BaseHessian):
                 dRdU(self.at_design, self.at_state).precond(
                     self.state_work, self.adjoint_work)
             else:
+                rel_tol = self.product_tol/max(self.state_work.norm2, EPS)
                 dRdU(self.at_design, self.at_state).solve(
-                    self.state_work, self.adjoint_work, rel_tol=1e-8)
+                    self.state_work, self.adjoint_work, rel_tol=rel_tol)
             # assemble the product
             dCdX(self.at_design, self.at_state).product(
                 in_vec, out_vec)
@@ -98,8 +102,9 @@ class TotalConstraintJacobian(BaseHessian):
                 dRdU(self.at_design, self.at_state).T.precond(
                     self.state_work, self.adjoint_work)
             else:
+                rel_tol = self.product_tol/max(self.state_work.norm2, EPS)
                 dRdU(self.at_design, self.at_state).T.solve(
-                    self.state_work, self.adjoint_work, rel_tol=1e-8)
+                    self.state_work, self.adjoint_work, rel_tol=rel_tol)
             # assemble the final product
             dCdX(self.at_design, self.at_state).T.product(
                 in_vec, out_vec)
@@ -113,7 +118,9 @@ class TotalConstraintJacobian(BaseHessian):
         self._transposed = False
 
 # imports here to prevent circular errors
+from kona.options import get_opt
 from kona.linalg.vectors.common import DesignVector, StateVector
 from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
 from kona.linalg.vectors.composite import CompositeDualVector
 from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU
+from kona.linalg.solvers.util import EPS

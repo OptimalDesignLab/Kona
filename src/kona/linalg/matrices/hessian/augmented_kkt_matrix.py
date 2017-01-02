@@ -22,9 +22,12 @@ class AugmentedKKTMatrix(BaseHessian):
 
         # decide which krylov solver we use
         self.use_gcrot = get_opt(self.optns, True, 'use_gcrot')
+        
+        # options dict for constraint Jacobian
+        cnstr_optns = {'product_tol' : get_opt(self.optns, 1e-6, 'product_tol')}
 
         # initialize the constraint jacobian
-        self.A = TotalConstraintJacobian(vector_factories)
+        self.A = TotalConstraintJacobian(vector_factories, optns=cnstr_optns)
 
         # get preconditioner options
         self.precond = get_opt(self.optns, None, 'precond')

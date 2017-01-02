@@ -24,7 +24,7 @@ class ReducedHessian(BaseHessian):
         super(ReducedHessian, self).__init__(vector_factories, optns)
 
         # read reduced options
-        self.product_fac = get_opt(self.optns, 0.001, 'product_fac')
+        self.product_tol = get_opt(self.optns, 1e-6, 'product_tol')
         self.lamb = get_opt(self.optns, 0.0, 'lambda')
         self.scale = get_opt(self.optns, 1.0, 'scale')
         self.nu = get_opt(self.optns, 0.95, 'nu')
@@ -158,9 +158,10 @@ class ReducedHessian(BaseHessian):
         self.state_work[0].times(-1.0)
 
         # solve the first 2nd order adjoint
+        rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.solve(
-            self.state_work[0], self.w_adj, rel_tol=self.product_fac)
+            self.state_work[0], self.w_adj, rel_tol=rel_tol)
 
         # second adjoint system
         #####################################
@@ -195,9 +196,10 @@ class ReducedHessian(BaseHessian):
         self.state_work[0].plus(self.state_work[3])
 
         # solve the second 2nd order adjoint
+        rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.T.solve(
-            self.state_work[0], self.lambda_adj, rel_tol=self.product_fac)
+            self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
 
         # assemble the Hessian-vector product using 2nd order adjoints
         ##############################################################
@@ -268,4 +270,4 @@ from kona.options import get_opt
 from kona.linalg.vectors.common import DesignVector, StateVector
 from kona.linalg.matrices.common import dRdX, dRdU, IdentityMatrix
 from kona.linalg.solvers.krylov.basic import KrylovSolver
-from kona.linalg.solvers.util import calc_epsilon
+from kona.linalg.solvers.util import calc_epsilon, EPS

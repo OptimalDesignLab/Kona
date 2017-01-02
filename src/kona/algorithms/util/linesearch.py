@@ -1,7 +1,8 @@
 import sys
 
-from kona.options import get_opt
+import numpy as np
 
+from kona.options import get_opt
 from kona.algorithms.util.merit import MeritFunction
 
 ################################################################################
@@ -75,7 +76,7 @@ class LineSearch(object):
     """
 
     def __init__(self, optns={}, out_file=sys.stdout):
-        self.max_iter = get_opt(optns, 50, 'max_iter')
+        self.max_iter = get_opt(optns, 10, 'max_iter')
         self.decr_cond = get_opt(optns, 1e-4, 'decr_cond')
         self.out_file = out_file
 
@@ -126,7 +127,7 @@ class BackTracking(LineSearch):
         super(BackTracking, self).__init__(optns, out_file)
         self.alpha_init = get_opt(optns, 1.0, 'alpha_init')
         self.alpha_max = self.alpha_init
-        self.alpha_min = get_opt(optns, 1e-4, 'alpha_min')
+        self.alpha_min = get_opt(optns, 1e-3, 'alpha_min')
         self.rdtn_factor = get_opt(optns, 0.5, 'rdtn_factor')
         self.p_dot_dfdx = 0.0
 
@@ -147,23 +148,23 @@ class BackTracking(LineSearch):
 
         self.p_dot_dfdx = merit.p_dot_grad
 
-        if (self.p_dot_dfdx >= 0):
+        if self.p_dot_dfdx >= 0.:
             raise ValueError('search direction is not a descent direction')
 
         alpha = self.alpha_init
-        self.f_init = merit.eval_func(alpha)
+        self.f_init = merit.eval_func(0.0)
 
         self.out_file.write('\n')
 
-        n_iter = 0
+        n_iter = 1
         while (alpha > self.alpha_min) and (n_iter < self.max_iter):
 
-            self.out_file.write('   Backtracking Linesearch : iter %i\n'%(n_iter + 1))
-            self.out_file.write('   ---------------------------------\n')
+            self.out_file.write('   Backtracking Linesearch : iter %i\n'%n_iter)
             
             f_sufficient = self.f_init + self.decr_cond*alpha*self.p_dot_dfdx
             self.f = merit.eval_func(alpha)
             
+            self.out_file.write('   alpha      = %f\n'%alpha)
             self.out_file.write('   merit val  = %e\n'%self.f)
             self.out_file.write('   sufficient = %e\n'%f_sufficient)
             
@@ -172,6 +173,7 @@ class BackTracking(LineSearch):
                 return alpha, n_iter
             else:
                 alpha *= self.rdtn_factor
+                    
             n_iter += 1
             
             self.out_file.write('\n')
@@ -232,6 +234,7 @@ class StrongWolfe(LineSearch):
 
             # user interpolation to get the new step
             alpha_new = quadratic_step(alpha_low, alpha_hi, phi_low, phi_hi, dphi_low)
+            
             # evaluate the merit function at the interpolated step
             phi_new = merit.eval_func(alpha_new)
 

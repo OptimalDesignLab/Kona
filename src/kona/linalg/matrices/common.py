@@ -159,6 +159,8 @@ class dRdU(KonaMatrix):
         assert isinstance(rhs_vec, StateVector), \
                 "Invalid RHS vector: must be StateVector!"
         converged = False
+        rel_tol = (EPS**0.5)/max(rhs_vec.norm2, EPS)
+        solution.equals(0.0)
         if not self._transposed:
             cost = self._solver.solve_linear(
                 self._design.base.data, self._state.base,
@@ -423,3 +425,4 @@ from kona.linalg.vectors.common import DesignVector, StateVector
 from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.vectors.composite import CompositeDualVector
+from kona.linalg.solvers.util import EPS

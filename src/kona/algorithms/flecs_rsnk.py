@@ -102,10 +102,10 @@ class FLECS_RSNK(OptimizationAlgorithm):
         # get globalization options
         ############################################################
         self.globalization = get_opt(self.optns, 'trust', 'globalization')
-        if self.globalization not in ['trust', 'filter']:
+        if self.globalization not in ['trust', 'filter', None]:
             raise TypeError(
                 'Invalid globalization! ' +
-                'Can only use \'trust\'. ' +
+                'Can only use \'trust\' or \'filter\'. ' +
                 'If you want to skip globalization, set to None.')
         else:
             if self.globalization == 'filter':
@@ -262,19 +262,9 @@ class FLECS_RSNK(OptimizationAlgorithm):
             krylov_tol = max(krylov_tol,
                              min(grad_tol/grad_norm,
                                  feas_tol/feas_norm))
-            krylov_tol *= self.nu
-
-            # set ReducedKKTMatrix product tolerances
-            if self.KKT_matrix.dynamic_tol:
-                raise NotImplementedError(
-                    'ConstrainedRSNK.solve()' +
-                    'not yet set up for dynamic tolerance in product')
-            else:
-                self.KKT_matrix.product_fac *= \
-                    krylov_tol/self.krylov.max_iter
+            self.info_file.write('\nkrylov tol = %e\n'%krylov_tol)
 
             # set other solver and product options
-            self.KKT_matrix.lamb = 0.0
             self.krylov.rel_tol = krylov_tol
             self.krylov.radius = self.radius
             self.krylov.mu = self.mu

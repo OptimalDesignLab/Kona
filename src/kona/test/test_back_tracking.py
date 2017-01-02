@@ -47,7 +47,7 @@ class BackTrackingTestCase(unittest.TestCase):
         '''Assuming your first guess viloates sufficient decrease condition'''
 
         search_dir = self.pf.generate()
-        search_dir.base.data[:] = [-1,0]
+        search_dir.base.data[:] = [0,-2]
 
         at_design = self.pf.generate()
         at_design.equals(1)
@@ -67,19 +67,19 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
-        self.bt.alpha_init = .3 # should evaluate 2.5, 2.5
-        self.bt.rdtn_factor = .3
+        self.bt.alpha_init = 0.5 # should evaluate 2.5, 2.5
+        self.bt.rdtn_factor = .5
         self.bt.decr_cond = 1e-4
         alpha, n_iter = self.bt.find_step_length(self.merit)
 
-        self.assertEqual(n_iter, 1)
-        self.assertEqual(alpha, .09)
+        self.assertEqual(n_iter, 2)
+        self.assertEqual(alpha, .25)
 
     def test_stops_after_multiple_iter(self):
         '''Assuming your first guess viloates sufficient decrease condition'''
 
         search_dir = self.pf.generate()
-        search_dir.base.data[:] = [-1,0]
+        search_dir.base.data[:] = [0,-2]
 
         at_design = self.pf.generate()
         at_design.equals(1)
@@ -100,11 +100,11 @@ class BackTrackingTestCase(unittest.TestCase):
         self.merit.reset(search_dir, at_design, at_state, p_dot_grad)
 
         self.bt.alpha_init = 1
-        self.bt.rdtn_factor = .95
-        self.bt.decr_cond = 0.5
+        self.bt.rdtn_factor = .75
+        self.bt.decr_cond = 1e-4
         alpha, n_iter = self.bt.find_step_length(self.merit)
 
-        self.assertEqual(n_iter, 3)
+        self.assertEqual(n_iter, 4)
 
     def test_from_running_other_way(self):
         '''Check that it works when the search direction sign is flips'''
@@ -131,11 +131,11 @@ class BackTrackingTestCase(unittest.TestCase):
 
         self.merit.reset(search_dir, at_design, at_state, self.bt.p_dot_dfdx)
 
-        self.bt.alpha_init = 1 # should evaluate 2.5, 2.5
+        self.bt.alpha_init = 1
         alpha, n_iter = self.bt.find_step_length(self.merit)
 
         self.assertEqual(n_iter, 1)
-        self.assertEqual(alpha, .5)
+        self.assertEqual(alpha, 1)
 
     def test_bad_search_direction(self):
 

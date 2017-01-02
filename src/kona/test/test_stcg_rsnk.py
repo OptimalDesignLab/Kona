@@ -3,10 +3,10 @@ import numpy
 import sys
 
 from kona import Optimizer
-from kona.algorithms import STCG_RSNK, Verifier
+from kona.algorithms import UnconstrainedRSNK, Verifier
 from kona.examples import Rosenbrock, Spiral
 
-class STCGRSNKTestCase(unittest.TestCase):
+class UnconstrainedRSNKTestCase(unittest.TestCase):
 
     def test_RSNK_with_Rosenbrock(self):
 
@@ -43,7 +43,7 @@ class STCGRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = STCG_RSNK
+        algorithm = UnconstrainedRSNK
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 
@@ -96,7 +96,7 @@ class STCGRSNKTestCase(unittest.TestCase):
             },
         }
 
-        algorithm = STCG_RSNK
+        algorithm = UnconstrainedRSNK
         # algorithm = Verifier
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
