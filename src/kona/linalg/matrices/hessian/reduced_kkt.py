@@ -248,6 +248,7 @@ class ReducedKKTMatrix(BaseHessian):
 
         # calculate appropriate FD perturbation for design
         epsilon_fd = calc_epsilon(self.design_norm, in_design.norm2)
+        print "Product FD epsilon = %e"%epsilon_fd
 
         # assemble RHS for first adjoint system
         self.dRdX.linearize(self.at_design, self.at_state)
@@ -257,6 +258,7 @@ class ReducedKKTMatrix(BaseHessian):
         # perform the adjoint solution
         self.w_adj.equals(0.0)
         rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
+        print "w_adj tol = %e"%rel_tol
         # rel_tol = 1e-12
         self._linear_solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
 
@@ -298,6 +300,7 @@ class ReducedKKTMatrix(BaseHessian):
         # perform the adjoint solution
         self.lambda_adj.equals(0.0)
         rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
+        print "lambda_adj tol = %e"%rel_tol
         # rel_tol = 1e-12
         self._adjoint_solve(
             self.state_work[0], self.lambda_adj, rel_tol=rel_tol)

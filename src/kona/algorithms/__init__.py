@@ -1,7 +1,7 @@
 import base_algorithm
 from reduced_space_quasi_newton import ReducedSpaceQuasiNewton
 from unconstrained_rsnk import UnconstrainedRSNK
-from flecs_rsnk import FLECS_RSNK
+from constrained_rsnk import ConstrainedRSNK
 from composite_step_rsnk import CompositeStepRSNK
 from predictor_corrector import PredictorCorrector
 from predictor_corrector_cnstr import PredictorCorrectorCnstr

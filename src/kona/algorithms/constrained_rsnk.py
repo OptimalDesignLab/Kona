@@ -1,6 +1,7 @@
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
-class FLECS_RSNK(OptimizationAlgorithm):
+
+class ConstrainedRSNK(OptimizationAlgorithm):
     """
     A reduced-space Newton-Krylov optimization algorithm for PDE-governed
     (in)equality constrained problems.
@@ -27,13 +28,15 @@ class FLECS_RSNK(OptimizationAlgorithm):
     ----------
     primal_factory : VectorFactory
     state_factory : VectorFactory
-    dual_factory : VectorFactory
+    eq_factory : VectorFactory
+    ineq_factory: VectorFactory
     optns : dict, optional
     """
+
     def __init__(self, primal_factory, state_factory,
                  eq_factory, ineq_factory, optns=None):
         # trigger base class initialization
-        super(FLECS_RSNK, self).__init__(
+        super(ConstrainedRSNK, self).__init__(
             primal_factory, state_factory, eq_factory, ineq_factory, optns
         )
 
@@ -41,6 +44,12 @@ class FLECS_RSNK(OptimizationAlgorithm):
         self.primal_factory.request_num_vectors(6 + 1)
         self.state_factory.request_num_vectors(3)
         self.eq_factory.request_num_vectors(12 + 2)
+
+        # misc variables
+        self.grad_norm0 = EPS
+        self.feas_norm0 = EPS
+        self.kkt_norm0 = EPS
+        self.iter = 0
 
         # general options
         ############################################################
@@ -89,11 +98,11 @@ class FLECS_RSNK(OptimizationAlgorithm):
         # krylov solver settings
         ############################################################
         krylov_optns = {
-            'krylov_file'   : get_opt(
+            'krylov_file':get_opt(
                 self.optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
-            'subspace_size' : get_opt(self.optns, 10, 'rsnk', 'subspace_size'),
-            'check_res'     : get_opt(self.optns, True, 'rsnk', 'check_res'),
-            'rel_tol'       : get_opt(self.optns, 1e-2, 'rsnk', 'rel_tol'),
+            'subspace_size':get_opt(self.optns, 10, 'rsnk', 'subspace_size'),
+            'check_res':get_opt(self.optns, True, 'rsnk', 'check_res'),
+            'rel_tol':get_opt(self.optns, 1e-2, 'rsnk', 'rel_tol'),
         }
         self.krylov = FLECS(
             [self.primal_factory, self.eq_factory],
@@ -156,9 +165,6 @@ class FLECS_RSNK(OptimizationAlgorithm):
         kkt_save = self._generate_KKT_vector()
         kkt_work = self._generate_KKT_vector()
 
-        # generate primal vectors
-        primal_work = self.primal_factory.generate()
-
         # generate state vectors
         state = self.state_factory.generate()
         state_work = self.state_factory.generate()
@@ -167,10 +173,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
         # generate dual vectors
         dual_work = self.eq_factory.generate()
 
-
         # initialize basic data for outer iterations
         converged = False
-        self.iter = 0
 
         # evaluate the initial design before starting outer iterations
         X.equals_init_guess()
@@ -243,7 +247,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
             ref_norm = min(grad_norm, feas_norm)
             self.mu = max(
                 self.mu,
-                self.mu_init * ((self.feas_norm0/ref_norm)**self.mu_pow))
+                self.mu_init*((self.feas_norm0/ref_norm)**self.mu_pow))
             self.mu = min(self.mu, self.mu_max)
 
             # write convergence history
@@ -289,9 +293,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
             if self.globalization == 'trust':
                 old_flag = min_radius_active
                 success, min_radius_active = self.trust_step(
-                    X, state, adjoint, P, kkt_rhs, krylov_tol, feas_tol,
-                    primal_work, state_work, dual_work,
-                    kkt_work, kkt_save)
+                    X, state, adjoint, P, kkt_rhs,
+                    state_work, dual_work, kkt_work, kkt_save)
 
                 # watchdog on trust region failures
                 if min_radius_active and old_flag:
@@ -308,7 +311,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     self.info_file.write(
                         'Trust radius breakdown! Terminating...\n')
                     break
-                
+
                 # if filter was successful, compute adjoint for next iteration
                 if success:
                     if self.factor_matrices and self.iter < self.max_iter:
@@ -346,16 +349,16 @@ class FLECS_RSNK(OptimizationAlgorithm):
 
         self.info_file.write(
             'Total number of nonlinear iterations: %i\n\n'%self.iter)
-        
+
     def filter_step(self, X, state, P, kkt_rhs, kkt_work, state_work, dual_work):
         filter_success = False
         min_radius_active = False
         max_filter_iter = 3
         for i in xrange(max_filter_iter):
-            self.info_file.write('\nFilter Step : iter %i\n'%(i+1))
+            self.info_file.write('\nFilter Step : iter %i\n'%(i + 1))
             X.plus(P)
             state_work.equals(state)  # save state for reverting later
-            
+
             solve_failed = False
             if state.equals_primal_solution(X.primal):
                 obj = objective_value(X.primal, state)
@@ -383,7 +386,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
                 solve_failed = True
                 X.minus(P)
                 state.equals(state_work)
-    
+
             # at the first iteration, try a second-order correction
             if i == 0 and not solve_failed:
                 kkt_work.equals(P)
@@ -415,7 +418,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
                         '   State-solve failed!\n')
                     X.minus(P)
                     state.equals(state_work)
-    
+
             # if we got here, filter has dominated the point
             self.info_file.write('   New point rejected!\n')
             # shrink radius and re-solve
@@ -429,12 +432,12 @@ class FLECS_RSNK(OptimizationAlgorithm):
                 self.krylov.radius = self.radius
                 self.info_file.write('   Re-solving step...\n')
                 self.krylov.re_solve(kkt_rhs, P)
-        
+
         self.info_file.write('\n')
         return filter_success, min_radius_active
 
-    def trust_step(self, X, state, adjoint, P, kkt_rhs, krylov_tol, feas_tol,
-                   primal_work, state_work, dual_work, kkt_work, kkt_save):
+    def trust_step(self, X, state, adjoint, P, kkt_rhs,
+                   state_work, dual_work, kkt_work, kkt_save):
         # start trust region loop
         max_iter = 6
         iters = 0
@@ -447,8 +450,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
             dual_work.equals_constraints(X.primal, state)
             # compute the merit value at the current step
             merit_init = objective_value(X.primal, state) \
-                + X.dual.inner(dual_work) \
-                + 0.5*self.mu*(dual_work.norm2**2)
+                         + X.dual.inner(dual_work) \
+                         + 0.5*self.mu*(dual_work.norm2**2)
             # add the FLECS step
             kkt_work.equals_ax_p_by(1., X, 1., P)
             # solve states at the new step
@@ -458,8 +461,8 @@ class FLECS_RSNK(OptimizationAlgorithm):
                     kkt_work.primal, state_work)
                 # compute the merit value at the next step
                 merit_next = objective_value(kkt_work.primal, state) \
-                    + X.dual.inner(dual_work) \
-                    + 0.5*self.mu*(dual_work.norm2**2)
+                             + X.dual.inner(dual_work) \
+                             + 0.5*self.mu*(dual_work.norm2**2)
                 # evaluate the quality of the FLECS model
                 rho = (merit_init - merit_next)/self.krylov.pred_aug
             else:
@@ -547,6 +550,7 @@ class FLECS_RSNK(OptimizationAlgorithm):
                 break
 
         return converged, min_radius_active
+
 
 # imports here to prevent circular errors
 import numpy as np

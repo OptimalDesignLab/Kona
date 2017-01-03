@@ -1,5 +1,6 @@
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
+
 class UnconstrainedRSNK(OptimizationAlgorithm):
     """
     A reduced-space Newton-Krylov optimization algorithm for PDE-governed
@@ -25,6 +26,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
     state_factory : VectorFactory
     optns : dict, optional
     """
+
     def __init__(self, primal_factory, state_factory,
                  eq_factory, ineq_factory, optns=None):
         # trigger base class initialization
@@ -35,15 +37,18 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
         self.primal_factory.request_num_vectors(7)
         self.state_factory.request_num_vectors(8)
 
+        # misc attributes
+        self.iter = 0
+
         # set the krylov solver options
         krylov_optns = {
-            'krylov_file'   : get_opt(
+            'krylov_file':get_opt(
                 self.optns, 'kona_krylov.dat', 'rsnk', 'krylov_file'),
-            'subspace_size' : get_opt(self.optns, 10, 'rsnk', 'subspace_size'),
-            'check_res'     : get_opt(self.optns, True, 'rsnk', 'check_res'),
-            'rel_tol'       : get_opt(self.optns, 1e-2, 'rsnk', 'rel_tol'),
+            'subspace_size':get_opt(self.optns, 10, 'rsnk', 'subspace_size'),
+            'check_res':get_opt(self.optns, True, 'rsnk', 'check_res'),
+            'rel_tol':get_opt(self.optns, 1e-2, 'rsnk', 'rel_tol'),
         }
-    
+
         # determine if the underlying PDE is matrix-explicit
         self.factor_matrices = get_opt(self.optns, False, 'matrix_explicit')
 
@@ -68,9 +73,9 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
             self.max_radius = get_opt(self.optns, 1.0, 'trust', 'max_radius')
             self.krylov.radius = self.radius
         else:
-            raise BadKonaOption(self.optns, 'globalization')        
+            raise BadKonaOption(self.optns, 'globalization')
 
-        # initialize the ReducedHessian approximation
+            # initialize the ReducedHessian approximation
         reduced_optns = get_opt(self.optns, {}, 'rsnk')
         reduced_optns['out_file'] = self.info_file
         self.hessian = ReducedHessian(
@@ -87,7 +92,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
                 qn_optns['out_file'] = self.info_file
                 self.quasi_newton = quasi_newton(self.primal_factory, qn_optns)
             except Exception:
-                raise BadKonaOption(self.optns, 'quasi_newton','type')
+                raise BadKonaOption(self.optns, 'quasi_newton', 'type')
             self.precond = self.quasi_newton.solve
             self.hessian.quasi_newton = self.quasi_newton
         else:
@@ -102,8 +107,8 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
         else:
             glob_text = '          '
         self.hist_file.write(
-            '# Kona %s RSNK convergence history file\n'%(self.globalization) +
-            '# iters' + 
+            '# Kona %s RSNK convergence history file\n'%self.globalization +
+            '# iters' +
             '      cost' + ' '*5 +
             'grad norm ' + ' '*7 +
             'objective ' + ' '*7 +
@@ -118,7 +123,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
         else:
             glob_num = ''
         self.hist_file.write(
-            '%7i'%num_iter + 
+            '%7i'%num_iter +
             '%10i'%self.primal_factory._memory.cost + ' '*5 +
             '%8e'%norm + ' '*5 +
             '%8e'%obj + ' '*5 +
@@ -153,14 +158,13 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
         # START THE NEWTON LOOP
         #######################
         self._write_header()
-        self.iter = 0
         converged = False
-        grad_tol = self.primal_tol * grad_norm0
+        grad_tol = self.primal_tol*grad_norm0
         for i in xrange(self.max_iter):
 
             self.info_file.write(
                 '==================================================\n')
-            self.info_file.write('Beginning Newton iteration %i\n'%(i+1))
+            self.info_file.write('Beginning Newton iteration %i\n'%(i + 1))
             self.info_file.write('\n')
 
             # compute convergence norm
@@ -168,14 +172,14 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
             grad_norm = dJdX.norm2
             self.info_file.write(
                 'grad norm : grad_tol = %e : %e\n'%(grad_norm, grad_tol))
-            
+
             # update quasi-newton preconditioner
             if self.precond == 'quasi_newton' and i != 0:
                 dJdX_old.minus(dJdX)
                 dJdX_old.times(-1.0)
                 self.quasi_newton.add_correction(p, dJdX_old)
             dJdX_old.equals(dJdX)
-                
+
             # write history
             solver_info = current_solution(
                 num_iter=self.iter, curr_primal=x,
@@ -203,7 +207,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
             pred, active = self.krylov.solve(
                 self.hessian.product, dJdX, p, self.precond)
             dJdX.times(-1.0)
-            
+
             if p.norm2 == 0.0:
                 # we converged to a local minimum that may or may not satisfy tolerances
                 self.info_file.write("\nNewton-step is zero!\n")
@@ -216,13 +220,13 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
                 if self.factor_matrices:
                     factor_linear_system(x, state)
                 adjoint.equals_objective_adjoint(x, state, state_work, scale=obj_scale)
-                
+
             elif self.globalization == 'trust':
                 # store old design point and take the step
                 primal_work.equals(x)
                 x.plus(p)
                 x.enforce_bounds()
-                
+
                 # compute the actual reduction and trust parameter rho
                 obj_old = obj
                 state_work.equals(state)
@@ -248,7 +252,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
                         self.radius = min(2*self.radius, self.max_radius)
                         self.krylov.radius = self.radius
                         self.info_file.write('new radius = %f\n'%self.radius)
-                        
+
             elif self.globalization == 'linesearch':
                 # perform line search along the new direction
                 p_dot_djdx = p.inner(dJdX)
@@ -279,6 +283,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
         self.info_file.write(
             '\nTotal number of nonlinear iterations: %i\n'%self.iter)
 
+
 # imports here to prevent circular errors
 import numpy as np
 from kona.options import BadKonaOption, get_opt
@@ -286,6 +291,5 @@ from kona.linalg.common import current_solution, objective_value, factor_linear_
 from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.hessian import LimitedMemoryBFGS, ReducedHessian
 from kona.linalg.solvers.krylov import STCG, LineSearchCG, FGMRES
-from kona.linalg.solvers.util import EPS
 from kona.algorithms.util.linesearch import BackTracking
 from kona.algorithms.util.merit import ObjectiveMerit

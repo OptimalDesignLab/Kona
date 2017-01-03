@@ -3,7 +3,7 @@ import sys
 import unittest
 
 from kona import Optimizer
-from kona.algorithms import PredictorCorrectorCnstr, FLECS_RSNK, Verifier
+from kona.algorithms import PredictorCorrectorCnstr, ConstrainedRSNK, Verifier
 from kona.examples import SimpleIDF
 
 class IDFSchurTestCase(unittest.TestCase):
