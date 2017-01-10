@@ -46,13 +46,10 @@ class ReducedKKTMatrix(BaseHessian):
 
     Attributes
     ----------
-    product_fac : float
     product_tol : float
-    lamb : float
     scale : float
     grad_scale : float
-    ceq_scale : float
-    dynamic_tol : boolean
+    feas_scale : float
     krylov : KrylovSolver
         A krylov solver object used to solve the system defined by this matrix.
     dRdX, dRdU, dCdX, dCdU : KonaMatrix
@@ -248,7 +245,6 @@ class ReducedKKTMatrix(BaseHessian):
 
         # calculate appropriate FD perturbation for design
         epsilon_fd = calc_epsilon(self.design_norm, in_design.norm2)
-        print "Product FD epsilon = %e"%epsilon_fd
 
         # assemble RHS for first adjoint system
         self.dRdX.linearize(self.at_design, self.at_state)
@@ -257,9 +253,8 @@ class ReducedKKTMatrix(BaseHessian):
 
         # perform the adjoint solution
         self.w_adj.equals(0.0)
-        rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
-        print "w_adj tol = %e"%rel_tol
-        # rel_tol = 1e-12
+        # rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
+        rel_tol = 1e-8
         self._linear_solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
 
         # find the adjoint perturbation by solving the linearized dual equation
@@ -299,9 +294,8 @@ class ReducedKKTMatrix(BaseHessian):
 
         # perform the adjoint solution
         self.lambda_adj.equals(0.0)
-        rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
-        print "lambda_adj tol = %e"%rel_tol
-        # rel_tol = 1e-12
+        # rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
+        rel_tol = 1e-8
         self._adjoint_solve(
             self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
 
@@ -355,10 +349,8 @@ class ReducedKKTMatrix(BaseHessian):
             out_dual_ineq.plus(in_slack)
 
 # imports here to prevent circular errors
-from numbers import Number
 from kona.options import get_opt
-from kona.linalg.vectors.common import DesignVector, StateVector
-from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
+from kona.linalg.vectors.common import StateVector
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.vectors.composite import CompositeDualVector
