@@ -138,7 +138,6 @@ class FGMRES(KrylovSolver):
                 for k in xrange(i-1, -1, -1):
                     y[k], y[k+1] = apply_givens(-sn[k], cn[k], y[k], y[k+1])
                 rLS = numpy.dot(H[:i+1,:i+1], y[:i+1])
-                #print 'rLS norm = ',numpy.sqrt(rLS.dot(rLS))
                 if numpy.sqrt(rLS.dot(rLS)) < 1000*EPS:
                     self.out_file.write(
                         '# small gradient in FGMRES least-squares problem\n')

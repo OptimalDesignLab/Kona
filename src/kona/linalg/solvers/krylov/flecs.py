@@ -46,6 +46,7 @@ class FLECS(KrylovSolver):
         # set a default trust radius
         # NOTE: this will be set by the optimization algorithm later
         self.radius = 1.0
+        self.trust_active = False
 
         # set a default quadratic subproblem constraint penalty
         # NOTE: this will be set by the optimization algorithm later
@@ -220,6 +221,10 @@ class FLECS(KrylovSolver):
         y_r, _ , _, _ = numpy.linalg.lstsq(H_r, g_r)
         # make sure the data is persistent
         self.y[0:self.iters] = y_r[:]
+        
+        # print " "
+        # print "solve_subspace_problems() -- iter %i"%self.iters
+        # print "------------------------------------"
 
         # compute residuals
         res_red = H_r.dot(y_r) - g_r
@@ -231,29 +236,31 @@ class FLECS(KrylovSolver):
 
         # find the Hessian of the objective and the Hessian of the augmented
         # Lagrangian in the reduced space
-        Hess_red = VtZ_r.T.dot(H_r) - VtZ_dual_r.T.dot(H_r) - \
-            H_r.T.dot(VtZ_dual_r)
+        Hess_red = 0.5*(VtZ_r.T.dot(H_r) + H_r.T.dot(VtZ_r)) \
+                   - VtZ_dual_r.T.dot(H_r) \
+                   - H_r.T.dot(VtZ_dual_r)
         VtVH = VtV_dual_r.dot(H_r)
         Hess_aug = self.mu * H_r.T.dot(VtVH)
         Hess_aug += Hess_red
+
+        # print " "
+        # print "Hess_red = %r"%Hess_red
+        # print "Hess_aug = %r"%Hess_aug
 
         # compute the RHS for the augmented Lagrangian problem
         rhs_aug = numpy.zeros(self.iters)
         for k in xrange(self.iters):
             rhs_aug[k] = -self.g[0]*(self.VtZ_prim[0, k] + self.mu*VtVH[0, k])
 
-        lamb = 0.0
-        radius_aug = self.radius
+        radius_aug = self.radius  
         try:
             # compute the transformation to apply trust-radius directly
             rhs_tmp = numpy.copy(rhs_aug)
             # NOTE: Numpy Cholesky always returns a lower triangular matrix
-            # Since UTU is presumed upper triangular, we transpose it here
+            # but UTU in C++ version contains both upper and lower information
             L = numpy.linalg.cholesky(ZtZ_prim_r)
             rhs_aug = solve_tri(L, rhs_tmp, lower=True)
-            # print numpy.inner(L, L.T) - ZtZ_prim_r
-            # print ' '
-
+  
             for j in xrange(self.iters):
                 rhs_tmp[:] = Hess_aug[:,j]
                 vec_tmp = solve_tri(L, rhs_tmp, lower=True)
@@ -263,7 +270,6 @@ class FLECS(KrylovSolver):
                 rhs_tmp[:] = Hess_aug[j,:]
                 vec_tmp = solve_tri(L, rhs_tmp, lower=True)
                 Hess_aug[j,:] = vec_tmp[:]
-
             vec_tmp, lamb, self.pred_aug = solve_trust_reduced(
                 Hess_aug, rhs_aug, radius_aug)
             self.y_aug = solve_tri(L.T, vec_tmp, lower=False)
@@ -277,8 +283,7 @@ class FLECS(KrylovSolver):
 
         # check if the trust-radius constraint is active
         self.trust_active = False
-        if lamb >= 1e-8:
-            self.radius = radius_aug
+        if lamb > 10.*EPS:
             self.trust_active = True
 
         # compute residual norms for the augmented Lagrangian solution
@@ -293,13 +298,20 @@ class FLECS(KrylovSolver):
 
         # compute the predicted reductions in the objective
         self.pred = \
-            -0.5*numpy.inner(y_r, numpy.inner(Hess_red, y_r)) \
+            -0.5*numpy.inner(y_r, Hess_red.dot(y_r)) \
             + self.g[0]*numpy.inner(VtZ_prim_r[0, 0:self.iters], y_r)
+
+        # print " "
+        # print "beta_aug = %r"%self.beta_aug
+        # print "gamma_aug = %r"%self.gamma_aug
+        # print "pred = %r"%self.pred
+        # print "pred_aug = %r"%self.pred_aug
 
         # determine if negative curvature may be present
         self.neg_curv = False
         if (self.pred_aug - self.pred) > 0.05*abs(self.pred):
             self.neg_curv = True
+            # print "negative curvature detected"
 
     def solve(self, mat_vec, b, x, precond):
         # validate solver options

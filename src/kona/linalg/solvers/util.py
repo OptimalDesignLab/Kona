@@ -452,7 +452,7 @@ def secular_function(H, g, lam, radius):
         reg_iter += 1
         try:
             H_hat = H + np.eye(H.shape[0])*(lam + diag)
-            UTU = np.linalg.cholesky(H_hat).T
+            L = np.linalg.cholesky(H_hat)
             semidefinite = False
         except np.linalg.LinAlgError:
             diag *= 100.0
@@ -461,8 +461,8 @@ def secular_function(H, g, lam, radius):
     if semidefinite:
         raise Exception('Regularization of Cholesky factorization failed')
 
-    work = solve_tri(UTU.T, g, lower=True)
-    y = solve_tri(UTU, work, lower=False)
+    work = solve_tri(L, g, lower=True)
+    y = solve_tri(L.T, work, lower=False)
     y *= -1.
 
     # compute the secular function
@@ -470,10 +470,9 @@ def secular_function(H, g, lam, radius):
     fnc = 1.0/radius - 1.0/norm_y
 
     # compute its derivative
-    work = solve_tri(UTU.T, y, lower=True)
+    work = solve_tri(L, y, lower=True)
     norm_work = np.linalg.norm(work)
-    dfnc = norm_work/norm_y
-    dfnc = -(dfnc**2)/norm_y
+    dfnc = -((norm_work/norm_y)**2)/norm_y
 
     return y, fnc, dfnc
 
@@ -516,7 +515,7 @@ def mod_GS_normalize(i, Hsbg, w):
         nrm -= Hsbg[k, i]**2
         if (nrm < 0.0):
             nrm = 0.0
-            thr = nrm*reorth
+        thr = nrm*reorth
 
     # test the resulting vector
     nrm = w[i+1].norm2
@@ -568,7 +567,7 @@ def mod_gram_schmidt(i, B, C, w, normalize=False):
         nrm -= B[k, i]**2
         if (nrm < 0.0):
             nrm = 0.0
-            thr = nrm*reorth
+        thr = nrm*reorth
 
     # test the resulting vector
     nrm = w.norm2

@@ -7,7 +7,7 @@
 
 ## Install Guide
 
-Kona should be installed using `pip install -e .` run from the root directory
+Kona should be installed using `pip install -e . --user` run from the root directory
 of the repo.
 
 For a quick start guide on how to run optimization problems with Kona, please

@@ -554,6 +554,7 @@ class ConstrainedRSNK(OptimizationAlgorithm):
 
 # imports here to prevent circular errors
 import numpy as np
+from copy import deepcopy
 from kona.options import BadKonaOption, get_opt
 from kona.linalg.common import current_solution, objective_value
 from kona.linalg.common import factor_linear_system

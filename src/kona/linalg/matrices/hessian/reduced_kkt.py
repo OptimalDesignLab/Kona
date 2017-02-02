@@ -84,11 +84,11 @@ class ReducedKKTMatrix(BaseHessian):
         self.dCdX = dCdX()
         self.dCdU = dCdU()
 
-    def _linear_solve(self, rhs_vec, solution, rel_tol=1e-8):
+    def _linear_solve(self, rhs_vec, solution, rel_tol=1e-6):
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.solve(rhs_vec, solution, rel_tol=rel_tol)
 
-    def _adjoint_solve(self, rhs_vec, solution, rel_tol=1e-8):
+    def _adjoint_solve(self, rhs_vec, solution, rel_tol=1e-6):
         self.dRdU.linearize(self.at_design, self.at_state)
         self.dRdU.T.solve(rhs_vec, solution, rel_tol=rel_tol)
 
@@ -254,7 +254,7 @@ class ReducedKKTMatrix(BaseHessian):
         # perform the adjoint solution
         self.w_adj.equals(0.0)
         # rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
-        rel_tol = 1e-8
+        rel_tol = 1e-6
         self._linear_solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
 
         # find the adjoint perturbation by solving the linearized dual equation
@@ -295,7 +295,7 @@ class ReducedKKTMatrix(BaseHessian):
         # perform the adjoint solution
         self.lambda_adj.equals(0.0)
         # rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
-        rel_tol = 1e-8
+        rel_tol = 1e-6
         self._adjoint_solve(
             self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
 

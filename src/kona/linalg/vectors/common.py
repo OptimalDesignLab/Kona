@@ -509,7 +509,7 @@ class StateVector(KonaVector):
             "Invalid work vector type: must be StateVector!"
         state_work.equals_objective_partial(at_primal, at_state)
         state_work.times(-scale) # RHS = (-scale * dF/dU)
-        dRdU(at_primal, at_state).T.solve(state_work, self)
+        dRdU(at_primal, at_state).T.solve(state_work, self, rel_tol=1e-6)
 
     def equals_constraint_adjoint(self, at_primal, at_state, at_dual,
                                   state_work, scale=1.0):
@@ -532,7 +532,7 @@ class StateVector(KonaVector):
             "Invalid work vector type: must be StateVector!"
         dCdU(at_primal, at_state).T.product(at_dual, state_work, self)
         state_work.times(-scale) # RHS = (-scale * dual^T * dC/dU)
-        dRdU(at_primal, at_state).T.solve(state_work, self)
+        dRdU(at_primal, at_state).T.solve(state_work, self, rel_tol=1e-6)
 
     def equals_lagrangian_adjoint(self, at_kkt, at_state, state_work,
                                   obj_scale=1.0, cnstr_scale=1.0):
@@ -570,7 +570,7 @@ class StateVector(KonaVector):
         state_work.plus(self)
         state_work.times(-1.)
         # solve the adjoint system
-        dRdU(at_primal, at_state).T.solve(state_work, self)
+        dRdU(at_primal, at_state).T.solve(state_work, self, rel_tol=1e-6)
 
 class DualVector(KonaVector):
     pass

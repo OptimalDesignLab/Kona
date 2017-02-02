@@ -159,7 +159,6 @@ class dRdU(KonaMatrix):
         assert isinstance(rhs_vec, StateVector), \
                 "Invalid RHS vector: must be StateVector!"
         converged = False
-        rel_tol = (EPS**0.5)/max(rhs_vec.norm2, EPS)
         solution.equals(0.0)
         if not self._transposed:
             cost = self._solver.solve_linear(
@@ -169,11 +168,9 @@ class dRdU(KonaMatrix):
             cost = self._solver.solve_adjoint(
                 self._design.base.data, self._state.base,
                 rhs_vec.base, rel_tol, solution.base)
+        self._memory.cost += abs(cost)
         if cost >= 0:
             converged = True
-            self._memory.cost += cost
-        else:
-            self._memory.cost -= cost
         return converged
 
     def precond(self, in_vec, out_vec):

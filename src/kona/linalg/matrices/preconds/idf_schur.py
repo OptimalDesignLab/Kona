@@ -37,14 +37,13 @@ class ReducedSchurPreconditioner(BaseHessian):
 
         # initialize the internal FGMRES solver
         krylov_opts = {
-            'subspace_size' : 10,
+            'subspace_size' : 5,
             'rel_tol' : 1e-2,
             'check_res' :  False,
             'check_LS_grad' : False,
             'krylov_file' : KonaFile(
                 'kona_schur.dat', self.primal_factory._memory.rank)}
         self.krylov = FGMRES(self.primal_factory, optns=krylov_opts)
-        self.max_iter = 15
 
         # initialize an identity preconditioner
         self.eye = IdentityMatrix()
@@ -57,37 +56,20 @@ class ReducedSchurPreconditioner(BaseHessian):
         self.diag = 0.0
         self._allocated = False
 
-    def prod_design(self, in_vec, out_vec):
-        self.design_prod.equals(in_vec)
-        self.design_prod.restrict_to_design()
-        self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
-        out_vec.equals(0.0)
-        self.dual_prod.convert_to_design(out_vec)
-        out_vec.times(1.-self.mu)
-
     def prod_target(self, in_vec, out_vec):
         self.design_prod.equals(in_vec)
         self.design_prod.restrict_to_target()
         self.cnstr_jac.approx.product(self.design_prod, self.dual_prod)
         out_vec.equals(0.0)
         self.dual_prod.convert_to_design(out_vec)
-        out_vec.equals_ax_p_by(1-self.mu, out_vec, -self.mu, self.design_prod)
-
-    def prod_design_t(self, in_vec, out_vec):
-        self.dual_prod.equals(0.0)
-        in_vec.convert_to_dual(self.dual_prod)
-        self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
-        out_vec.restrict_to_design()
-        out_vec.times(1.-self.mu)
 
     def prod_target_t(self, in_vec, out_vec):
         self.dual_prod.equals(0.0)
         in_vec.convert_to_dual(self.dual_prod)
         self.cnstr_jac.T.approx.product(self.dual_prod, out_vec)
-        out_vec.equals_ax_p_by(1.-self.mu, out_vec, -self.mu, in_vec)
         out_vec.restrict_to_target()
 
-    def linearize(self, at_primal, at_state, scale=1.0, homotopy=0.0):
+    def linearize(self, at_primal, at_state, scale=1.0):
         # store references to the evaluation point
         if isinstance(at_primal, CompositePrimalVector):
             self.at_design = at_primal.design
@@ -97,9 +79,6 @@ class ReducedSchurPreconditioner(BaseHessian):
 
         # save the scaling on constraint terms
         self.scale = scale
-
-        # save the homotopy coefficient
-        self.mu = homotopy
 
         # linearize the constraint jacobian
         self.cnstr_jac.linearize(self.at_design, self.at_state, scale=self.scale)
@@ -135,37 +114,36 @@ class ReducedSchurPreconditioner(BaseHessian):
         out_design.equals(0.0)
         out_dual.equals(0.0)
 
-        # Step 1: Solve [(1-mu)*A_t^T + mu*I] v_idf = u_t
+        # Step 1: Solve A_targ^T * v_dual = u_targ
         design_work[1].equals(in_design)
         design_work[1].restrict_to_target()
         design_work[0].equals(0.0)
+        self.prod_target_t(design_work[1], design_work[0])
         self.krylov.solve(
             self.prod_target_t, design_work[1], design_work[0], self.precond)
         design_work[0].convert_to_dual(out_dual)
-
-        # Step 2: Compute v_d = u_d - (1-mu) * A_d^T * v_idf
-        out_dual.convert_to_design(design_work[0])
-        self.prod_design_t(design_work[0], out_design)
-        out_design.equals_ax_p_by(1., in_design, -1., out_design)
+        
+        # Step 2: Compute v_x = u_x - A_x^T * v_dual
+        design_work[0].equals(0.0)
+        self.cnstr_jac.T.approx.product(out_dual, design_work[0])
+        out_design.equals_ax_p_by(1., in_design, -1., design_work[0])
         out_design.restrict_to_design()
 
-        # Step 3: Solve [(1-mu)*A_t + mu*I] v_t = u_idf - (1-mu) * A_d * v_d
-        self.prod_design(out_design, design_work[0])
-        in_dual.convert_to_design(design_work[1])
-        design_work[0].equals_ax_p_by(1., design_work[1], -1., design_work[0])
-        design_work[1].equals(0.0)
-        self.krylov.solve(
-            self.prod_target, design_work[0], design_work[1], self.precond)
+        # Step 3: Solve A_targ * v_targ = u_dual - A_x * v_x
+        self.dual_prod.equals(0.0)
+        self.cnstr_jac.approx.product(out_design, self.dual_prod)
+        self.dual_prod.equals_ax_p_by(1., in_dual, -1., self.dual_prod)
+        self.dual_prod.convert_to_design(design_work[1])
         design_work[1].restrict_to_target()
-        out_design.plus(design_work[1])
-        
-        # Step 4: v_lamb = u_lamb
-        self.dual_prod.equals(in_dual)
-        self.dual_prod.restrict_to_regular()
-        out_dual.restrict_to_idf()
-        out_dual.plus(self.dual_prod)
+        design_work[0].equals(0.0)
+        self.krylov.solve(
+            self.prod_target, design_work[1], design_work[0], self.precond)
+        design_work[0].restrict_to_target()
+        out_design.plus(design_work[0])
+    
 
 # imports here to prevent circular errors
+import numpy as np
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.vectors.composite import CompositeDualVector
 from kona.linalg.matrices.common import IdentityMatrix
