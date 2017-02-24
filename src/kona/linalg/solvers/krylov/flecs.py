@@ -221,10 +221,6 @@ class FLECS(KrylovSolver):
         y_r, _ , _, _ = numpy.linalg.lstsq(H_r, g_r)
         # make sure the data is persistent
         self.y[0:self.iters] = y_r[:]
-        
-        # print " "
-        # print "solve_subspace_problems() -- iter %i"%self.iters
-        # print "------------------------------------"
 
         # compute residuals
         res_red = H_r.dot(y_r) - g_r
@@ -242,10 +238,6 @@ class FLECS(KrylovSolver):
         VtVH = VtV_dual_r.dot(H_r)
         Hess_aug = self.mu * H_r.T.dot(VtVH)
         Hess_aug += Hess_red
-
-        # print " "
-        # print "Hess_red = %r"%Hess_red
-        # print "Hess_aug = %r"%Hess_aug
 
         # compute the RHS for the augmented Lagrangian problem
         rhs_aug = numpy.zeros(self.iters)
@@ -301,17 +293,10 @@ class FLECS(KrylovSolver):
             -0.5*numpy.inner(y_r, Hess_red.dot(y_r)) \
             + self.g[0]*numpy.inner(VtZ_prim_r[0, 0:self.iters], y_r)
 
-        # print " "
-        # print "beta_aug = %r"%self.beta_aug
-        # print "gamma_aug = %r"%self.gamma_aug
-        # print "pred = %r"%self.pred
-        # print "pred_aug = %r"%self.pred_aug
-
         # determine if negative curvature may be present
         self.neg_curv = False
         if (self.pred_aug - self.pred) > 0.05*abs(self.pred):
             self.neg_curv = True
-            # print "negative curvature detected"
 
     def solve(self, mat_vec, b, x, precond):
         # validate solver options

@@ -114,18 +114,19 @@ class KonaMemory(object):
         self.ndv = solver.num_design
         self.neq = solver.num_eq
         self.nineq = solver.num_ineq
-        self.rank = self.solver.get_rank()
+        self.rank = solver.get_rank()
 
         # check if this is an IDF problem
-        if isinstance(self.solver, UserSolverIDF):
-            self.num_real_design = self.solver.num_real_design
-            self.num_real_ceq = self.solver.num_real_ceq
-        elif isinstance(self.solver, UserSolver):
+        try:
+            self.num_real_design = solver.num_real_design
+            if self.num_real_design == self.ndv:
+                self.num_real_design = None
+            self.num_real_ceq = solver.num_real_ceq
+            if self.num_real_ceq == self.neq:
+                self.num_real_ceq = None
+        except AttributeError:
             self.num_real_design = None
             self.num_real_ceq = None
-        else:
-            raise TypeError(
-                "Solver must be based on UserSolver or UserSolverIDF!")
 
         # empty design bounds
         self.design_lb = None

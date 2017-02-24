@@ -90,7 +90,9 @@ class Verifier(object):
             num_dual_in = max(num_dual_in, 6)
         if self.optns['red_grad']:
             num_primal = max(num_primal, 4)
-            num_state = max(num_state, 4)
+            num_state = max(num_state, 5)
+            if self.optns['dual_vec_eq']:
+                num_dual_eq = max(num_dual_eq, 7)
         if self.optns['lin_solve']:
             num_primal = max(num_primal, 1)
             num_state = max(num_state, 5)
@@ -574,7 +576,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['gradients']['eval_dFdX'] = True
             self.out_stream.write(
                 'WARNING: eval_dFdX() or eval_obj() may be inaccurate!\n'
@@ -603,7 +605,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['gradients']['eval_dFdU'] = True
             self.out_stream.write(
                 'WARNING: eval_dFdU() or eval_obj() may be inaccurate!\n')
@@ -657,7 +659,7 @@ class Verifier(object):
             '   absolute error       : %e\n'%error +
             '   relative error       : %e\n'%rel_error
         )
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['pde_jac']['multiply_dRdX'] = True
             self.out_stream.write(
                 'WARNING: multiply_dRdX or eval_residual may be inaccurate!\n'
@@ -679,7 +681,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['pde_jac']['multiply_dRdX_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dRdX_T() may be inaccurate!\n'
@@ -741,7 +743,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['pde_jac']['multiply_dRdU_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dRdU_T() may be inaccurate!\n'
@@ -803,7 +805,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['cnstr_jac_eq']['multiply_dCEQdX'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCEQdX() or eval_eq_cnstr() ' +
@@ -829,7 +831,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['cnstr_jac_eq']['multiply_dCEQdX_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCEQdX_T() may be inaccurate!\n'
@@ -868,7 +870,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['cnstr_jac_eq']['multiply_dCEQdU'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCEQdU() or eval_eq_cnstr() ' +
@@ -893,7 +895,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['cnstr_jac_eq']['multiply_dCEQdU_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCEQdU_T() may be inaccurate!\n'
@@ -956,7 +958,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['cnstr_jac_in']['multiply_dCINdX'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCINdX() or eval_ineq_cnstr() ' +
@@ -982,7 +984,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['cnstr_jac_in']['multiply_dCINdX_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCINdX_T() may be inaccurate!\n'
@@ -1021,7 +1023,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['cnstr_jac_in']['multiply_dCINdU'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCINdU() or eval_ineq_cnstr() ' +
@@ -1046,7 +1048,7 @@ class Verifier(object):
             '   relative error       : %e\n'%rel_error
         )
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['cnstr_jac_in']['multiply_dCINdU_T'] = True
             self.out_stream.write(
                 'WARNING: multiply_dCINdU_T() may be inaccurate!\n'
@@ -1068,6 +1070,12 @@ class Verifier(object):
         u_s = self.state_factory.generate()
         v_s = self.state_factory.generate()
         w_s = self.state_factory.generate()
+        z_s = self.state_factory.generate()
+        if self.optns['dual_vec_eq']:
+            u_d = self.eq_factory.generate()
+            z_d = self.eq_factory.generate()
+            v_d = self.eq_factory.generate()
+            w_d = self.eq_factory.generate()
 
         u_p.equals_init_design()
         u_s.equals_primal_solution(u_p)
@@ -1077,7 +1085,9 @@ class Verifier(object):
 
         v_s.equals_objective_partial(u_p, u_s)
         v_s.equals_objective_adjoint(u_p, u_s, w_s)
-        v_p.equals_total_gradient(u_p, u_s, v_s)
+        dRdX(u_p, u_s).T.product(v_s, w_p)
+        v_p.equals_objective_partial(u_p, u_s)
+        v_p.plus(w_p)
         z_p.equals(1.0)
         prod = z_p.inner(v_p)
 
@@ -1101,9 +1111,9 @@ class Verifier(object):
             '   FD product           : %f\n'%prod_fd +
             '   absolute error       : %e\n'%abs_error +
             '   relative error       : %e\n'%rel_error
-        )
+        )        
 
-        if rel_error > epsilon_fd:
+        if rel_error > sqrt(epsilon_fd):
             self.failures['red_grad']['solve_adjoint'] = True
             self.out_stream.write(
                 'WARNING: solve_adjoint() may be inaccurate!\n'
@@ -1120,6 +1130,44 @@ class Verifier(object):
                 self.out_stream.write(
                     'WARNING: Fix multiply_dRdX_T() and check this again!\n'
                 )
+
+        # check lagrangian if there are equality constraints
+        if self.optns['dual_vec_eq']:
+            u_d.equals(1.0)
+            u_p.equals_init_design()
+            u_s.equals_primal_solution(u_p)
+            if self.factor_matrices:
+                factor_linear_system(u_p, u_s)
+            u_kkt = ReducedKKTVector(u_p, u_d)
+            L = lagrangian_value(u_kkt, u_s)
+
+            v_s.equals_lagrangian_adjoint(u_kkt, u_s, w_s)
+            v_p.equals_lagrangian_total_gradient(u_p, u_s, u_d, v_s)
+            z_p.equals(1.0)
+            prod = z_p.inner(v_p)
+
+            epsilon_fd = calc_epsilon(u_p.norm2, z_p.norm2)
+            w_p.equals(z_p)
+            w_p.times(epsilon_fd)
+            w_p.plus(u_p)
+            w_s.equals_primal_solution(w_p)
+            if self.factor_matrices:
+                factor_linear_system(w_p, w_s)
+            w_kkt = ReducedKKTVector(w_p, u_d)
+            L_pert = lagrangian_value(w_kkt, w_s)
+            prod_fd = (L_pert - L)/epsilon_fd
+            abs_error = abs(prod - prod_fd)
+            rel_error = abs_error/max(abs(prod), EPS)
+
+            self.out_stream.write(
+                '============================================================\n' +
+                'Lagrangian gradient (total derivative) test: dL/dX * 1 \n' +
+                '   FD perturbation      : %e\n'%epsilon_fd +
+                '   analytical product   : %f\n'%prod +
+                '   FD product           : %f\n'%prod_fd +
+                '   absolute error       : %e\n'%abs_error +
+                '   relative error       : %e\n'%rel_error
+            )
 
     def _verify_lin_solve(self):
         if not self.optns['lin_solve']:
@@ -1167,8 +1215,11 @@ class Verifier(object):
 
 # imports here to prevent errors
 import sys
+import numpy as np
+from math import sqrt
 from kona.options import get_opt
-from kona.linalg.common import objective_value, factor_linear_system
+from kona.linalg.common import objective_value, lagrangian_value, factor_linear_system
 from kona.linalg.solvers.util import calc_epsilon
+from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.matrices.common import dRdX, dRdU
 from kona.linalg.matrices.common import dCEQdX, dCEQdU, dCINdX, dCINdU

@@ -131,7 +131,8 @@ class ReducedHessian(BaseHessian):
             Result of the operation.
         """
         # calculate perturbation
-        epsilon_fd = calc_epsilon(self.primal_norm, in_vec.norm2)
+        # epsilon_fd = calc_epsilon(self.primal_norm, in_vec.norm2)
+        epsilon_fd = 1e-5
 
         # perturb the design vector
         self.pert_design.equals_ax_p_by(1.0, self.at_design, epsilon_fd, in_vec)

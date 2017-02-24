@@ -49,7 +49,7 @@ class Optimizer(object):
         else:
             eq_factory = None
         if self._memory.nineq > 0:
-            ineq_factory =  self._memory.ineq_factory
+            ineq_factory = self._memory.ineq_factory
         else:
             ineq_factory = None
 

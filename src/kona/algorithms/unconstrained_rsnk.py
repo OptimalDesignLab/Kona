@@ -99,7 +99,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
             self.eye = IdentityMatrix()
             self.precond = self.eye.product
 
-    def _write_header(self):
+    def _write_header(self, obj_scale):
         if self.globalization == 'trust':
             glob_text = 'radius    '
         elif self.globalization == 'linesearch':
@@ -107,7 +107,8 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
         else:
             glob_text = '          '
         self.hist_file.write(
-            '# Kona %s RSNK convergence history file\n'%self.globalization +
+            '# Kona %s RSNK convergence history file '%self.globalization +
+            '(grad scale = %e)\n'%obj_scale +
             '# iters' +
             '      cost' + ' '*5 +
             'grad norm ' + ' '*7 +
@@ -157,9 +158,9 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
 
         # START THE NEWTON LOOP
         #######################
-        self._write_header()
+        self._write_header(obj_scale)
         converged = False
-        grad_tol = self.primal_tol*grad_norm0
+        grad_tol = self.primal_tol*grad_norm0*obj_scale
         for i in xrange(self.max_iter):
 
             self.info_file.write(
@@ -180,7 +181,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
                 self.quasi_newton.add_correction(p, dJdX_old)
             dJdX_old.equals(dJdX)
 
-            # write history
+            # write history 
             solver_info = current_solution(
                 num_iter=self.iter, curr_primal=x,
                 curr_state=state, curr_adj=adjoint)

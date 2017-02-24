@@ -45,7 +45,7 @@ class LineSearchCG(KrylovSolver):
             curv = d.inner(Bd)
             
             # check curvature
-            if curv <= 0:
+            if curv <= 1e-8:
                 # return steepest descent if negative
                 self.out_file.write('# Negative curvature encountered!\n')
                 if i == 0:
