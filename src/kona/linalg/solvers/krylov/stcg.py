@@ -84,7 +84,7 @@ class STCG(KrylovSolver):
             mat_vec(p, Ap)
             alpha = p.inner(Ap)
             # check alpha for non-positive curvature
-            if alpha <= -1e-8:
+            if alpha <= -1e-6:
                 # direction of non-positive curvature detected
                 xp = p.inner(x)
                 x2 = x.norm2**2
@@ -115,7 +115,7 @@ class STCG(KrylovSolver):
                 # mark trust-region boundary as active and finish solution
                 self.out_file.write(
                     '# direction of nonpositive curvature detected: ' +
-                    'alpha = %f\n'%alpha)
+                    'alpha = %e\n'%alpha)
                 active = True
                 break
             # otherwise we have positive curvature, so let's update alpha

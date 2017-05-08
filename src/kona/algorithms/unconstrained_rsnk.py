@@ -153,14 +153,15 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
         grad_norm0 = dJdX_old.norm2
         obj_scale = 1.
         # recompute adjoint and grad norm
-        adjoint.equals_objective_adjoint(x, state, state_work, scale=obj_scale)
-        dJdX_old.equals_total_gradient(x, state, adjoint, scale=obj_scale)
+        if obj_scale != 1.:
+            adjoint.equals_objective_adjoint(x, state, state_work, scale=obj_scale)
+            dJdX_old.equals_total_gradient(x, state, adjoint, scale=obj_scale)
 
         # START THE NEWTON LOOP
         #######################
         self._write_header(obj_scale)
         converged = False
-        grad_tol = self.primal_tol*grad_norm0*obj_scale
+        grad_tol = self.primal_tol*grad_norm0
         for i in xrange(self.max_iter):
 
             self.info_file.write(
