@@ -207,6 +207,44 @@ class CompositeVector(object):
             norms.append(self._vectors[i].infty)
         return max(norms)
 
+class PrimalDualVector(CompositeVector):
+    """
+    A composite vector made up of primal, dual equality, and dual inequality vectors.
+
+    Parameters
+    ----------
+    _memory : KonaMemory
+        All-knowing Kona memory manager.
+    _primal : DesignVector
+        Primal component of the composite vector.
+    _dual : DualVector
+        Dual components of the composite vector.
+    """
+
+    init_dual = 0.0  # default initial value for multipliers
+
+    def __init__(self, primal_vec, dual_vec):
+        assert isinstance(primal_vec, DesignVector), \
+            'PrimalDualVector() >> Mismatched primal vector. ' + \
+            'Must be DesignVector!'
+        assert isinstance(dual_vec, DualVectorEQ) or \
+               isinstance(dual_vec, DualVectorINEQ) or \
+               isinstance(dual_vec, CompositeDualVector), \
+            'PrimalDualVector() >> Mismatched dual vector. ' + \
+            'Must be DualVectorEQ, DualVectorINEQ CompositeDualVector!'
+
+        self.primal = primal_vec
+        self.dual = dual_vec
+
+        super(PrimalDualVector, self).__init__([primal_vec, dual_vec])
+
+    def equals_init_guess(self):
+        """
+        Sets the primal-dual vector to the initial guess, using the initial design.
+        """
+        self.primal.equals_init_design()
+        self.dual.equals(self.init_dual)
+
 class ReducedKKTVector(CompositeVector):
     """
     A composite vector representing a combined primal and dual vectors.
@@ -369,7 +407,7 @@ class CompositeDualVector(CompositeVector):
 
 class CompositePrimalVector(CompositeVector):
     """
-    A composite vector representing a combined design and slack vectors..
+    A composite vector representing a combined design and slack vectors.
 
     Parameters
     ----------
