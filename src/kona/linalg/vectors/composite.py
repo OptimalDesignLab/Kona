@@ -232,7 +232,7 @@ class ReducedKKTVector(CompositeVector):
             assert isinstance(dual_vec, DualVectorINEQ) or \
                    isinstance(dual_vec, CompositeDualVector), \
                 'ReducedKKTVector() >> Mismatched dual vector. ' + \
-                'Must be DualVecINEQ or CompositeDualVector!'
+                'Must be DualVectorINEQ or CompositeDualVector!'
         else:
             raise AssertionError(
                 'ReducedKKTVector() >> Invalid primal vector. ' +

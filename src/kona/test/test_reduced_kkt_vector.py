@@ -106,7 +106,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
             self.assertEqual(
                 str(err),
                 "ReducedKKTVector() >> Mismatched dual vector. " +
-                "Must be DualVecINEQ or CompositeDualVector!")
+                "Must be DualVectorINEQ or CompositeDualVector!")
         else:
             self.fail('AssertionError expected')
 
