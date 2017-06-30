@@ -100,7 +100,7 @@ class QuasiNewtonApprox(BaseHessian):
 
     def __init__(self, vector_factory, optns={}):
         assert isinstance(vector_factory, VectorFactory), \
-            "LimitedMemoryBFGS() >> Invalid vector factory!"
+            "QuasiNewtonApprox() >> Invalid vector factory!"
         super(QuasiNewtonApprox, self).__init__(vector_factory, optns)
         self.max_stored = get_opt(optns, 10, 'max_stored')
 
@@ -121,6 +121,60 @@ class QuasiNewtonApprox(BaseHessian):
         """
         raise NotImplementedError # pragma: no cover
 
+class MultiSecantApprox(BaseHessian):
+    """ Base class for multi-secant approximations of Jacobians
+
+    Attributes
+    ----------
+    max_stored : int
+        Maximum number of previous steps and residuals stored.
+    ptr : list of integers
+        Integer "pointers" that indicate the oldest to newest data
+    x_hist : list of KonaVector
+        The sequence of solutions used to build x_diff
+    r_hist : list of KonaVector
+        The sequence of residuals used to build r_diff
+    x_diff : list of KonaVector
+        Difference between subsequent solutions: :math:`\\Delta x_k = x_{k+1} - x_k`
+    r_diff : list of KonaVector
+        Difference between subsequent residuals: :math:`\\Delta r_k = r_{k+1} - r_k`
+    """
+
+    def __init__(self, vector_factory, optns={}):
+        assert isinstance(vector_factory, VectorFactory), \
+        "MultiSecantApprox() >> Invalid vector factory!"
+        super(MultiSecantApprox, self).__init__(vector_factory, optns)
+        self.max_stored = get_opt(optns, 10, 'max_stored')
+        self.ptr = []
+        self.x_hist = []
+        self.r_hist = []
+        self.x_diff = []
+        self.r_diff = []
+
+    def add_to_history(self, x_new, r_new):
+        """
+        Adds to the solution and residual history
+
+        Parameters
+        ----------
+        x_new : KonaVector
+            New solution vector.
+        r_new : KonaVector
+            New residual vector, or data that can be used to build residual.
+        """
+        raise NotImplementedError # pragma: no cover
+
+    def build_difference_matrices(mu=0.0):
+        """
+        Constructs the solution and residual differences from the history
+
+        Parameters
+        ----------
+        mu : float
+            Homotopy continuation parameter
+        """
+        raise NotImplementedError # pragma: no cover
+            
 # imports at the bottom to prevent circular import errors
 import sys
 from kona.options import get_opt
