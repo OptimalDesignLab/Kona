@@ -245,6 +245,84 @@ class PrimalDualVector(CompositeVector):
         self.primal.equals_init_design()
         self.dual.equals(self.init_dual)
 
+    def equals_opt_residual(self, x, state, adjoint, barrier=None,
+                            obj_scale=1.0, cnstr_scale=1.0):
+        """
+        Calculates the following nonlinear vector function:
+
+        .. math::
+        r(x,\\lambda_h,\\lambda_g) =
+        \\begin{bmatrix}
+        \\nabla_x f(x, u) - \\nabla_x h(x, u)^T \\lambda_{h} - \\nabla_x g(x, u)^T \\lambda_{g} \\\\
+        h(x,u) \\\\
+        -\\theta(|g(x,u) - \\lambda_g|) + \\theta(g(x,u)) + \theta(\\lambda_g)
+        \\end{bmatrix}
+
+        where :math:`h(x,u)` are the equality constraints, and :math:`g(x,u)` are the
+        inequality constraints.  The vectors :math:`\\lambda_h` and :math:`\\lambda_g`
+        are the associated Lagrange multipliers.  The function :math:`\\theta(z)`
+        is any strictly increasing function; typically :math:`\\theta(z) = z^3`.  The
+        solution to :math:`r(x,\\lambda_h,\\lambda_g) = 0` is equivalent to the
+        first-order optimality conditions for the optimization problem
+
+        .. math::
+        \\begin{align*}
+        \\min_x &f(x,u(x)) \\\\
+        \\textsf{s.t.} &h(x,u(x)) = 0, \\\\
+        &g(x,u(x)) \geq 0.
+        \\end{align*}
+
+        Parameters
+        ----------
+        x : PrimalDualVector
+            Evaluate first-order optimality conditions at this primal-dual point.
+        state : StateVector
+            Evaluate first-order optimality conditions at this state point.
+        adjoint : StateVector
+            Evaluate first-order optimality conditions using this adjoint vector.
+        obj_scale : float, optional
+            Scaling for the objective function.
+        cnstr_scale : float, optional
+            Scaling for the constraints.
+        """
+        assert isinstance(x, PrimalDualVector), \
+            "PrimalDualVector() >> invalid type x in equals_opt_residual. " + \
+            "x vector must be a PrimalDualVector!"
+        if isinstance(x.dual, CompositeDualVector):
+            dual_eq = x.dual.eq
+            dual_ineq = x.dual.ineq
+        elif isinstance(x.dual, DualVectorINEQ):
+            dual_eq = None
+            dual_ineq = x.dual
+        elif isinstance(x.dual, DualVectorEQ):
+            dual_eq = x.dual
+            dual_ineq = None
+        else:
+            raise AssertionError("PrimalDualVector() >> invalid dual vector type")
+        design = x.primal
+
+        design_opt = self.primal
+
+        # first include the objective partial and adjoint contribution
+        design_opt.equals_total_gradient(design, state, adjoint, obj_scale)
+        if dual_eq is not None:
+            # add the Lagrange multiplier products for equality constraints
+            design_opt.base.data[:] += design_opt._memory.solver.multiply_dCEQdX_T(
+                design.base.data, state.base, dual_eq.base.data) * \
+                cnstr_scale
+        if dual_ineq is not None:
+            # add the Lagrange multiplier products for inequality constraints
+            design_opt.base.data[:] += design_opt._memory.solver.multiply_dCINdX_T(
+                design.base.data, state.base, dual_ineq.base.data) * \
+                cnstr_scale
+        # include constraint terms
+        self.dual.equals_constraints(design, state, cnstr_scale)
+        if isinstance(self.dual, DualVectorINEQ):
+            self.dual.equals_mangasarian(self.dual, dual_ineq)
+        elif isinstance(self.dual, CompositeDualVector):
+            self.dual.ineq.equals_mangasarian(self.dual.ineq, dual_ineq)
+        print self.dual.ineq.base.data
+
 class ReducedKKTVector(CompositeVector):
     """
     A composite vector representing a combined primal and dual vectors.

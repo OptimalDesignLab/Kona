@@ -682,6 +682,28 @@ class DualVectorINEQ(DualVector):
             at_design.base.data, at_state.base)
         self.times(scale)
 
+    def equals_mangasarian(self, ineq, mult):
+        """
+        Evaluate the nonlinear function, due to Mangasarian, that is equivalent to the
+        complimentarity conditions, multiplier bounds and inequality constraints:
+        :math:`G(g,\\lambda_g) = -|g - \\lambda_g|^3 + (g)^3 + (\\lambda_g)^3`.
+        Stores the result in-place.
+
+        Parameters
+        ----------
+        ineq : DualVectorINEQ
+            Inequality constraint at the current design and state.
+        mult : DualVectorINEQ
+            The multiplier corresponding to the inequality constraints.
+        """
+        assert isinstance(ineq, DualVectorINEQ), \
+            'DualVectorINEQ >> Invalid type for ineq. ' + \
+            'Must be DualVecINEQ!'
+        assert isinstance(mult, DualVectorINEQ), \
+            'DualVectorINEQ >> Invalid type for mult. ' + \
+            'Must be DualVecINEQ!'
+        self.base.data[:] = -np.fabs(ineq.base.data[:] - mult.base.data[:])**3 \
+                            + ineq.base.data[:]**3 + mult.base.data[:]**3
 
 # package imports at the bottom to prevent import errors
 import numpy as np
