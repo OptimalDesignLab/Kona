@@ -18,6 +18,7 @@ class CompositeVector(object):
                 except TypeError:
                     raise TypeError("CompositeVector() >> " +
                                     "Mismatched internal vectors!")
+
     def equals(self, rhs):
         """
         Used as the assignment operator.
@@ -215,38 +216,153 @@ class PrimalDualVector(CompositeVector):
     ----------
     _memory : KonaMemory
         All-knowing Kona memory manager.
-    _primal : DesignVector
+    primal : DesignVector
         Primal component of the composite vector.
-    _dual : DualVector
-        Dual components of the composite vector.
+    eq : DualVectorEQ
+        Dual component corresponding to the equality constraints.
+    ineq: DualVectorINEQ
+        Dual component corresponding to the inequality constraints.
     """
 
     init_dual = 0.0  # default initial value for multipliers
 
-    def __init__(self, primal_vec, dual_vec):
+    def __init__(self, primal_vec, eq_vec=None, ineq_vec=None):
         assert isinstance(primal_vec, DesignVector), \
-            'PrimalDualVector() >> Mismatched primal vector. ' + \
-            'Must be DesignVector!'
-        assert isinstance(dual_vec, DualVectorEQ) or \
-               isinstance(dual_vec, DualVectorINEQ) or \
-               isinstance(dual_vec, CompositeDualVector), \
-            'PrimalDualVector() >> Mismatched dual vector. ' + \
-            'Must be DualVectorEQ, DualVectorINEQ CompositeDualVector!'
-
+            'PrimalDualVector() >> primal_vec must be a DesignVector!'
+        if eq_vec is not None:
+            assert isinstance(eq_vec, DualVectorEQ), \
+                'PrimalDualVector() >> eq_vec must be a DualVectorEQ!'
+        if ineq_vec is not None:
+            assert isinstance(ineq_vec, DualVectorINEQ), \
+                'PrimalDualVector() >> ineq_vec must be a DualVectorINEQ!'
         self.primal = primal_vec
-        self.dual = dual_vec
-
-        super(PrimalDualVector, self).__init__([primal_vec, dual_vec])
+        self.eq = eq_vec
+        self.ineq = ineq_vec
+        super(PrimalDualVector, self).__init__([primal_vec, eq_vec, ineq_vec])
 
     def equals_init_guess(self):
         """
         Sets the primal-dual vector to the initial guess, using the initial design.
         """
         self.primal.equals_init_design()
-        self.dual.equals(self.init_dual)
+        if self.eq is not None:
+            self.eq.equals(self.init_dual)
+        if self.ineq is not None:
+            self.ineq.equals(self.init_dual)
 
-    def equals_opt_residual(self, x, state, adjoint, barrier=None,
-                            obj_scale=1.0, cnstr_scale=1.0):
+    def equals_KKT_conditions(self, x, state, adjoint, obj_scale=1.0, cnstr_scale=1.0):
+        """
+        Calculates the total derivative of the Lagrangian
+        :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda_{h}^T h(x, u) + \\lambda_{g}^T g(x, u)` with
+        respect to :math:`\\begin{pmatrix}x && \\lambda_{h} && \\lambda_{g}\\end{pmatrix}^T`,
+        where :math:`h` denotes the equality constraints (if any) and :math:`g` denotes
+        the inequality constraints (if any).  Note that these (total) derivatives do not
+        represent the complete set of first-order optimality conditions in the case of
+        inequality constraints.
+
+        Parameters
+        ----------
+        x : PrimalDualVector
+            Evaluate derivatives at this primal-dual point.
+        state : StateVector
+            Evaluate derivatives at this state point.
+        adjoint : StateVector
+            Evaluate derivatives using this adjoint vector.
+        obj_scale : float, optional
+            Scaling for the objective function.
+        cnstr_scale : float, optional
+            Scaling for the constraints.
+        """
+        assert isinstance(x, PrimalDualVector), \
+            "PrimalDualVector() >> invalid type x in equals_opt_residual. " + \
+            "x vector must be a PrimalDualVector!"
+        if x.eq is None or self.eq is None:
+            assert self.eq is None and x.eq is None, \
+                "PrimalDualVector() >> inconsistency with x.eq and self.eq!"
+        if x.ineq is None or self.ineq is None:
+            assert self.ineq is None and x.ineq is None, \
+                "PrimalDualVector() >> inconsistency with x.ineq and self.ineq!"
+        # set some aliases
+        design = x.primal
+        dLdx = self.primal
+        ceq = self.eq
+        cineq = self.ineq
+        # first include the objective partial and adjoint contribution
+        dLdx.equals_total_gradient(design, state, adjoint, obj_scale)
+        if x.eq is not None:
+            # add the Lagrange multiplier products for equality constraints
+            dLdx.base.data[:] += dLdx._memory.solver.multiply_dCEQdX_T(
+                design.base.data, state.base, x.eq.base.data) * \
+                cnstr_scale
+        if x.ineq is not None:
+            # add the Lagrange multiplier products for inequality constraints
+            dLdx.base.data[:] += dLdx._memory.solver.multiply_dCINdX_T(
+                design.base.data, state.base, x.ineq.base.data) * \
+                cnstr_scale
+        # include constraint terms
+        if ceq is not None:
+            ceq.equals_constraints(design, state, cnstr_scale)
+        if cineq is not None:
+            cineq.equals_constraints(design, state ,cnstr_scale)
+
+    def equals_homotopy_residual(self, dLdx, x, init, mu=1.0):
+        """
+        Using dLdx=:math:`\\begin{pmatrix} \\nabla_x L && h && g \\end{pmatrix}`, which can be
+        obtained from the method equals_KKT_conditions, as well as the initial values
+        init=:math:`\\begin{pmatrix} x_0 && h(x_0,u_0) && g(x_0,u_0) \\end{pmatrix}` and the
+        current point :math:`\\begin{pmatrix} x && \lambda_h && \lambda_g \end{pmatrix}`, this
+        method computes the following nonlinear vector function:
+
+        .. math::
+        r(x,\\lambda_h,\\lambda_g;\\mu) =
+        \\begin{bmatrix}
+        \\mu\\left[\\nabla_x f(x, u) - \\nabla_x h(x, u)^T \\lambda_{h} - \\nabla_x g(x, u)^T \\lambda_{g}\\right] + (1 - \\mu)(x - x_0) \\\\
+        h(x,u) - (1-\mu)h(x_0,u_0) \\\\
+        -|g(x,u) - (1-\\mu)*g_0 - \\lambda_g|^3 + (g(x,u) - (1-\\mu)g_0)^3 + \\lambda_g^3 - (1-\\mu)\\hat{g}
+        \\end{bmatrix}
+
+        where :math:`h(x,u)` are the equality constraints, and :math:`g(x,u)` are the
+        inequality constraints.  The vectors :math:`\\lambda_h` and :math:`\\lambda_g`
+        are the associated Lagrange multipliers.  When mu=1.0, we recover a set of nonlinear
+        algebraic equations equivalent to the first-order optimality conditions.
+
+        Parameters
+        ----------
+        dLdx : PrimalDualVector
+            The total derivative of the Lagranginan with respect to the primal and dual variables.
+        x : PrimalDualVector
+            The current solution vector value corresponding to dLdx.
+        init: PrimalDualVector
+            The initial primal variable, as well as the initial constraint values.
+        mu : float
+            Homotopy parameter; must be between 0 and 1.
+        """
+        assert isinstance(dLdx, PrimalDualVector), \
+            "PrimalDualVector() >> dLdx must be a PrimalDualVector!"
+        assert isinstance(init, PrimalDualVector), \
+            "PrimalDualVector() >> init must be a PrimalDualVector!"
+        if dLdx.eq is None or self.eq is None or x.eq is None or init.eq is None:
+            assert dLdx.eq is None and self.eq is None and x.eq is None and init.eq is None, \
+                "PrimalDualVector() >> inconsistent eq component in self, dLdx, x, and/or init!"
+        if dLdx.ineq is None or self.ineq is None or x.ineq is None or init.ineq is None:
+            assert dLdx.ineq is None and self.ineq is None and x.ineq is None \
+                and init.ineq is None, \
+                "PrimalDualVector() >> inconsistent ineq component in self, dLdx, x, and/or init!"
+        if dLdx == self or x == self or init == self:
+            "PrimalDualVector() >> equals_homotopy_residual is not in-place!"
+        # construct the primal part of the residual: mu*dLdx + (1-mu)(x - x_0)
+        self.primal.equals_ax_p_by(1.0, x.primal, -1.0, init.primal)
+        self.primal.equals_ax_p_by(mu, dLdx.primal, (1.0 - mu), self.primal)
+        if dLdx.eq is not None:
+            # include the equality constraint part: h - (1-mu)h_0
+            self.eq.equals_ax_p_by(1.0, dLdx.eq, -(1.0 - mu), init.eq)
+        if dLdx.ineq is not None:
+            # include the inequality constraint part
+            self.ineq.equals_ax_p_by(1.0, dLdx.ineq, -(1.0 - mu), init.ineq)
+            self.ineq.equals_mangasarian(self.ineq, x.ineq)
+            self.ineq.minus((1.0 - mu)*0.1)
+
+    def equals_opt_residual(self, x, state, adjoint, obj_scale=1.0, cnstr_scale=1.0):
         """
         Calculates the following nonlinear vector function:
 
@@ -321,7 +437,6 @@ class PrimalDualVector(CompositeVector):
             self.dual.equals_mangasarian(self.dual, dual_ineq)
         elif isinstance(self.dual, CompositeDualVector):
             self.dual.ineq.equals_mangasarian(self.dual.ineq, dual_ineq)
-        print self.dual.ineq.base.data
 
 class ReducedKKTVector(CompositeVector):
     """

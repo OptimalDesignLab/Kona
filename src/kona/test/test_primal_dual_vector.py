@@ -14,18 +14,21 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         solver = DummySolver(10, 5, 5)  # 10 DVs, 5 equality, 5 inequality
         self.km = km = KonaMemory(solver)
 
-        km.primal_factory.request_num_vectors(5)
+        km.primal_factory.request_num_vectors(10)
         km.state_factory.request_num_vectors(3)
-        km.eq_factory.request_num_vectors(4)
-        km.ineq_factory.request_num_vectors(8)  # doe we need this many?
+        km.eq_factory.request_num_vectors(6)
+        km.ineq_factory.request_num_vectors(10)  # doe we need this many?
         km.allocate_memory()
 
         # get some work vectors
-        self.primal_work = km.primal_factory.generate()
+        self.primal_work1 = km.primal_factory.generate()
+        self.primal_work2 = km.primal_factory.generate()
         self.slack_work = km.ineq_factory.generate()  # only used for error testing
         self.state_work = km.state_factory.generate()
-        self.eq_work = km.eq_factory.generate()
-        self.ineq_work = km.ineq_factory.generate()
+        self.eq_work1 = km.eq_factory.generate()
+        self.eq_work2 = km.eq_factory.generate()
+        self.ineq_work1 = km.ineq_factory.generate()
+        self.ineq_work2 = km.ineq_factory.generate()
 
         # get static eval point vectors
         self.design = km.primal_factory.generate()
@@ -33,15 +36,17 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         self.adjoint = km.state_factory.generate()
         self.dual_eq = km.eq_factory.generate()
         self.dual_ineq = km.ineq_factory.generate()
-        self.dual = CompositeDualVector(self.dual_eq, self.dual_ineq)
-        self.at_pd1 = PrimalDualVector(self.design, self.dual)
-        self.at_pd2 = PrimalDualVector(self.design, self.dual_ineq)
-        self.at_pd3 = PrimalDualVector(self.design, self.dual_eq)
+        self.at_pd1 = PrimalDualVector(self.design, eq_vec=self.dual_eq,
+                                       ineq_vec=self.dual_ineq)
+        self.at_pd2 = PrimalDualVector(self.design, ineq_vec=self.dual_ineq)
+        self.at_pd3 = PrimalDualVector(self.design, eq_vec=self.dual_eq)
+        self.at_pd4 = PrimalDualVector(self.design)
 
         # set the evaluation point
         self.design.equals_init_design()
         self.state.equals_primal_solution(self.design)
-        self.dual.equals(1.0)
+        self.dual_eq.equals(1.0)
+        self.dual_ineq.equals(1.0)
 
         # case 1: primal-dual vector is a complete vector with design, eq and ineq
         self.pv1 = km.primal_factory.generate()
@@ -51,8 +56,13 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         self.eq1.base.data = 4*np.ones(5)
         self.ineq1.base.data = 5*np.ones(5)
         primal1 = self.pv1
-        dual1 = CompositeDualVector(self.eq1, self.ineq1)
-        self.pd_vec1 = PrimalDualVector(primal1, dual1)
+        dual_eq1 = self.eq1
+        dual_ineq1 = self.ineq1
+        self.pd_vec1 = PrimalDualVector(primal1, eq_vec=dual_eq1, ineq_vec=dual_ineq1)
+        self.pd_work11 = PrimalDualVector(self.primal_work1, eq_vec=self.eq_work1,
+                                          ineq_vec=self.ineq_work1)
+        self.pd_work12 = PrimalDualVector(self.primal_work2, eq_vec=self.eq_work2,
+                                          ineq_vec=self.ineq_work2)
 
         # case 2: primal-dual vector has design and ineq
         self.pv2 = km.primal_factory.generate()
@@ -61,14 +71,25 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         self.ineq2.base.data = 4*np.ones(5)
         primal2 = self.pv2
         dual2 = self.ineq2
-        self.pd_vec2 = PrimalDualVector(primal2, dual2)
+        self.pd_vec2 = PrimalDualVector(primal2, ineq_vec=dual2)
+        self.pd_work21 = PrimalDualVector(self.primal_work1, ineq_vec=self.ineq_work1)
+        self.pd_work22 = PrimalDualVector(self.primal_work2, ineq_vec=self.ineq_work2)
 
         # case 3: primal-dual vector only has design and eq
         self.pv3 = km.primal_factory.generate()
         self.eq3 = km.eq_factory.generate()
         primal3 = self.pv3
         dual3 = self.eq3
-        self.pd_vec3 = PrimalDualVector(primal3, dual3)
+        self.pd_vec3 = PrimalDualVector(primal3, eq_vec=dual3)
+        self.pd_work31 = PrimalDualVector(self.primal_work1, eq_vec=self.eq_work1)
+        self.pd_work32 = PrimalDualVector(self.primal_work2, eq_vec=self.eq_work2)
+
+        # case 4: primal-dual vector has design only
+        self.pv4 = km.primal_factory.generate()
+        primal4 = self.pv4
+        self.pd_vec4 = PrimalDualVector(primal4)
+        self.pd_work41 = PrimalDualVector(self.primal_work1)
+        self.pd_work42 = PrimalDualVector(self.primal_work2)
 
     def test_bad_init_args(self):
         try:
@@ -76,8 +97,7 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         except AssertionError as err:
             self.assertEqual(
                 str(err),
-                "PrimalDualVector() >> Mismatched primal vector. " +
-                "Must be DesignVector!")
+                "PrimalDualVector() >> primal_vec must be a DesignVector!")
         else:
             self.fail('AssertionError expected')
 
@@ -86,8 +106,7 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         except AssertionError as err:
             self.assertEqual(
                 str(err),
-                "PrimalDualVector() >> Mismatched dual vector. " +
-                "Must be DualVectorEQ, DualVectorINEQ CompositeDualVector!")
+                "PrimalDualVector() >> eq_vec must be a DualVectorEQ!")
         else:
             self.fail('AssertionError expected')
 
@@ -96,8 +115,16 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         except AssertionError as err:
             self.assertEqual(
                 str(err),
-                "PrimalDualVector() >> Mismatched primal vector. " +
-                "Must be DesignVector!")
+                "PrimalDualVector() >> primal_vec must be a DesignVector!")
+        else:
+            self.fail('AssertionError expected')
+
+        try:
+            PrimalDualVector(self.pv1, self.eq1, self.eq1)
+        except AssertionError as err:
+            self.assertEqual(
+                str(err),
+                "PrimalDualVector() >> ineq_vec must be a DualVectorINEQ!")
         else:
             self.fail('AssertionError expected')
 
@@ -107,8 +134,7 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         except AssertionError as err:
             self.assertEqual(
                 str(err),
-                "PrimalDualVector() >> Mismatched primal vector. " +
-                "Must be DesignVector!")
+                "PrimalDualVector() >> primal_vec must be a DesignVector!")
         else:
             self.fail('AssertionError expected')
 
@@ -142,22 +168,177 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         err = self.eq3.base.data - self.pd_vec3.init_dual*(np.ones(5))
         self.assertEqual(np.linalg.norm(err), 0)
 
-    def test_opt_residual_case1(self):
+    def test_init_guess_case4(self):
+        self.pd_vec4.equals_init_guess()
+
+        err = self.pv4.base.data - 10*np.ones(10)
+        self.assertEqual(np.linalg.norm(err), 0)
+
+    def test_kkt_conditions_case1(self):
         # case 1 has both equality and inequality constraints
         # recall: self.dual = 1, so dCeqdU^T*dual.eq + dCineqdU^Tdual.ineq = 5 + 5 = 10
-        dCdU(self.design, self.state).T.product(self.dual, self.adjoint, self.state_work)
+        dCdU(self.design, self.state).T.product(CompositeDualVector(self.dual_eq, self.dual_ineq),
+                                                self.adjoint, self.state_work)
         # recall: dFdU = -1
         self.state_work.equals_objective_partial(self.design, self.state)
         self.state_work.plus(self.adjoint)
         self.state_work.times(-1.)
         # We get adjoint = 9
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
-        self.pd_vec1.equals_opt_residual(self.at_pd1, self.state, self.adjoint)
+        self.pd_vec1.equals_KKT_conditions(self.at_pd1, self.state, self.adjoint)
 
         # check results
         exp_dLdX_norm = np.sqrt(10. * 20.**2)
         self.assertEqual(self.pd_vec1.primal.norm2, exp_dLdX_norm)
         exp_dLdEq_norm = np.sqrt(5. * 200.**2)
-        self.assertEqual(self.pd_vec1.dual.eq.norm2, exp_dLdEq_norm)
-        exp_dLdIn_norm = np.sqrt(5. * 119402**2)
-        self.assertEqual(self.pd_vec1.dual.ineq.norm2, exp_dLdIn_norm)
+        self.assertEqual(self.pd_vec1.eq.norm2, exp_dLdEq_norm)
+        exp_dLdIn_norm = np.sqrt(5. * 200**2)
+        self.assertEqual(self.pd_vec1.ineq.norm2, exp_dLdIn_norm)
+
+    def test_kkt_conditions_case2(self):
+        # case 2 has inequality constraints only
+        # recall: self.dual = 1, so dCineqdU^Tdual.ineq = 5 = 5
+        dCdU(self.design, self.state).T.product(self.dual_ineq, self.adjoint, self.state_work)
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.plus(self.adjoint)
+        self.state_work.times(-1.)
+        # We get adjoint = 4
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        self.pd_vec2.equals_KKT_conditions(self.at_pd2, self.state, self.adjoint)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 10.**2)
+        self.assertEqual(self.pd_vec2.primal.norm2, exp_dLdX_norm)
+        exp_dLdEq_norm = np.sqrt(5. * 200.**2)
+        self.assertEqual(self.pd_vec2.ineq.norm2, exp_dLdEq_norm)
+
+    def test_kkt_conditions_case3(self):
+        # case 3 has equality constraints only
+        # recall: self.dual = 1, so dCeqdU^Tdual.eq = 5 = 5
+        dCdU(self.design, self.state).T.product(self.dual_eq, self.adjoint, self.state_work)
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.plus(self.adjoint)
+        self.state_work.times(-1.)
+        # We get adjoint = 4
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        self.pd_vec3.equals_KKT_conditions(self.at_pd3, self.state, self.adjoint)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 10.**2)
+        self.assertEqual(self.pd_vec3.primal.norm2, exp_dLdX_norm)
+        exp_dLdEq_norm = np.sqrt(5. * 200**2)
+        self.assertEqual(self.pd_vec3.eq.norm2, exp_dLdEq_norm)
+
+    def test_kkt_conditions_case4(self):
+        # case 4 has no constraints
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.times(-1.)
+        # We get adjoint = -1
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        self.pd_vec4.equals_KKT_conditions(self.at_pd4, self.state, self.adjoint)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 0.**2)
+        self.assertEqual(self.pd_vec4.primal.norm2, exp_dLdX_norm)
+
+    def test_homotopy_residual_case1(self):
+        # case 1 has both equality and inequality constraints
+        # recall: self.dual = 1, so dCeqdU^T*dual.eq + dCineqdU^Tdual.ineq = 5 + 5 = 10
+        dCdU(self.design, self.state).T.product(CompositeDualVector(self.dual_eq, self.dual_ineq),
+                                                self.adjoint, self.state_work)
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.plus(self.adjoint)
+        self.state_work.times(-1.)
+        # We get adjoint = 9
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        dLdx = self.pd_work11
+        dLdx.equals_KKT_conditions(self.at_pd1, self.state, self.adjoint)
+
+        init = self.pd_work12
+        init.equals_init_guess()
+        init.eq.equals_constraints(init.primal, self.state)
+        init.ineq.equals_constraints(init.primal, self.state)
+
+        x = self.at_pd1
+        self.pd_vec1.equals_homotopy_residual(dLdx, x, init, mu=0.5)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 10.**2)
+        self.assertAlmostEqual(self.pd_vec1.primal.norm2, exp_dLdX_norm, places=10)
+        exp_dLdEq_norm = np.sqrt(5. * 100.**2)
+        self.assertAlmostEqual(self.pd_vec1.eq.norm2, exp_dLdEq_norm, places=10)
+        exp_dLdIn_norm = np.sqrt(5. * 29701.95**2)
+        self.assertAlmostEqual(self.pd_vec1.ineq.norm2, exp_dLdIn_norm, places=10)
+
+    def test_homotopy_residual_case2(self):
+        # case 2 has inequality constraints only
+        # recall: self.dual = 1, so dCineqdU^Tdual.ineq = 5
+        dCdU(self.design, self.state).T.product(self.dual_ineq, self.adjoint, self.state_work)
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.plus(self.adjoint)
+        self.state_work.times(-1.)
+        # We get adjoint = 9
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        dLdx = self.pd_work21
+        dLdx.equals_KKT_conditions(self.at_pd2, self.state, self.adjoint)
+        init = self.pd_work22
+        init.equals_init_guess()
+        init.ineq.equals_constraints(init.primal, self.state)
+
+        x = self.at_pd2
+        self.pd_vec2.equals_homotopy_residual(dLdx, x, init, mu=0.5)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 5**2)
+        self.assertAlmostEqual(self.pd_vec2.primal.norm2, exp_dLdX_norm, places=10)
+        exp_dLdIn_norm = np.sqrt(5. * 29701.95**2)
+        self.assertAlmostEqual(self.pd_vec2.ineq.norm2, exp_dLdIn_norm, places=10)
+
+    def test_homotopy_residual_case3(self):
+        # case 3 has equality constraints only
+        # recall: self.dual = 1, so dCeqdU^Tdual.ineq = 5
+        dCdU(self.design, self.state).T.product(self.dual_eq, self.adjoint, self.state_work)
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.plus(self.adjoint)
+        self.state_work.times(-1.)
+        # We get adjoint = 4
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        dLdx = self.pd_work31
+        dLdx.equals_KKT_conditions(self.at_pd3, self.state, self.adjoint)
+        init = self.pd_work32
+        init.equals_init_guess()
+        init.eq.equals_constraints(init.primal, self.state)
+
+        x = self.at_pd3
+        self.pd_vec3.equals_homotopy_residual(dLdx, x, init, mu=0.5)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 5**2)
+        self.assertAlmostEqual(self.pd_vec3.primal.norm2, exp_dLdX_norm, places=10)
+        exp_dLdEq_norm = np.sqrt(5. * 100.**2)
+        self.assertAlmostEqual(self.pd_vec3.eq.norm2, exp_dLdEq_norm, places=10)
+
+    def test_homotopy_residual_case4(self):
+        # case 4 has no constraints
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.times(-1.)
+        # We get adjoint = -1
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        dLdx = self.pd_work41
+        dLdx.equals_KKT_conditions(self.at_pd4, self.state, self.adjoint)
+        init = self.pd_work42
+        init.equals_init_guess()
+
+        x = self.at_pd4
+        self.pd_vec4.equals_homotopy_residual(dLdx, x, init, mu=0.5)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 0**2)
+        self.assertAlmostEqual(self.pd_vec3.primal.norm2, exp_dLdX_norm, places=10)

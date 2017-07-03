@@ -59,11 +59,15 @@ class KonaVector(object):
 
         Parameters
         ----------
-        vector : KonaVector
+        vector : float or KonaVector
             Vector to be added.
         """
-        assert isinstance(vector, type(self))
-        self.base.plus(vector.base)
+        if isinstance(vector,
+                      (float, np.float32, np.float64, int, np.int32, np.int64)):
+            self.base.data[:] += vector
+        else:
+            assert isinstance(vector, type(self))
+            self.base.plus(vector.base)
 
     def minus(self, vector):
         """
@@ -73,16 +77,20 @@ class KonaVector(object):
 
         Parameters
         ----------
-        vector : KonaVector
+        vector : float or KonaVector
             Vector to be subtracted.
         """
         if vector == self:  # special case...
             self.equals(0)
 
-        assert isinstance(vector, type(self))
-        self.base.times_scalar(-1.)
-        self.base.plus(vector.base)
-        self.base.times_scalar(-1.)
+        if isinstance(vector,
+                      (float, np.float32, np.float64, int, np.int32, np.int64)):
+            self.base.data[:] -= vector
+        else:
+            assert isinstance(vector, type(self))
+            self.base.times_scalar(-1.)
+            self.base.plus(vector.base)
+            self.base.times_scalar(-1.)
 
     def times(self, factor):
         """
