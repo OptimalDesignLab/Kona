@@ -342,3 +342,39 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         # check results
         exp_dLdX_norm = np.sqrt(10. * 0**2)
         self.assertAlmostEqual(self.pd_vec3.primal.norm2, exp_dLdX_norm, places=10)
+
+    def test_get_base_data_case1(self):
+        # case 1 has both equality and inequality constraints
+        A = np.zeros((10+5+5,1))
+        self.at_pd1.get_base_data(A[:,0])
+        B = np.ones_like(A)
+        B[0:10] *= 10
+        for i in range(A.shape[0]):
+            self.assertEqual(A[i], B[i])
+
+    def test_get_base_data_case2(self):
+        # case 2 has inequality constraints only
+        A = np.zeros((10+5,1))
+        self.at_pd2.get_base_data(A[:,0])
+        B = np.ones_like(A)
+        B[0:10] *= 10
+        for i in range(A.shape[0]):
+            self.assertEqual(A[i], B[i])
+
+    def test_get_base_data_case3(self):
+        # case 3 has equality constraints only
+        A = np.zeros((10+5,1))
+        self.at_pd3.get_base_data(A[:,0])
+        B = np.ones_like(A)
+        B[0:10] *= 10
+        for i in range(A.shape[0]):
+            self.assertEqual(A[i], B[i])
+
+    def test_get_base_data_case4(self):
+        # case 4 has no constraints
+        A = np.zeros((10,1))
+        self.at_pd4.get_base_data(A[:,0])
+        B = np.ones_like(A)
+        B[0:10] *= 10
+        for i in range(A.shape[0]):
+            self.assertEqual(A[i], B[i])
