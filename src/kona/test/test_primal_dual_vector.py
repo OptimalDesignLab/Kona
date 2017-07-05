@@ -174,6 +174,18 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         err = self.pv4.base.data - 10*np.ones(10)
         self.assertEqual(np.linalg.norm(err), 0)
 
+    def test_get_num_var_case1(self):
+        self.assertEqual(self.pd_vec1.get_num_var(), 20)
+
+    def test_get_num_var_case2(self):
+        self.assertEqual(self.pd_vec2.get_num_var(), 15)
+
+    def test_get_num_var_case3(self):
+        self.assertEqual(self.pd_vec3.get_num_var(), 15)
+
+    def test_get_num_var_case4(self):
+        self.assertEqual(self.pd_vec4.get_num_var(), 10)
+
     def test_kkt_conditions_case1(self):
         # case 1 has both equality and inequality constraints
         # recall: self.dual = 1, so dCeqdU^T*dual.eq + dCineqdU^Tdual.ineq = 5 + 5 = 10
@@ -181,9 +193,9 @@ class PrimalDualVectorTestCase(unittest.TestCase):
                                                 self.adjoint, self.state_work)
         # recall: dFdU = -1
         self.state_work.equals_objective_partial(self.design, self.state)
-        self.state_work.plus(self.adjoint)
+        self.state_work.minus(self.adjoint) # L = f - ceq^T*lambda_eq - cineq^T*lambda_ineq
         self.state_work.times(-1.)
-        # We get adjoint = 9
+        # We get adjoint = -11
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
         self.pd_vec1.equals_KKT_conditions(self.at_pd1, self.state, self.adjoint)
 
@@ -201,9 +213,9 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         dCdU(self.design, self.state).T.product(self.dual_ineq, self.adjoint, self.state_work)
         # recall: dFdU = -1
         self.state_work.equals_objective_partial(self.design, self.state)
-        self.state_work.plus(self.adjoint)
+        self.state_work.minus(self.adjoint) # L = f - cineq^T*lambda_ineq
         self.state_work.times(-1.)
-        # We get adjoint = 4
+        # We get adjoint = -6
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
         self.pd_vec2.equals_KKT_conditions(self.at_pd2, self.state, self.adjoint)
 
@@ -219,9 +231,9 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         dCdU(self.design, self.state).T.product(self.dual_eq, self.adjoint, self.state_work)
         # recall: dFdU = -1
         self.state_work.equals_objective_partial(self.design, self.state)
-        self.state_work.plus(self.adjoint)
+        self.state_work.minus(self.adjoint) # L = f - cineq^T*lambda_ineq
         self.state_work.times(-1.)
-        # We get adjoint = 4
+        # We get adjoint = -6
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
         self.pd_vec3.equals_KKT_conditions(self.at_pd3, self.state, self.adjoint)
 
@@ -251,9 +263,9 @@ class PrimalDualVectorTestCase(unittest.TestCase):
                                                 self.adjoint, self.state_work)
         # recall: dFdU = -1
         self.state_work.equals_objective_partial(self.design, self.state)
-        self.state_work.plus(self.adjoint)
+        self.state_work.minus(self.adjoint) # L = f - ceq^T*lambda_eq - cineq^T*lambda_ineq
         self.state_work.times(-1.)
-        # We get adjoint = 9
+        # We get adjoint = -11
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
         dLdx = self.pd_work11
         dLdx.equals_KKT_conditions(self.at_pd1, self.state, self.adjoint)
@@ -280,9 +292,9 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         dCdU(self.design, self.state).T.product(self.dual_ineq, self.adjoint, self.state_work)
         # recall: dFdU = -1
         self.state_work.equals_objective_partial(self.design, self.state)
-        self.state_work.plus(self.adjoint)
+        self.state_work.minus(self.adjoint) # L = f - cineq^T*lambda_ineq
         self.state_work.times(-1.)
-        # We get adjoint = 9
+        # We get adjoint = -6
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
         dLdx = self.pd_work21
         dLdx.equals_KKT_conditions(self.at_pd2, self.state, self.adjoint)
@@ -305,9 +317,9 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         dCdU(self.design, self.state).T.product(self.dual_eq, self.adjoint, self.state_work)
         # recall: dFdU = -1
         self.state_work.equals_objective_partial(self.design, self.state)
-        self.state_work.plus(self.adjoint)
+        self.state_work.minus(self.adjoint) # L = f - ceq^T*lambda_eq
         self.state_work.times(-1.)
-        # We get adjoint = 4
+        # We get adjoint = -6
         dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
         dLdx = self.pd_work31
         dLdx.equals_KKT_conditions(self.at_pd3, self.state, self.adjoint)
@@ -373,8 +385,45 @@ class PrimalDualVectorTestCase(unittest.TestCase):
     def test_get_base_data_case4(self):
         # case 4 has no constraints
         A = np.zeros((10,1))
+        print A.shape
         self.at_pd4.get_base_data(A[:,0])
         B = np.ones_like(A)
         B[0:10] *= 10
+        for i in range(A.shape[0]):
+            self.assertEqual(A[i], B[i])
+
+    def test_set_base_data_case1(self):
+        # case 1 has both equality and inequality constraints
+        A = np.random.random((10+5+5,1))
+        self.pd_vec1.set_base_data(A[:,0])
+        B = np.zeros_like(A)
+        self.pd_vec1.get_base_data(B[:,0])
+        for i in range(A.shape[0]):
+            self.assertEqual(A[i], B[i])
+
+    def test_set_base_data_case2(self):
+        # case 2 has only inequality constraints
+        A = np.random.random((10+5,1))
+        self.pd_vec2.set_base_data(A[:,0])
+        B = np.zeros_like(A)
+        self.pd_vec2.get_base_data(B[:,0])
+        for i in range(A.shape[0]):
+            self.assertEqual(A[i], B[i])
+
+    def test_set_base_data_case3(self):
+        # case 3 has only equality constraints
+        A = np.random.random((10+5,1))
+        self.pd_vec3.set_base_data(A[:,0])
+        B = np.zeros_like(A)
+        self.pd_vec3.get_base_data(B[:,0])
+        for i in range(A.shape[0]):
+            self.assertEqual(A[i], B[i])
+
+    def test_set_base_data_case4(self):
+        # case 4 has no constraints
+        A = np.random.random((10,1))
+        self.pd_vec4.set_base_data(A[:,0])
+        B = np.zeros_like(A)
+        self.pd_vec4.get_base_data(B[:,0])
         for i in range(A.shape[0]):
             self.assertEqual(A[i], B[i])

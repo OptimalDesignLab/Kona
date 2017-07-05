@@ -240,6 +240,17 @@ class PrimalDualVector(CompositeVector):
         self.ineq = ineq_vec
         super(PrimalDualVector, self).__init__([primal_vec, eq_vec, ineq_vec])
 
+    def get_num_var(self):
+        """
+        Returns the total number of variables in the PrimalDualVector
+        """
+        nvar = self.primal._memory.ndv
+        if self.eq is not None:
+            nvar += self.eq._memory.neq
+        if self.ineq is not None:
+            nvar += self.ineq._memory.nineq
+        return nvar
+
     def equals_init_guess(self):
         """
         Sets the primal-dual vector to the initial guess, using the initial design.
@@ -290,13 +301,13 @@ class PrimalDualVector(CompositeVector):
         # first include the objective partial and adjoint contribution
         dLdx.equals_total_gradient(design, state, adjoint, obj_scale)
         if x.eq is not None:
-            # add the Lagrange multiplier products for equality constraints
-            dLdx.base.data[:] += dLdx._memory.solver.multiply_dCEQdX_T(
+            # subtract the Lagrange multiplier products for equality constraints
+            dLdx.base.data[:] -= dLdx._memory.solver.multiply_dCEQdX_T(
                 design.base.data, state.base, x.eq.base.data) * \
                 cnstr_scale
         if x.ineq is not None:
-            # add the Lagrange multiplier products for inequality constraints
-            dLdx.base.data[:] += dLdx._memory.solver.multiply_dCINdX_T(
+            # subract the Lagrange multiplier products for inequality constraints
+            dLdx.base.data[:] -= dLdx._memory.solver.multiply_dCINdX_T(
                 design.base.data, state.base, x.ineq.base.data) * \
                 cnstr_scale
         # include constraint terms
@@ -371,17 +382,32 @@ class PrimalDualVector(CompositeVector):
         A : numpy array
             Array into which data is inserted.
         """
-        # check the length of A against the number of design variables and constraints
         ptr = 0
         A[ptr:ptr+self.primal._memory.ndv] = self.primal.base.data[:]
         ptr += self.primal._memory.ndv
         if self.eq is not None:
-            print self.eq._memory.neq
-            print self.eq.base.data.shape
             A[ptr:ptr+self.eq._memory.neq] = self.eq.base.data[:]
             ptr += self.eq._memory.neq
         if self.ineq is not None:
             A[ptr:ptr+self.ineq._memory.nineq] = self.ineq.base.data[:]
+
+    def set_base_data(self, A):
+        """
+        Copies the given array into the PrimalDualVector's underlying data
+
+        Parameters
+        ----------
+        A : numpy array
+            Array that is copied into the PrimalDualVector.
+        """
+        ptr = 0
+        self.primal.base.data[:] = A[ptr:ptr+self.primal._memory.ndv]
+        ptr += self.primal._memory.ndv
+        if self.eq is not None:
+            self.eq.base.data[:] = A[ptr:ptr+self.eq._memory.neq]
+            ptr += self.eq._memory.neq
+        if self.ineq is not None:
+            self.ineq.base.data[:] = A[ptr:ptr+self.ineq._memory.nineq]
 
 class ReducedKKTVector(CompositeVector):
     """
