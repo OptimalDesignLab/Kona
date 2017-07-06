@@ -1,3 +1,4 @@
+from collections import deque
 
 class BaseHessian(object):
     """
@@ -39,7 +40,11 @@ class BaseHessian(object):
         self.state_factory = None
         self.eq_factory = None
         self.ineq_factory = None
-        if type(self.vec_fac) is list:
+        if type(self.vec_fac) is not list:
+            assert self.vec_fac._vec_type is DesignVector, \
+                'BaseHessian() >> non-list factory is not for DesignVectors!'
+            self.primal_factory = vector_factory
+        else:
             for factory in self.vec_fac:
                 if factory is not None:
                     if factory._vec_type is DesignVector:
@@ -128,8 +133,6 @@ class MultiSecantApprox(BaseHessian):
     ----------
     max_stored : int
         Maximum number of previous steps and residuals stored.
-    ptr : list of integers
-        Integer "pointers" that indicate the oldest to newest data
     x_hist : list of KonaVector
         The sequence of solutions used to build x_diff
     r_hist : list of KonaVector
@@ -141,13 +144,12 @@ class MultiSecantApprox(BaseHessian):
     """
 
     def __init__(self, vector_factory, optns={}):
-        assert isinstance(vector_factory, VectorFactory), \
-        "MultiSecantApprox() >> Invalid vector factory!"
+        #assert isinstance(vector_factory, VectorFactory), \
+        #    "MultiSecantApprox() >> Invalid vector factory!"
         super(MultiSecantApprox, self).__init__(vector_factory, optns)
         self.max_stored = get_opt(optns, 10, 'max_stored')
-        self.ptr = []
-        self.x_hist = []
-        self.r_hist = []
+        self.x_hist = deque()
+        self.r_hist = deque()
         self.x_diff = []
         self.r_diff = []
 
@@ -164,7 +166,7 @@ class MultiSecantApprox(BaseHessian):
         """
         raise NotImplementedError # pragma: no cover
 
-    def build_difference_matrices(mu=0.0):
+    def build_difference_matrices(self, mu=0.0):
         """
         Constructs the solution and residual differences from the history
 
@@ -174,7 +176,7 @@ class MultiSecantApprox(BaseHessian):
             Homotopy continuation parameter
         """
         raise NotImplementedError # pragma: no cover
-            
+
 # imports at the bottom to prevent circular import errors
 import sys
 from kona.options import get_opt

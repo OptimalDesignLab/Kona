@@ -238,7 +238,8 @@ class PrimalDualVector(CompositeVector):
         self.primal = primal_vec
         self.eq = eq_vec
         self.ineq = ineq_vec
-        super(PrimalDualVector, self).__init__([primal_vec, eq_vec, ineq_vec])
+        vec_list = [primal_vec, eq_vec, ineq_vec]
+        super(PrimalDualVector, self).__init__([vec for vec in vec_list if vec is not None])
 
     def get_num_var(self):
         """
