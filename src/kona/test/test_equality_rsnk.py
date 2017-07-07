@@ -2,30 +2,34 @@ import numpy as np
 import unittest
 
 from kona import Optimizer
-from kona.algorithms import PredictorCorrectorCnstr
-from kona.examples import SphereConstrained
+from kona.algorithms import ConstrainedRSNK
+from kona.examples import ExponentialConstrained
 
-class PredictorCorrectorCnstrTestCase(unittest.TestCase):
+class ConstrainedRSNKTestCase(unittest.TestCase):
 
-    def test_with_simple_constrained(self):
+    def test_with_sphere_constrained(self):
 
-        init_x = [1.51, 1.52, 1.53]
-
-        solver = SphereConstrained(init_x=init_x, ineq=False)
+        solver = ExponentialConstrained()
 
         optns = {
             'info_file' : 'kona_info.dat',
-            'max_iter' : 100,
+            'max_iter' : 50,
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
-
-            'homotopy' : {
-                'inner_tol' : 1e-2,
-                'inner_maxiter' : 20,
-                'nominal_dist' : 5.0,
-                'nominal_angle' : 15.0*np.pi/180.,
+            'globalization' : 'filter',
+        
+            'trust' : {
+                'init_radius' : 1.0,
+                'max_radius' : 4.0,
+                'min_radius' : 1e-3,
             },
-
+        
+            'penalty' : {
+                'mu_init' : 10.0,
+                'mu_pow' : 1.0,
+                'mu_max' : 1e5,
+            },
+        
             'rsnk' : {
                 'precond'       : None,
                 # rsnk algorithm settings
@@ -40,17 +44,16 @@ class PredictorCorrectorCnstrTestCase(unittest.TestCase):
                 # FLECS solver settings
                 'krylov_file'   : 'kona_krylov.dat',
                 'subspace_size' : 10,
-                'rel_tol'       : 1e-6,
-            },
+                'check_res'     : True,
+                'rel_tol'       : 0.005,
+            }
         }
 
-        algorithm = PredictorCorrectorCnstr
+        algorithm = ConstrainedRSNK
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
-
-        print solver.curr_design
-
-        expected = -1.*np.ones(solver.num_design)
+        
+        expected = np.zeros(solver.num_design)
         diff = abs(solver.curr_design - expected)
         self.assertTrue(max(diff) < 1e-4)
 
