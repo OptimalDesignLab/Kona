@@ -580,6 +580,49 @@ class StateVector(KonaVector):
         # solve the adjoint system
         dRdU(at_primal, at_state).T.solve(state_work, self, rel_tol=1e-6)
 
+    def equals_homotopy_adjoint(self, at_pd, at_state, state_work,
+                                obj_scale=1.0, cnstr_scale=1.0, rel_tol=1e-6):
+        """
+        Computes in-place the adjoint variables for the augmented Lagrangian,
+        :math:`L = f - h^T \lambda_h - g^T \lambda_g` where :math:`h` denotes the equality constraints (if any) and :math:`g` denotes the inequality constraints (if any).  Note the
+        negative signs, which are opposite to how the Lagrangian is defined elsewhere in Kona.
+
+        Parameters
+        ----------
+        at_pd : PrimalDualVector
+            Current primal-dual solution.
+        at_state : StateVector
+            Current state point.
+        state_work : StateVector
+            Temporary work vector of State type.
+        obj_scale : float, optional
+            Scaling for the objective function.
+        cnstr_scale : float, optional
+            Scaling for the constraints.
+        rel_tol : float, optional
+            relative tolerance provided to adjoint solver
+        """
+        # assemble the right hand side for the Lagrangian adjoint solve
+        assert isinstance(at_pd, PrimalDualVector), \
+            "Invalid KKT vector: must be PrimalDualVector!"
+        at_primal = at_pd.primal
+
+        # add the dual contribution to the Adjoint RHS, if necessary
+        at_dual = at_pd.get_dual()
+        if at_dual is not None:
+            dCdU(at_primal, at_state).T.product(at_dual, self, state_work)
+            self.times(cnstr_scale)
+        else:
+            self.equals(0.)
+        # add objective partial
+        state_work.equals_objective_partial(at_primal, at_state)
+        state_work.times(obj_scale)
+        # form the adjoint RHS
+        state_work.minus(self)  # note the minus here !!!
+        state_work.times(-1.)
+        # solve the adjoint system
+        dRdU(at_primal, at_state).T.solve(state_work, self, rel_tol=rel_tol)
+
 class DualVector(KonaVector):
     pass
 
@@ -713,8 +756,33 @@ class DualVectorINEQ(DualVector):
         self.base.data[:] = -np.fabs(ineq.base.data[:] - mult.base.data[:])**3 \
                             + ineq.base.data[:]**3 + mult.base.data[:]**3
 
+    def deriv_mangasarian(self, ineq, mult):
+        """
+        Evaluate the derivative of the Mangasarian function with respect to the first argument,
+        :math:`\\partial G/\\partial g = -3\\mathsf{sgn}(g-\\lambda_g)|g - \\lambda_g|^2 + 3(g)^2`,
+        where :math:`\\mathsf{sgn}(\\cdot)` is the sign of the argument.  Stores the result
+        in-place.
+
+        Parameters
+        ----------
+        ineq : DualVectorINEQ
+            Inequality constraint at the current design and state.
+        mult : DualVectorINEQ
+            The multiplier corresponding to the inequality constraints.
+        """
+        assert isinstance(ineq, DualVectorINEQ), \
+            'DualVectorINEQ >> Invalid type for ineq. ' + \
+            'Must be DualVecINEQ!'
+        assert isinstance(mult, DualVectorINEQ), \
+            'DualVectorINEQ >> Invalid type for mult. ' + \
+            'Must be DualVecINEQ!'
+        self.base.data[:] = np.multiply(-3*np.sign(ineq.base.data[:] - mult.base.data[:]),
+                                        (ineq.base.data[:] - mult.base.data[:])**2) \
+                            + 3*ineq.base.data[:]**2
+
 # package imports at the bottom to prevent import errors
 import numpy as np
 from kona.linalg.vectors.composite import ReducedKKTVector
+from kona.linalg.vectors.composite import PrimalDualVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.matrices.common import *

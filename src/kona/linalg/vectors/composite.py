@@ -252,6 +252,20 @@ class PrimalDualVector(CompositeVector):
             nvar += self.ineq._memory.nineq
         return nvar
 
+    def get_dual(self):
+        """
+        Returns 1) eq or ineq if only one is None, 2) a CompositeDualVector if neither is none or
+        3) None if both are none
+        """
+        dual = None
+        if self.eq is not None and self.ineq is not None:
+            dual = CompositeDualVector(self.eq, self.ineq)
+        elif self.eq is not None:
+            dual = self.eq
+        elif self.ineq is not None:
+            dual = self.ineq
+        return dual
+
     def equals_init_guess(self):
         """
         Sets the primal-dual vector to the initial guess, using the initial design.
@@ -317,19 +331,33 @@ class PrimalDualVector(CompositeVector):
         if cineq is not None:
             cineq.equals_constraints(design, state ,cnstr_scale)
 
+    def get_optimality_and_feasiblity(self):
+        """
+        Returns the norm of the primal (opt) the dual parts of the vector (feas).  If the dual
+        parts of the vector are both None, then feas is returned as zero.
+        """
+        opt = self.primal.norm2
+        feas = 0.0
+        if self.eq is not None:
+            feas += self.eq.norm2**2
+        if self.ineq is not None:
+            feas += self.ineq.norm2**2
+        feas = np.sqrt(feas)
+        return opt, feas
+
     def equals_homotopy_residual(self, dLdx, x, init, mu=1.0):
         """
         Using dLdx=:math:`\\begin{pmatrix} \\nabla_x L && h && g \\end{pmatrix}`, which can be
         obtained from the method equals_KKT_conditions, as well as the initial values
         init=:math:`\\begin{pmatrix} x_0 && h(x_0,u_0) && g(x_0,u_0) \\end{pmatrix}` and the
-        current point :math:`\\begin{pmatrix} x && \lambda_h && \lambda_g \end{pmatrix}`, this
+        current point x=:math:`\\begin{pmatrix} x && \lambda_h && \lambda_g \end{pmatrix}`, this
         method computes the following nonlinear vector function:
 
         .. math::
         r(x,\\lambda_h,\\lambda_g;\\mu) =
         \\begin{bmatrix}
         \\mu\\left[\\nabla_x f(x, u) - \\nabla_x h(x, u)^T \\lambda_{h} - \\nabla_x g(x, u)^T \\lambda_{g}\\right] + (1 - \\mu)(x - x_0) \\\\
-        h(x,u) - (1-\mu)h(x_0,u_0) \\\\
+        -\\mu h(x,u) - (1-\mu)\\lambda_h \\\\
         -|g(x,u) - (1-\\mu)*g_0 - \\lambda_g|^3 + (g(x,u) - (1-\\mu)g_0)^3 + \\lambda_g^3 - (1-\\mu)\\hat{g}
         \\end{bmatrix}
 
@@ -366,13 +394,72 @@ class PrimalDualVector(CompositeVector):
         self.primal.equals_ax_p_by(1.0, x.primal, -1.0, init.primal)
         self.primal.equals_ax_p_by(mu, dLdx.primal, (1.0 - mu), self.primal)
         if dLdx.eq is not None:
-            # include the equality constraint part: h - (1-mu)h_0
-            self.eq.equals_ax_p_by(1.0, dLdx.eq, -(1.0 - mu), init.eq)
+            # include the equality constraint part: -mu*h - (1-mu)*lambda_h
+            self.eq.equals_ax_p_by(-mu, dLdx.eq, -(1.0 - mu), x.eq)
+            #self.eq.equals_ax_p_by(mu, dLdx.eq, -(1.0 - mu), x.eq)
         if dLdx.ineq is not None:
             # include the inequality constraint part
             self.ineq.equals_ax_p_by(1.0, dLdx.ineq, -(1.0 - mu), init.ineq)
             self.ineq.equals_mangasarian(self.ineq, x.ineq)
             self.ineq.minus((1.0 - mu)*0.1)
+
+    def equals_predictor_rhs(self, dLdx, x, init, mu=1.0):
+        """
+        Using dLdx=:math:`\\begin{pmatrix} \\nabla_x L && h && g \\end{pmatrix}`, which can be
+        obtained from the method equals_KKT_conditions, as well as the initial values
+        init=:math:`\\begin{pmatrix} x_0 && h(x_0,u_0) && g(x_0,u_0) \\end{pmatrix}` and the
+        current point x=:math:`\\begin{pmatrix} x && \lambda_h && \lambda_g \end{pmatrix}`, this
+        method computes the right-hand-side for the homotopy-predictor step, that is
+
+        .. math::
+        \partial r/\partial \\mu =
+        \\begin{bmatrix}
+        \\left[\\nabla_x f(x, u) - \\nabla_x h(x, u)^T \\lambda_{h} - \\nabla_x g(x, u)^T \\lambda_{g}\\right] - (x - x_0) \\\\
+        -h(x,u) + \\lambda_h \\\\
+        -3*(g_0)|g(x,u) - (1-\\mu)*g_0 - \\lambda_g|^2 + 3*g_0*(g(x,u) - (1-\\mu)g_0)^2 + \hat{g}
+        \\end{bmatrix}
+
+        where :math:`h(x,u)` are the equality constraints, and :math:`g(x,u)` are the
+        inequality constraints.  The vectors :math:`\\lambda_h` and :math:`\\lambda_g`
+        are the associated Lagrange multipliers.
+
+        Parameters
+        ----------
+        dLdx : PrimalDualVector
+            The total derivative of the Lagranginan with respect to the primal and dual variables.
+        x : PrimalDualVector
+            The current solution vector value corresponding to dLdx.
+        init: PrimalDualVector
+            The initial primal variable, as well as the initial constraint values.
+        mu : float
+            Homotopy parameter; must be between 0 and 1.
+        """
+        assert isinstance(dLdx, PrimalDualVector), \
+            "PrimalDualVector() >> dLdx must be a PrimalDualVector!"
+        assert isinstance(init, PrimalDualVector), \
+            "PrimalDualVector() >> init must be a PrimalDualVector!"
+        if dLdx.eq is None or self.eq is None or x.eq is None or init.eq is None:
+            assert dLdx.eq is None and self.eq is None and x.eq is None and init.eq is None, \
+                "PrimalDualVector() >> inconsistent eq component in self, dLdx, x, and/or init!"
+        if dLdx.ineq is None or self.ineq is None or x.ineq is None or init.ineq is None:
+            assert dLdx.ineq is None and self.ineq is None and x.ineq is None \
+                and init.ineq is None, \
+                "PrimalDualVector() >> inconsistent ineq component in self, dLdx, x, and/or init!"
+        if dLdx == self or x == self or init == self:
+            "PrimalDualVector() >> equals_predictor_rhs is not in-place!"
+        # construct the primal part of the rhs: dLdx - (x - x_0)
+        self.primal.equals_ax_p_by(1.0, dLdx.primal, -1.0, x.primal)
+        self.primal.plus(init.primal)
+        if dLdx.eq is not None:
+            # include the equality constraint part: -h + lambda_h
+            self.eq.equals_ax_p_by(-1., dLdx.eq, 1.0, x.eq)
+            #self.eq.equals_ax_p_by(1., dLdx.eq, 1.0, x.eq)
+        if dLdx.ineq is not None:
+            # include the inequality constraint part
+            self.ineq.equals_ax_p_by(1.0, dLdx.ineq, -(1.0 - mu), init.ineq)
+            self.ineq.deriv_mangasarian(self.ineq, x.ineq)
+            self.ineq.times(init.ineq)
+            self.ineq.plus(0.1)
 
     def get_base_data(self, A):
         """

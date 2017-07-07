@@ -5,5 +5,6 @@ from constrained_rsnk import ConstrainedRSNK
 from composite_step_rsnk import CompositeStepRSNK
 from predictor_corrector import PredictorCorrector
 from predictor_corrector_cnstr import PredictorCorrectorCnstr
+from homotopy_multi_secant import HomotopyMultiSecant
 from verifier import Verifier
 import util

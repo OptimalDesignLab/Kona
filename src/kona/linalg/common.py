@@ -39,13 +39,20 @@ def current_solution(num_iter, curr_primal, curr_state=None, curr_adj=None,
     elif isinstance(curr_primal, DesignVector):
         curr_design = curr_primal
         out_slack = None
-        if isinstance(curr_dual, DualVectorEQ):
+        if isinstance(curr_dual, DualVectorINEQ):
+            out_eq = None
+            out_ineq = deepcopy(curr_dual.base.data)
+        elif isinstance(curr_dual, DualVectorEQ):
             out_eq = deepcopy(curr_dual.base.data)
+            out_ineq = None
+        elif isinstance(curr_dual, CompositeDualVector):
+            out_eq = deepcopy(curr_dual.eq.base.data)
+            out_ineq = deepcopy(curr_dual.ineq.base.data)
         elif curr_dual is None:
             out_eq = None
+            out_ineq = None
         else:
-            raise TypeError("Invalid dual vector type: must be DualVectorEQ!")
-        out_ineq = None
+            raise TypeError("Invalid dual vector type")
 
     else:
         raise TypeError("Invalid primal vector type: " +
