@@ -169,6 +169,7 @@ class Sellar(UserSolver):
             du = np.linalg.solve(dRdU, -R)
 
             u += du
+            iters += 1
 
         result.data[0] = u[0]
         result.data[1] = u[1]
