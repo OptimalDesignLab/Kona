@@ -14,7 +14,7 @@ class IDFSchurTestCase(unittest.TestCase):
         
         optns = {
             'info_file' : 'kona_info.dat',
-            'max_iter' : 10,
+            'max_iter' : 5,
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
             'globalization' : 'trust',
@@ -63,7 +63,7 @@ class IDFSchurTestCase(unittest.TestCase):
         
         optns = {
             'info_file' : 'kona_info.dat',
-            'max_iter' : 10,
+            'max_iter' : 5,
             'opt_tol' : 1e-5,
             'feas_tol' : 1e-5,
             'globalization' : 'trust',
