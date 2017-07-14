@@ -20,5 +20,4 @@ Package contents
     kona.algorithms.PredictorCorrector
     kona.algorithms.PredictorCorrectorCnstr
     kona.algorithms.FLECS_RSNK
-    kona.algorithms.CompositeStepRSNK
     kona.algorithms.Verifier

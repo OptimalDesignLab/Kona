@@ -13,3 +13,4 @@ Subclasses
     kona.examples.SphereConstrained
     kona.examples.ExponentialConstrained
     kona.examples.Sellar
+    kona.examples.simple_mdo
