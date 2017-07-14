@@ -28,9 +28,9 @@ class BaseHessian(object):
         self.out_file = get_opt(self.optns, sys.stdout, 'out_file')
         if isinstance(self.out_file, str):
             try:
-                _memory = self.vec_fac._memory
+                _memory = vector_factory._memory
             except Exception:
-                _memory = self.vec_fac[0]._memory
+                _memory = vector_factory[0]._memory
             self.out_file = _memory.open_file(self.out_file)
 
         # get references to individual factories
