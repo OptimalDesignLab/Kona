@@ -19,8 +19,8 @@ macOS installations, please refer to the [documentation](http://kona.readthedocs
 
 ## What is it?
 
-Kona is a library for nonlinear (equality) constrained optimization. The stable master branch 
-currently provides several gradient-based optimization algorithms for both constrained and 
+Kona is a library for non-convex and nonlinear (equality) constrained optimization. The master 
+branch currently provides several gradient-based optimization algorithms for both constrained and 
 unconstrained problems. Development is ongoing to support inequality constrained problems at a 
 future date.
 
