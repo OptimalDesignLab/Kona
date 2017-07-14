@@ -166,14 +166,9 @@ class MultiSecantApprox(BaseHessian):
         """
         raise NotImplementedError # pragma: no cover
 
-    def build_difference_matrices(self, mu=0.0):
+    def build_difference_matrices(self):
         """
         Constructs the solution and residual differences from the history
-
-        Parameters
-        ----------
-        mu : float
-            Homotopy continuation parameter
         """
         raise NotImplementedError # pragma: no cover
 

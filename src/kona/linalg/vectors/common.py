@@ -753,8 +753,11 @@ class DualVectorINEQ(DualVector):
         assert isinstance(mult, DualVectorINEQ), \
             'DualVectorINEQ >> Invalid type for mult. ' + \
             'Must be DualVecINEQ!'
-        self.base.data[:] = -np.fabs(ineq.base.data[:] - mult.base.data[:])**3 \
-                            + ineq.base.data[:]**3 + mult.base.data[:]**3
+        #self.base.data[:] = -np.fabs(ineq.base.data[:] - mult.base.data[:])**3 \
+        #                    + ineq.base.data[:]**3 + mult.base.data[:]**3
+        self.base.data[:] = -np.fabs(ineq.base.data[:] - mult.base.data[:]) \
+                            + ineq.base.data[:] + mult.base.data[:]
+        self.times(0.5)
 
     def deriv_mangasarian(self, ineq, mult):
         """
@@ -776,9 +779,12 @@ class DualVectorINEQ(DualVector):
         assert isinstance(mult, DualVectorINEQ), \
             'DualVectorINEQ >> Invalid type for mult. ' + \
             'Must be DualVecINEQ!'
-        self.base.data[:] = np.multiply(-3*np.sign(ineq.base.data[:] - mult.base.data[:]),
-                                        (ineq.base.data[:] - mult.base.data[:])**2) \
-                            + 3*ineq.base.data[:]**2
+        #self.base.data[:] = np.multiply(-3*np.sign(ineq.base.data[:] - mult.base.data[:]),
+        #                                (ineq.base.data[:] - mult.base.data[:])**2) \
+        #                    + 3*ineq.base.data[:]**2
+        self.base.data[:] = -np.sign(ineq.base.data[:] - mult.base.data[:]) \
+                            + np.ones_like(ineq.base.data)
+        self.times(0.5)
 
 # package imports at the bottom to prevent import errors
 import numpy as np

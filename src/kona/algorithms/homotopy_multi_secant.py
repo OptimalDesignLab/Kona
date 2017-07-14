@@ -92,7 +92,7 @@ class HomotopyMultiSecant(OptimizationAlgorithm):
         Create appropriate vector based on vector factory
         """
         assert self.primal_factory is not None, \
-            'AndersonMultiSecant() >> primal_factory is not defined!'
+            'HomotopyMultiSecant() >> primal_factory is not defined!'
         dual_eq = None
         dual_ineq = None
         primal = self.primal_factory.generate()
@@ -107,7 +107,7 @@ class HomotopyMultiSecant(OptimizationAlgorithm):
         self.info_file.write(
             '\n' +
             '**************************************************\n' +
-            '***        Using Multi-Secant Algorithm        ***\n' +
+            '***        Using Multi-Secant Homotopy         ***\n' +
             '**************************************************\n' +
             '\n')
 
@@ -188,7 +188,7 @@ class HomotopyMultiSecant(OptimizationAlgorithm):
 
             # find the predictor step
             R.equals_predictor_rhs(dLdX, X, X_init, mu=self.mu)
-            self.multisecant.build_difference_matrices(mu=self.mu)
+            self.multisecant.build_difference_matrices_for_homotopy(mu=self.mu)
             dXdmu_old.equals(dXdmu)
             self.multisecant.solve(R, dXdmu)
             # adjust the step size
@@ -242,7 +242,7 @@ class HomotopyMultiSecant(OptimizationAlgorithm):
                         break
 
                 # solve for corrector step
-                self.multisecant.build_difference_matrices(mu=self.mu)
+                self.multisecant.build_difference_matrices_for_homotopy(mu=self.mu)
                 self.multisecant.solve(R, dX)
                 # safe-guard against large steps
                 if dX.norm2 > self.radius_max:

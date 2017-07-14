@@ -367,6 +367,12 @@ class AndersonMultiSecantTestCase(unittest.TestCase):
             aa.x_diff[k].get_base_data(A[:])
             for i in range(A.shape[0]):
                 self.assertAlmostEqual(A[i], 1.0, places=14)
+        aa.build_difference_matrices_for_homotopy()
+        A = np.zeros(3)
+        for k in range(max_stored-1):
+            aa.x_diff[k].get_base_data(A[:])
+            for i in range(A.shape[0]):
+                self.assertAlmostEqual(A[i], 1.0, places=14)
 
     def test_build_difference_matrices_case2(self):
         # case 2: constrained with equality constraints only
@@ -404,6 +410,12 @@ class AndersonMultiSecantTestCase(unittest.TestCase):
             aa.x_diff[k].get_base_data(A[:])
             for i in range(A.shape[0]):
                 self.assertAlmostEqual(A[i], 1.0, places=14)
+        aa.build_difference_matrices_for_homotopy()
+        A = np.zeros(13)
+        for k in range(max_stored-1):
+            aa.x_diff[k].get_base_data(A[:])
+            for i in range(A.shape[0]):
+                self.assertAlmostEqual(A[i], 1.0, places=14)
 
     def test_build_difference_matrices_case3(self):
         # case 3: constrained with inequality constraints only
@@ -436,6 +448,12 @@ class AndersonMultiSecantTestCase(unittest.TestCase):
             r.equals(r_scalar[k])
             aa.add_to_history(x, r)
         aa.build_difference_matrices()
+        A = np.zeros(15)
+        for k in range(max_stored-1):
+            aa.x_diff[k].get_base_data(A[:])
+            for i in range(A.shape[0]):
+                self.assertAlmostEqual(A[i], 1.0, places=14)
+        aa.build_difference_matrices_for_homotopy()
         A = np.zeros(15)
         for k in range(max_stored-1):
             aa.x_diff[k].get_base_data(A[:])
@@ -482,6 +500,12 @@ class AndersonMultiSecantTestCase(unittest.TestCase):
             aa.x_diff[k].get_base_data(A[:])
             for i in range(A.shape[0]):
                 self.assertAlmostEqual(A[i], 1.0, places=14)
+        aa.build_difference_matrices_for_homotopy()
+        A = np.zeros(18)
+        for k in range(max_stored-1):
+            aa.x_diff[k].get_base_data(A[:])
+            for i in range(A.shape[0]):
+                self.assertAlmostEqual(A[i], 1.0, places=14)
 
     def test_solve_case1(self):
         # case 1: unconstrained
@@ -517,7 +541,7 @@ class AndersonMultiSecantTestCase(unittest.TestCase):
         x.set_base_data(np.array([0.,0.,0.]))
         r.set_base_data(np.array([0.,0.,0.]))
         aa.add_to_history(x, r)
-        aa.build_difference_matrices(mu=1.0)
+        aa.build_difference_matrices_for_homotopy(mu=1.0)
 
         # AA should be able to recover exact inverse
         x.set_base_data(np.array([1.,0.,0.]))

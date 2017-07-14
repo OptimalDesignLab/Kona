@@ -345,6 +345,51 @@ class PrimalDualVector(CompositeVector):
         feas = np.sqrt(feas)
         return opt, feas
 
+    def equals_primaldual_residual(self, dLdx, ineq_mult=None):
+        """
+        Using dLdx=:math:`\\begin{pmatrix} \\nabla_x L && h && g \\end{pmatrix}`, which can be
+        obtained from the method equals_KKT_conditions (as well as the inequality multiplier when
+        inequality constraints are present) this method computes the following nonlinear vector
+        function:
+
+        .. math::
+        r(x,\\lambda_h,\\lambda_g;\\mu) =
+        \\begin{bmatrix}
+        \\left[\\nabla_x f(x, u) - \\nabla_x h(x, u)^T \\lambda_{h} - \\nabla_x g(x, u)^T \\lambda_{g}\\right] \\\\
+        -h(x,u) \\\\
+        -|g(x,u) - \\lambda_g| + g(x,u) + \\lambda_g
+        \\end{bmatrix}
+
+        where :math:`h(x,u)` are the equality constraints, and :math:`g(x,u)` are the
+        inequality constraints.  The vectors :math:`\\lambda_h` and :math:`\\lambda_g`
+        are the associated Lagrange multipliers.
+
+        Parameters
+        ----------
+        dLdx : PrimalDualVector
+            The total derivative of the Lagranginan with respect to the primal and dual variables.
+        ineq_mult : DualVectorINEQ, optional
+            The current multiplier associated with the inequality constraints.
+        """
+        assert isinstance(dLdx, PrimalDualVector), \
+            "PrimalDualVector() >> dLdx must be a PrimalDualVector!"
+        if dLdx.ineq is not None or ineq_mult is not None:
+            assert isinstance(ineq_mult, DualVectorINEQ), \
+                "PrimalDualVector() >> ineq_mult, if present, must be a DualVectorINEQ!"
+            assert dLdx.ineq is not None and ineq_mult is not None, \
+                "PrimalDualVector() >> dLdx.ineq and ineq_mult are inconsistent!"
+        if dLdx == self:
+            "PrimalDualVector() >> equals_primaldual_residual is not in-place!"
+        # construct the primal part of the residual: dLdx
+        self.primal.equals(dLdx.primal)
+        if dLdx.eq is not None:
+            # include the equality constraint part: -h
+            self.eq.equals(dLdx.eq)
+            self.eq.times(-1.)
+        if dLdx.ineq is not None:
+            # include the inequality constraint part
+            self.ineq.equals_mangasarian(dLdx.ineq, ineq_mult)
+
     def equals_homotopy_residual(self, dLdx, x, init, mu=1.0):
         """
         Using dLdx=:math:`\\begin{pmatrix} \\nabla_x L && h && g \\end{pmatrix}`, which can be
@@ -379,6 +424,8 @@ class PrimalDualVector(CompositeVector):
         """
         assert isinstance(dLdx, PrimalDualVector), \
             "PrimalDualVector() >> dLdx must be a PrimalDualVector!"
+        assert isinstance(x, PrimalDualVector), \
+            "PrimalDualVector() >> x must be a PrimalDualVector!"
         assert isinstance(init, PrimalDualVector), \
             "PrimalDualVector() >> init must be a PrimalDualVector!"
         if dLdx.eq is None or self.eq is None or x.eq is None or init.eq is None:
@@ -390,6 +437,20 @@ class PrimalDualVector(CompositeVector):
                 "PrimalDualVector() >> inconsistent ineq component in self, dLdx, x, and/or init!"
         if dLdx == self or x == self or init == self:
             "PrimalDualVector() >> equals_homotopy_residual is not in-place!"
+        # construct the primal part of the residual: mu*dLdx + (1-mu)(x - x_0)
+        self.primal.equals_ax_p_by(1.0, x.primal, -1.0, init.primal)
+        self.primal.equals_ax_p_by(mu, dLdx.primal, (1.0 - mu), self.primal)
+        if dLdx.eq is not None:
+            # include the equality constraint part: -mu*h - (1-mu)*lambda_h
+            self.eq.equals_ax_p_by(-mu, dLdx.eq, -(1.0 - mu), x.eq)
+            #self.eq.equals_ax_p_by(mu, dLdx.eq, -(1.0 - mu), x.eq)
+        if dLdx.ineq is not None:
+            # include the inequality constraint part
+            self.ineq.equals_ax_p_by(1.0, dLdx.ineq, -(1.0 - mu), init.ineq)
+            self.ineq.equals_mangasarian(self.ineq, x.ineq)
+            self.ineq.minus((1.0 - mu)*0.1)
+
+    def equals_projgrad_residual(self, dLdx, x, init, mu=1.0):
         # construct the primal part of the residual: mu*dLdx + (1-mu)(x - x_0)
         self.primal.equals_ax_p_by(1.0, x.primal, -1.0, init.primal)
         self.primal.equals_ax_p_by(mu, dLdx.primal, (1.0 - mu), self.primal)

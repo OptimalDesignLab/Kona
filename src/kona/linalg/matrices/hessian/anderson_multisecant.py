@@ -1,3 +1,4 @@
+from collections import deque
 import numpy
 from kona.linalg.matrices.hessian.basic import MultiSecantApprox
 from kona.linalg.vectors.composite import CompositeDualVector, PrimalDualVector
@@ -66,7 +67,41 @@ class AndersonMultiSecant(MultiSecantApprox):
         self.x_hist.append(x)
         self.r_hist.append(r)
 
-    def build_difference_matrices(self, mu=0.0):
+    def clear_history(self):
+        """
+        Clears data from x_hist and r_hist deques
+        """
+        self.x_hist = deque()
+        self.r_hist = deque()
+
+    def build_difference_matrices(self):
+        assert len(self.x_hist) == len(self.r_hist), \
+            'AndersonMultiSecant() >> inconsistent list sizes!'
+        # clear the previous x_diff and r_diff lists
+        del self.x_diff[:], self.r_diff[:]
+        self.work.equals_primaldual_residual(self.r_hist[0], self.x_hist[0].ineq)
+        for k in range(len(self.x_hist)-1):
+            # generate new vectors for x_diff and r_diff lists
+            dx = self._generate_vector()
+            dr = self._generate_vector()
+            self.x_diff.append(dx)
+            self.r_diff.append(dr)
+            # now get the differences
+            self.x_diff[k].equals_ax_p_by(1.0, self.x_hist[k+1], -1.0, self.x_hist[k])
+            self.r_diff[k].equals(self.work)
+            self.work.equals_primaldual_residual(self.r_hist[k+1], self.x_hist[k+1].ineq)
+            self.r_diff[k].minus(self.work)
+            self.r_diff[k].times(-1.0)
+
+    def build_difference_matrices_for_homotopy(self, mu=0.0):
+        """
+        Constructs the solution and homotopy residual differences from the history
+
+        Parameters
+        ----------
+        mu : float
+            Homotopy continuation parameter
+        """
         assert len(self.x_hist) == len(self.r_hist), \
             'AndersonMultiSecant() >> inconsistent list sizes!'
         # clear the previous x_diff and r_diff lists
@@ -85,7 +120,7 @@ class AndersonMultiSecant(MultiSecantApprox):
             self.r_diff[k].minus(self.work)
             self.r_diff[k].times(-1.0)
 
-    def solve(self, in_vec, out_vec, rel_tol=1e-15):
+    def solve(self, in_vec, out_vec, beta=1.0, rel_tol=1e-15):
         # store the difference matrices and rhs in numpy array format
         nvar = in_vec.get_num_var()
         dR = numpy.empty((nvar, len(self.x_diff)))
@@ -96,9 +131,9 @@ class AndersonMultiSecant(MultiSecantApprox):
             vec.get_base_data(dX[:,k])
         rhs = numpy.empty((nvar))
         in_vec.get_base_data(rhs)
-        dRinv = numpy.linalg.pinv(dR, rcond=1e-14)
-        sol = numpy.empty_like(rhs)
-        sol[:] = -rhs - numpy.matmul(dX - dR, numpy.matmul(dRinv,rhs))
+        dRinv = numpy.linalg.pinv(dR, rcond=1e-3)
+        sol = numpy.zeros_like(rhs)
+        sol[:] = -beta*rhs - numpy.matmul(dX - beta*dR, numpy.matmul(dRinv,rhs))
         out_vec.set_base_data(sol)
 
 # imports at the bottom to prevent circular import errors

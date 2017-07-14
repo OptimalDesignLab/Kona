@@ -147,6 +147,8 @@ class Sellar(UserSolver):
         abs_tol = 1e-6
         du = 0
         while iters < max_iter:
+            iters += 1
+            # print "Seller nonlinear solve iteration",iters
             y1 = u[0]
             y2 = u[1]
 
@@ -157,6 +159,7 @@ class Sellar(UserSolver):
             R[0] = y1 - x1**2 - x3 - x2 + 0.2*y2
             R[1] = y2 - np.sqrt(y1) - x1 - x2
 
+            # print "\tnorm(R) = ",np.linalg.norm(R)
             if np.linalg.norm(R) < abs_tol:
                 result.data[0] = u[0]
                 result.data[1] = u[1]
@@ -168,8 +171,11 @@ class Sellar(UserSolver):
 
             du = np.linalg.solve(dRdU, -R)
 
+            # safe-guard against y1 dropping below 3.16
             u += du
+            u[0] = max(0.01, u[0])
 
+        print 'Sellar nonlinear problem failed to converge'
         result.data[0] = u[0]
         result.data[1] = u[1]
         return -1

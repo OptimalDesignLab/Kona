@@ -278,6 +278,105 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         exp_dLdX_norm = np.sqrt(10. * 0.**2)
         self.assertEqual(self.pd_vec4.primal.norm2, exp_dLdX_norm)
 
+    def test_equals_primaldual_residual_case1(self):
+        # case 1 has both equality and inequality constraints
+        # recall: self.dual = 1, so dCeqdU^T*dual.eq + dCineqdU^Tdual.ineq = 5 + 5 = 10
+        dCdU(self.design, self.state).T.product(CompositeDualVector(self.dual_eq, self.dual_ineq),
+                                                self.adjoint, self.state_work)
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.minus(self.adjoint) # L = f - ceq^T*lambda_eq - cineq^T*lambda_ineq
+        self.state_work.times(-1.)
+        # We get adjoint = -11
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        dLdx = self.pd_work11
+        dLdx.equals_KKT_conditions(self.at_pd1, self.state, self.adjoint)
+
+        init = self.pd_work12
+        init.equals_init_guess()
+        init.eq.equals_constraints(init.primal, self.state)
+        init.ineq.equals_constraints(init.primal, self.state)
+
+        ineq_mult = self.at_pd1.ineq
+        self.pd_vec1.equals_primaldual_residual(dLdx, ineq_mult)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 20.**2)
+        self.assertAlmostEqual(self.pd_vec1.primal.norm2, exp_dLdX_norm, places=10)
+        exp_dLdEq_norm = np.sqrt(5. * 200**2)
+        self.assertAlmostEqual(self.pd_vec1.eq.norm2, exp_dLdEq_norm, places=10)
+        # exp_dLdIn_norm = np.sqrt(5. * 29701.95**2) # for cubic Mangasarian
+        exp_dLdIn_norm = np.sqrt(5. * 1**2) # for linear Mangasarian
+        self.assertAlmostEqual(self.pd_vec1.ineq.norm2, exp_dLdIn_norm, places=10)
+
+    def test_equals_primaldual_residual_case2(self):
+        # case 2 has inequality constraints only
+        # recall: self.dual = 1, so dCineqdU^Tdual.ineq = 5
+        dCdU(self.design, self.state).T.product(self.dual_ineq, self.adjoint, self.state_work)
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.minus(self.adjoint) # L = f - cineq^T*lambda_ineq
+        self.state_work.times(-1.)
+        # We get adjoint = -6
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        dLdx = self.pd_work21
+        dLdx.equals_KKT_conditions(self.at_pd2, self.state, self.adjoint)
+        init = self.pd_work22
+        init.equals_init_guess()
+        init.ineq.equals_constraints(init.primal, self.state)
+
+        ineq_mult = self.at_pd2.ineq
+        self.pd_vec2.equals_primaldual_residual(dLdx, ineq_mult)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 10**2)
+        self.assertAlmostEqual(self.pd_vec2.primal.norm2, exp_dLdX_norm, places=10)
+        # exp_dLdIn_norm = np.sqrt(5. * 29701.95**2) # for cubic Mangasarian
+        exp_dLdIn_norm = np.sqrt(5. * 1**2) # for linear Mangasarian
+        self.assertAlmostEqual(self.pd_vec2.ineq.norm2, exp_dLdIn_norm, places=10)
+
+    def test_equals_primaldual_residual_case3(self):
+        # case 3 has equality constraints only
+        # recall: self.dual = 1, so dCeqdU^Tdual.ineq = 5
+        dCdU(self.design, self.state).T.product(self.dual_eq, self.adjoint, self.state_work)
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.minus(self.adjoint) # L = f - ceq^T*lambda_eq
+        self.state_work.times(-1.)
+        # We get adjoint = -6
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        dLdx = self.pd_work31
+        dLdx.equals_KKT_conditions(self.at_pd3, self.state, self.adjoint)
+        init = self.pd_work32
+        init.equals_init_guess()
+        init.eq.equals_constraints(init.primal, self.state)
+
+        self.pd_vec3.equals_primaldual_residual(dLdx)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 10**2)
+        self.assertAlmostEqual(self.pd_vec3.primal.norm2, exp_dLdX_norm, places=10)
+        exp_dLdEq_norm = np.sqrt(5. * 200**2)
+        self.assertAlmostEqual(self.pd_vec3.eq.norm2, exp_dLdEq_norm, places=10)
+
+    def test_equals_primaldual_residual_case4(self):
+        # case 4 has no constraints
+        # recall: dFdU = -1
+        self.state_work.equals_objective_partial(self.design, self.state)
+        self.state_work.times(-1.)
+        # We get adjoint = -1
+        dRdU(self.design, self.state).T.solve(self.state_work, self.adjoint)
+        dLdx = self.pd_work41
+        dLdx.equals_KKT_conditions(self.at_pd4, self.state, self.adjoint)
+        init = self.pd_work42
+        init.equals_init_guess()
+
+        self.pd_vec4.equals_primaldual_residual(dLdx)
+
+        # check results
+        exp_dLdX_norm = np.sqrt(10. * 0**2)
+        self.assertAlmostEqual(self.pd_vec3.primal.norm2, exp_dLdX_norm, places=10)
+
     def test_homotopy_residual_case1(self):
         # case 1 has both equality and inequality constraints
         # recall: self.dual = 1, so dCeqdU^T*dual.eq + dCineqdU^Tdual.ineq = 5 + 5 = 10
@@ -305,7 +404,8 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         self.assertAlmostEqual(self.pd_vec1.primal.norm2, exp_dLdX_norm, places=10)
         exp_dLdEq_norm = np.sqrt(5. * 100.5**2)
         self.assertAlmostEqual(self.pd_vec1.eq.norm2, exp_dLdEq_norm, places=10)
-        exp_dLdIn_norm = np.sqrt(5. * 29701.95**2)
+        # exp_dLdIn_norm = np.sqrt(5. * 29701.95**2) # for cubic Mangasarian
+        exp_dLdIn_norm = np.sqrt(5. * 0.95**2) # for linear Mangasarian
         self.assertAlmostEqual(self.pd_vec1.ineq.norm2, exp_dLdIn_norm, places=10)
 
         # test get_optimality_and_feasiblity while we are at it
@@ -335,7 +435,8 @@ class PrimalDualVectorTestCase(unittest.TestCase):
         # check results
         exp_dLdX_norm = np.sqrt(10. * 5**2)
         self.assertAlmostEqual(self.pd_vec2.primal.norm2, exp_dLdX_norm, places=10)
-        exp_dLdIn_norm = np.sqrt(5. * 29701.95**2)
+        # exp_dLdIn_norm = np.sqrt(5. * 29701.95**2) # for cubic Mangasarian
+        exp_dLdIn_norm = np.sqrt(5. * 0.95**2) # for linear Mangasarian
         self.assertAlmostEqual(self.pd_vec2.ineq.norm2, exp_dLdIn_norm, places=10)
 
         # test get_optimality_and_feasiblity while we are at it
