@@ -8,6 +8,7 @@ from kona.examples import SphereConstrained
 class EqualityCompositeStepTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
+        '''CompositeStepRSNK tested with Sphere problem'''
         init_x = [0.51, 0.52, 0.53]
         solver = SphereConstrained(init_x=init_x, ineq=False)
 
