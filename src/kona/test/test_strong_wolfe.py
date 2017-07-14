@@ -44,8 +44,7 @@ class StrongWolfeTestCase(unittest.TestCase):
         self.sw.p_dot_dfdx = dfdx.inner(search_dir)
 
     def test_find_step_length(self):
-        '''Check that it works when the search direction sign is flips'''
-
+        '''StrongWolfe line search test (1/2)'''
         search_dir = self.pf.generate()
         search_dir.base.data[:] = [4.25,0]
 
@@ -74,7 +73,7 @@ class StrongWolfeTestCase(unittest.TestCase):
         self.assertTrue(abs(alpha - 0.4) < 1.e-1)
 
     def test_bad_search_direction(self):
-
+        '''StrongWolf line search test (2/2)'''
         search_dir = self.pf.generate()
         search_dir.base.data[:] = [-1,0]
 
@@ -107,6 +106,7 @@ class StrongWolfeTestCase(unittest.TestCase):
             self.fail('ValueError expected')
 
     def test_no_merit_function(self):
+        '''StrongWolfe error test for no merit function'''
         try:
             alpha, n_iter = self.sw.find_step_length(None)
         except ValueError as err:
@@ -115,6 +115,7 @@ class StrongWolfeTestCase(unittest.TestCase):
             self.fail('ValueError expected')
 
     def test_bad_alpha_init(self):
+        '''StrongWolfe error test for bad initial alpha'''
         self.sw.alpha_init = -2.
         try:
             alpha, n_iter = self.sw.find_step_length(None)
@@ -126,6 +127,7 @@ class StrongWolfeTestCase(unittest.TestCase):
             self.fail('ValueError expected')
 
     def test_bad_alpha_max(self):
+        '''StrongWolfe error test for bad maximum alpha'''
         self.sw.alpha_max = 0.5
         try:
             alpha, n_iter = self.sw.find_step_length(None)
@@ -137,6 +139,7 @@ class StrongWolfeTestCase(unittest.TestCase):
             self.fail('ValueError expected')
 
     def test_bad_curv_cond(self):
+        '''StrongWolfe error test for bad curvature condition'''
         self.sw.curv_cond = 1e-10
         try:
             alpha, n_iter = self.sw.find_step_length(None)

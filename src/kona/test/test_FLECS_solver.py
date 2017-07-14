@@ -58,6 +58,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         out_vec.dual.base.data[:] = out_data[3]
 
     def test_bad_radius(self):
+        '''FLECS error test for bad trust radius'''
         # reset the solution vector
         self.x.equals(0)
         self.b.equals(1)
@@ -72,6 +73,7 @@ class FLECSSolverTestCase(unittest.TestCase):
                 'trust-region radius must be nonnegative: radius = -1.000000')
 
     def test_radius_inactive_with_large_mu(self):
+        '''FLECS solution test with inactive trust radius'''
         # reset the solution vector
         self.x.equals(0)
         self.b.equals(1)
@@ -98,6 +100,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.assertTrue(diff <= 1.e-3 and not self.krylov.trust_active)
 
     def test_radius_active(self):
+        '''FLECS solution test with active trust radius'''
         # reset the solution vector
         self.x.equals(0)
         self.b.equals(1)

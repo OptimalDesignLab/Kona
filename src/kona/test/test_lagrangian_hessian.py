@@ -16,7 +16,8 @@ class LagrangianHessianTestCase(unittest.TestCase):
         dual = self.df.generate()
         return ReducedKKTVector(design, dual)
 
-    def test_unconstrained_product(self):
+    def test_constrained_product(self):
+        '''LagrangianHessian forward product'''
         solver = SphereConstrained()
         km = KonaMemory(solver)
         self.pf = km.primal_factory

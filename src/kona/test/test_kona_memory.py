@@ -8,6 +8,7 @@ from kona.user.user_solver import UserSolver
 class VectorFactoryTestCase(unittest.TestCase):
 
     def test_generate(self):
+        '''VectorFactory generation test'''
         ndv = 2
         solver = UserSolver(ndv)
         km = KonaMemory(solver)
@@ -30,6 +31,7 @@ class VectorFactoryTestCase(unittest.TestCase):
         self.assertEqual(len(km.vector_stack[DesignVector]), 12)
 
     def test_error_generate(self):
+        '''VectorFactory error for memory allocation'''
         ndv = 2
         solver = UserSolver(ndv)
         km = KonaMemory(solver)
@@ -59,6 +61,7 @@ class VectorFactoryTestCase(unittest.TestCase):
             self.fail("RuntimeError expected")
 
     def test_too_many_vectors(self):
+        '''VectorFactory error test for not enough vectors'''
         ndv = 2
         solver = UserSolver(ndv)
         km = KonaMemory(solver)

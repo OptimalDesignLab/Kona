@@ -38,6 +38,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         out_vec.base.data[:] = out_data[:]
 
     def test_solve(self):
+        '''FGMRES solution'''
         # reset the solution vector
         self.x.equals(0)
         # solve the system with FGMRES
@@ -50,6 +51,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.assertTrue(diff < 1.e-6)
 
     def test_solve_underdetermined(self):
+        '''FMGRES underdetermined system test'''
         # try solving a consistent underdetermined problem
         self.A = numpy.array([[4, 3, 2, 1],
                               [3, 4, 3, 2],
@@ -64,6 +66,7 @@ class FLECSSolverTestCase(unittest.TestCase):
         self.assertTrue(iters == 3)
 
     def test_solve_overdetermined(self):
+        '''FGMRES overdetermined system test'''
         # try solving an overdetermined problem; must be a symmetric matrix
         self.A = numpy.array([[4, 3, 2, 0],
                               [3, 4, 3, 0],

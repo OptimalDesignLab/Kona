@@ -37,6 +37,7 @@ class STCGSolverTestCase(unittest.TestCase):
         out_vec.base.data[:] = out_data[:]
 
     def test_bad_radius(self):
+        '''STCG error test for bad trust radius'''
         # reset the solution vector
         self.x.equals(0)
         # solve the system with CG
@@ -48,6 +49,7 @@ class STCGSolverTestCase(unittest.TestCase):
             self.assertEqual(str(err), 'radius must be postive')
 
     def test_radius_inactive(self):
+        '''STCG solution test with inactive trust radius'''
         # reset the solution vector
         self.x.equals(0)
         # solve the system with CG
@@ -64,6 +66,7 @@ class STCGSolverTestCase(unittest.TestCase):
         self.assertTrue(abs(prec - 0.2) <= 1e-12)
 
     def test_radius_active(self):
+        '''STCG solution test with active trust radius'''
         # reset the solution vector
         self.x.equals(0)
         # solve the system with CG

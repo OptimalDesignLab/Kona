@@ -42,6 +42,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         out_vec.base.data[:] = out_data[:]
 
     def test_solve(self):
+        '''GCROT solution test'''
         # reset the solution vector
         self.x.equals(0.0)
         # solve the system with FGMRES
@@ -89,6 +90,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         self.assertTrue(diff < 1.e-12)
 
     def test_solve_recycle(self):
+        '''GCROT subspace recycling test'''
         # clear the recycled subspace
         self.krylov.clear_subspace()
 
@@ -146,6 +148,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         self.assertTrue(diff < 1.e-12)
 
     def test_multiple_recycle(self):
+        '''GCROT multiple recycling test'''
         # test multiple calls on recycle
 
         # clear the recycled subspace and reset parameters
@@ -163,6 +166,7 @@ class GCROTSolverTestCase(unittest.TestCase):
                 self.krylov.clear_subspace()
 
     def test_clear_subsapce(self):
+        '''GCROT subspace clearing/flushing'''
         # clear the recycled subspace
         self.krylov.clear_subspace()
 
@@ -219,6 +223,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         self.assertTrue(diff < 1.e-12)
 
     def test_solve_underdetermined(self):
+        '''GCROT solution with underdetermined system'''
         N = 100
         # try solving a consistent underdetermined problem
         self.A[10:N+1,:] = numpy.zeros((N+1-10,N+1))

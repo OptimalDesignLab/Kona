@@ -8,7 +8,7 @@ from kona.examples import SphereConstrained
 class PredictorCorrectorCnstrTestCase(unittest.TestCase):
 
     def test_with_simple_constrained(self):
-
+        '''PredictorCorrectorCnstr test with SimpleConstrained problem'''
         init_x = [1.51, 1.52, 1.53]
 
         solver = SphereConstrained(init_x=init_x, ineq=False)

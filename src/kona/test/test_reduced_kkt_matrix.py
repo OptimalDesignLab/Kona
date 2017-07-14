@@ -8,9 +8,7 @@ from kona.linalg.matrices.common import dCdU, dRdU
 from kona.linalg.matrices.hessian import ReducedKKTMatrix
 from kona.linalg.vectors.composite import ReducedKKTVector
 
-
 class ReducedKKTMatrixTestCase(unittest.TestCase):
-    '''Test case for the Reduced Hessian approximation matrix.'''
 
     def _generate_KKT_vector(self):
         primal = self.pf.generate()
@@ -21,6 +19,7 @@ class ReducedKKTMatrixTestCase(unittest.TestCase):
         self.assertTrue(np.linalg.norm(vec1 - vec2) < atol)
 
     def test_equality_constrained_product(self):
+        '''ReducedKKTMatrix forward product'''
         solver = SphereConstrained(ineq=False)
         km = KonaMemory(solver)
         self.pf = km.primal_factory

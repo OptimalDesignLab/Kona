@@ -8,6 +8,7 @@ from kona.examples import SphereConstrained
 class EqualityCompositeStepTestCase(unittest.TestCase):
 
     def test_dummy(self):
+        '''CompositeStepRSNK placeholder (not working!)'''
         self.failUnless('Untested')
 
     # def test_with_simple_constrained(self):

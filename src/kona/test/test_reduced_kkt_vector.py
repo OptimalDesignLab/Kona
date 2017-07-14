@@ -78,7 +78,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.rkkt_vec3 = ReducedKKTVector(primal3, dual3)
 
     def test_bad_init_args(self):
-
+        '''ReducedKKTVector test for bad initial arguments'''
         try:
             ReducedKKTVector(self.eq1, self.eq1)
         except AssertionError as err:
@@ -111,6 +111,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
             self.fail('AssertionError expected')
 
     def test_initial_guess_case1(self):
+        '''ReducedKKTVector initial guess test (1/3)'''
         self.rkkt_vec1.equals_init_guess()
 
         err = self.pv1.base.data - 10 * np.ones(10)
@@ -126,6 +127,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_init_guess_case2(self):
+        '''ReducedKKTVector initial guess test (2/3)'''
         self.rkkt_vec2.equals_init_guess()
 
         err = self.pv2.base.data - 10 * np.ones(10)
@@ -138,6 +140,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_init_guess_case3(self):
+        '''ReducedKKTVector initial guess test (3/3)'''
         self.rkkt_vec3.equals_init_guess()
 
         err = self.pv3.base.data - 10*np.ones(10)
@@ -147,6 +150,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_kkt_conditions_case1(self):
+        '''ReducedKKTVector KKT condition evaluation (1/3)'''
         # case 1 has both equality and inequality constraints
         dCdU(self.design, self.state).T.product(self.dual, self.adjoint, self.state_work)
         self.state_work.equals_objective_partial(self.design, self.state)
@@ -167,6 +171,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.assertEqual(self.rkkt_vec1.dual.ineq.norm2, exp_dLdIn_norm)
 
     def test_kkt_conditions_case2(self):
+        '''ReducedKKTVector KKT condition evaluation (2/3)'''
         # case 2 has only inequality constraints
         dCINdU(self.design, self.state).T.product(self.dual_ineq, self.adjoint)
         self.state_work.equals_objective_partial(self.design, self.state)
@@ -185,6 +190,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         self.assertEqual(self.rkkt_vec2.dual.norm2, exp_dLdIn_norm)
 
     def test_kkt_conditions_case3(self):
+        '''ReducedKKTVector KKT condition evaluation (3/3)'''
         # case 3 has only equality constraints
         dCEQdU(self.design, self.state).T.product(self.dual_eq, self.adjoint)
         self.state_work.equals_objective_partial(self.design, self.state)

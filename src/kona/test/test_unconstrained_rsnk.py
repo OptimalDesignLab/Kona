@@ -9,7 +9,7 @@ from kona.examples import Rosenbrock, Spiral
 class UnconstrainedRSNKTestCase(unittest.TestCase):
 
     def test_RSNK_with_Rosenbrock(self):
-
+        '''UnconstrainedRSNK solution with Rosenbrock'''
         ndv = 2
         solver = Rosenbrock(ndv)
 
@@ -51,7 +51,7 @@ class UnconstrainedRSNKTestCase(unittest.TestCase):
         self.assertTrue(max(diff) < 1e-5)
 
     def test_RSNK_with_Spiral(self):
-
+        '''UnconstrainedRSNK solution with Spiral problem'''
         solver = Spiral()
 
         optns = {
