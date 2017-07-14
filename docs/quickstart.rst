@@ -17,10 +17,10 @@ a multidimensional Rosenbrock problem using the reduced-space Newton-Krylov
 
     # initialize the problem with the design space size
     num_design = 2
-    solver = kona.examples.Rosenbrock(2)
+    solver = kona.examples.Rosenbrock(num_design)
 
     # get the optimization algorithm handle -- do not initialize
-    algorithm = kona.algorithms.STCG_RSNK
+    algorithm = kona.algorithms.UnconstrainedRSNK
 
     # options dictionary -- we only need convergence tolerance for now
     optns = {

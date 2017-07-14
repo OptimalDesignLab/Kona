@@ -33,7 +33,8 @@ Contents:
 .. toctree::
     :titlesonly:
 
-    installation
+    quickstart
+    installosx
     implementation
     references
     api/kona

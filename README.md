@@ -7,11 +7,15 @@
 
 ## Install Guide
 
-Kona should be installed using `pip install -e . --user` run from the root directory
-of the repo.
+If you already have a Python distribution, Kona can be installed using `pip install -e . --user` 
+run from the root directory of the repo. 
 
-For a quick start guide on how to run optimization problems with Kona, please
-refer to the [documentation](http://kona.readthedocs.org).
+On macOS, we strongly recommend installing [Miniconda](https://conda.io/miniconda.html) first 
+before installing Kona on top. Using the system Python distribution on macOS can break the 
+operating system.
+
+For a quick start guide on how to run optimization problems with Kona, or for more detail on 
+macOS installations, please refer to the [documentation](http://kona.readthedocs.org).
 
 ## What is it?
 

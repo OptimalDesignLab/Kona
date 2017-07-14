@@ -1,3 +1,100 @@
+class CompositeFactory(object):
+    """
+    A factory-like object that generates composite vectors.
+
+    It is intended to mimic the function of basic VectorFactory objects.
+
+    Parameters
+    ----------
+    memory : KonaMemory
+        All-knowing Kona memory manager.
+    vec_type : CompositeVector-like
+        Type of composite vector the factory will produce.
+
+    Attributes
+    ----------
+    _memory : KonaMemory
+        All-knowing Kona memory manager.
+    _vec_type : CompositeVector-like
+        Type of composite vector the factory will produce.
+    _factories : list of VectorFactory or CompositeFactory
+        Vector factories used in generating the composite vector of choice.
+    """
+    def __init__(self, memory, vec_type):
+        # make sure the given type is a composite vector
+        assert issubclass(vec_type, CompositeVector), "Must provide a CompositeVector-type!"
+        assert isinstance(memory, KonaMemory), "Invalid memory object!"
+
+        # store memory and figure out what factories we need for the job
+        self._memory = memory
+        self._vec_type = vec_type
+
+        if self._vec_type is CompositePrimalVector:
+            # make sure we have inequality constraints
+            assert self._memory.nineq > 0, \
+                "Cannot generate CompositePrimalVector! No inequality constraints."
+            self._factories = [self._memory.primal_factory, self._memory.ineq_factory]
+
+        elif self._vec_type is CompositeDualVector:
+            # make sure we have both types of constraints
+            assert self._memory.neq > 0 and self._memory.nineq > 0, \
+                "Cannot generate CompositeDualVector! No equality and inequality constraints."
+            self._factories = [self._memory.eq_factory, self._memory.ineq_factory]
+
+        elif self._vec_type is PrimalDualVector:
+            # make sure we have at least one kind of constraint
+            assert self._memory.neq > 0 or self._memory.nineq > 0, \
+                "Cannot generate PrimalDualVector! No constraints."
+            self._factories = [self._memory.primal_factory]
+            if self._memory.neq > 0:
+                self._factories.append(self._memory.eq_factory)
+            if self._memory.nineq > 0:
+                self._factories.append(self._memory.ineq_factory)
+
+        elif self._vec_type is ReducedKKTVector:
+            # make sure we have equality constraints
+            assert self._memory.neq > 0, \
+                "Cannot generate ReducedKKTVector! No equality constraints."
+            # sub-structure of ReducedKKTVector varies depending on inequality constraints
+            if self._memory.nineq > 0:
+                self._factories = [CompositeFactory(memory, CompositePrimalVector),
+                                   CompositeFactory(memory, CompositeDualVector)]
+            else:
+                self._factories = [self._memory.primal_factory, self._memory.eq_factory]
+
+        else:
+            raise NotImplementedError("Factory has not been implemented for given type!")
+
+    def request_num_vectors(self, count):
+        for factory in self._factories:
+            factory.request_num_vectors(count)
+
+    def generate(self):
+        if self._vec_type is CompositePrimalVector:
+            design = self._factories[0].generate()
+            slack = self._factories[1].generate()
+            return CompositePrimalVector(design, slack)
+
+        elif self._vec_type is CompositeDualVector:
+            eq = self._factories[0].generate()
+            ineq = self._factories[1].generate()
+            return CompositeDualVector(eq, ineq)
+
+        elif self._vec_type is PrimalDualVector:
+            design = self._factories[0].generate()
+            eq = None
+            ineq = None
+            for factory in self._factories:
+                if factory._vec_type is DualVectorEQ:
+                    eq = factory.generate()
+                if factory._vec_type is DualVectorINEQ:
+                    ineq = factory.generate()
+            return PrimalDualVector(design, eq, ineq)
+
+        elif self._vec_type is ReducedKKTVector:
+            primal = self._factories[0].generate()
+            dual = self._factories[1].generate()
+            return ReducedKKTVector(primal, dual)
 
 class CompositeVector(object):
     """
@@ -583,7 +680,7 @@ class ReducedKKTVector(CompositeVector):
             assert isinstance(dual_vec, DualVectorINEQ) or \
                    isinstance(dual_vec, CompositeDualVector), \
                 'ReducedKKTVector() >> Mismatched dual vector. ' + \
-                'Must be DualVecINEQ or CompositeDualVector!'
+                'Must be DualVectorINEQ or CompositeDualVector!'
         else:
             raise AssertionError(
                 'ReducedKKTVector() >> Invalid primal vector. ' +
@@ -775,7 +872,8 @@ class CompositePrimalVector(CompositeVector):
         .. math::
             \\nabla_{primal} \\mathcal{L} =
             \\begin{bmatrix}
-            \\nabla_x f(x, u) + \\nabla_x c_{eq}(x, u)^T \\lambda_{eq} + \\nabla_x c_{inq}(x, u)^T \\lambda_{ineq} \\\\
+            \\nabla_x f(x, u) + \\nabla_x c_{eq}(x, u)^T \\lambda_{eq}
+                + \\nabla_x c_{inq}(x, u)^T \\lambda_{ineq} \\\\
             \\muS^{-1}e - \\lambda_{ineq}
             \\end{bmatrix}
 
@@ -816,5 +914,5 @@ class CompositePrimalVector(CompositeVector):
 
 # package imports at the bottom to prevent import errors
 import numpy as np
-from kona.linalg.vectors.common import DesignVector
-from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
+from kona.linalg.memory import KonaMemory
+from kona.linalg.vectors.common import DesignVector, DualVectorEQ, DualVectorINEQ

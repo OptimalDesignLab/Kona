@@ -106,7 +106,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
             self.assertEqual(
                 str(err),
                 "ReducedKKTVector() >> Mismatched dual vector. " +
-                "Must be DualVecINEQ or CompositeDualVector!")
+                "Must be DualVectorINEQ or CompositeDualVector!")
         else:
             self.fail('AssertionError expected')
 
@@ -134,7 +134,7 @@ class ReducedKKTVectorTestCase(unittest.TestCase):
         err = self.slack2.base.data - np.ones(5)
         self.assertEqual(np.linalg.norm(err), 0)
 
-        err = self.ineq2.base.data - self.rkkt_vec1.init_dual * (np.ones(5))
+        err = self.ineq2.base.data - self.rkkt_vec2.init_dual * (np.ones(5))
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_init_guess_case3(self):

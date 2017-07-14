@@ -171,7 +171,7 @@ class Sellar(UserSolver):
 
             du = np.linalg.solve(dRdU, -R)
 
-            # safe-guard against y1 dropping below 3.16
+            # safe-guard against y1 dropping below 0
             u += du
             u[0] = max(0.01, u[0])
 
