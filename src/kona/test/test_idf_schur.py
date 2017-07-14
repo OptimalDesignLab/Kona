@@ -54,8 +54,8 @@ class IDFSchurTestCase(unittest.TestCase):
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
         
-        error = abs(solver.curr_design[0])
-        self.assertTrue(error < 1e-4)
+        error = np.linalg.norm(solver.curr_design)
+        self.assertTrue(error < 1e-8)
 
     def test_with_precond_inactive(self):
 
@@ -94,7 +94,7 @@ class IDFSchurTestCase(unittest.TestCase):
                 # FLECS solver settings
                 'krylov_file'   : 'kona_krylov.dat',
                 'subspace_size' : 10,
-                'check_res'     : True,
+                'check_res'     : False,
                 'rel_tol'       : 0.0095,
             }
         }
@@ -103,8 +103,8 @@ class IDFSchurTestCase(unittest.TestCase):
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
         
-        error = abs(solver.curr_design[0])
-        self.assertFalse(error < 1e-4)
+        error = np.linalg.norm(solver.curr_design)
+        self.assertFalse(error < 1e-8)
 
 if __name__ == "__main__":
     unittest.main()
