@@ -84,7 +84,7 @@ class STCG(KrylovSolver):
             mat_vec(p, Ap)
             alpha = p.inner(Ap)
             # check alpha for non-positive curvature
-            if alpha <= -1e-6:
+            if alpha <= 0.0:
                 # direction of non-positive curvature detected
                 xp = p.inner(x)
                 x2 = x.norm2**2

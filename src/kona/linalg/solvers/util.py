@@ -567,7 +567,7 @@ def mod_gram_schmidt(i, B, C, w, normalize=False):
         nrm -= B[k, i]**2
         if (nrm < 0.0):
             nrm = 0.0
-        thr = nrm*reorth
+            thr = nrm*reorth
 
     # test the resulting vector
     nrm = w.norm2
