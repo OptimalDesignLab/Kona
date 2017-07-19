@@ -1,6 +1,38 @@
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class PredictorCorrectorCnstr(OptimizationAlgorithm):
+    """
+    A reduced-space Newton-Krylov algorithm for PDE-governed equality constrained optimization, 
+    globalized in a predictor-corrector homotopy path following framework.
+
+    This implementation is loosely based on the predictor-corrector method described by 
+    `Brown and Zingg<http://www.sciencedirect.com/science/article/pii/S0021999116301760>`_ for
+    nonlinear computational fluid dynamics problems.
+
+    The homotopy map used in this algorithm is given as:
+
+    .. math::
+        \\\\mathcal{H}(x, u) = \\mu L(x, u) + (1 - \\mu) \frac{1}{2} \\left[ 
+        (x - x_0)^T(x - x_0) - (\\lambda - \\lambda_0)^T(\\lambda - \\lambda_0)
+
+    where :math:`x_0` is the initial design point and :math:`\lambda_0` is the initial Lagrange 
+    multipliers.
+
+    Attributes
+    ----------
+    factor_matrices : bool
+        Boolean flag for matrix-based PDE solvers.
+    mu, inner_tol, step, nom_dcurv, nom_angl, max_factor, min_factor : float
+        Homotopy parameters.
+    scale, grad_scale, feas_scale : float
+        Optimality metric normalization factors.
+    hessian : :class:`~kona.linalg.matrices.hessian.ReducedKKTMatrix`
+        Matrix object defining the KKT matrix-vector product.
+    precond : :class:`~kona.linalg.matrices.hessian.basic.BaseHessian`-like
+        Matrix object defining the approximation to the Hessian inverse.
+    krylov : :class:`~kona.linalg.solvers.krylov.FGMRES`
+        Krylov solver object used to solve the system defined by the KKT matrix-vector product.
+    """
 
     def __init__(self, primal_factory, state_factory,
                  eq_factory=None, ineq_factory=None, optns=None):

@@ -94,7 +94,7 @@ class dRdX(KonaMatrix):
                     "Invalid multiplying vector: " +
                     "must be DesignVector or CompositePrimalVector!")
             assert isinstance(out_vec, StateVector), \
-                    "Invalid output vector: must be StateVector!"
+                "Invalid output vector: must be StateVector!"
             self._solver.multiply_dRdX(
                 self._design.base.data, self._state.base,
                 in_design.base.data, out_vec.base)
@@ -120,9 +120,9 @@ class dRdU(KonaMatrix):
     def product(self, in_vec, out_vec):
         assert self._linearized
         assert isinstance(in_vec, StateVector), \
-                "Invalid multiplying vector: must be StateVector!"
+            "Invalid multiplying vector: must be StateVector!"
         assert isinstance(out_vec, StateVector), \
-                "Invalid output vector: must be StateVector!"
+            "Invalid output vector: must be StateVector!"
         if not self._transposed:
             self._solver.multiply_dRdU(
                 self._design.base.data, self._state.base,
@@ -155,9 +155,9 @@ class dRdU(KonaMatrix):
         """
         assert self._linearized
         assert isinstance(solution, StateVector), \
-                "Invalid solution vector: must be StateVector!"
+            "Invalid solution vector: must be StateVector!"
         assert isinstance(rhs_vec, StateVector), \
-                "Invalid RHS vector: must be StateVector!"
+            "Invalid RHS vector: must be StateVector!"
         converged = False
         solution.equals(0.0)
         if not self._transposed:
@@ -422,4 +422,3 @@ from kona.linalg.vectors.common import DesignVector, StateVector
 from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.vectors.composite import CompositeDualVector
-from kona.linalg.solvers.util import EPS

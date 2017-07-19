@@ -20,11 +20,27 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
 
         Insert inexact-Hessian paper reference here.
 
-    Parameters
+    Attributes
     ----------
-    primal_factory : VectorFactory
-    state_factory : VectorFactory
-    optns : dict, optional
+    factor_matrices : bool
+        Boolean flag for matrix-based PDE solvers.
+    iter : int
+        Optimization iteration counter.
+    hessian : :class:`~kona.linalg.matrices.hessian.ReducedHessian`
+        Matrix object defining the Hessian matrix-vector product.
+    precond : :class:`~kona.linalg.matrices.hessian.basic.BaseHessian`-like
+        Matrix object defining the approximation to the Hessian inverse.
+    krylov : :class:`~kona.linalg.solvers.krylov.FGMRES` or :class:`~kona.linalg.solvers.krylov.STCG`
+        A krylov solver object used to solve the system defined by the Hessian.
+    globalization : string
+        Flag to determine which type of globalization to use.
+    radius, max_radius : float
+        Trust radius parameters.
+    line_search : :class:`~kona.algorithms.util.linesearch.BackTracking`
+        Back-tracking line search tool.
+    merit_func : :class:`~kona.algorithms.util.merit.ObjectiveMerit`
+        Simple objective as merit function.
+
     """
 
     def __init__(self, primal_factory, state_factory,

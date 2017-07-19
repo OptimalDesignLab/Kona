@@ -1,6 +1,36 @@
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class PredictorCorrector(OptimizationAlgorithm):
+    """
+    A reduced-space Newton-Krylov algorithm for PDE-governed unconstrained optimization, 
+    globalized in a predictor-corrector homotopy path following framework.
+
+    This implementation is loosely based on the predictor-corrector method described by 
+    `Brown and Zingg<http://www.sciencedirect.com/science/article/pii/S0021999116301760>`_ for
+    nonlinear computational fluid dynamics problems.
+
+    The homotopy map used in this algorithm is given as:
+
+    .. math::
+        \\\\mathcal{H}(x, u) = (1-\\lambda) F(x, u) + \\lambda \frac{1}{2}(x - x_0)^T(x - x_0)
+
+    where :math:`x_0` is the initial design point.
+
+    Attributes
+    ----------
+    factor_matrices : bool
+        Boolean flag for matrix-based PDE solvers.
+    lamb, inner_tol, step, nom_dcurv, nom_angl, max_factor, min_factor : float
+        Homotopy parameters.
+    scale, grad_scale, feas_scale : float
+        Optimality metric normalization factors.
+    hessian : :class:`~kona.linalg.matrices.hessian.ReducedHessian`
+        Matrix object defining the Hessian matrix-vector product.
+    precond : :class:`~kona.linalg.matrices.hessian.basic.BaseHessian`-like
+        Matrix object defining the approximation to the Hessian inverse.
+    krylov : :class:`~kona.linalg.solvers.krylov.FGMRES`
+        A krylov solver object used to solve the system defined by the Hessian.
+    """
 
     def __init__(self, primal_factory, state_factory,
                  eq_factory=None, ineq_factory=None, optns=None):

@@ -8,23 +8,19 @@ class OptimizationAlgorithm(object):
 
     Parameters
     ----------
-    primal_factory : VectorFactory
-        DesignVector factory.
-    state_factory : VectorFactory
-        StateVector factory.
-    dual_factory : VectorFactory
-        DualVector factory.
-    optns : dict
-        Options dictionary.
+    primal_factory, state_factory, eq_factory, ineq_factory : VectorFactory
+    optns : dict, optional
 
     Attributes
     ----------
-    primal_factory : VectorFactory
+    primal_factory : :class:`~kona.linalg.memory.VectorFactory`
         Generates primal vectors.
-    state_factory : VectorFactory
+    state_factory : :class:`~kona.linalg.memory.VectorFactory`
         Generates state vectors.
-    dual_factory : VectorFactory
-        Generates dual vectors.
+    eq_factory : :class:`~kona.linalg.memory.VectorFactory`
+        Generates dual vectors for equality constraints.
+    eq_factory : :class:`~kona.linalg.memory.VectorFactory`
+        Generates dual vectors for inequality constraints.
     max_iter : int
         Maximum nonlinear iterations for the optimization.
     primal_tol : float
@@ -33,8 +29,6 @@ class OptimizationAlgorithm(object):
         Relative convergence tolerance for the constraints.
     info_file : file
         File stream for data output.
-    merit_func : MeritFunction
-        Merit function for the optimization
     """
     def __init__(self, primal_factory, state_factory, eq_factory, ineq_factory,
                  optns=None):

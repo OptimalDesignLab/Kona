@@ -4,33 +4,37 @@ from kona.algorithms.base_algorithm import OptimizationAlgorithm
 class ConstrainedRSNK(OptimizationAlgorithm):
     """
     A reduced-space Newton-Krylov optimization algorithm for PDE-governed
-    (in)equality constrained problems.
+    equality constrained problems, globalized with a trust-region approach.
 
-    This algorithm uses a novel 2nd order adjoint formulation of the KKT
-    matrix-vector product, in conjunction with a novel Krylov-method called
-    FLECS for non-convex saddle point problems.
+    This algorithm uses a 2nd order adjoint formulation of the KKT matrix-vector 
+    product, in conjunction with a novel Krylov-method called 
+    `FLECS<http://dx.doi.org/10.1137/140994496>`_ for non-convex saddle point problems.
 
-    Inequality constraints are converted to equality constraints using slack
-    terms of the form :math:`e^s` where `s` are the slack variables.
+    More information on this reduced-space Newton-Krylov appoach can be found 
+    `in this paper <http://dx.doi.org/10.1007/s00158-017-1734-0>`_.
 
-    The KKT system is then preconditioned using a nested solver operating on
-    an approximation of the KKT matrix-vector product. This approximation is
-    assembled using the PDE preconditioner on 2nd order adjoing solves.
-
-    The step produced by FLECS is globalized using a trust region approach.
-
-    .. note::
-
-        More information on this reduced-space Newton-Krylov appoach can be
-        found `in this paper <http://arc.aiaa.org/doi/abs/10.2514/6.2015-1945>`.
-
-    Parameters
+    Attributes
     ----------
-    primal_factory : VectorFactory
-    state_factory : VectorFactory
-    eq_factory : VectorFactory
-    ineq_factory: VectorFactory
-    optns : dict, optional
+    grad_norm0, feas_norm0, kkt_norm0 : float
+        Initial optimality norms.
+    iter : int
+        Optimization iteration counter.
+    factor_matrices : bool
+        Boolean flag for matrix-based PDE solvers.
+    radius, min_radius, max_radius : float
+        Trust radius parameters.
+    mu, mu_init, mu_max, mu_pow, eta : float
+        Augmented Lagrangian constraint factor parameters.
+    scale, grad_scale, feas_scale : float
+        Optimality metric normalization factors.
+    KKT_matrix : :class:`~kona.linalg.matrices.hessian.ReducedKKTVector`
+        Matrix object defining the KKT matrix-vector product.
+    precond : :class:`~kona.linalg.matrices.hessian.basic.BaseHessian`-like
+        Matrix object defining the preconditioner to the KKT system.
+    krylov : :class:`~kona.linalg.solvers.krylov.FLECS`
+        A krylov solver object used to solve the system defined by this matrix.
+    globalization : string
+        Flag to determine solution globalization type.
     """
 
     def __init__(self, primal_factory, state_factory,

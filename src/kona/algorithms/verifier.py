@@ -1,24 +1,25 @@
 EPS = 1e-12
 
-class Verifier(object):
+from kona.algorithms.base_algorithm import OptimizationAlgorithm
+
+class Verifier(OptimizationAlgorithm):
     """
     This is a verification tool that performs finite-difference checks on the
-    provided user solver to make sure that the required optimization tasks
-    have been implemented correctly.
+    provided solver to make sure that the required tasks have been implemented 
+    correctly by the user.
 
     Attributes
     ----------
-    primal_factory : VectorFactory
-    state_factory : VectorFactory
-    dual_factory : VectorFactory
-    optns : dict
-    out_stream :
-
-    Parameters
-    ----------
-    vector_factories : list of VectorFactory
-    solver : UserSolver
-    optns : dict
+    out_stream : file
+        File handle for verification output.
+    factor_matrices : bool
+        Boolean flag for matrix-based PDE solvers.
+    warnings_flagged, exit_verify : bool
+        Flags for terminating verification.
+    failures : dict
+        Dictionary containing verification results.
+    critical, non_critical, all_tests : list of string
+        Lists of dictionary key names for critical, non-critical, and complete verification tests.
     """
     def __init__(self, primal_factory, state_factory, eq_factory, ineq_factory,
                  optns=None):
@@ -1070,12 +1071,8 @@ class Verifier(object):
         u_s = self.state_factory.generate()
         v_s = self.state_factory.generate()
         w_s = self.state_factory.generate()
-        z_s = self.state_factory.generate()
         if self.optns['dual_vec_eq']:
             u_d = self.eq_factory.generate()
-            z_d = self.eq_factory.generate()
-            v_d = self.eq_factory.generate()
-            w_d = self.eq_factory.generate()
 
         u_p.equals_init_design()
         u_s.equals_primal_solution(u_p)
@@ -1215,7 +1212,6 @@ class Verifier(object):
 
 # imports here to prevent errors
 import sys
-import numpy as np
 from math import sqrt
 from kona.options import get_opt
 from kona.linalg.common import objective_value, lagrangian_value, factor_linear_system

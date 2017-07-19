@@ -5,7 +5,39 @@ class ReducedKKTMatrix(BaseHessian):
     Reduced approximation of the KKT matrix using a 2nd order adjoint
     formulation.
 
-    The KKT system is defined as:
+    For problems with only equality constraints, the KKT system is given as:
+
+    .. math::
+        \\begin{bmatrix}
+        \\nabla_x^2 \\mathcal{L} && \\nabla_x c^T \\\\
+        \\nabla_x c_{eq} && 0
+        \\end{bmatrix}
+        \\begin{bmatrix}
+        \\Delta x \\\\
+        \\Delta \\lambda
+        \\end{bmatrix}
+        =
+        \\begin{bmatrix}
+        -\\nabla_x \\mathcal{f} - \\lambda^T \\nabla_x c \\\\
+        - c
+        \\end{bmatrix}
+
+    where :math:`\\mathcal{L}` is the Lagrangian defined as:
+
+    .. math::
+        \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) + \\lambda^T c(x, u(x))
+
+    For problems with inequality constraints, slack variables :math:`s` are introduced 
+    alongside a log-barrier term for non-negativity, such that the Lagrangian 
+    :math:`\\mathcal{L}` becomes:
+
+    .. math::
+        \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) +
+        \\lambda_{eq}^T c_{eq}(x, u(x)) +
+        \\lambda_{ineq}^T \\left[c_{ineq}(x, u(x)) - s\\right] +
+        \\frac{1}{2}\\mu\\sum_{i=1}^{n_{ineq}}ln(s_i)
+
+    The inequality constrained KKT system is then defined as:
 
     .. math::
         \\begin{bmatrix}
@@ -28,28 +60,18 @@ class ReducedKKTMatrix(BaseHessian):
         - c_{ineq} + s
         \\end{bmatrix}
 
-    where :math:`\\mathcal{L}` is the Lagrangian defined as:
-
-    .. math::
-        \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) +
-        \\lambda_{eq}^T c_{eq}(x, u(x)) +
-        \\lambda_{ineq}^T \\left[c_{ineq}(x, u(x)) - s\\right] +
-        \\frac{1}{2}\\mu\\sum_{i=1}^{n_{ineq}}ln(s_i)
-
-    Inequality constrained are handled via the slack variables :math:`s` and
-    the logarithmic barrier term enforcing non-negativity.
-
     .. note::
 
-        More information on this 2nd order adjoint formulation can be found
-        `in this paper <http://arc.aiaa.org/doi/abs/10.2514/6.2015-1945>`.
+        Currently, Kona does not have any optimization algorithms that support inequality 
+        constraints. The slack implementation in this matrix is part of an ongoing development 
+        effort to support inequality constraints at a future date.
 
     Attributes
     ----------
     product_tol : float
-    scale : float
-    grad_scale : float
-    feas_scale : float
+        Tolerance for 2nd order adjoint system solutions.
+    scale, grad_scale, feas_scale : float
+        Optimality metric normalization factors.
     krylov : KrylovSolver
         A krylov solver object used to solve the system defined by this matrix.
     dRdX, dRdU, dCdX, dCdU : KonaMatrix

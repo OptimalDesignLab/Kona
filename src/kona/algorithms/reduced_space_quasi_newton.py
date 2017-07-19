@@ -2,14 +2,27 @@ from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
 class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
     """
-    Unconstrained optimization using quasi-Newton in the reduced space.
+    Unconstrained optimization using quasi-Newton in the reduced space, 
+    globalized using either back-tracking or Strong Wolfe line search on 
+    the objective as the merit function.
+
+    This algorithm can leverage both limited-memory BFGS and limited-memory 
+    Symmetric Rank 1 approximations of the Hessian.
 
     Attributes
     ----------
-    approx_hessian : QuasiNewtonApprox
-        Abstract matrix object that defines the QN approximation of the Hessian.
-    line_search : LineSearch
-        Line search object for globalization.
+    factor_matrices : bool
+        Boolean flag for matrix-based PDE solvers.
+    radius, min_radius, max_radius : float
+        Trust radius parameters.
+    mu, mu_init, mu_max, mu_pow, eta : float
+        Augmented Lagrangian constraint factor parameters.
+    scale, grad_scale, feas_scale : float
+        Optimality metric normalization factors.
+    approx_hessian : :class:`~kona.linalg.matrices.basic.QuasiNewtonApprox`-like
+        The quasi-Newton approximation object for the Hessian.
+    globalization : string
+        Flag to determine solution globalization type.
     """
     def __init__(self, primal_factory, state_factory,
                  eq_factory, ineq_factory, optns=None):

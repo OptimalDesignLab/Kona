@@ -11,20 +11,27 @@ from kona.algorithms.base_algorithm import OptimizationAlgorithm
 class CompositeStepRSNK(OptimizationAlgorithm):
     """
     A reduced-space composite-step optimization algorithm for PDE-governed
-    (in)equality constrained problems.
+    equality constrained problems, globalized using a trust-region approach.
 
-    This algorithm uses a novel 2nd order adjoint formulation for constraint
-    jacobian and constrained hessian products.
+    This implementation is based on the composite-step algorithm proposed by 
+    `Heinkenschloss and Ridzal<http://epubs.siam.org/doi/abs/10.1137/130921738>`_. 
+    However, we have omitted the inexactness corrections for simplicity and implemented
+    a 2nd order adjoint approach for producing the necessary matrix-vector products.
 
-    Inequality constraints are converted to equality constraints using slack
-    terms of the form :math:`e^s` where `s` are the slack variables.
-
-    Parameters
+    Attributes
     ----------
-    primal_factory : VectorFactory
-    state_factory : VectorFactory
-    dual_factory : VectorFactory
-    optns : dict, optional
+    factor_matrices : bool
+        Boolean flag for matrix-based PDE solvers.
+    radius, min_radius, max_radius : float
+        Trust radius parameters.
+    mu, mu_max, mu_pow : float
+        Augmented Lagrangian constraint factor parameters.
+    normal_KKT : :class:`~kona.linalg.matrices.hessian.AugmentedKKTMatrix`
+        Matrix object for the normal step system.
+    tangent_KKT : :class:`~kona.linalg.matrices.hessian.LagrangianHessian`
+        Matrix object for the tangent step system.
+    globalization : string
+        Flag to determine solution globalization type.
     """
     def __init__(self, primal_factory, state_factory, eq_factory, ineq_factory, optns={}):
         # trigger base class initialization
@@ -38,7 +45,6 @@ class CompositeStepRSNK(OptimizationAlgorithm):
         self.dual_factory.request_num_vectors(15)
 
         # get general options
-        self.cnstr_tol = get_opt(optns, 1e-8, 'feas_tol')
         self.factor_matrices = get_opt(optns, False, 'matrix_explicit')
 
         # get trust region options
