@@ -20,6 +20,7 @@ class DualVectorEQTestCase(unittest.TestCase):
         self.dv = km.eq_factory.generate()
 
     def test_equals_constraints(self):
+        '''DualVectorEQ constraint evaluation'''
         at_design = self.pv
         at_design.equals(1)
         at_state = self.sv
@@ -45,6 +46,7 @@ class DualVectorINEQTestCase(unittest.TestCase):
         self.mang = km.ineq_factory.generate()
 
     def test_equals_constraints(self):
+        '''DualVectorINEQ constraint evaluation'''
         at_design = self.pv
         at_design.equals(1)
         at_state = self.sv
@@ -85,6 +87,7 @@ class DualVectorEQTestCaseIDF(unittest.TestCase):
         self.dv = km.eq_factory.generate()
 
     def test_convert_to_primal(self):
+        '''DualVectorEQ IDF conversion'''
         self.pv.equals(5)
         self.dv.equals(1)
         self.dv.convert_to_design(self.pv)

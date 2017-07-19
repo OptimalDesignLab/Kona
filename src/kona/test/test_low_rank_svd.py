@@ -20,6 +20,7 @@ class LowRankSVDTestCase(unittest.TestCase):
         return ReducedKKTVector(primal, dual)
 
     def test_with_rectangular(self):
+        '''LowRankSVD approximation for rectangular matrix'''
         solver = Sellar()
         km = KonaMemory(solver)
         self.pf = km.primal_factory
@@ -89,6 +90,7 @@ class LowRankSVDTestCase(unittest.TestCase):
         self.assertTrue(rel_error <= 1e-8)
 
     def test_with_square(self):
+        '''LowRankSVD approximation for square matrix'''
         solver = Sellar()
         km = KonaMemory(solver)
         self.pf = km.primal_factory

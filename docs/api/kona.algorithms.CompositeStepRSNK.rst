@@ -1,5 +1,5 @@
 Equality Constrained Composite-Step RSNK
-========================================
+=====================================
 
 .. autoclass:: kona.algorithms.CompositeStepRSNK
     :members:

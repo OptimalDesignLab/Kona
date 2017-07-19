@@ -19,7 +19,10 @@ macOS installations, please refer to the [documentation](http://kona.readthedocs
 
 ## What is it?
 
-Kona is a library for nonlinear constrained optimization.
+Kona is a library for non-convex and nonlinear (equality) constrained optimization. The master 
+branch currently provides several gradient-based optimization algorithms for both constrained and 
+unconstrained problems. Development is ongoing to support inequality constrained problems at a 
+future date.
 
 ## Who is it for?
 
@@ -41,9 +44,9 @@ parallel-agnostic implementation and linear algebra abstraction.
 Kona was originally written by Dr. Jason E. Hicken in C++. This old version is
 now deprecated, but still available [on BitBucket](https://bitbucket.org/odl/kona).
 
-The Python re-write of Kona is being developed and maintained by Dr. Hicken and
-the [Optimal Design Lab](http://www.optimaldesignlab.com) research group at
-Rensselaer Polytechnic Institute.
+The current Python implementation of Kona is being developed and maintained by the 
+[Optimal Design Lab](http://www.optimaldesignlab.com) research group at Rensselaer Polytechnic 
+Institute.
 
 ## Acknowledgements
 

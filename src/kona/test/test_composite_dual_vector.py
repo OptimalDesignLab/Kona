@@ -32,6 +32,7 @@ class CompositeDualVectorTestCase(unittest.TestCase):
         self.cdv = CompositeDualVector(self.eq, self.ineq)
 
     def test_bad_init_args(self):
+        '''CompositeDualVector test for bad initial arguments'''
         try:
             CompositeDualVector(self.ineq, self.ineq)
         except TypeError as err:
@@ -53,12 +54,14 @@ class CompositeDualVectorTestCase(unittest.TestCase):
             self.fail('TypeError expected')
 
     def test_equals_constraints_with_design(self):
+        '''CompositeDualVector test for constraint evaluation (1/2)'''
         self.cdv.equals_constraints(self.design, self.state)
         exp_norm = np.sqrt(5. * 200.**2)
         self.assertEqual(self.cdv.eq.norm2, exp_norm)
         self.assertEqual(self.cdv.ineq.norm2, exp_norm)
 
     def test_equals_constraints_with_primal(self):
+        '''CompositeDualVector test for constraint evaluation (2/2)'''
         self.cdv.equals_constraints(self.primal, self.state)
         exp_norm = np.sqrt(5. * 200.**2)
         self.assertEqual(self.cdv.eq.norm2, exp_norm)

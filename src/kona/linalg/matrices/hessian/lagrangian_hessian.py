@@ -39,7 +39,7 @@ class LagrangianHessian(BaseHessian):
         self.krylov = STCG(
             self.primal_factory,
             optns=krylov_optns,
-            dual_factory=self.eq_factory)
+            dual_factory=self.ineq_factory)
 
     @property
     def approx(self):

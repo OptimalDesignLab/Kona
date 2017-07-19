@@ -1,20 +1,18 @@
 import numpy as np
 from kona.user import UserSolver
 
-"""
-Knitro's NLP1 test problem
-    minimize    1000 - x1^2 - 2*x2^2 - x3^2 - x1*x2 - x1*x3
-    subject to  8*x1 + 14*x2 + 7*x3         = 56
-                 (x1^2 + x2^2 + x3^2 - 25)  >= 0
-                0 <= (x1, x2, x3) <= 10
-
-    and has two local solutions:
-    the point (0,0,8) with objective 936.0, and
-    the point (7,0,0) with objective 951.0
-"""
-
 class NLP1(UserSolver):
+    """
+    Knitro's NLP1 test problem
+        minimize    1000 - x1^2 - 2*x2^2 - x3^2 - x1*x2 - x1*x3
+        subject to  8*x1 + 14*x2 + 7*x3         = 56
+                     (x1^2 + x2^2 + x3^2 - 25)  >= 0
+                    0 <= (x1, x2, x3) <= 10
 
+        and has two local solutions:
+        the point (0,0,8) with objective 936.0, and
+        the point (7,0,0) with objective 951.0
+    """
     def __init__(self, init_x = [1., 1., 1.]):
         super(NLP1, self).__init__(
             num_design = 3,

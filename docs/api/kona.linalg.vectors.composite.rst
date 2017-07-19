@@ -8,3 +8,4 @@ Subclasses
 
     kona.linalg.vectors.composite.CompositeVector
     kona.linalg.vectors.composite.derived
+    kona.linalg.vectors.composite.CompositeFactory

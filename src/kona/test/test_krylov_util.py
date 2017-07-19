@@ -14,6 +14,7 @@ from kona.linalg.memory import KonaMemory
 class KrylovUtilTestCase(unittest.TestCase):
 
     def test_sign(self):
+        '''Krylov utilities abs_sign()'''
         x = 2
         y = -1
         z = abs_sign(x,y)
@@ -21,7 +22,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertEqual(z,-2)
 
     def test_calc_epsilon(self):
-
+        '''Krylov utilities calc_epsilon()'''
         mult_by_norm = 1e-30
         eval_at_norm = 1
 
@@ -42,7 +43,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertTrue(abs(out3 - np.sqrt(EPS)*2) < 1e-5)
 
     def test_eigen_decomp(self):
-
+        '''Krylov utilities eigen_decomp()'''
         A = np.diag(np.array([1,2,3,4]))
 
         eig_val, eig_vec = eigen_decomp(A)
@@ -51,7 +52,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertTrue(np.all(eig_vec == np.eye(4)))
 
     def test_apply_givens(self):
-
+        '''Krylov utilities apply_givens()'''
         # theta = 90
         s = 1
         c = 0
@@ -64,6 +65,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertEqual(a2, -1)
 
     def test_generate_givens(self):
+        '''Krylov utilities generate_givens()'''
         dx = 0.0
         dy = 0.0
         dx, dy, s, c = generate_givens(dx, dy)
@@ -97,6 +99,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertEqual(c, 1.0)
 
     def test_solve_tri(self):
+        '''Krylov utilities solve_tri()'''
         A = np.matrix([[1, 1],[0, 1]])
         b = np.array([3, 1])
         x = solve_tri(A, b, lower=False)
@@ -114,6 +117,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertEqual(x[0], 2.)
 
     def test_lanczos(self):
+        '''Krylov utilities lanczos_bidiag()'''
         # problem sizing
         num_design = 100
         num_cnstr = 30
@@ -163,7 +167,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertTrue(rel_error <= 0.1)
 
     def test_secular_function(self):
-
+        '''Krylov utilities secular_function()'''
         # The eigenvalues of the following matrix are (1e-5, 0.01, 1)
         A = np.zeros((3,3))
         A[0][0] = 3.931544008059447
@@ -201,6 +205,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         self.assertFalse(abs(dfnc + 0.858531792016) > 1e-12)
 
     def test_solve_trust_reduced(self):
+        '''Krylov utilities solve_trust_reduced()'''
         # first we test with the trust radius constraint inactive
 
         # The eigenvalues of the following matrix are (1e-5, 0.01, 1)

@@ -6,7 +6,7 @@ from kona.examples import Sellar
 class VerifierTestCase(unittest.TestCase):
 
     def test_sellar(self):
-
+        '''Verifier test on Sellar problem'''
         solver = Sellar()
 
         optns = {

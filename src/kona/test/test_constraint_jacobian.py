@@ -19,6 +19,7 @@ class TotalConstraintJacobianTestCase(unittest.TestCase):
         return ReducedKKTVector(primal, dual)
 
     def test_constrained_product(self):
+        '''TotalConstraintJacobian forward product'''
         solver = Sellar()
         km = KonaMemory(solver)
         self.pf = km.primal_factory

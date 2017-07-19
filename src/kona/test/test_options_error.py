@@ -5,6 +5,7 @@ from kona.options import BadKonaOption
 class KonaOptionTestCase(unittest.TestCase):
 
     def test_err_msg(self):
+        '''BadKonaOptions error message test'''
         optns = {
             'quasi_newton': {'type': 2}
         }

@@ -19,6 +19,7 @@ class StateVectorTestCase(unittest.TestCase):
         self.sv_work = km.state_factory.generate()
 
     def test_equals_objective_partial(self):
+        '''StateVector objective partial derivative'''
         at_design = self.pv
         at_design.equals(1)
         at_state = self.sv_work
@@ -27,6 +28,7 @@ class StateVectorTestCase(unittest.TestCase):
         self.assertEqual(self.sv.inner(self.sv), 10.0)
 
     def test_equals_residual(self):
+        '''StateVector residual evaluation'''
         at_design = self.pv
         at_design.equals(1)
         at_state = self.sv_work
@@ -35,12 +37,14 @@ class StateVectorTestCase(unittest.TestCase):
         self.assertEqual(self.sv.inner(self.sv), 90.0)
 
     def test_equals_primal_solution(self):
+        '''StateVector nonlinear system solution'''
         at_design = self.pv
         at_design.equals(2)
         self.sv.equals_primal_solution(at_design)
         self.assertEqual(self.sv.inner(self.sv), 40.0)
 
     def test_equals_adjoint_solution(self):
+        '''StateVector linear adjoint solution'''
         at_design = self.pv
         at_design.equals(1)
         at_state = self.sv_work

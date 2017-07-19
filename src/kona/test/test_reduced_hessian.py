@@ -6,9 +6,7 @@ from kona.linalg.memory import KonaMemory
 from kona.examples import Simple2x2
 from kona.linalg.matrices.hessian import ReducedHessian
 
-
 class ReducedHessianTestCase(unittest.TestCase):
-    '''Test case for the Reduced Hessian approximation matrix.'''
 
     def setUp(self):
         solver = Simple2x2()
@@ -27,6 +25,7 @@ class ReducedHessianTestCase(unittest.TestCase):
         self.assertTrue(np.linalg.norm(vec1 - vec2) < atol)
 
     def test_product(self):
+        '''ReducedHessian forward product'''
         # get memory
         x = self.pf.generate()
         dJdX = self.pf.generate()

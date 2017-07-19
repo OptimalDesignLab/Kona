@@ -58,11 +58,14 @@ class AugLagMeritTestCase(unittest.TestCase):
         self.merit_val_init = obj_val + aug_term + penalty_term
 
     def test_init_func(self):
+        '''AugmentedLagrangian merit initialization'''
         self.merit.reset(self.kkt_start, self.u_start, self.search_dir, self.mu)
         print abs(self.merit.func_val-self.merit_val_init)
         self.assertTrue(abs(self.merit.func_val-self.merit_val_init) <= 1e-10)
 
     def test_eval_func(self):
+        '''AugmentedLagrangian merit function value evaluation'''
+
         # get merit value from merit object
         self.merit.reset(self.kkt_start, self.u_start, self.search_dir, self.mu)
         alpha = 1.
@@ -85,6 +88,7 @@ class AugLagMeritTestCase(unittest.TestCase):
         self.assertTrue(abs(merit_value - expected_value) <= 1e-10)
 
     def test_unnecessary_func_eval(self):
+        '''AugmentedLagrangian merit avoiding unnecessary computation'''
         self.merit.reset(self.kkt_start, self.u_start, self.search_dir, self.mu)
         expected_value = self.merit.func_val
         init_alpha = self.merit.last_func_alpha

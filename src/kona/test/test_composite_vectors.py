@@ -31,7 +31,7 @@ class CompositeVectorTestCase(unittest.TestCase):
         self.diff_comp2 = CompositeVector([self.eq1, self.eq2])
 
     def test_check_type(self):
-
+        '''CompositeVector type checking'''
         try:
             self.comp_vec2._check_type(self.pv1)
         except TypeError as err:
@@ -53,6 +53,7 @@ class CompositeVectorTestCase(unittest.TestCase):
             self.fail('TypeError expected')
 
     def test_equals(self):
+        '''CompositeVector vector-value assignment'''
         self.comp_vec2.equals(self.comp_vec1)
 
         err = self.eq2.base.data - self.eq1.base.data
@@ -62,6 +63,7 @@ class CompositeVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_plus(self):
+        '''CompositeVector elementwise summation'''
         self.comp_vec2.plus(self.comp_vec1)
 
         err = self.pv2.base.data - 4*np.ones(10)
@@ -71,6 +73,7 @@ class CompositeVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_minus(self):
+        '''CompositeVector elementwise subtraction'''
         self.comp_vec2.minus(self.comp_vec1)
 
         err = self.pv2.base.data - 0*np.ones(10)
@@ -80,10 +83,12 @@ class CompositeVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_times_vector(self):
+        '''CompositeVector elementwise multiplication'''
         self.comp_vec2.times(self.comp_vec1)
         self.assertEqual(self.comp_vec2.inner(self.comp_vec2), 340.)
 
     def test_times_scalar(self):
+        '''CompositeVector scalar multiplication'''
         self.comp_vec2.times(3)
         err = self.pv2.base.data - 6*np.ones(10)
         self.assertEqual(np.linalg.norm(err), 0)
@@ -99,6 +104,7 @@ class CompositeVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_divide_by(self):
+        '''CompositeVector elementwise division'''
         self.comp_vec2.divide_by(2)
         err = self.pv2.base.data - 1*np.ones(10)
         self.assertEqual(np.linalg.norm(err), 0)
@@ -107,6 +113,7 @@ class CompositeVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_equals_ax_p_by(self):
+        '''CompositeVector linear combination (ax + by)'''
         self.comp_vec2.equals_ax_p_by(2, self.comp_vec1, 2, self.comp_vec2)
 
         err = self.pv2.base.data - 8*np.ones(10)
@@ -116,10 +123,12 @@ class CompositeVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0)
 
     def test_inner(self):
+        '''CompositeVector inner product'''
         ip = self.comp_vec2.inner(self.comp_vec1)
         self.assertEqual(ip, 70)
 
     def test_norm2(self):
+        '''CompositeVector L2 norm'''
         ip = self.comp_vec2.norm2
         self.assertEqual(ip, 60**.5)
 

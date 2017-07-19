@@ -58,10 +58,12 @@ class L2PenaltyMeritTestCase(unittest.TestCase):
         self.merit_val_init = obj_val + penalty_term
 
     def test_init_func(self):
+        '''L2QuadraticPenalty merit initialization'''
         self.merit.reset(self.kkt_start, self.u_start, self.search_dir, self.mu)
         self.assertEqual(self.merit.func_val, self.merit_val_init)
 
     def test_eval_func(self):
+        '''L2QuadraticPenalty merit function value evaluation'''
         # get merit value from merit object
         self.merit.reset(self.kkt_start, self.u_start, self.search_dir, self.mu)
         alpha = 1.
@@ -83,6 +85,7 @@ class L2PenaltyMeritTestCase(unittest.TestCase):
         self.assertEqual(merit_value, expected_value)
 
     def test_unnecessary_func_eval(self):
+        '''L2QuadraticPenalty merit avoiding unnecessary computation'''
         self.merit.reset(self.kkt_start, self.u_start, self.search_dir, self.mu)
         expected_value = self.merit.func_val
         init_alpha = self.merit.last_func_alpha

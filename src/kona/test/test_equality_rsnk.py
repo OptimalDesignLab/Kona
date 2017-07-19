@@ -7,8 +7,8 @@ from kona.examples import ExponentialConstrained
 
 class ConstrainedRSNKTestCase(unittest.TestCase):
 
-    def test_with_sphere_constrained(self):
-
+    def test_with_exponential_constrained(self):
+        '''ConstrainedRSNK test with ExponentialConstrained problem'''
         solver = ExponentialConstrained()
 
         optns = {

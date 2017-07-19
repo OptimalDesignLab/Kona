@@ -6,6 +6,7 @@ import kona
 class OptimizerTestCase(unittest.TestCase):
 
     def test_rosenbrock(self):
+        '''Optimizer controller'''
         num_design = 2
         solver = kona.examples.Rosenbrock(num_design)
         optns = {

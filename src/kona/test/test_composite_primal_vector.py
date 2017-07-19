@@ -38,6 +38,7 @@ class CompositePrimalVectorTestCase(unittest.TestCase):
         self.pv = CompositePrimalVector(self.dv, self.sv)
 
     def test_bad_init_args(self):
+        '''CompositePrimalVector test for bad initial arguments'''
         try:
             CompositePrimalVector(self.sv, self.sv)
         except TypeError as err:
@@ -59,6 +60,7 @@ class CompositePrimalVectorTestCase(unittest.TestCase):
             self.fail('TypeError expected')
 
     def test_barrier_not_set(self):
+        '''CompositePrimalVector error for missing barrier term'''
         try:
             self.pv.equals_lagrangian_total_gradient(
                 self.primal, self.state, self.dual_ineq, self.adjoint)
@@ -70,6 +72,7 @@ class CompositePrimalVectorTestCase(unittest.TestCase):
             self.fail('AssertionError expected')
 
     def test_init_design(self):
+        '''CompositeDualVector design initialization'''
         self.pv.equals_init_design()
 
         err = self.dv.base.data - 10*np.ones(10)
@@ -79,6 +82,7 @@ class CompositePrimalVectorTestCase(unittest.TestCase):
         self.assertEqual(np.linalg.norm(err), 0.0)
 
     def test_lagrangian_tot_grad(self):
+        '''CompositeDualVector lagrangian total gradient'''
         dCINdU(self.design, self.state).T.product(self.dual_ineq, self.adjoint)
         self.state_work.equals_objective_partial(self.design, self.state)
         self.state_work.plus(self.adjoint)

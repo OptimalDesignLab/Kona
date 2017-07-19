@@ -10,6 +10,7 @@ from kona.user.user_solver import UserSolver
 class CompositeFactoryTestCase(unittest.TestCase):
 
     def test_generate_compositeprimal(self):
+        '''CompositeFactory generating CompositePrimalVector'''
         solver = UserSolver(2, 3, 4, 5)
         km = KonaMemory(solver)
 
@@ -23,6 +24,7 @@ class CompositeFactoryTestCase(unittest.TestCase):
         self.assertTrue(isinstance(vec, CompositePrimalVector))
 
     def test_generate_compositedual(self):
+        '''CompositeFactory generating CompositeDualVector'''
         solver = UserSolver(2, 3, 4, 5)
         km = KonaMemory(solver)
 
@@ -36,6 +38,7 @@ class CompositeFactoryTestCase(unittest.TestCase):
         self.assertTrue(isinstance(vec, CompositeDualVector))
 
     def test_generate_primaldual(self):
+        '''CompositeFactory generating PrimalDualVector'''
         solver = UserSolver(2, 3, 4, 5)
         km = KonaMemory(solver)
 
@@ -49,6 +52,7 @@ class CompositeFactoryTestCase(unittest.TestCase):
         self.assertTrue(isinstance(vec, PrimalDualVector))
 
     def test_generate_reducedkkt_no_slack(self):
+        '''CompositeFactory generating ReducedKKTVector (1/2)'''
         solver = UserSolver(2, 3, 4, 0)
         km = KonaMemory(solver)
 
@@ -62,6 +66,7 @@ class CompositeFactoryTestCase(unittest.TestCase):
         self.assertTrue(isinstance(vec, ReducedKKTVector))
 
     def test_generate_reducedkkt_slack(self):
+        '''CompositeFactory generating CompositePrimalVector (2/2)'''
         solver = UserSolver(2, 3, 4, 5)
         km = KonaMemory(solver)
 
@@ -74,7 +79,16 @@ class CompositeFactoryTestCase(unittest.TestCase):
 
         self.assertTrue(isinstance(vec, ReducedKKTVector))
 
+    def test_invalid_memory(self):
+        '''CompositeFactory error message for invalid memory object'''
+        solver = UserSolver(2, 3, 4, 5)
+        try:
+            fac = CompositeFactory(solver, ReducedKKTVector)
+        except AssertionError as err:
+            self.assertEqual(str(err), "Invalid memory object!")
+
     def test_invalid_type(self):
+        '''CompositeFactory error message for invalid vector type (1/6)'''
         solver = UserSolver(2, 3, 4, 5)
         km = KonaMemory(solver)
         try:
@@ -82,14 +96,8 @@ class CompositeFactoryTestCase(unittest.TestCase):
         except AssertionError as err:
             self.assertEqual(str(err), "Must provide a CompositeVector-type!")
 
-    def test_invalid_memory(self):
-        solver = UserSolver(2, 3, 4, 5)
-        try:
-            fac = CompositeFactory(solver, ReducedKKTVector)
-        except AssertionError as err:
-            self.assertEqual(str(err), "Invalid memory object!")
-
     def test_compositeprimal_error(self):
+        '''CompositeFactory error message for invalid vector type (2/6)'''
         solver = UserSolver(2, 3, 4, 0)
         km = KonaMemory(solver)
         try:
@@ -99,6 +107,7 @@ class CompositeFactoryTestCase(unittest.TestCase):
                 str(err), "Cannot generate CompositePrimalVector! No inequality constraints.")
 
     def test_compositedual_error(self):
+        '''CompositeFactory error message for invalid vector type (3/6)'''
         solver = UserSolver(2)
         km = KonaMemory(solver)
         try:
@@ -109,6 +118,7 @@ class CompositeFactoryTestCase(unittest.TestCase):
                 "Cannot generate CompositeDualVector! No equality and inequality constraints.")
 
     def test_primaldual_error(self):
+        '''CompositeFactory error message for invalid vector type (4/6)'''
         solver = UserSolver(2)
         km = KonaMemory(solver)
         try:
@@ -118,6 +128,7 @@ class CompositeFactoryTestCase(unittest.TestCase):
                 str(err), "Cannot generate PrimalDualVector! No constraints.")
 
     def test_reducedkkt_error(self):
+        '''CompositeFactory error message for invalid vector type (5/6)'''
         solver = UserSolver(2)
         km = KonaMemory(solver)
         try:
@@ -127,6 +138,7 @@ class CompositeFactoryTestCase(unittest.TestCase):
                 str(err), "Cannot generate ReducedKKTVector! No equality constraints.")
 
     def test_notimplemented_error(self):
+        '''CompositeFactory error message for invalid vector type (6/6)'''
         solver = UserSolver(2)
         km = KonaMemory(solver)
         try:

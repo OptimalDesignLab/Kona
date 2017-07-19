@@ -43,6 +43,7 @@ class ObjectiveMeritTestCase(unittest.TestCase):
         self.merit.reset(p, x_start, u_start, self.p_dot_grad_init)
 
     def test_eval_func(self):
+        '''ObjectiveMerit function value evaluation'''
         # get merit value from merit object
         merit_value = self.merit.eval_func(1)
         # calculate expected merit value
@@ -55,6 +56,7 @@ class ObjectiveMeritTestCase(unittest.TestCase):
         self.assertEqual(merit_value, expected_value)
 
     def test_eval_grad(self):
+        '''ObjectiveMerit directional derivative evaluation'''
         # get merit grad from merit object
         merit_value = self.merit.eval_grad(1)
         # calculate expected merit value
@@ -75,10 +77,12 @@ class ObjectiveMeritTestCase(unittest.TestCase):
         self.assertEqual(merit_value, expected_value)
 
     def test_unnecessary_func_eval(self):
+        '''ObjectiveMerit avoiding unnecessary computation (1/2)'''
         merit_value = self.merit.eval_func(1e-20)
         self.assertEqual(merit_value, self.merit_val_init)
 
     def test_unnecessary_grad_eval(self):
+        '''ObjectiveMerit avoiding unnecessary computation (2/2)'''
         merit_grad = self.merit.eval_grad(1e-20)
         self.assertEqual(merit_grad, self.p_dot_grad_init)
 

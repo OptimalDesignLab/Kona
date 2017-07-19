@@ -6,17 +6,17 @@
 Welcome to KONA's documentation!
 ================================
 
-|build| |coverage|
+|build| |coveralls| |codecov|
 
 .. |build| image:: https://travis-ci.org/OptimalDesignLab/Kona.svg?branch=master
     :target: https://travis-ci.org/OptimalDesignLab/Kona
     :alt: Build Status
 
-.. |coverage| image:: https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master&service=github
+.. |coveralls| image:: https://coveralls.io/repos/OptimalDesignLab/Kona/badge.svg?branch=master&service=github
     :target: https://coveralls.io/github/OptimalDesignLab/Kona?branch=master
     :alt: Coveralls.io
 
-.. |coverage| image:: http://codecov.io/github/OptimalDesignLab/Kona/coverage.svg?branch=master
+.. |codecov| image:: http://codecov.io/github/OptimalDesignLab/Kona/coverage.svg?branch=master
     :target: http://codecov.io/github/OptimalDesignLab/Kona?branch=master
     :alt: Codecov.io
 

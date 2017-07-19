@@ -44,8 +44,7 @@ class BackTrackingTestCase(unittest.TestCase):
         self.bt.p_dot_dfdx = dfdx.inner(search_dir)
 
     def test_stops_after_one_iter(self):
-        '''Assuming your first guess viloates sufficient decrease condition'''
-
+        '''BackTracking line search test (1/4)'''
         search_dir = self.pf.generate()
         search_dir.base.data[:] = [0,-2]
 
@@ -76,7 +75,7 @@ class BackTrackingTestCase(unittest.TestCase):
         self.assertEqual(alpha, .25)
 
     def test_stops_after_multiple_iter(self):
-        '''Assuming your first guess viloates sufficient decrease condition'''
+        '''BackTracking line search test (2/4)'''
 
         search_dir = self.pf.generate()
         search_dir.base.data[:] = [0,-2]
@@ -107,7 +106,7 @@ class BackTrackingTestCase(unittest.TestCase):
         self.assertEqual(n_iter, 4)
 
     def test_from_running_other_way(self):
-        '''Check that it works when the search direction sign is flips'''
+        '''BackTracking line search test (3/4)'''
 
         search_dir = self.pf.generate()
         search_dir.base.data[:] = [4.25,0]
@@ -138,6 +137,7 @@ class BackTrackingTestCase(unittest.TestCase):
         self.assertEqual(alpha, 1)
 
     def test_bad_search_direction(self):
+        '''BackTracking line search test (4/4)'''
 
         search_dir = self.pf.generate()
         search_dir.base.data[:] = [-1,0]
@@ -173,6 +173,7 @@ class BackTrackingTestCase(unittest.TestCase):
             self.fail('ValueError expected')
 
     def test_no_merit_function(self):
+        '''BackTracking error test for no merit function'''
         try:
             alpha, n_iter = self.bt.find_step_length(None)
         except ValueError as err:
@@ -181,6 +182,7 @@ class BackTrackingTestCase(unittest.TestCase):
             self.fail('ValueError expected')
 
     def test_bad_alpha_init(self):
+        '''BackTracking error test for bad initial alpha'''
         self.bt.alpha_init = 1e6
         try:
             alpha, n_iter = self.bt.find_step_length(None)
