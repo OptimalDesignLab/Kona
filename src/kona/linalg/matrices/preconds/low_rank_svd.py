@@ -56,8 +56,8 @@ class LowRankSVD(object):
         self._allocated = False
 
         # request vector memory for future allocation
-        self.fwd_factory.request_num_vectors(2*self.subspace_size + 1)
-        self.rev_factory.request_num_vectors(2*self.subspace_size)
+        self.fwd_factory.request_num_vectors(2*self.subspace_size + 2)
+        self.rev_factory.request_num_vectors(2*self.subspace_size + 1)
 
     def linearize(self):
         if not self._allocated:
@@ -129,3 +129,15 @@ class LowRankSVD(object):
         out_vec.equals(0.0)
         for i in xrange(len(self.V)):
             out_vec.equals_ax_p_by(1., out_vec, SUT_vec[i], self.V[i])
+
+    def inv_schur_prod(self, in_vec, out_vec):
+        UT_vec = np.zeros(len(self.U)-1)
+        for i in xrange(len(self.U)-1):
+            UT_vec[i] = self.U[i].inner(in_vec)
+        S2invUT_vec = np.zeros(len(self.U)-1)
+        for i in xrange(len(self.U)-1):
+            S2invUT_vec[i] = UT_vec[i]*(1./self.S[i,i]**2 - 1./self.S[-1,-1]**2)
+        out_vec.equals(in_vec)
+        out_vec.times(1./self.S[-1,-1]**2)
+        for i in xrange(len(self.U)-1):
+            out_vec.equals_ax_p_by(1.0, out_vec, S2invUT_vec[i], self.U[i])
