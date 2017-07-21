@@ -21,8 +21,8 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         )
 
         # number of vectors required in solve() method
-        # PrimalDualVectors = X, dX, R, dLdX, obj_grad, dX_safe
-        num_pd = 6
+        # PrimalDualVectors = X, dX, R, dLdX
+        num_pd = 4
         self.primal_factory.request_num_vectors(num_pd)
         if self.eq_factory is not None:
             self.eq_factory.request_num_vectors(num_pd)
@@ -59,10 +59,6 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
             self.hess_reg = get_opt(self.optns, 0.0, 'multi_secant', 'hess_reg')
             self.multisecant = multisecant([self.primal_factory, self.eq_factory,
                                             self.ineq_factory], hessian_optns)
-            # the multisecant_safe member is for the first-order scheme
-            self.multisecant_safe = multisecant([self.primal_factory, self.eq_factory,
-                                                 self.ineq_factory], hessian_optns)
-
         except Exception:
             raise BadKonaOption(self.optns, 'multi_secant','type')
 
@@ -128,10 +124,8 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         # generate primal-dual vectors, and other vectors
         X = self._generate_vector()
         dX = self._generate_vector()
-        dX_safe = self._generate_vector()
         R = self._generate_vector()
         dLdX = self._generate_vector()
-        obj_grad = self._generate_vector()
 
         # generate state vectors
         state = self.state_factory.generate()
@@ -143,25 +137,14 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         state.equals_primal_solution(X.primal)
         obj_val = objective_value(X.primal, state)
 
-        # initialize the multi-secant methods
+        # initialize the multi-secant method and preconditioner
         self.multisecant.set_initial_data(X)
-        self.multisecant_safe.set_initial_data(X)
-
-        # initialize the preconditioner
         self.precond.linearize(X.primal, state)
 
-        # get the adjoint for -h^T\lambda_h - g^T\lambda_g
-        adjoint.equals_homotopy_adjoint(X, state, state_work, obj_scale=0.0)
-        R.equals_KKT_conditions(X, state, adjoint, obj_scale=0.0)
+        # get the adjoint for dLdX, compute KKT conditions, and add to history
+        adjoint.equals_homotopy_adjoint(X, state, state_work)
+        R.equals_KKT_conditions(X, state, adjoint)
         dLdX.equals(R)
-        R.primal.plus(X.primal)
-        self.multisecant_safe.add_to_history(X, R)
-
-        # get the adjoint for df/dx, then add it to finish dLdX computation
-        adjoint.equals_objective_adjoint(X.primal, state, state_work)
-        obj_grad.equals(0.)
-        obj_grad.primal.equals_total_gradient(X.primal, state, adjoint)
-        dLdX.primal.plus(obj_grad.primal)
         self.multisecant.add_to_history(X, dLdX)
 
         # send initial point info to the user
@@ -208,38 +191,13 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
             # get full multi-secant step and projected-gradient
             self.multisecant.build_difference_matrices(self.hess_reg)
             self.multisecant.solve(R, dX, self.beta, self.precond.product)
-            self.multisecant_safe.build_difference_matrices(self.hess_reg)
-            self.multisecant_safe.solve(obj_grad, dX_safe, precond=self.precond.product)
-            info = ' '
-            if False: #dX.primal.inner(dX_safe.primal) < 0.:
-                # the full step is considered unsafe: compute first-order step
-                self.multisecant_safe.solve(R, dX, self.beta, self.precond.product)
-                info += 'safe-step'
-                # remove history from multisecant
-                #self.multisecant.clear_history()
 
             # safe-guard against large steps
-            if dX.norm2 > self.radius_max: #/self.iter:
-                dX.times(self.radius_max/(dX.norm2)) #*self.iter))
+            info = ' '
+            if dX.norm2 > self.radius_max:
+                dX.times(self.radius_max/(dX.norm2))
                 info += ' length restricted'
             X.plus(dX)
-
-            # j = 0
-            # while True:
-            #     j += 1
-            #     X.plus(dX)
-            #     # evaluate at new X, and check if optimality improved
-            #     state.equals_primal_solution(X.primal)
-            #     adjoint.equals_homotopy_adjoint(X, state, state_work)
-            #     dLdX.equals_KKT_conditions(X, state, adjoint)
-            #     R.equals_primaldual_residual(dLdX, X.ineq)
-            #     self.info_file.write(
-            #         'line search iteration %i: |R(x_k)| = %e: |R(x_k + p_k)| = %e\n'%(
-            #             j, grad_norm**2 + feas_norm**2, R.norm2**2))
-            #     if R.norm2**2 < grad_norm**2 + feas_norm**2 or j >= 4:
-            #         break
-            #     X.minus(dX)
-            #     dX.times(0.1)
 
             # evaluate at new X, construct first-order optimality conditions, and store
             state.equals_primal_solution(X.primal)
@@ -247,17 +205,10 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
 
             self.precond.linearize(X.primal, state)
 
-            # get the adjoint for -h^T\lambda_h - g^T\lambda_g
-            adjoint.equals_homotopy_adjoint(X, state, state_work, obj_scale=0.0)
-            R.equals_KKT_conditions(X, state, adjoint, obj_scale=0.0)
+            # get the adjoint for dLdX
+            adjoint.equals_homotopy_adjoint(X, state, state_work)
+            R.equals_KKT_conditions(X, state, adjoint)
             dLdX.equals(R)
-            R.primal.plus(X.primal)
-            self.multisecant_safe.add_to_history(X, R)
-
-            # get the adjoint for df/dx, then add it to finish dLdX computation
-            adjoint.equals_objective_adjoint(X.primal, state, state_work)
-            obj_grad.primal.equals_total_gradient(X.primal, state, adjoint)
-            dLdX.primal.plus(obj_grad.primal)
             self.multisecant.add_to_history(X, dLdX)
 
             # output current solution info to the user

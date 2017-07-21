@@ -381,7 +381,7 @@ class PrimalDualVector(CompositeVector):
     def equals_KKT_conditions(self, x, state, adjoint, obj_scale=1.0, cnstr_scale=1.0):
         """
         Calculates the total derivative of the Lagrangian
-        :math:`\\mathcal{L}(x, u) = f(x, u)+ \\lambda_{h}^T h(x, u) + \\lambda_{g}^T g(x, u)` with
+        :math:`\\mathcal{L}(x, u) = f(x, u) - \\lambda_{h}^T h(x, u) - \\lambda_{g}^T g(x, u)` with
         respect to :math:`\\begin{pmatrix}x && \\lambda_{h} && \\lambda_{g}\\end{pmatrix}^T`,
         where :math:`h` denotes the equality constraints (if any) and :math:`g` denotes
         the inequality constraints (if any).  Note that these (total) derivatives do not
