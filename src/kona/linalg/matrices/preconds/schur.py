@@ -48,18 +48,23 @@ class ApproxSchur(BaseHessian):
         if self.dual_factory is not None:
             self.dual_factory.request_num_vectors(1)
 
-        # initialize the total constraint jacobian block
-        self.dCdX = TotalConstraintJacobian(vector_factories)
+            # initialize the total constraint jacobian block
+            self.dCdX = TotalConstraintJacobian(vector_factories)
 
-        # initialize the low-rank SVD
-        def fwd_mat_vec(in_vec, out_vec):
-            self.dCdX.product(in_vec, out_vec)
+            # initialize the low-rank SVD
+            def fwd_mat_vec(in_vec, out_vec):
+                self.dCdX.product(in_vec, out_vec)
 
-        def rev_mat_vec(in_vec, out_vec):
-            self.dCdX.T.product(in_vec, out_vec)
+            def rev_mat_vec(in_vec, out_vec):
+                self.dCdX.T.product(in_vec, out_vec)
 
-        self.dCdX_approx = LowRankSVD(fwd_mat_vec, self.primal_factory,
-                                      rev_mat_vec, self.dual_factory, optns)
+            self.dCdX_approx = LowRankSVD(fwd_mat_vec, self.primal_factory,
+                                          rev_mat_vec, self.dual_factory, optns)
+
+        else:
+            # if self.dual_factory is None, there are no constraints
+            self.dCdX = None
+            self.dCdX_approx = None
 
         self._allocated = False
 
@@ -70,13 +75,15 @@ class ApproxSchur(BaseHessian):
         self.scale = scale
 
         # get the total constraint Jacobian ready, and then use it in Lanczos bi-diagonalization
-        self.dCdX.linearize(self.at_design, self.at_state, scale=self.scale)
-        self.dCdX_approx.linearize()
+        if self.dual_factory is not None:
+            self.dCdX.linearize(self.at_design, self.at_state, scale=self.scale)
+            self.dCdX_approx.linearize()
 
         # check if dual_work needs to be allocated
         if not self._allocated:
             if self.dual_factory is not None:
                 self.dual_work = self.dual_factory.generate()
+            self._allocated = True
 
     def product(self, in_vec, out_vec):
         assert isinstance(in_vec, PrimalDualVector), \

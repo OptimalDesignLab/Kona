@@ -1,7 +1,8 @@
 from collections import deque
 import numpy
 from kona.linalg.matrices.hessian.basic import MultiSecantApprox
-from kona.linalg.vectors.composite import CompositeDualVector, PrimalDualVector
+from kona.linalg.vectors.composite import PrimalDualVector
+from kona.linalg.solvers.util import EPS
 
 class AndersonMultiSecant(MultiSecantApprox):
     """
@@ -74,12 +75,25 @@ class AndersonMultiSecant(MultiSecantApprox):
         self.x_hist = deque()
         self.r_hist = deque()
 
-    def build_difference_matrices(self):
+    def build_difference_matrices(self, alpha=0.0):
+        """
+        Constructs the difference matrices based on first-order optimality
+
+        Parameters
+        ----------
+        alpha : Float
+            controls the amount of Hessian regularization
+        """
         assert len(self.x_hist) == len(self.r_hist), \
             'AndersonMultiSecant() >> inconsistent list sizes!'
+        assert alpha >= 0.0, \
+            'AndersonMultiSecant() >> alpha must be non-negative in build_difference_matrices!'
         # clear the previous x_diff and r_diff lists
         del self.x_diff[:], self.r_diff[:]
         self.work.equals_primaldual_residual(self.r_hist[0], self.x_hist[0].ineq)
+        if alpha > EPS:
+            # include Hessian regularization
+            self.work.primal.equals_ax_p_by(1.0, self.work.primal, alpha, self.x_hist[0].primal)
         for k in range(len(self.x_hist)-1):
             # generate new vectors for x_diff and r_diff lists
             dx = self._generate_vector()
@@ -90,6 +104,10 @@ class AndersonMultiSecant(MultiSecantApprox):
             self.x_diff[k].equals_ax_p_by(1.0, self.x_hist[k+1], -1.0, self.x_hist[k])
             self.r_diff[k].equals(self.work)
             self.work.equals_primaldual_residual(self.r_hist[k+1], self.x_hist[k+1].ineq)
+            if alpha > EPS:
+                # include Hessian regularization
+                self.work.primal.equals_ax_p_by(1.0, self.work.primal, alpha,
+                                                self.x_hist[k+1].primal)
             self.r_diff[k].minus(self.work)
             self.r_diff[k].times(-1.0)
 
@@ -120,7 +138,7 @@ class AndersonMultiSecant(MultiSecantApprox):
             self.r_diff[k].minus(self.work)
             self.r_diff[k].times(-1.0)
 
-    def solve(self, in_vec, out_vec, beta=1.0, rel_tol=1e-15):
+    def solve(self, in_vec, out_vec, beta=1.0, precond=None, rel_tol=1e-15):
         # store the difference matrices and rhs in numpy array format
         nvar = in_vec.get_num_var()
         dR = numpy.empty((nvar, len(self.x_diff)))
@@ -131,9 +149,22 @@ class AndersonMultiSecant(MultiSecantApprox):
             vec.get_base_data(dX[:,k])
         rhs = numpy.empty((nvar))
         in_vec.get_base_data(rhs)
-        dRinv = numpy.linalg.pinv(dR, rcond=1e-3)
+        dRinv = numpy.linalg.pinv(dR, rcond=1e-6)
         sol = numpy.zeros_like(rhs)
-        sol[:] = -beta*rhs - numpy.matmul(dX - beta*dR, numpy.matmul(dRinv,rhs))
-        out_vec.set_base_data(sol)
+        # sol[:] = -beta*rhs - numpy.matmul(dX - beta*dR, numpy.matmul(dRinv,rhs))
+        # out_vec.set_base_data(sol)
+        dRinv_r = numpy.zeros_like(rhs)
+        dRinv_r = numpy.matmul(dRinv,rhs)
+        sol = numpy.matmul(dR, dRinv_r) - rhs
+        # move the base data into work so it can be preconditioned
+        self.work.set_base_data(sol)
+        if precond is None:
+            out_vec.equals(self.work)
+        else:
+            precond(self.work, out_vec)
+        out_vec.times(beta)
+        sol = numpy.matmul(dX, dRinv_r)
+        self.work.set_base_data(sol)
+        out_vec.equals_ax_p_by(1., out_vec, -1., self.work)
 
 # imports at the bottom to prevent circular import errors

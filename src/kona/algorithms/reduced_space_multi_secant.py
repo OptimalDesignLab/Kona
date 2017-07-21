@@ -1,6 +1,5 @@
 from kona.algorithms.base_algorithm import OptimizationAlgorithm
 
-
 class ReducedSpaceMultiSecant(OptimizationAlgorithm):
     """
     Algorithm for generic nonlinearly constrained optiimzation problems.
@@ -34,6 +33,22 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         # iteration counter
         self.iter = 0
 
+        # set the preconditioner for the multi-secant methods
+        self.precond = get_opt(self.optns, None, 'multi_secant', 'precond')
+        if self.precond is None:
+            # use the identity preconditioner
+            self.precond = IdentityMatrix()
+        elif self.precond is 'approx_schur':
+            # use the SVD-based approximate Schur preconditioner
+            precond_optns = get_opt(self.optns, {}, 'multi_secant')
+            self.precond = ApproxSchur([self.primal_factory, self.state_factory, self.eq_factory,
+                                        self.ineq_factory], precond_optns)
+        elif self.precond is 'idf_schur':
+            self.precond = ReducedSchurPreconditioner(
+                [primal_factory, state_factory, eq_factory, ineq_factory])
+        else:
+            raise BadKonaOption(self.optns, 'precond')
+
         # set the type of multi-secant method
         try:
             # the multisecant member is for the "second"-order scheme
@@ -41,6 +56,7 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
                 self.optns, AndersonMultiSecant, 'multi_secant', 'type')
             hessian_optns = get_opt(self.optns, {}, 'multi_secant')
             hessian_optns['out_file'] = self.info_file
+            self.hess_reg = get_opt(self.optns, 0.0, 'multi_secant', 'hess_reg')
             self.multisecant = multisecant([self.primal_factory, self.eq_factory,
                                             self.ineq_factory], hessian_optns)
             # the multisecant_safe member is for the first-order scheme
@@ -50,6 +66,7 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         except Exception:
             raise BadKonaOption(self.optns, 'multi_secant','type')
 
+        # set remaining options
         self.primal_tol_abs = get_opt(self.optns, 1e-6, 'opt_tol_abs')
         self.cnstr_tol_abs = get_opt(self.optns, 1e-6, 'feas_tol_abs')
         self.beta = get_opt(self.optns, 1.0, 'multi_secant', 'beta')
@@ -130,6 +147,9 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         self.multisecant.set_initial_data(X)
         self.multisecant_safe.set_initial_data(X)
 
+        # initialize the preconditioner
+        self.precond.linearize(X.primal, state)
+
         # get the adjoint for -h^T\lambda_h - g^T\lambda_g
         adjoint.equals_homotopy_adjoint(X, state, state_work, obj_scale=0.0)
         R.equals_KKT_conditions(X, state, adjoint, obj_scale=0.0)
@@ -186,14 +206,14 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
                 break
 
             # get full multi-secant step and projected-gradient
-            self.multisecant.build_difference_matrices()
-            self.multisecant.solve(R, dX, self.beta)
-            self.multisecant_safe.build_difference_matrices()
-            self.multisecant_safe.solve(obj_grad, dX_safe)
+            self.multisecant.build_difference_matrices(self.hess_reg)
+            self.multisecant.solve(R, dX, self.beta, self.precond.product)
+            self.multisecant_safe.build_difference_matrices(self.hess_reg)
+            self.multisecant_safe.solve(obj_grad, dX_safe, precond=self.precond.product)
             info = ' '
-            if dX.primal.inner(dX_safe.primal) < 0.:
+            if False: #dX.primal.inner(dX_safe.primal) < 0.:
                 # the full step is considered unsafe: compute first-order step
-                self.multisecant_safe.solve(R, dX, self.beta)
+                self.multisecant_safe.solve(R, dX, self.beta, self.precond.product)
                 info += 'safe-step'
                 # remove history from multisecant
                 #self.multisecant.clear_history()
@@ -224,6 +244,8 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
             # evaluate at new X, construct first-order optimality conditions, and store
             state.equals_primal_solution(X.primal)
             obj_val = objective_value(X.primal, state)
+
+            self.precond.linearize(X.primal, state)
 
             # get the adjoint for -h^T\lambda_h - g^T\lambda_g
             adjoint.equals_homotopy_adjoint(X, state, state_work, obj_scale=0.0)
@@ -258,4 +280,7 @@ from kona.options import BadKonaOption, get_opt
 from kona.linalg.common import current_solution, objective_value
 from kona.linalg.vectors.composite import PrimalDualVector
 from kona.linalg.matrices.hessian import AndersonMultiSecant
+from kona.linalg.matrices.common import IdentityMatrix
+from kona.linalg.matrices.preconds.schur import ApproxSchur
+from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.util import EPS

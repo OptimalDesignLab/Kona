@@ -363,6 +363,11 @@ class PrimalDualVector(CompositeVector):
             dual = self.ineq
         return dual
 
+    @property
+    def dual(self):
+        # added this property so we could use IDF preconditioner with PrimalDualVectors
+        return self.get_dual()
+
     def equals_init_guess(self):
         """
         Sets the primal-dual vector to the initial guess, using the initial design.
