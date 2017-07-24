@@ -65,10 +65,8 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         # set remaining options
         self.primal_tol_abs = get_opt(self.optns, 1e-6, 'opt_tol_abs')
         self.cnstr_tol_abs = get_opt(self.optns, 1e-6, 'feas_tol_abs')
-        self.beta = get_opt(self.optns, 1.0, 'multi_secant', 'beta')
-
-        # TEMPORARY!!!
-        self.radius_max = get_opt(self.optns, 1.0, 'homotopy', 'radius_max')
+        self.alpha = get_opt(self.optns, 1.0, 'multi_secant', 'alpha')
+        self.radius_max = get_opt(self.optns, 1.0, 'multi_secant', 'radius_max')
 
         # The following data members are set by super class
         # self.primal_tol
@@ -188,9 +186,9 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
                 converged = True
                 break
 
-            # get full multi-secant step and projected-gradient
+            # get full multi-secant step
             self.multisecant.build_difference_matrices(self.hess_reg)
-            self.multisecant.solve(R, dX, self.beta, self.precond.product)
+            self.multisecant.solve(R, dX, self.alpha, self.precond.product)
 
             # safe-guard against large steps
             info = ' '
