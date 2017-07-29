@@ -28,7 +28,7 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
             self.eq_factory.request_num_vectors(num_pd)
         if self.ineq_factory is not None:
             self.ineq_factory.request_num_vectors(num_pd)
-        self.state_factory.request_num_vectors(3)
+        self.state_factory.request_num_vectors(5)
 
         # iteration counter
         self.iter = 0
@@ -67,6 +67,7 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         self.cnstr_tol_abs = get_opt(self.optns, 1e-6, 'feas_tol_abs')
         self.alpha = get_opt(self.optns, 1.0, 'multi_secant', 'alpha')
         self.radius_max = get_opt(self.optns, 1.0, 'multi_secant', 'radius_max')
+        self.filter = SimpleFilter()
 
         # The following data members are set by super class
         # self.primal_tol
@@ -129,6 +130,8 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         state = self.state_factory.generate()
         state_work = self.state_factory.generate()
         adjoint = self.state_factory.generate()
+        state_save = self.state_factory.generate()
+        adjoint_save = self.state_factory.generate()
 
         # evaluate the initial design, state, and adjoint before starting outer iterations
         X.equals_init_guess()
@@ -192,10 +195,41 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
 
             # safe-guard against large steps
             info = ' '
-            if dX.norm2 > self.radius_max:
-                dX.times(self.radius_max/(dX.norm2))
+            if dX.primal.norm2 > self.radius_max:
+                dX.times(self.radius_max/(dX.primal.norm2))
                 info += ' length restricted'
             X.plus(dX)
+
+            # # evaluate at new X, construct first-order optimality conditions, and store
+            # state_save.equals(state)
+            # state.equals_primal_solution(X.primal)
+            # obj_val = objective_value(X.primal, state)
+            # # get the adjoint for dLdX
+            # adjoint_save.equals(adjoint)
+            # adjoint.equals_homotopy_adjoint(X, state, state_work)
+            # R.equals_KKT_conditions(X, state, adjoint)
+            # dLdX.equals(R)
+            # self.multisecant.add_to_history(X, dLdX)
+            #
+            # R.equals_primaldual_residual(dLdX, X.ineq)
+            # grad_norm, feas_norm = R.get_optimality_and_feasiblity()
+            # if self.filter.dominates(obj_val, feas_norm):
+            #     # point is acceptable
+            #     self.precond.linearize(X.primal, state)
+            #
+            # else: # point is not acceptable
+            #     info += ', rejected'
+            #     X.minus(dX)
+            #     state.equals(state_save)
+            #     obj_val = objective_value(X.primal, state)
+            #     adjoint.equals(adjoint_save)
+            #     R.equals_KKT_conditions(X, state, adjoint)
+            #     dLdX.equals(R)
+            #
+            # # output current solution info to the user
+            # solver_info = current_solution(self.iter, X.primal, state, adjoint, X.get_dual())
+            # if isinstance(solver_info, str):
+            #     self.info_file.write('\n' + solver_info + '\n')
 
             # evaluate at new X, construct first-order optimality conditions, and store
             state.equals_primal_solution(X.primal)
@@ -233,3 +267,4 @@ from kona.linalg.matrices.common import IdentityMatrix
 from kona.linalg.matrices.preconds.schur import ApproxSchur
 from kona.linalg.matrices.preconds import ReducedSchurPreconditioner
 from kona.linalg.solvers.util import EPS
+from kona.algorithms.util.filter import SimpleFilter

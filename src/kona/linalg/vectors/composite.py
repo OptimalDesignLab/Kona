@@ -459,7 +459,7 @@ class PrimalDualVector(CompositeVector):
         \\begin{bmatrix}
         \\left[\\nabla_x f(x, u) - \\nabla_x h(x, u)^T \\lambda_{h} - \\nabla_x g(x, u)^T \\lambda_{g}\\right] \\\\
         -h(x,u) \\\\
-        -|g(x,u) - \\lambda_g| + g(x,u) + \\lambda_g
+        \\frac{1}{2}(|g(x,u) - \\lambda_g| - g(x,u) - \\lambda_g)
         \\end{bmatrix}
 
         where :math:`h(x,u)` are the equality constraints, and :math:`g(x,u)` are the
@@ -491,6 +491,7 @@ class PrimalDualVector(CompositeVector):
         if dLdx.ineq is not None:
             # include the inequality constraint part
             self.ineq.equals_mangasarian(dLdx.ineq, ineq_mult)
+            self.ineq.times(-1.)
 
     def equals_homotopy_residual(self, dLdx, x, init, mu=1.0):
         """

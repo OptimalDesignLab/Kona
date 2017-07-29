@@ -150,6 +150,9 @@ class AndersonMultiSecant(MultiSecantApprox):
         rhs = numpy.empty((nvar))
         in_vec.get_base_data(rhs)
         dRinv = numpy.linalg.pinv(dR, rcond=1e-6)
+        if len(self.x_diff) > 0:
+            U, s, V = numpy.linalg.svd(dR)
+            print s
         sol = numpy.zeros_like(rhs)
         # sol[:] = -beta*rhs - numpy.matmul(dX - beta*dR, numpy.matmul(dRinv,rhs))
         # out_vec.set_base_data(sol)
