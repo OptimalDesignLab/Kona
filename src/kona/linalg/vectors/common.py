@@ -267,14 +267,20 @@ class DesignVector(KonaVector):
         """
         Element-wise enforcement of design bounds.
         """
-        if self.lb is not None:
-            for i in xrange(len(self.base.data)):
-                if self.base.data[i] < self.lb:
-                    self.base.data[i] = self.lb
-        if self.ub is not None:
-            for i in xrange(len(self.base.data)):
-                if self.base.data[i] > self.ub:
-                    self.base.data[i] = self.ub
+        self._memory.solver.enforce_bounds(self.base.data)
+
+    # def enforce_bounds(self):
+    #     """
+    #     Element-wise enforcement of design bounds.
+    #     """
+    #     if self.lb is not None:
+    #         for i in xrange(len(self.base.data)):
+    #             if self.base.data[i] < self.lb:
+    #                 self.base.data[i] = self.lb
+    #     if self.ub is not None:
+    #         for i in xrange(len(self.base.data)):
+    #             if self.base.data[i] > self.ub:
+    #                 self.base.data[i] = self.ub
 
     def equals_init_design(self):
         """

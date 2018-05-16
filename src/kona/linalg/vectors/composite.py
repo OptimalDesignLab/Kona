@@ -838,10 +838,14 @@ class CompositePrimalVector(CompositeVector):
         self.design.equals_lagrangian_total_gradient(
             at_primal, at_state, at_dual, at_adjoint, obj_scale, cnstr_scale)
         # compute the slack derivative of the lagrangian
+        # self.slack.equals(at_slack)
+        # self.slack.pow(-1.)
+        # self.slack.times(self.barrier)
+        # self.slack.minus(at_dual_ineq)
+
         self.slack.equals(at_slack)
-        self.slack.pow(-1.)
-        self.slack.times(self.barrier)
-        self.slack.minus(at_dual_ineq)
+        self.slack.times(at_dual_ineq)
+        self.slack.times(-1.0)
         # reset the barrier to None
         self.barrier = None
 

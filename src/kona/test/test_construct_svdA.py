@@ -17,7 +17,7 @@ class InequalityTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        num_design = 100
+        num_design = 500
         self.outdir = './temp'  
         # self.outdir = './output2/' + str(num_design) + '/'
         if not os.path.isdir(self.outdir):
@@ -73,7 +73,7 @@ class InequalityTestCase(unittest.TestCase):
                 'init_step' : self.init_s,
                 'nominal_dist' : 10.0,
                 'nominal_angle' : 20.0*np.pi/180.,
-                'max_factor' : 30.0,                  
+                'max_factor' : 50.0,                  
                 'min_factor' : 0.001,                   
                 'dmu_max' : -0.0005,       
                 'dmu_min' : -0.9,      
@@ -215,7 +215,7 @@ class InequalityTestCase(unittest.TestCase):
         
 
 
-    def test_snopt(self):
+    def test_snopt_kona(self):
 
         # ------ Kona Opt --------
         # self.kona_optimize(None)
