@@ -60,7 +60,7 @@ class PredictorCorrectorCnstrCond(OptimizationAlgorithm):
         
       
         self.svd_inequ = None
-        self.svd_general = None                   
+        self.svd_gen = None                   
 
         if self.precond is 'svd_inequ': 
             print 'svd_inequ is used! '
@@ -71,7 +71,7 @@ class PredictorCorrectorCnstrCond(OptimizationAlgorithm):
                 'sig_exact'        : get_opt(self.optns, 1.0, 'svd', 'sig_exact'),
                 'beta'            : get_opt(self.optns, 1.0, 'svd', 'beta'), 
                 'cmin'            : get_opt(self.optns, 1e-3, 'svd', 'cmin'), 
-                'fstopo'          : get_opt(self.optns, False, 'svd', 'fstopo'),
+                # 'fstopo'          : get_opt(self.optns, False, 'svd', 'fstopo'),
             }
             self.svd_inequ = SvdInequ(
                 [primal_factory, state_factory, eq_factory, ineq_factory], svd_optns)

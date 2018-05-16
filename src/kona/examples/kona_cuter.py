@@ -14,7 +14,7 @@ class KONA_CUTER(UserSolver):
         if cutermgr.isCached(prob_name): 
             self.prob=cutermgr.importProblem(prob_name)
         else:
-            cutermgr.prepareProblem(prob_name, sifParams={'N': V1,},    #'NY': V2, 'NZ': V3,
+            cutermgr.prepareProblem(prob_name, sifParams={'N': V1,},   #'NY': V2, 'NZ': V3,
                 efirst=True, nvfirst=True)            
             self.prob=cutermgr.importProblem(prob_name)
 

@@ -36,7 +36,10 @@ BT3       Equ and Ineq   5 0 3 6       |  0.05 10 10
 parser = argparse.ArgumentParser()
 parser.add_argument("--name", help='Cuter problem name', type=str, default='BT1')
 parser.add_argument("--v", help='Number of variables', type=int, default=0)
-parser.add_argument("--output", help='Ouput Directory', type=str, default='./temp')
+parser.add_argument("--iniST", help='init step', type=float, default=0.05)
+parser.add_argument("--nomDist", help='nominal dist', type=float, default=1.0)
+parser.add_argument("--nomAngle", help='nominal angle', type=float, default=5.0)
+parser.add_argument("--output", help='Ouput Directory', type=str, default='./temp2')
 parser.add_argument("--precond", help='Preconditioner', type=str, default='Eye')
 args = parser.parse_args()
 
@@ -63,11 +66,11 @@ else:
 
     elif solver.num_eq == 0:
         print 'num_eq = 0, Inequality only case'
-        pc = 'svd_inequ'      
+        pc = 'svd_pc_cmu'      
 
     else: 
         print 'Contains both equality and inequality constraints '
-        pc = 'svd_general'
+        pc = 'svd_pc5'
 
 if not os.path.isdir(outdir):
     os.makedirs(outdir)
@@ -85,9 +88,9 @@ optns = {
     'homotopy' : {
         'inner_tol' : 0.1,
         'inner_maxiter' : 2,
-        'init_step' : 1.0,
-        'nominal_dist' : 10.0,
-        'nominal_angle' : 20.0*np.pi/180.,
+        'init_step' : args.iniST,
+        'nominal_dist' : args.nomDist,
+        'nominal_angle' : args.nomAngle*np.pi/180.,
         'max_factor' : 30.0,                  
         'min_factor' : 0.001,                   
         'dmu_max' : -0.0005,       
