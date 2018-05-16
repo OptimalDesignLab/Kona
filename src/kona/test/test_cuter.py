@@ -35,7 +35,9 @@ BT3       Equ and Ineq   5 0 3 6       |  0.05 10 10
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--name", help='Cuter problem name', type=str, default='BT1')
-parser.add_argument("--v", help='Number of variables', type=int, default=0)
+parser.add_argument("--V1", help='1st Parameter', type=int, default=0)
+parser.add_argument("--V2", help='2nd Parameter', type=int, default=0)
+parser.add_argument("--V3", help='3rd Parameter', type=float, default=0)
 parser.add_argument("--iniST", help='init step', type=float, default=0.05)
 parser.add_argument("--nomDist", help='nominal dist', type=float, default=1.0)
 parser.add_argument("--nomAngle", help='nominal angle', type=float, default=5.0)
@@ -45,9 +47,11 @@ args = parser.parse_args()
 
 prob_name = args.name
 pc_name = args.precond    
-V = args.v
+V1 = args.V1
+V2 = args.V2
+V3 = args.V3
 
-solver = KONA_CUTER(prob_name, V)
+solver = KONA_CUTER(prob_name, V1, V2, V3)
 
 
 if pc_name == 'Eye': 

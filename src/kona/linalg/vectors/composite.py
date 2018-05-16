@@ -789,6 +789,10 @@ class CompositePrimalVector(CompositeVector):
     def equals_init_design(self):
         self.design.equals_init_design()
         self.slack.equals(self.init_slack)
+        try:
+            self.slack.equals_init_slack()
+        except:
+            pass
 
     def equals_lagrangian_total_gradient(
             self, at_primal, at_state, at_dual, at_adjoint,

@@ -681,6 +681,13 @@ class DualVectorINEQ(DualVector):
         self.base.data[:] = self._memory.solver.eval_ineq_cnstr(
             at_design.base.data, at_state.base)
         self.times(scale)
+        
+    def equals_init_slack(self):
+        """
+        Sets this vector equal to the initial design point.
+        """
+        self.base.data[:], cost = self._memory.solver.init_slack()
+        self._memory.cost += abs(cost)
 
 
 # package imports at the bottom to prevent import errors
