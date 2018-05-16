@@ -6,33 +6,6 @@ from kona import Optimizer
 from kona.algorithms import PredictorCorrectorCnstrCond, Verifier
 from kona.examples import KONA_CUTER
 
-"""
-Problem Solution
-BT1  -1.0
-BT2  0.032568200
-BT3  4.09301056 
-BT4  3.28903771 
-BT6  0.277044924
-CAMEL6  -1.031628
-
-OK0  : not OK, caused by other issue but not Kona
-OK1  : solved by Kona (opt/feas low value), but accuracy not checked,
-       as the correct solution for this CUTEr problem is not listed 
-       http://www.cuter.rl.ac.uk/Problems/mastsif.shtml
-OK2  : solved by Kona, the objective function agrees with 
-       the solution objective on the problem page
-
-                                        d0 t d         noPC   PC
-ACOPR14   Equ and Ineq   38 0 28 144                              
-AUG2D     Equ and Ineq   220 0 100 200                 Yes   No
-AVGASA            Ineq            
-BDRY2                              
-
-BT1       Equ and Ineq                    1 
-BT2       Equ and Ineq   3 0 1 2       |          5              
-BT3       Equ and Ineq   5 0 3 6       |  0.05 10 10             
-"""
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--name", help='Cuter problem name', type=str, default='BT1')
 parser.add_argument("--V1", help='1st Parameter', type=int, default=0)

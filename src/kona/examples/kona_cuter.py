@@ -2,6 +2,12 @@ import numpy as np
 from kona.user import UserSolver
 import pdb
 import cutermgr
+"""
+Prerequisites:  
+1.  Install CUTEr, SIF from:  http://www.cuter.rl.ac.uk/index.html
+2.  Install Python interface to CUTEr test problems for optimization: 
+        http://fides.fe.uni-lj.si/~arpadb/software-pycuter.html
+"""
 
 
 class KONA_CUTER(UserSolver):
