@@ -17,7 +17,7 @@ class InequalityTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        num_design = 500
+        num_design = 100
         self.outdir = './temp'  
         # self.outdir = './output2/' + str(num_design) + '/'
         if not os.path.isdir(self.outdir):

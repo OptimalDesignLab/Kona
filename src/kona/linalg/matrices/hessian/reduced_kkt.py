@@ -5,7 +5,39 @@ class ReducedKKTMatrix(BaseHessian):
     Reduced approximation of the KKT matrix using a 2nd order adjoint
     formulation.
 
-    The KKT system is defined as:
+    For problems with only equality constraints, the KKT system is given as:
+
+    .. math::
+        \\begin{bmatrix}
+        \\nabla_x^2 \\mathcal{L} && \\nabla_x c^T \\\\
+        \\nabla_x c_{eq} && 0
+        \\end{bmatrix}
+        \\begin{bmatrix}
+        \\Delta x \\\\
+        \\Delta \\lambda
+        \\end{bmatrix}
+        =
+        \\begin{bmatrix}
+        -\\nabla_x \\mathcal{f} - \\lambda^T \\nabla_x c \\\\
+        - c
+        \\end{bmatrix}
+
+    where :math:`\\mathcal{L}` is the Lagrangian defined as:
+
+    .. math::
+        \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) + \\lambda^T c(x, u(x))
+
+    For problems with inequality constraints, slack variables :math:`s` are introduced 
+    alongside a log-barrier term for non-negativity, such that the Lagrangian 
+    :math:`\\mathcal{L}` becomes:
+
+    .. math::
+        \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) +
+        \\lambda_{eq}^T c_{eq}(x, u(x)) +
+        \\lambda_{ineq}^T \\left[c_{ineq}(x, u(x)) - s\\right] +
+        \\frac{1}{2}\\mu\\sum_{i=1}^{n_{ineq}}ln(s_i)
+
+    The inequality constrained KKT system is then defined as:
 
     .. math::
         \\begin{bmatrix}
@@ -28,31 +60,18 @@ class ReducedKKTMatrix(BaseHessian):
         - c_{ineq} + s
         \\end{bmatrix}
 
-    where :math:`\\mathcal{L}` is the Lagrangian defined as:
-
-    .. math::
-        \\mathcal{L}(x, u(x), \lambda) = F(x, u(x)) +
-        \\lambda_{eq}^T c_{eq}(x, u(x)) +
-        \\lambda_{ineq}^T \\left[c_{ineq}(x, u(x)) - s\\right] +
-        \\frac{1}{2}\\mu\\sum_{i=1}^{n_{ineq}}ln(s_i)
-
-    Inequality constrained are handled via the slack variables :math:`s` and
-    the logarithmic barrier term enforcing non-negativity.
-
     .. note::
 
-        More information on this 2nd order adjoint formulation can be found
-        `in this paper <http://arc.aiaa.org/doi/abs/10.2514/6.2015-1945>`.
+        Currently, Kona does not have any optimization algorithms that support inequality 
+        constraints. The slack implementation in this matrix is part of an ongoing development 
+        effort to support inequality constraints at a future date.
 
     Attributes
     ----------
-    product_fac : float
     product_tol : float
-    lamb : float
-    scale : float
-    grad_scale : float
-    ceq_scale : float
-    dynamic_tol : boolean
+        Tolerance for 2nd order adjoint system solutions.
+    scale, grad_scale, feas_scale : float
+        Optimality metric normalization factors.
     krylov : KrylovSolver
         A krylov solver object used to solve the system defined by this matrix.
     dRdX, dRdU, dCdX, dCdU : KonaMatrix
@@ -62,15 +81,13 @@ class ReducedKKTMatrix(BaseHessian):
         super(ReducedKKTMatrix, self).__init__(vector_factories, optns)
 
         # read reduced options
-        self.product_fac = get_opt(self.optns, 0.001, 'product_fac')
-        self.product_tol = 1.0
-        self.lamb = get_opt(self.optns, 0.0, 'lambda')
+        self.product_tol = get_opt(self.optns, 1e-6, 'product_tol')
         self.scale = get_opt(self.optns, 1.0, 'scale')
         self.grad_scale = get_opt(self.optns, 1.0, 'grad_scale')
         self.feas_scale = get_opt(self.optns, 1.0, 'feas_scale')
         self.dynamic_tol = get_opt(self.optns, False, 'dynamic_tol')
         self.symmetric = get_opt(self.optns, False, 'symmetric')
-
+        self.lamb = get_opt(self.optns, 0.0, 'lambda')
         # set empty solver handle
         self.krylov = None
 
@@ -90,7 +107,6 @@ class ReducedKKTMatrix(BaseHessian):
         self.dRdU = dRdU()
         self.dCdX = dCdX()
         self.dCdU = dCdU()
-        self.dCINdX = dCINdX()
 
         self._approx = False
 
@@ -173,15 +189,6 @@ class ReducedKKTMatrix(BaseHessian):
             if self.ineq_factory is not None:
                 self.slack_block = self.ineq_factory.generate()
 
-            if self.eq_factory is not None:
-                self.reduced_work_eq = self.eq_factory.generate()  
-
-            if self.ineq_factory is not None:  
-                self.reduced_work_ineq = self.ineq_factory.generate()
-                self.reduced_work_ineq2 = self.ineq_factory.generate()
-                self.in_dual_ineq = self.ineq_factory.generate()
-            self.reduced_work_design = self.primal_factory.generate()
-
             self._allocated = True
 
         # store the linearization point
@@ -235,8 +242,6 @@ class ReducedKKTMatrix(BaseHessian):
         self.dCdX.T.product(self.at_dual, self.primal_work)
         self.primal_work.times(self.cnstr_scale)
         self.reduced_grad.plus(self.primal_work)
-
-        self.dCINdX.linearize(self.at_design, self.at_state)
 
 
     def product(self, in_vec, out_vec):
@@ -293,15 +298,10 @@ class ReducedKKTMatrix(BaseHessian):
 
         # perform the adjoint solution
         self.w_adj.equals(0.0)
-        rel_tol = self.product_tol * \
-            self.product_fac/max(self.state_work[0].norm2, EPS)
-        # rel_tol = 1e-12
-        # if self.w_adj._memory.solver.get_rank() == 0:
-        #     print 'first second adjoint solve in forming KKT mat_vec product'
-
+        # rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
+        rel_tol = 1e-6
         self._linear_solve(self.state_work[0], self.w_adj, rel_tol=rel_tol)
-        # if self.w_adj._memory.solver.get_rank() == 0:
-        #     print 'first second adjoint solve completed'
+
         # find the adjoint perturbation by solving the linearized dual equation
         self.pert_design.equals_ax_p_by(
             1.0, self.at_design, epsilon_fd, in_design)
@@ -339,16 +339,10 @@ class ReducedKKTMatrix(BaseHessian):
 
         # perform the adjoint solution
         self.lambda_adj.equals(0.0)
-        rel_tol = self.product_tol * \
-            self.product_fac/max(self.state_work[0].norm2, EPS)
-        # rel_tol = 1e-12
-        # if self.lambda_adj._memory.solver.get_rank() == 0:
-        #     print 'second Second adjoint solve in forming KKT mat_vec product'
+        # rel_tol = self.product_tol/max(self.state_work[0].norm2, EPS)
+        rel_tol = 1e-6
         self._adjoint_solve(
             self.state_work[0], self.lambda_adj, rel_tol=rel_tol)
-
-        # if self.lambda_adj._memory.solver.get_rank() == 0:
-        #     print 'second Second adjoint solve completed'
 
         # evaluate first order optimality conditions at perturbed design, state
         # and adjoint:
@@ -439,6 +433,6 @@ from kona.linalg.vectors.common import DualVectorEQ, DualVectorINEQ
 from kona.linalg.vectors.composite import ReducedKKTVector
 from kona.linalg.vectors.composite import CompositePrimalVector
 from kona.linalg.vectors.composite import CompositeDualVector
-from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU, dCINdX
+from kona.linalg.matrices.common import dRdX, dRdU, dCdX, dCdU 
 from kona.linalg.solvers.krylov.basic import KrylovSolver
 from kona.linalg.solvers.util import calc_epsilon, EPS
