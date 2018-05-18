@@ -1,7 +1,10 @@
 import numpy as np
 from kona.user import UserSolver
 import pdb
-import cutermgr
+try:
+    import cutermgr
+except:
+    pass
 """
 Prerequisites:  
 1.  Install CUTEr, SIF from:  http://www.cuter.rl.ac.uk/index.html
