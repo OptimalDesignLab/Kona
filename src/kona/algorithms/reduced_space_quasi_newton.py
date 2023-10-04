@@ -92,7 +92,7 @@ class ReducedSpaceQuasiNewton(OptimizationAlgorithm):
         self.iter = 0
         converged = False
         self._write_header()
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
             info.write('========== Outer Iteration %i ==========\n'%(i+1))
             if not state.equals_primal_solution(x):
                 info.write('WARNING: Nonlinear solution failed to converge!\n')

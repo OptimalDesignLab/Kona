@@ -93,7 +93,7 @@ class FGMRES(KrylovSolver):
         ################
 
         lin_depend = False
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
 
             # check convergence and linear dependence
             if lin_depend and (beta > self.rel_tol*norm0):
@@ -123,7 +123,7 @@ class FGMRES(KrylovSolver):
             # apply old Givens rotations to new column of the Hessenberg matrix
             # then generate new Givens rotation matrix and apply it to the last
             # two elements of H[i, :] and g
-            for k in xrange(i):
+            for k in range(i):
                 H[k, i], H[k+1, i] = apply_givens(
                     sn[k], cn[k], H[k, i], H[k+1, i])
 
@@ -135,7 +135,7 @@ class FGMRES(KrylovSolver):
             if self.check_LSgrad and iters > 1:
                 # check the gradient of the least-squares problem
                 y[:i] = numpy.zeros(i)
-                for k in xrange(i-1, -1, -1):
+                for k in range(i-1, -1, -1):
                     y[k], y[k+1] = apply_givens(-sn[k], cn[k], y[k], y[k+1])
                 rLS = numpy.dot(H[:i+1,:i+1], y[:i+1])
                 if numpy.sqrt(rLS.dot(rLS)) < 1000*EPS:
@@ -152,7 +152,7 @@ class FGMRES(KrylovSolver):
 
         # solve the least squares system
         y[:i] = solve_tri(H[:i, :i], g[:i], lower=False)
-        for k in xrange(i):
+        for k in range(i):
             x.equals_ax_p_by(1.0, x, y[k], Z[k])
 
         if self.check_res:

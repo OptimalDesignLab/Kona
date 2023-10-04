@@ -73,7 +73,7 @@ class STCG(KrylovSolver):
 
         # START OF BIG FOR LOOP
         #######################
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
 
             # to be included from c++
             # if (ptin.get<bool>("dynamic",false))

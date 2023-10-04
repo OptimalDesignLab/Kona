@@ -127,7 +127,7 @@ class GCROT(KrylovSolver):
         norm0 = res.norm2
 
         # find initial guess from recycled subspace
-        for k in xrange(self.num_stored):
+        for k in range(self.num_stored):
             alpha = res.inner(self.C[k])
             x.equals_ax_p_by(1.0, x, alpha, self.U[k])
             res.equals_ax_p_by(1.0, res, -alpha, self.C[k])
@@ -146,7 +146,7 @@ class GCROT(KrylovSolver):
         ##########################
         W = []
         Z = []
-        for j in xrange(self.max_outer):
+        for j in range(self.max_outer):
 
             # begin nested FGMRES(fgmres_iter)
             fgmres_iter = self.max_recycle - self.num_stored + self.max_iter
@@ -168,7 +168,7 @@ class GCROT(KrylovSolver):
             g[0] = beta
             inner_iters = 0
             lin_depend = False
-            for i in xrange(fgmres_iter):
+            for i in range(fgmres_iter):
 
                 # check convergence and linear dependence
                 if lin_depend and (beta > self.rel_tol*norm0):
@@ -208,7 +208,7 @@ class GCROT(KrylovSolver):
                 # apply old Givens rotations to new column of the Hessenberg
                 # matrix then generate new Givens rotation matrix and apply it
                 # to the last two elements of H[i, :] and g
-                for k in xrange(i):
+                for k in range(i):
                     H[k, i], H[k+1, i] = apply_givens(
                         sn[k], cn[k], H[k, i], H[k+1, i])
 
@@ -228,20 +228,20 @@ class GCROT(KrylovSolver):
             # first, solve to get y = R^{-1} g
             y[:i] = solve_tri(H[:i, :i], g[:i], lower=False)
             U_new.equals(0.0)
-            for k in xrange(i):
+            for k in range(i):
                 U_new.equals_ax_p_by(1.0, U_new, y[k], Z[k])
             # update U_new -= U * B
-            for k in xrange(self.num_stored):
+            for k in range(self.num_stored):
                 tmp = numpy.dot(B[k, :i], y[:i])
                 U_new.equals_ax_p_by(1.0, U_new, -tmp, self.U[k])
 
             # finished with g, so undo rotations to find C_new
             y[:i] = g[:i]
             y[i] = 0.0
-            for k in xrange(i-1, -1, -1):
+            for k in range(i-1, -1, -1):
                 y[k], y[k+1] = apply_givens(-sn[k], cn[k], y[k], y[k+1])
             C_new.equals(0.0)
-            for k in xrange(i+1):
+            for k in range(i+1):
                 C_new.equals_ax_p_by(1.0, C_new, y[k], W[k])
 
             # normalize and scale new vectors and update solution and res

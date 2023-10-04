@@ -100,18 +100,18 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         num_stored = len(s_list)
 
         Bs = []
-        for k in xrange(num_stored):
+        for k in range(num_stored):
             Bs.append(self.vec_fac.generate())
             Bs[k].equals(s_list[k])
 
         v_vec.equals(u_vec)
 
-        for i in xrange(num_stored):
+        for i in range(num_stored):
             denom = 1.0 / (y_list[i].inner(s_list[i]) - Bs[i].inner(s_list[i]))
             fac = (y_list[i].inner(u_vec) - Bs[i].inner(u_vec))*denom
             v_vec.equals_ax_p_by(1.0, v_vec, fac, y_list[i])
             v_vec.equals_ax_p_by(1.0, v_vec, -fac, Bs[i])
-            for j in xrange(i+1, num_stored):
+            for j in range(i+1, num_stored):
                 fac = (y_list[i].inner(s_list[j])
                        - Bs[i].inner(s_list[j]))*denom
                 Bs[j].equals_ax_p_by(1.0, Bs[j], fac, y_list[i])
@@ -133,7 +133,7 @@ class LimitedMemorySR1(QuasiNewtonApprox):
         alpha = numpy.zeros(num_stored)
 
         z_list = []
-        for k in xrange(num_stored):
+        for k in range(num_stored):
             z_list.append(self.vec_fac.generate())
             z_list[k].equals_ax_p_by(1.0 - lambda0, s_list[k],
                                      (lambda0 - 1.0)/norm_init,
@@ -141,8 +141,8 @@ class LimitedMemorySR1(QuasiNewtonApprox):
 
         alpha = self._check_threshold(z_list, 0, alpha)
 
-        for i in xrange(1, num_stored):
-            for j in xrange(1, num_stored):
+        for i in range(1, num_stored):
+            for j in range(1, num_stored):
                 prod = (1.0 - lambda0) * z_list[i-1].inner(y_list[j]) + \
                     lambda0 * norm_init * z_list[i-1].inner(s_list[j])
                 z_list[j].equals_ax_p_by(1.0, z_list[j],
@@ -151,6 +151,6 @@ class LimitedMemorySR1(QuasiNewtonApprox):
             alpha = self._check_threshold(z_list, i, alpha)
 
         v_vec.equals(u_vec)
-        for k in xrange(num_stored):
+        for k in range(num_stored):
             v_vec.equals_ax_p_by(1.0, v_vec,
                                  alpha[k] * z_list[k].inner(u_vec), z_list[k])

@@ -89,31 +89,31 @@ class AlgorithmForApproxSchur(OptimizationAlgorithm,unittest.TestCase):
         v_vec = self._generate_vector()
         self.dCdX.linearize(at_design, at_state)
         self.precond.linearize(at_design, at_state)
-        for i in xrange(20):
+        for i in range(20):
             u_vec.equals(0.)
             v_vec.equals(0.)
             u_vec.primal.base.data[i] = 1.0
             self.exact_product(u_vec, v_vec)
             u_vec.equals(0.)
             self.precond.product(v_vec, u_vec)
-            for j in xrange(20):
+            for j in range(20):
                 if j == i:
                     self.assertAlmostEqual(u_vec.primal.base.data[j], 1., places=10)
                 else:
                     self.assertAlmostEqual(u_vec.primal.base.data[j], 0., places=10)
-            for j in xrange(10):
+            for j in range(10):
                 self.assertAlmostEqual(u_vec.eq.base.data[j], 0., places=10)
 
-        for i in xrange(10):
+        for i in range(10):
             u_vec.equals(0.)
             v_vec.equals(0.)
             u_vec.eq.base.data[i] = 1.0
             self.exact_product(u_vec, v_vec)
             u_vec.equals(0.)
             self.precond.product(v_vec, u_vec)
-            for j in xrange(20):
+            for j in range(20):
                 self.assertAlmostEqual(u_vec.primal.base.data[j], 0., places=10)
-            for j in xrange(10):
+            for j in range(10):
                 if j == i:
                     self.assertAlmostEqual(u_vec.eq.base.data[j], 1., places=10)
                 else:

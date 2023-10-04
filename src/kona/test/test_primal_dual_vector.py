@@ -560,7 +560,7 @@ class PrimalDualVectorTestCase(unittest.TestCase):
     def test_get_base_data_case4(self):
         # case 4 has no constraints
         A = np.zeros((10,1))
-        print A.shape
+        print(A.shape)
         self.at_pd4.get_base_data(A[:,0])
         B = np.ones_like(A)
         B[0:10] *= 10

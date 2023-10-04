@@ -95,8 +95,8 @@ class FLECSSolverTestCase(unittest.TestCase):
         total_data[3] = self.x.dual.base.data[:]
         diff = abs(total_data - expected)
         diff = max(diff)
-        print diff
-        print self.krylov.trust_active
+        print(diff)
+        print(self.krylov.trust_active)
         self.assertTrue(diff <= 1.e-3 and not self.krylov.trust_active)
 
     def test_radius_active(self):
@@ -110,9 +110,9 @@ class FLECSSolverTestCase(unittest.TestCase):
         # compare actual result to expected
         exp_norm = self.krylov.radius
         actual_norm = self.x.primal.norm2
-        print exp_norm
-        print actual_norm
-        print self.krylov.trust_active
+        print(exp_norm)
+        print(actual_norm)
+        print(self.krylov.trust_active)
         self.assertTrue(
             (exp_norm - actual_norm) <= 1e-1 and self.krylov.trust_active)
 

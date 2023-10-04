@@ -159,7 +159,7 @@ class GCROTSolverTestCase(unittest.TestCase):
         self.krylov.max_krylov = 100
 
         # solve the same problem 20 times
-        for k in xrange(20):
+        for k in range(20):
             self.x.equals(0.0)
             self.krylov.solve(self.mat_vec, self.b, self.x, self.precond.product)
             if k % 5 == 0:

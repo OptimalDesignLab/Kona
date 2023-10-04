@@ -162,7 +162,7 @@ class UnconstrainedRSNK(OptimizationAlgorithm):
         self._write_header(obj_scale)
         converged = False
         grad_tol = self.primal_tol*grad_norm0
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
 
             self.info_file.write(
                 '==================================================\n')

@@ -94,14 +94,14 @@ class ReducedHessian(BaseHessian):
             self.w_adj = self.state_factory.generate()
             self.lambda_adj = self.state_factory.generate()
             self.state_work = []
-            for i in xrange(4):
+            for i in range(4):
                 self.state_work.append(self.state_factory.generate())
 
             # generate primal vectors
             self.pert_design = self.primal_factory.generate()
             self.reduced_grad = self.primal_factory.generate()
             self.primal_work = []
-            for i in xrange(2):
+            for i in range(2):
                 self.primal_work.append(self.primal_factory.generate())
             self._allocated = True
 

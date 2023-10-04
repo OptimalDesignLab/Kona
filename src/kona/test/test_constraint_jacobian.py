@@ -81,14 +81,14 @@ class TotalConstraintJacobianTestCase(unittest.TestCase):
         self.A.linearize(X.primal.design, state)
         self.A.product(in_vec.primal.design, out_vec.dual)
 
-        print '-----------------------------'
-        print 'Constraint Hessian'
-        print '-----------------------------'
-        print 'FD product:'
-        print dLdX_pert.dual.base.data
-        print 'Analytical product:'
-        print out_vec.dual.base.data
-        print '-----------------------------'
+        print('-----------------------------')
+        print('Constraint Hessian')
+        print('-----------------------------')
+        print('FD product:')
+        print(dLdX_pert.dual.base.data)
+        print('Analytical product:')
+        print(out_vec.dual.base.data)
+        print('-----------------------------')
 
         dLdX.equals_ax_p_by(1.0, dLdX_pert, -1.0, out_vec)
         diff_norm = dLdX.dual.norm2

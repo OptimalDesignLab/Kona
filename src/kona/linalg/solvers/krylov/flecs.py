@@ -187,13 +187,13 @@ class FLECS(KrylovSolver):
         VtVH = VtV_dual_r.dot(H_r)
         A = ZtZ_prim_r + VtVH + VtVH.T
         rhs = numpy.zeros(self.iters)
-        for k in xrange(self.iters):
+        for k in range(self.iters):
             rhs[k] = self.V[k].dual.inner(cnstr)
         self.y = numpy.linalg.solve(A, rhs)
 
         # construct the design update
         # leave the dual solution untouched
-        for k in xrange(self.iters):
+        for k in range(self.iters):
             step.primal.equals_ax_p_by(
                 1.0, step.primal, self.y[k], self.Z[k].primal)
 
@@ -241,7 +241,7 @@ class FLECS(KrylovSolver):
 
         # compute the RHS for the augmented Lagrangian problem
         rhs_aug = numpy.zeros(self.iters)
-        for k in xrange(self.iters):
+        for k in range(self.iters):
             rhs_aug[k] = -self.g[0]*(self.VtZ_prim[0, k] + self.mu*VtVH[0, k])
 
         radius_aug = self.radius  
@@ -253,12 +253,12 @@ class FLECS(KrylovSolver):
             L = numpy.linalg.cholesky(ZtZ_prim_r)
             rhs_aug = solve_tri(L, rhs_tmp, lower=True)
   
-            for j in xrange(self.iters):
+            for j in range(self.iters):
                 rhs_tmp[:] = Hess_aug[:,j]
                 vec_tmp = solve_tri(L, rhs_tmp, lower=True)
                 Hess_aug[:, j] = vec_tmp[:]
 
-            for j in xrange(self.iters):
+            for j in range(self.iters):
                 rhs_tmp[:] = Hess_aug[j,:]
                 vec_tmp = solve_tri(L, rhs_tmp, lower=True)
                 Hess_aug[j,:] = vec_tmp[:]
@@ -361,7 +361,7 @@ class FLECS(KrylovSolver):
         self.lin_depend = False
         self.neg_curv = False
         self.trust_active = False
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
             # advance iteration counter
             self.iters += 1
 
@@ -386,7 +386,7 @@ class FLECS(KrylovSolver):
                 self.lin_depend = True
 
             # compute new row and column of the VtZ matrix
-            for k in xrange(i+1):
+            for k in range(i+1):
                 self.VtZ_prim[k, i] = self.V[k].primal.inner(self.Z[i].primal)
                 self.VtZ_prim[i+1, k] = self.V[i+1].primal.inner(
                     self.Z[k].primal)
@@ -440,7 +440,7 @@ class FLECS(KrylovSolver):
 
         # compute solution: augmented-Lagrangian for primal, FGMRES for dual
         x.equals(0.0)
-        for k in xrange(self.iters):
+        for k in range(self.iters):
             x.primal.equals_ax_p_by(
                 1.0, x.primal, self.y_aug[k], self.Z[k].primal)
             x.dual.equals_ax_p_by(
@@ -454,7 +454,7 @@ class FLECS(KrylovSolver):
         if self.check_res:
             # calculate true residual for the solution
             self.V[0].equals(0.0)
-            for k in xrange(self.iters):
+            for k in range(self.iters):
                 self.V[0].equals_ax_p_by(
                     1.0, self.V[0], self.y_mult[k], self.Z[k])
             mat_vec(self.V[0], res)
@@ -526,7 +526,7 @@ class FLECS(KrylovSolver):
 
         # always use composite-step approach in re-solve
         x.equals(0.0)
-        for k in xrange(self.iters):
+        for k in range(self.iters):
             x.primal.equals_ax_p_by(
                 1.0, x.primal, self.y_aug[k], self.Z[k].primal)
             x.dual.equals_ax_p_by(

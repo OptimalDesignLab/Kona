@@ -114,7 +114,7 @@ class Spiral(UserSolver):
         max_iter = 100
         converged = False
         # start Newton loop
-        for iters in xrange(max_iter):
+        for iters in range(max_iter):
             # check convergence with new residual
             if np.linalg.norm(self.PDE.R) <= rel_tol*norm0:
                 converged = True

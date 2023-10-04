@@ -182,7 +182,7 @@ def lanczos_tridiag(mat_vec, Q, Q_init=False):
         Q[0].equals(1.0)
         Q[0].divide_by(Q[0].norm2)
 
-    for i in xrange(subspace_size-1):
+    for i in range(subspace_size-1):
         # perform the matrix vector product
         mat_vec(Q[i], Q[i+1])
         # orthogonalize the new vector
@@ -248,7 +248,7 @@ def lanczos_bidiag(fwd_mat_vec, Q, q_work,
         Q[0].equals(1.0)
         Q[0].divide_by(Q[0].norm2)
 
-    for j in xrange(subspace_size):
+    for j in range(subspace_size):
         fwd_mat_vec(Q[j], P[j])
         if j > 0:
             p_work.equals(P[j-1])
@@ -333,8 +333,8 @@ def solve_trust_reduced(H, g, radius):
         if (fnc < 0.0): # i.e. norm_2(y) < raidus
             # compute predicted decrease in objective and return
             pred = 0.0
-            for i in xrange(n):
-                for j in xrange(n):
+            for i in range(n):
+                for j in range(n):
                     pred -= 0.5*y[i]*H[i,j]*y[j]
                 pred -= g[i]*y[i]
             return y, lam, pred
@@ -346,7 +346,7 @@ def solve_trust_reduced(H, g, radius):
     dlam = 0.1*max(-eigmin, EPS)
     lam_h = max(-eigmin, 0.0) + dlam
     y, fnc_h, dfnc = secular_function(H, g, lam_h, radius)
-    for k in xrange(max_brk):
+    for k in range(max_brk):
         if fnc_h > 0.0:
             break
         dlam *= 0.1
@@ -357,7 +357,7 @@ def solve_trust_reduced(H, g, radius):
     dlam = np.sqrt(EPS)
     lam_l = max(-eigmin, 0.0) + dlam
     y, fnc_l, dfnc = secular_function(H, g, lam_l, radius)
-    for k in xrange(max_brk):
+    for k in range(max_brk):
         if fnc_l < 0.0:
             break
         dlam *= 100.0
@@ -376,7 +376,7 @@ def solve_trust_reduced(H, g, radius):
     y, fnc, dfnc = secular_function(H, g, lam, radius)
     res0 = abs(fnc)
 
-    for l in xrange(max_Newt):
+    for l in range(max_Newt):
         # check if y lies on the trust region; if so, exit loop
         if (abs(fnc) < tol*res0) or (abs(dlam) < lam_tol):
             break
@@ -500,7 +500,7 @@ def mod_GS_normalize(i, Hsbg, w):
         return
 
     # begin main Gram-Schmidt loop
-    for k in xrange(i+1):
+    for k in range(i+1):
         prod = w[i+1].inner(w[k])
         Hsbg[k, i] = prod
         w[i+1].equals_ax_p_by(1.0, w[i+1], -prod, w[k])
@@ -552,7 +552,7 @@ def mod_gram_schmidt(i, B, C, w, normalize=False):
         raise ValueError('mod_gram_schmidt failed : w = NaN')
 
     # begin main Gram-Schmidt loop
-    for k in xrange(len(C)):
+    for k in range(len(C)):
         prod = w.inner(C[k])
         B[k, i] = prod
         w.equals_ax_p_by(1.0, w, -prod, C[k])

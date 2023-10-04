@@ -58,7 +58,7 @@ class EqualityCompositeStepTestCase(unittest.TestCase):
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 
-        print solver.curr_design
+        print(solver.curr_design)
 
         expected = -1.*numpy.ones(solver.num_design)
         diff = abs(solver.curr_design - expected)

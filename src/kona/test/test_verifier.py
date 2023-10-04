@@ -29,7 +29,7 @@ class VerifierTestCase(unittest.TestCase):
         optimizer = Optimizer(solver, algorithm, optns)
         optimizer.solve()
 
-        self.failUnless('Output inspected by hand...')
+        self.assertTrue('Output inspected by hand...')
 
 if __name__ == "__main__":
     unittest.main()

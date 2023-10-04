@@ -68,12 +68,12 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         rho = numpy.zeros(num_stored)
         alpha = numpy.zeros(num_stored)
 
-        for k in xrange(num_stored):
+        for k in range(num_stored):
             rho[k] = 1.0 / (s_dot_s_list[k] * lambda0 +
                             s_dot_y_list[k])
 
         v_vec.equals(u_vec)
-        for k in xrange(num_stored-1, -1, -1):
+        for k in range(num_stored-1, -1, -1):
             alpha[k] = rho[k] * s_list[k].inner(v_vec)
             if lambda0 > 0.0:
                 v_vec.equals_ax_p_by(1.0, v_vec,
@@ -91,7 +91,7 @@ class LimitedMemoryBFGS(QuasiNewtonApprox):
         else:
             v_vec.divide_by(self.norm_init)
 
-        for k in xrange(num_stored):
+        for k in range(num_stored):
             beta = rho[k] * y_list[k].inner(v_vec)
             if lambda0 > 0.0:
                 beta += rho[k] * lambda0 * s_list[k].inner(v_vec)

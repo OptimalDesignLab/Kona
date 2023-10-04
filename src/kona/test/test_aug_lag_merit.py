@@ -60,7 +60,7 @@ class AugLagMeritTestCase(unittest.TestCase):
     def test_init_func(self):
         '''AugmentedLagrangian merit initialization'''
         self.merit.reset(self.kkt_start, self.u_start, self.search_dir, self.mu)
-        print abs(self.merit.func_val-self.merit_val_init)
+        print(abs(self.merit.func_val-self.merit_val_init))
         self.assertTrue(abs(self.merit.func_val-self.merit_val_init) <= 1e-10)
 
     def test_eval_func(self):

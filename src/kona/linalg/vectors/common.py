@@ -276,11 +276,11 @@ class DesignVector(KonaVector):
         Element-wise enforcement of design bounds.
         """
         if self.lb is not None:
-            for i in xrange(len(self.base.data)):
+            for i in range(len(self.base.data)):
                 if self.base.data[i] < self.lb:
                     self.base.data[i] = self.lb
         if self.ub is not None:
-            for i in xrange(len(self.base.data)):
+            for i in range(len(self.base.data)):
                 if self.base.data[i] > self.ub:
                     self.base.data[i] = self.ub
 

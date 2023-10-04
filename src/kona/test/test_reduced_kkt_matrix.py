@@ -83,16 +83,16 @@ class ReducedKKTMatrixTestCase(unittest.TestCase):
         self.KKT_matrix.linearize(X, state, adjoint)
         self.KKT_matrix.product(in_vec, out_vec)
 
-        print '----------------------'
-        print 'Equality Constraints'
-        print '----------------------'
-        print 'FD product:'
-        print dLdX_pert.primal.base.data
-        print dLdX_pert.dual.base.data
-        print 'Analytical product:'
-        print out_vec.primal.base.data
-        print out_vec.dual.base.data
-        print '----------------------'
+        print('----------------------')
+        print('Equality Constraints')
+        print('----------------------')
+        print('FD product:')
+        print(dLdX_pert.primal.base.data)
+        print(dLdX_pert.dual.base.data)
+        print('Analytical product:')
+        print(out_vec.primal.base.data)
+        print(out_vec.dual.base.data)
+        print('----------------------')
 
         dLdX.equals_ax_p_by(1.0, dLdX_pert, -1.0, out_vec)
         diff_norm = dLdX.norm2

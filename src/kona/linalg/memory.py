@@ -24,7 +24,7 @@ class VectorFactory(object):
     def __init__(self, memory, vec_type=None):
         self.num_vecs = 0
         self._memory = memory
-        if vec_type not in self._memory.vector_stack.keys():
+        if vec_type not in list(self._memory.vector_stack.keys()):
             raise TypeError('VectorFactory() >> Unknown vector type!')
         else:
             self._vec_type = vec_type
@@ -70,7 +70,7 @@ class KonaFile(object):
         # only produce a file handle for the root processor
         if rank == 0:
             if isinstance(filename, str):
-                self.file = open(filename, 'w', 0)
+                self.file = open(filename, 'w')
             else:
                 self.file = filename
         else:
@@ -181,7 +181,7 @@ class KonaMemory(object):
         BaseVector
             User-defined vector data structure.
         """
-        if vec_type not in self.vector_stack.keys():
+        if vec_type not in list(self.vector_stack.keys()):
             raise TypeError('KonaMemory.pop_vector() >> ' +
                             'Unknown vector type!')
         else:

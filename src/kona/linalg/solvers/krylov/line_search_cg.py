@@ -39,7 +39,7 @@ class LineSearchCG(KrylovSolver):
 
         # START OF BIG FOR LOOP
         #######################
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
             
             mat_vec(d, Bd)
             curv = d.inner(Bd)

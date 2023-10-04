@@ -409,7 +409,7 @@ class AugmentedLagrangian(L2QuadraticPenalty):
                 else:
                     self.mult_eq.equals(self.mult_eq_start)
                 self.func_val += self.mult_eq.inner(self.cnstr_eq)
-                print self.func_val
+                print(self.func_val)
             if self.cnstr_ineq is not None:
                 if not self.freeze_mults:
                     self.mult_ineq.equals_ax_p_by(

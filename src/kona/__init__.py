@@ -1,5 +1,5 @@
-from optimizer import Optimizer
-import examples
-import algorithms
-import linalg
-import user
+from .optimizer import Optimizer
+from . import examples
+from . import algorithms
+from . import linalg
+from . import user

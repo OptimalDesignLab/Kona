@@ -126,7 +126,7 @@ class ReducedKKTMatrix(BaseHessian):
             self.w_adj = self.state_factory.generate()
             self.lambda_adj = self.state_factory.generate()
             self.state_work = []
-            for i in xrange(3):
+            for i in range(3):
                 self.state_work.append(self.state_factory.generate())
 
             # generate primal vectors

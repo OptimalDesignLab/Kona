@@ -88,7 +88,7 @@ class ReducedSchurPreconditioner(BaseHessian):
             # design vectors
             self.design_prod = self.primal_factory.generate()
             self.design_work = []
-            for i in xrange(2):
+            for i in range(2):
                 self.design_work.append(self.primal_factory.generate())
             # dual vectors
             self.dual_prod = None

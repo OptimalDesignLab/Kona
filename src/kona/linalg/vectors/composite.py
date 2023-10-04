@@ -109,7 +109,7 @@ class CompositeVector(object):
             raise TypeError('CompositeVector() >> ' +
                             'Wrong vector type. Must be %s' % type(self))
         else:
-            for i in xrange(len(self._vectors)):
+            for i in range(len(self._vectors)):
                 try:
                     self._vectors[i]._check_type(vec._vectors[i])
                 except TypeError:
@@ -131,11 +131,11 @@ class CompositeVector(object):
         """
         if isinstance(rhs,
                       (float, int, np.float64, np.int64, np.float32, np.int32)):
-            for i in xrange(len(self._vectors)):
+            for i in range(len(self._vectors)):
                 self._vectors[i].equals(rhs)
         else:
             self._check_type(rhs)
-            for i in xrange(len(self._vectors)):
+            for i in range(len(self._vectors)):
                 self._vectors[i].equals(rhs._vectors[i])
 
     def plus(self, vector):
@@ -150,7 +150,7 @@ class CompositeVector(object):
             Vector to be added.
         """
         self._check_type(vector)
-        for i in xrange(len(self._vectors)):
+        for i in range(len(self._vectors)):
             self._vectors[i].plus(vector._vectors[i])
 
     def minus(self, vector):
@@ -165,7 +165,7 @@ class CompositeVector(object):
             Vector to be subtracted.
         """
         self._check_type(vector)
-        for i in xrange(len(self._vectors)):
+        for i in range(len(self._vectors)):
             self._vectors[i].minus(vector._vectors[i])
 
     def times(self, factor):
@@ -181,11 +181,11 @@ class CompositeVector(object):
         """
         if isinstance(factor,
                       (float, int, np.float64, np.int64, np.float32, np.int32)):
-            for i in xrange(len(self._vectors)):
+            for i in range(len(self._vectors)):
                 self._vectors[i].times(factor)
         else:
             self._check_type(factor)
-            for i in xrange(len(self._vectors)):
+            for i in range(len(self._vectors)):
                 self._vectors[i].times(factor._vectors[i])
 
     def divide_by(self, value):
@@ -201,7 +201,7 @@ class CompositeVector(object):
         """
         if isinstance(value,
                       (float, int, np.float64, np.int64, np.float32, np.int32)):
-            for i in xrange(len(self._vectors)):
+            for i in range(len(self._vectors)):
                 self._vectors[i].divide_by(value)
         else:
             raise TypeError(
@@ -221,7 +221,7 @@ class CompositeVector(object):
         """
         self._check_type(x)
         self._check_type(y)
-        for i in xrange(len(self._vectors)):
+        for i in range(len(self._vectors)):
             self._vectors[i].equals_ax_p_by(a, x._vectors[i], b, y._vectors[i])
 
     def inner(self, vector):
@@ -234,7 +234,7 @@ class CompositeVector(object):
         """
         self._check_type(vector)
         total_prod = 0.
-        for i in xrange(len(self._vectors)):
+        for i in range(len(self._vectors)):
             total_prod += self._vectors[i].inner(vector._vectors[i])
         return total_prod
 
@@ -248,7 +248,7 @@ class CompositeVector(object):
         vector : CompositeVector
         """
         self._check_type(vector)
-        for i in xrange(len(self._vectors)):
+        for i in range(len(self._vectors)):
             self._vectors[i].exp(vector)
 
     def log(self, vector):
@@ -261,7 +261,7 @@ class CompositeVector(object):
         vector : CompositeVector
         """
         self._check_type(vector)
-        for i in xrange(len(self._vectors)):
+        for i in range(len(self._vectors)):
             self._vectors[i].log(vector)
 
     def pow(self, power):
@@ -272,7 +272,7 @@ class CompositeVector(object):
         ----------
         power : float
         """
-        for i in xrange(len(self._vectors)):
+        for i in range(len(self._vectors)):
             self._vectors[i].pow(power)
 
     @property
@@ -301,7 +301,7 @@ class CompositeVector(object):
         float : Infinity norm.
         """
         norms = []
-        for i in xrange(len(self._vectors)):
+        for i in range(len(self._vectors)):
             norms.append(self._vectors[i].infty)
         return max(norms)
 

@@ -175,7 +175,7 @@ class Sellar(UserSolver):
             u += du
             u[0] = max(0.01, u[0])
 
-        print 'Sellar nonlinear problem failed to converge'
+        print('Sellar nonlinear problem failed to converge')
         result.data[0] = u[0]
         result.data[1] = u[1]
         return -1

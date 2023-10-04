@@ -165,7 +165,7 @@ class ReducedSpaceMultiSecant(OptimizationAlgorithm):
         # Begin iterations
         converged = False
         info = ' '
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
             self.iter += 1
 
             # evaluate optimality and feasibility, and output as necessary

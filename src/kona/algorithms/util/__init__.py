@@ -1,3 +1,3 @@
-import merit
-import linesearch
-import filter
+from . import merit
+from . import linesearch
+from . import filter

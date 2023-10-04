@@ -228,7 +228,7 @@ class StrongWolfe(LineSearch):
         self.out_file.write('\n')
 
         # START OF BIG FOR-LOOP
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
             
             self.out_file.write('    Strong-Wolfe Zoom : iter %i\n'%(i+1))
 
@@ -305,7 +305,7 @@ class StrongWolfe(LineSearch):
         self.out_file.write('\n')
 
         # START OF BIG FOR-LOOP
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
 
             self.out_file.write('  Strong-Wolfe Line Search : iter %i\n'%(i+1))
             self.out_file.write('  ----------------------------------\n')

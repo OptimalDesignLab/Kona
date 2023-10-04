@@ -378,7 +378,7 @@ class PredictorCorrectorCnstr(OptimizationAlgorithm):
             max_newton = self.inner_maxiter
             inner_iters = 0
             dx_newt.equals(0.0)
-            for i in xrange(max_newton):
+            for i in range(max_newton):
 
                 self.info_file.write('\n')
                 self.info_file.write('   Inner Newton iteration %i\n'%(i+1))

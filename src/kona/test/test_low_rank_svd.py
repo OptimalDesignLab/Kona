@@ -65,32 +65,32 @@ class LowRankSVDTestCase(unittest.TestCase):
         self.A.product(in_vec.primal.design, out_vec_exact.dual)
         self.svd.approx_fwd_prod(in_vec.primal.design, out_vec_approx.dual)
 
-        print 'Constraint Jacobian test:'
+        print('Constraint Jacobian test:')
 
-        print 'Exact fwd product  =', out_vec_exact.dual.norm2
-        print 'Approx fwd product =', out_vec_approx.dual.norm2
+        print('Exact fwd product  =', out_vec_exact.dual.norm2)
+        print('Approx fwd product =', out_vec_approx.dual.norm2)
 
         out_vec_approx.dual.minus(out_vec_exact.dual)
         abs_error = out_vec_approx.dual.norm2
         rel_error = abs_error/out_vec_exact.dual.norm2
 
-        print 'Abs error norm     =', abs_error
-        print 'Rel error norm     =', rel_error
+        print('Abs error norm     =', abs_error)
+        print('Rel error norm     =', rel_error)
 
         self.assertTrue(rel_error <= 1e-8)
 
         self.A.T.product(in_vec.dual, out_vec_exact.primal.design)
         self.svd.approx_rev_prod(in_vec.dual, out_vec_approx.primal.design)
 
-        print 'Exact rev product  =', out_vec_exact.primal.design.norm2
-        print 'Approx fwd product =', out_vec_approx.primal.design.norm2
+        print('Exact rev product  =', out_vec_exact.primal.design.norm2)
+        print('Approx fwd product =', out_vec_approx.primal.design.norm2)
 
         out_vec_approx.primal.design.minus(out_vec_exact.primal.design)
         abs_error = out_vec_approx.primal.design.norm2
         rel_error = abs_error/out_vec_exact.primal.design.norm2
 
-        print 'Abs error norm     =', abs_error
-        print 'Rel error norm     =', rel_error
+        print('Abs error norm     =', abs_error)
+        print('Rel error norm     =', rel_error)
 
         self.assertTrue(rel_error <= 1e-8)
 
@@ -140,16 +140,16 @@ class LowRankSVDTestCase(unittest.TestCase):
         self.svd.approx_fwd_prod(
             in_vec.primal.design, out_vec_approx.primal.design)
 
-        print 'Hessian test:'
-        print 'Exact product  =', out_vec_exact.primal.design.norm2
-        print 'Approx product =', out_vec_approx.primal.design.norm2
+        print('Hessian test:')
+        print('Exact product  =', out_vec_exact.primal.design.norm2)
+        print('Approx product =', out_vec_approx.primal.design.norm2)
 
         out_vec_approx.primal.design.minus(out_vec_exact.primal.design)
         abs_error = out_vec_approx.primal.design.norm2
         rel_error = abs_error/out_vec_exact.primal.design.norm2
 
-        print 'Abs error norm =', abs_error
-        print 'Rel error norm =', rel_error
+        print('Abs error norm =', abs_error)
+        print('Rel error norm =', rel_error)
 
         self.assertTrue(rel_error <= 1e-8)
 
@@ -185,12 +185,12 @@ class LowRankSVDTestCase(unittest.TestCase):
 
         # loop over and check each column in the approximate Schur
         self.svd.linearize()
-        for i in xrange(km.neq):
+        for i in range(km.neq):
             in_vec.base.data = np.zeros_like(in_vec.base.data)
             in_vec.base.data[i] = 1.0
             out_vec.base.data = np.zeros_like(out_vec.base.data)
             self.svd.inv_schur_prod(in_vec, out_vec)
-            for j in xrange(km.neq):
+            for j in range(km.neq):
                 self.assertAlmostEqual(Sinv[j,i]/out_vec.base.data[j], 1.0, places=9)
 
     def test_inv_schur_prod_ineq(self):
@@ -225,12 +225,12 @@ class LowRankSVDTestCase(unittest.TestCase):
 
         # loop over and check each column in the approximate Schur
         self.svd.linearize()
-        for i in xrange(km.nineq):
+        for i in range(km.nineq):
             in_vec.base.data = np.zeros_like(in_vec.base.data)
             in_vec.base.data[i] = 1.0
             out_vec.base.data = np.zeros_like(out_vec.base.data)
             self.svd.inv_schur_prod(in_vec, out_vec)
-            for j in xrange(km.nineq):
+            for j in range(km.nineq):
                 self.assertAlmostEqual(Sinv[j,i]/out_vec.base.data[j], 1.0, places=9)
 
     def test_inv_schur_prod_comp(self):
@@ -273,23 +273,23 @@ class LowRankSVDTestCase(unittest.TestCase):
 
         # loop over and check each column in the approximate Schur
         self.svd.linearize()
-        for i in xrange(km.neq):
+        for i in range(km.neq):
             in_vec.equals(0.)
             in_vec.eq.base.data[i] = 1.0
             out_vec.equals(0.)
             self.svd.inv_schur_prod(in_vec, out_vec)
-            for j in xrange(km.neq):
+            for j in range(km.neq):
                 self.assertAlmostEqual(Sinv[j,i]/out_vec.eq.base.data[j], 1.0, places=9)
-            for j in xrange(km.nineq):
+            for j in range(km.nineq):
                 self.assertAlmostEqual(Sinv[km.neq+j,i]/out_vec.ineq.base.data[j], 1.0, places=9)
-        for i in xrange(km.nineq):
+        for i in range(km.nineq):
             in_vec.equals(0.)
             in_vec.ineq.base.data[i] = 1.0
             out_vec.equals(0.)
             self.svd.inv_schur_prod(in_vec, out_vec)
-            for j in xrange(km.neq):
+            for j in range(km.neq):
                 self.assertAlmostEqual(Sinv[j,km.neq+i]/out_vec.eq.base.data[j], 1.0, places=9)
-            for j in xrange(km.nineq):
+            for j in range(km.nineq):
                 self.assertAlmostEqual(Sinv[km.neq+j,km.neq+i]/out_vec.ineq.base.data[j], 1.0,
                                        places=9)
 

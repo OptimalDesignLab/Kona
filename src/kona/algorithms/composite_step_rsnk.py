@@ -180,7 +180,7 @@ class CompositeStepRSNK(OptimizationAlgorithm):
         ###############################
         min_radius_active = False
         krylov_tol = 0.00095
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
             # advance iteration counter
             self.iter += 1
 

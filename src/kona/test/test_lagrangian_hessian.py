@@ -78,14 +78,14 @@ class LagrangianHessianTestCase(unittest.TestCase):
         self.W.linearize(X, state, adjoint)
         self.W.multiply_W(in_vec.primal, out_vec.primal)
 
-        print '-----------------------------'
-        print 'Constrained Hessian'
-        print '-----------------------------'
-        print 'FD product:'
-        print dLdX_pert.primal.base.data
-        print 'Analytical product:'
-        print out_vec.primal.base.data
-        print '-----------------------------'
+        print('-----------------------------')
+        print('Constrained Hessian')
+        print('-----------------------------')
+        print('FD product:')
+        print(dLdX_pert.primal.base.data)
+        print('Analytical product:')
+        print(out_vec.primal.base.data)
+        print('-----------------------------')
 
         dLdX.equals_ax_p_by(1.0, dLdX_pert, -1.0, out_vec)
         diff_norm = dLdX.primal.norm2

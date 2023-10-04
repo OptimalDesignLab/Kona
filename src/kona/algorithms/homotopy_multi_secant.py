@@ -158,7 +158,7 @@ class HomotopyMultiSecant(OptimizationAlgorithm):
 
         # Begin outer (homotopy) loop here
         converged = False
-        for i in xrange(self.max_iter):
+        for i in range(self.max_iter):
             self.iter += 1
             self.inner = 0
 
@@ -222,7 +222,7 @@ class HomotopyMultiSecant(OptimizationAlgorithm):
                 ': inner_feas_norm0 = %e\n'%inner_feas_norm0)
 
             # inner (corrector) iterations
-            for k in xrange(self.inner_max_iter):
+            for k in range(self.inner_max_iter):
                 self.inner += 1
                 self.info_file.write(
                     'Corr. Iter. %i'%self.inner +

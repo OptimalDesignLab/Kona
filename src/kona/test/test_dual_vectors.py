@@ -62,12 +62,12 @@ class DualVectorINEQTestCase(unittest.TestCase):
         self.dv.equals_constraints(at_design, at_state)
         self.mult.equals(-9)
         self.mang.equals_mangasarian(self.dv, self.mult)
-        for i in xrange(len(self.mang.base.data)):
+        for i in range(len(self.mang.base.data)):
             self.assertEqual(self.mang.base.data[i], -10) # linear Mangasarian
             # self.assertEqual(self.mang.base.data[i], -1730) # cubic Mangasarian
         self.mult.equals(-11)
         self.mang.equals_mangasarian(self.dv, self.mult)
-        for i in xrange(len(self.mang.base.data)):
+        for i in range(len(self.mang.base.data)):
             self.assertEqual(self.mang.base.data[i], -11) # linear Mangasarian
             # self.assertEqual(self.mang.base.data[i], -2332) # cubic Mangasarian
 

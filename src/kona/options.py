@@ -30,7 +30,7 @@ def get_opt(optns, default, *keys):
     return val
 
 def print_dict(obj, pre='', out_file=sys.stdout):
-    for k, v in obj.items():
+    for k, v in list(obj.items()):
         if hasattr(v, '__iter__'):
             out_file.write('%s%s : {\n'%(pre, k))
             print_dict(v, pre='%s  '%pre, out_file=out_file)

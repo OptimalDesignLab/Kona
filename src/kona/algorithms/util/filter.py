@@ -34,7 +34,7 @@ class SimpleFilter(object):
         
         # check if new point dominates any filter point
         dominated_by = []
-        for i in xrange(len(self.points)):
+        for i in range(len(self.points)):
             if new_point >= self.points[i]:
                 # new point is not acceptable
                 return False

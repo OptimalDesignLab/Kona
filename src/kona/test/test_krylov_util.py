@@ -151,7 +151,7 @@ class KrylovUtilTestCase(unittest.TestCase):
         p_work = df.generate()
         Q = []
         P = []
-        for i in xrange(lanczos_size):
+        for i in range(lanczos_size):
             Q.append(pf.generate())
             P.append(df.generate())
         Q.append(pf.generate())
